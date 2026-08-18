@@ -1,0 +1,191 @@
+---
+name: session-restore
+description: Restore a fresh or recycled VM/container/session to full working state in minutes, not hours — the cache inventory (toolchain-cache branch, .checked verification cache, pycottas venv, skill symlinks), what the bootstrap hook restores automatically vs what needs a command, the wasm_of_ocaml/binaryen ≥116 install path (proxy-blocked release binaries, conda-forge fallback), and the never-again rules from the 2026-07-03 session that burned ~90 minutes compiling F* from source twice. Use on any fresh clone, restored VM, new sandbox, when fstar.exe or test data is missing, when a wasm build fails on a missing `wasm-merge`, when a session is about to do something expensive that a previous session already did, or when adding a new cache-worthy artifact.
+---
+
+# Session / VM restoration: never rebuild what a previous session built
+
+An ephemeral container is recycled; the repo is the only durable
+store. Everything expensive a session produces must therefore either
+be committed (binaries, per Iron Rule #9), pushed to a cache branch,
+or accepted as lost. This skill is the inventory of what we cache,
+how restoration works, and the mistakes that motivated it.
+
+## What restores automatically (the bootstrap hook)
+
+`.claude/hooks/session-start.sh` → `tools/sandbox-bootstrap.sh` runs
+in remote sandboxes on every session start, all steps idempotent:
+
+| Restored | From | Cold cost | Warm cost |
+|---|---|---|---|
+| Test fixtures — ALL 14 `third_party/testing/*` submodules + per-suite sentinel verification (`tools/ensure-test-env.sh`; worktrees must run it themselves) | git | ~2-4 min (~500 MB) | no-op |
+| Committed binaries check + `ocaml-output/` symlinks | `bin/<platform>/` | instant | instant |
+| pycottas venv (`_tmp.junk/pycottas-venv`) | PyPI | ~1 min | no-op |
+| **Skill discovery symlinks** `.claude/skills/<n>` | regenerated fresh from `skills/*/` | instant | instant |
+| F\* toolchain (backgrounded) | `toolchain-cache` branch | ~2-4 min | no-op |
+| fstar-mcp binary + daemon | cargo / running pid | ~2-3 min | instant |
+| **Git freshness** (fetch + auto-ff when behind) | `origin/<branch>` | ~2 s | ~2 s |
+
+Container state is cached after the hook completes, so a warm
+container pays none of this.
+
+**Behind-origin is the silent killer (2026-07-07).** A resumed/recycled
+container can come up on an OLD commit — one incident had it **78
+commits behind** `origin/claude/main`, undetected until a push was
+rejected, after which a whole pass was spent diagnosing a dashboard
+"bug" that origin had already fixed and re-`--run`-ning suites on stale
+binaries. The hook now guards this: on start it fetches `origin/<current
+branch>` and, if behind, **fast-forwards automatically when the working
+tree is clean**, or prints a loud `BEHIND … DIRTY … NOT auto-pulled`
+warning when it isn't (never overwrites uncommitted work). The `git:`
+line in the orientation block reports the outcome. Still, before
+publishing anything (dashboard, docs) or diagnosing "missing" work,
+confirm `git rev-parse HEAD == origin/<branch>` — the auto-ff only fires
+if the tree was clean at start. If you find yourself confused that
+landed work "isn't here," check freshness FIRST, not the code.
+
+## The cache branches (orphan, never merged)
+
+- **`toolchain-cache`** — `bin/fstar.exe` + `lib/fstar` for the
+  pinned F\* version (split <100MB chunks + SHA256SUMS). Consumer:
+  `tools/install-toolchain-cache.sh`. Rebuild when
+  `fstar_version` in `bin/ci-linux-x86_64/build-info.json` changes;
+  instructions in the branch README.
+- **`checked-cache`** (live 2026-07-03) — the repo's
+  `formal/fstar/*.checked` verification cache (~13MB gzip, 88
+  modules), snapshotted from the gates-green state. Restored by
+  `tools/install-toolchain-cache.sh` step 4b. Content-digest keyed by
+  F\*, so even a stale snapshot gives partial hits; a full cold
+  re-verify of the tree costs ~2 hours, which is what this saves.
+  Refresh (single amended commit) after landing changes that
+  re-verified large parts of the tree — gates-green states only.
+
+**Gate rule (non-negotiable): cache artifacts are pushed only from a
+state that passed the full test battery** — F\* verification, the W3C
+suites, and the perf gates — exactly like the committed binaries
+(Iron Rule #9). A `.checked` set or toolchain snapshot from an
+unproven tree would let every future session bootstrap from a
+regression. Same order of operations as binaries: build → gates →
+commit/push, never build → push → hope.
+
+Pattern for new cache artifacts: orphan branch, split files under
+100MB, SHA256SUMS, single amended commit (history of a cache is
+worthless bulk), consumer script on the main line, restore step wired
+into the bootstrap hook, entry in this table — and the gate rule
+above.
+
+## Skill discovery is regenerated, never trusted stale
+
+`skills/` is the single source of truth for what skills exist. The
+hook regenerates `.claude/skills/<name>` symlinks from a directory
+scan **every session** — new skills get linked, deleted ones
+unlinked, and the orientation output warns if a skill on disk is
+missing from CLAUDE.md's human-facing index (fix CLAUDE.md when you
+see that warning; do not let the two lists drift). When a Claude
+session is in play, these symlinks are what make skills load
+natively — they are not optional decoration.
+
+## Never-again rules (2026-07-03, ~90 wasted minutes)
+
+1. **Never compile F\* from source when a cache exists.** Check
+   `toolchain-cache` first; `tools/install-toolchain-cache.sh` is the
+   entry point. Source builds are for producing a NEW cache entry.
+2. **Never let opam choose the F\* version.** Pin to CI's
+   (`build-info.json`); a mismatched version verifies fine and then
+   churns every extracted `.ml` — we paid the full compile twice.
+   **Same for z3: check `z3 --version` says 4.13.3 after every
+   restore.** A 2026-07-10 container shipped z3 4.16.0 first on PATH
+   (both `/usr/local/bin/z3` and the opam switch's `z3`) with 4.13.3
+   sitting unused at `/usr/local/bin/z3-4.13.3`. Fix:
+   `ln -sf /usr/local/bin/z3-4.13.3 /root/.opam/fstar/bin/z3` (and the
+   same for `/usr/local/bin/z3`).
+3. **Never conclude "unreachable" from one 403.** Probe: git protocol
+   reaches ANY GitHub repo (incl. clones into /tmp);
+   `api.github.com` + release assets are blocked; PyPI/npm/crates are
+   direct. Check `$HTTPS_PROXY/__agentproxy/status`. Release-only
+   artifacts get mirrored into a cache branch — that is this repo's
+   standard answer, endorsed as policy. (Asked and answered
+   2026-07-03: upstream F\* binaries are NOT git-fetchable —
+   `FStarLang/FStar` carries source only, release assets are the
+   blocked endpoint, and `FStarLang/binaries`' newest Linux tarball
+   dates to 2021-04. Our `toolchain-cache` branch is not duplication
+   of something upstream already serves.)
+4. **Big one-off costs run once, then get cached for everyone.** If
+   a session pays >10 minutes for reusable state, pushing it to a
+   cache branch is part of finishing the task.
+5. **Restoration must never block the session.** Hook steps are
+   backgrounded and fail-open; a session can always run the committed
+   binaries with zero toolchain.
+6. **Wasm builds need binaryen ≥ 116** (`wasm-merge` does not exist in
+   Ubuntu apt's binaryen 108, so `opam install wasm_of_ocaml-compiler`
+   fails at its runtime link step). GitHub release binaries are
+   proxy-blocked; the working source is a conda-forge tarball over
+   plain HTTPS (2026-07-04):
+   `api.anaconda.org/download/conda-forge/binaryen/121/linux-64/...conda`
+   → unzip → `tar --zstd` → copy `bin/*` + `lib/*` to `/usr/local`.
+   `tools/install-toolchain-cache.sh` step 5b does this automatically;
+   also needs apt `zstd` for the inner tarball.
+7. **The binary-untar of F\* bypasses opam dependency resolution**
+   (2026-07-11). Because the `toolchain-cache` branch drops `fstar.exe`
+   + `lib/fstar` as a tarball rather than via `opam install fstar`,
+   `fstar.lib`'s own runtime requires (`batteries pprint ppx_deriving
+   ppx_deriving_yojson yojson stdint`) and `uucp` are never pulled — a
+   fresh container's FIRST `./build-ocaml.sh` then dies one missing
+   package at a time at the ocamlopt link step. `install-toolchain-cache.sh`
+   step 5 now installs the full set, retries on a flaky network, and
+   writes `.claude-runs/toolchain-deps.ok` on success (check it before
+   building). Two more install-robustness fixes landed the same day:
+   `apt-get update` runs tolerantly so a broken **third-party** PPA
+   (`ondrej/php` changed its Label) can't abort the whole install over a
+   repo we don't use; and z3 4.13.3 is symlinked into the switch bin
+   (`$SWITCH_PREFIX/bin/z3`), not just `/usr/local/bin`, so a
+   PATH-shadowing newer z3 can't reach a bare `fstar.exe`.
+
+## Shallow clones break hub provenance tests — deepen by SHA, never unshallow (2026-08-04)
+
+Fresh containers clone SHALLOW. The hub posts 17/18 tests run
+`git cat-file -t <sha>` on cited commits (and one reads a cited
+commit's message), so on a fresh container they fail with
+"Not a valid object name" — an ENVIRONMENT failure that looks like a
+broken promise in the post. Cost on 2026-08-04: the only red suite
+(hub 249 pass, 5 fail, out of 254) in an otherwise-green 53-suite
+gate, plus ~40 minutes of diagnosis and two failed repair attempts.
+
+- **`git fetch --unshallow` does NOT fit.** Committed binaries (rule
+  #9) make full history enormous — `.git` was already 16 GB with
+  6.9 GB free; the fetch dies with `fetch-pack: invalid index-pack
+  output` (disk), and if you pipe it through `tail -1` the failure is
+  MASKED because the pipeline exits 0 (anti-pattern #14 — capture the
+  fetch's own exit code).
+- **The working repair costs bytes, not gigabytes.** The tests need
+  the commit OBJECTS only, never their trees:
+  1. resolve each short SHA to a full SHA with the GitHub API
+     (`get_commit` accepts short SHAs);
+  2. `git fetch --depth=1 --filter=tree:0 origin <full-sha>` per SHA
+     — the tree:0 filter passes through the git proxy and delivers
+     just the commit object;
+  3. verify with `git cat-file -t <short-sha>` == `commit`.
+- The SHAs currently cited live in `tests/hub/post17_test.mjs` and
+  `tests/hub/post18_test.mjs`; grep `cat-file` there when new posts
+  add more.
+- The other fresh-container hub failure of that day — the C
+  delta-log demo binary post18 runs — is fixed PERMANENTLY: the
+  binary is committed since 2026-08-04 (`formal/fstar/.gitignore`
+  carries the war story). If it regresses, the gcc recipe is the
+  tail of `tools/karamel-c-build.sh` with `KRML_HOME` pointing at a
+  depth-1 clone of FStarLang/karamel (headers only; opam karamel
+  does not install here — its depext wants python2.7).
+
+## Manual restoration (non-hook harnesses, local dev)
+
+```bash
+git submodule update --init third_party/testing/w3c third_party/testing/rdf-canon
+tools/install-toolchain-cache.sh        # F* + z3 + switch, 2-4 min
+eval $(opam env --switch=fstar)         # every shell, before F* work
+```
+
+## What this skill does NOT cover
+
+- Toolchain internals and repair — `fstar-env`.
+- Making the verify/extract loop itself fast — `fast-verify-extract`.
+- What to do once restored — `session-economy`.

@@ -1,0 +1,26 @@
+name: RDF 1.1 XML Syntax
+spec: https://www.w3.org/TR/rdf-syntax-grammar/
+runner: bin/linux-x86_64/w3c_runner
+runner_args:
+  - --rdf
+  - rdf-xml
+log_path: formal/fstar/ocaml-output/sparql_results.log
+result_path: docs/test-results/by-suite/rdf-xml.json
+domain: RDF
+foundational: false
+
+triggers:
+  paths:
+    - formal/fstar/Parser.RDFXML.fst
+    - formal/fstar/Parser.XML.fst
+    - formal/fstar/Parser.Combinators.fst
+    - formal/fstar/Parser.IRI.fst
+    - formal/fstar/RDF.Format.fst
+    - bin/w3c-runner/**
+
+  excludes: []
+
+# What's left, in plain language (source: docs/claude-rules/w3c-completeness-ledger.md,
+# RDF 1.1 row, 2026-07-10).
+remaining:
+  - "some very deeply nested RDF/XML documents can overflow the parser — a parser-depth gap, not a semantics gap"

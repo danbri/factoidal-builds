@@ -1,0 +1,72 @@
+name: Check F* Extraction
+
+on:
+  pull_request:
+    paths:
+      - 'formal/fstar/*.fst'
+      - 'formal/fstar/build-ocaml.sh'
+      - 'formal/fstar/ocaml-patches.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache opam
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-fstar-${{ runner.os }}-v4
+          restore-keys: |
+            opam-fstar-${{ runner.os }}-
+
+      # F* per-module verification cache — mirrors w3c-tests.yml's
+      # block (#238). Without it this PR gate re-verifies the whole
+      # tree cold (the dominant cost of this workflow; ~2h measured
+      # locally). Keyed on the hash of all F* sources; restore-keys
+      # give partial hits (F*'s .checked invalidation is per-module
+      # content-digest, so stale entries for unchanged modules still
+      # count).
+      - name: Cache F* .checked files
+        uses: actions/cache@v4
+        with:
+          path: formal/fstar/*.fst.checked
+          key: fstar-checked-${{ runner.os }}-${{ hashFiles('formal/fstar/*.fst', 'formal/fstar/*.fsti') }}
+          restore-keys: |
+            fstar-checked-${{ runner.os }}-
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opam libgmp-dev pkg-config libzstd-dev
+
+      - name: Setup opam + F*
+        run: |
+          if [ ! -d ~/.opam ]; then
+            opam init -y --disable-sandboxing
+          fi
+          # Ensure fstar switch exists
+          if ! opam switch list 2>/dev/null | grep -q fstar; then
+            opam switch create fstar ocaml-base-compiler.4.14.1
+          fi
+          eval $(opam env --switch=fstar)
+          # Install F* and deps (pin z3 to 4.13.3 — F* 2025.12.15 requires exact match)
+          opam pin add z3 4.13.3 -y --no-action 2>/dev/null || true
+          opam install -y fstar z3.4.13.3 zarith sha digestif ocamlfind uucp
+          echo "OPAMSWITCH=fstar" >> $GITHUB_ENV
+          # Verify tools are available and correct versions
+          fstar.exe --version
+          z3 --version
+
+      - name: Verify + Extract + Compile
+        run: |
+          eval $(opam env --switch=fstar)
+          cd formal/fstar
+          ./build-ocaml.sh extract
+          ./build-ocaml.sh compile

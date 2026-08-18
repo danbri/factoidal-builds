@@ -1,0 +1,47 @@
+name: SHACL Core (W3C data-shapes-test-suite)
+spec: https://www.w3.org/TR/shacl/
+runner: bin/linux-x86_64/shacl_runner
+runner_args: []
+manifest: third_party/testing/shacl/data-shapes-test-suite/tests/core/manifest.ttl
+log_path: formal/fstar/ocaml-output/shacl_results.log
+result_path: docs/test-results/by-suite/shacl-core.json
+domain: RDF
+foundational: false
+
+# Phase 3 of the SHACL program (issue #181 follow-up; see
+# formal/fstar/SHACL.Validation.fst sections 11/13 for constraint
+# coverage + sh:sparql dispatch). `runner_args: []` runs the runner's
+# DEFAULT mode: full validation-report comparison, canonicalizing both
+# the expected and actual report graphs (RDF.Canonical) and comparing
+# per the suite's own "full compliance" isomorphism rule — see
+# bin/shacl-runner/shacl_runner.ml's header comment for exactly which
+# predicates are compared and the sh:resultMessage carve-out. The
+# slice-1 floor (sh:conforms boolean only) is still available via
+# `./shacl_runner --conforms-only` for local debugging; see
+# shacl-sparql.yaml for the separate sh:sparql-focused suite section
+# (node/, property/, pre-binding/ folders of the same vendored
+# manifest tree — component/ is out of scope, see that file's
+# comment). Remaining known gaps, scored as honest FAILs: sh:sparql on
+# a shape reached via sh:property (nested, not directly targeted),
+# and the SPARQL-SELECT-based TARGET form (sh:target [ sh:select ...
+# ] / T_Sparql — distinct from the sh:sparql CONSTRAINT form).
+
+triggers:
+  paths:
+    # The validator core (shape parsing, targets, paths, constraints,
+    # validation report).
+    - formal/fstar/SHACL.Validation.fst
+    # Reused for shape-graph/data-graph loading.
+    - formal/fstar/RDF.Graph.Executable.fst
+    - formal/fstar/Parser.Turtle.fst
+    # sh:pattern reuses the existing regex assume-val realisation.
+    - formal/fstar/SPARQL11.Algebra.fst
+    - formal/fstar/minimal_regrettable_glue_code_each_with_an_open_issue/181_shacl_validate_stub.sh
+    - formal/fstar/minimal_regrettable_glue_code_each_with_an_open_issue/63_regex_hash_uuid_stubs.sh
+    # The runner.
+    - bin/shacl-runner/**
+    # Vendored W3C SHACL data-shapes-test-suite (manifest + core/*.ttl
+    # fixtures).
+    - third_party/testing/shacl/data-shapes-test-suite/**
+
+  excludes: []

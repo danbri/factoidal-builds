@@ -1,0 +1,568 @@
+(* JSON-LD 1.1 toRdf manifest runner — Phase 2 of the JSON-LD program.
+
+   Reads third_party/testing/json-ld/tests/toRdf-manifest.jsonld,
+   walks its `sequence`, and for each test:
+     - loads the `input` .jsonld file;
+     - calls the F*-extracted Parser_JSONLD.parse_jsonld (expanded-form
+       only — see formal/fstar/Parser.JSONLD.fst module banner);
+     - for PositiveEvaluationTest, compares the resulting dataset
+       against the `expect` .nq file via RDF_Canonical.canonicalize_to_nquads
+       string equality (both sides parsed, then canonicalized — this
+       makes the comparison independent of blank-node label choices);
+     - for NegativeEvaluationTest, PASSes iff parse_jsonld returns None;
+     - for PositiveSyntaxTest, PASSes iff parse_jsonld returns Some _
+       (no `expect` file to compare against).
+
+   !! THIS IS I/O GLUE — NO RDF/JSON-LD SEMANTIC LOGIC !!
+   See CLAUDE.md iron rule #11 / anti-pattern #15. All JSON-LD
+   deserialization semantics live in formal/fstar/Parser.JSONLD.fst;
+   all canonicalization semantics live in formal/fstar/RDF.Canonical.fst.
+   This file only does file I/O, manifest traversal, and string
+   comparison of two already-canonicalized N-Quads strings.
+
+   Per Iron Rule #7 (parsers belong in F-star), the manifest itself — a
+   JSON-LD document — is parsed with the F*-extracted RFC 8259 parser
+   (Parser_JSON.parse_json), not any OCaml JSON library. There is no
+   hand-rolled JSON parsing in this file.
+
+   Scope (see docs/designissues/2026-07-04-jsonld-program-lessons.md
+   and docs/designissues/2026-07-05-jsonld-phase2-runner.md):
+     - toRdf manifest only (not compact/flatten/frame/fromRdf/html).
+     - option.specVersion == "json-ld-1.0" (11 tests: t0118, te014,
+       te026, te038, te071, te115, te116, ter02, ter03, ter24, ter32)
+       used to be a blanket SKIP. As of the 2026-07-05 IRI-resolution/
+       JCS/skip-policy pass, option.specVersion now threads into
+       parse_jsonld's processing_mode exactly like option.processingMode
+       already did (see jld_processing_mode below) — so every one of
+       these 11 actually RUNS through the normal Positive/Negative
+       comparison instead of being skipped sight-unseen. Measuring the
+       real result (not just "specVersion says 1.0, skip it") showed 3
+       of the 11 are honestly gettable with this program's 1.1-plus-
+       ac_mode10-gating engine: te026, ter02, ter03. A same-day
+       goal-wave follow-up (jld_predicate_iri_wf, Parser.JSONLD.fst)
+       made 2 more (t0118, te038) genuinely re-measure as MATCH too —
+       see jld_1_0_still_skip's banner for exactly why. The 2026-07-16
+       skip audit implemented three more 1.0-mode semantics in F*
+       behind ac_mode10 (1.0's absolute-@vocab requirement ->
+       te115+te116; 1.0's list-of-lists error -> ter24+ter32; 1.0's
+       every-term-is-a-prefix rule -> te014), leaving only 1 (te071)
+       that still needs GENUINE 1.0-mode semantics this engine does
+       not implement (see jld_1_0_still_skip below for the
+       fixture-specific reason).
+
+   PHASE 6 (issue #275): remote contexts / "@import" + document base.
+   This runner is the ONE consumer that realises
+   JSONLD_Loader.jsonld_load_document with a REAL loader (rule #11
+   ASSUME-IO glue, registered below via jsonld_loader_register): it
+   maps the manifest's baseIri prefix
+   (https://w3c.github.io/json-ld-api/tests/) back to
+   third_party/testing/json-ld/tests/ on disk and reads the file — the
+   suite's remote contexts are ordinary fixture files, per
+   docs/designissues/2026-07-04-jsonld-program-lessons.md. Every test's
+   document base IRI is baseIri ^ input (the manifest's own convention,
+   `@context = [..., {"@base": "toRdf-manifest"}]` / `baseIri` field),
+   overridden by the test's own `option.base` when the manifest
+   supplies one (8 tests do, e.g. #te076).
+
+   Usage:
+     ./jsonld_runner                Run the default toRdf manifest
+     ./jsonld_runner <manifest>     Run a specific manifest.jsonld
+     ./jsonld_runner --list         List parsed test entries (no execution)
+     ./jsonld_runner -v|--verbose   Show expected-vs-got diff on FAIL
+     ./jsonld_runner --help         Show this help
+*)
+
+(* ------------------------------------------------------------------ *)
+(* Repo-root resolution (parallel to rdfc10_runner.ml / owl_runner.ml). *)
+
+let find_repo_root () =
+  let rec walk d =
+    if d = "/" || d = "" then None
+    else if Sys.file_exists (Filename.concat d "CLAUDE.md") then Some d
+    else walk (Filename.dirname d)
+  in
+  let start =
+    try Filename.dirname (Sys.executable_name)
+    with _ -> Sys.getcwd ()
+  in
+  match walk start with
+  | Some r -> r
+  | None ->
+    (match walk (Sys.getcwd ()) with
+     | Some r -> r
+     | None -> Sys.getcwd ())
+
+let manifest_candidates () =
+  let repo_root = find_repo_root () in
+  [ Filename.concat repo_root "third_party/testing/json-ld/tests/toRdf-manifest.jsonld";
+    "third_party/testing/json-ld/tests/toRdf-manifest.jsonld";
+    "../../third_party/testing/json-ld/tests/toRdf-manifest.jsonld";
+    "../../../third_party/testing/json-ld/tests/toRdf-manifest.jsonld" ]
+
+let default_manifest () =
+  try List.find Sys.file_exists (manifest_candidates ())
+  with Not_found ->
+    Filename.concat (find_repo_root ())
+      "third_party/testing/json-ld/tests/toRdf-manifest.jsonld"
+
+(* ------------------------------------------------------------------ *)
+(* File I/O. *)
+
+let read_file path =
+  try
+    let ic = open_in_bin path in
+    let n = in_channel_length ic in
+    let s = Bytes.create n in
+    really_input ic s 0 n;
+    close_in ic;
+    Some (Bytes.to_string s)
+  with Sys_error _ -> None
+
+(* Manual substring search — no external dependency, just enough to
+   detect "@context" in raw input bytes. *)
+let contains_substring ~needle haystack =
+  let nlen = String.length needle and hlen = String.length haystack in
+  let rec go i =
+    if i + nlen > hlen then false
+    else if String.sub haystack i nlen = needle then true
+    else go (i + 1)
+  in
+  nlen = 0 || go 0
+
+let head s n =
+  if String.length s <= n then s else String.sub s 0 n ^ " …(truncated)"
+
+(* ------------------------------------------------------------------ *)
+(* PHASE 6 (issue #275): documentLoader realisation + document base.
+
+   !! THIS IS I/O GLUE, NOT SEMANTIC LOGIC !! Which bytes come back for
+   which IRI is ordinary fixture-file lookup; the F*-extracted
+   JSONLD.Context module decides what to DO with the bytes (parse,
+   recurse, merge — see that module's banner). *)
+
+let jsonld_test_base = "https://w3c.github.io/json-ld-api/tests/"
+
+let jsonld_fixture_root () =
+  Filename.concat (find_repo_root ()) "third_party/testing/json-ld/tests"
+
+(* Map an absolute w3c.github.io test-suite IRI to its on-disk fixture
+   file and read it; anything else (a real remote host, a malformed
+   IRI) is an honest None -- this runner has no live HTTP loader. *)
+let jsonld_document_loader (iri : string) : string option =
+  let prefix = jsonld_test_base in
+  let plen = String.length prefix and ilen = String.length iri in
+  if ilen >= plen && String.sub iri 0 plen = prefix then
+    read_file (Filename.concat (jsonld_fixture_root ()) (String.sub iri plen (ilen - plen)))
+  else
+    None
+
+let () =
+  JSONLD_Loader.jsonld_loader_register
+    (fun iri ->
+       match jsonld_document_loader iri with
+       | Some s -> FStar_Pervasives_Native.Some s
+       | None -> FStar_Pervasives_Native.None)
+
+(* ------------------------------------------------------------------ *)
+(* Thin wrappers over the F*-extracted JSON accessors.
+
+   json_get_field / json_get_string / json_get_array all return
+   FStar_Pervasives_Native.option; unwrap once to plain OCaml option
+   so the rest of this file reads like ordinary OCaml. *)
+
+let opt_of_fs = function
+  | FStar_Pervasives_Native.Some x -> Some x
+  | FStar_Pervasives_Native.None -> None
+
+let field key obj = opt_of_fs (Parser_JSON.json_get_field key obj)
+let str_field key obj = opt_of_fs (Parser_JSON.json_get_string key obj)
+let arr_field key obj = opt_of_fs (Parser_JSON.json_get_array key obj)
+
+(* @type is an array of strings for every sequence entry in the toRdf
+   manifest (jld:PositiveEvaluationTest / NegativeEvaluationTest /
+   PositiveSyntaxTest, each paired with jld:ToRDFTest); be lenient
+   about a bare string too, in case a future manifest edit collapses
+   it. *)
+let jld_types entry =
+  match field "@type" entry with
+  | Some (Parser_JSON.JArray items) ->
+    List.filter_map
+      (function Parser_JSON.JString s -> Some s | _ -> None)
+      items
+  | Some (Parser_JSON.JString s) -> [ s ]
+  | _ -> []
+
+type test_kind =
+  | K_Positive
+  | K_Negative
+  | K_PositiveSyntax
+  | K_Unknown
+
+let classify types =
+  if List.mem "jld:PositiveEvaluationTest" types then K_Positive
+  else if List.mem "jld:NegativeEvaluationTest" types then K_Negative
+  else if List.mem "jld:PositiveSyntaxTest" types then K_PositiveSyntax
+  else K_Unknown
+
+let kind_label = function
+  | K_Positive -> "toRdf-Positive"
+  | K_Negative -> "toRdf-Negative"
+  | K_PositiveSyntax -> "toRdf-PositiveSyntax"
+  | K_Unknown -> "toRdf-Unknown"
+
+let jld_spec_version entry =
+  match field "option" entry with
+  | Some opt_obj -> str_field "specVersion" opt_obj
+  | None -> None
+
+(* PHASE 6 (issue #275): a handful of manifest entries (8, e.g. #te076)
+   override the document base IRI directly via `option.base` rather
+   than relying on the baseIri-plus-input convention. *)
+let jld_base_override entry =
+  match field "option" entry with
+  | Some opt_obj -> str_field "base" opt_obj
+  | None -> None
+
+(* rdfDirection threads exactly like base above: a handful of manifest
+   entries (toRdf/di09-di12) set `option.rdfDirection` to select how a
+   "@direction"-bearing value object becomes RDF — see
+   formal/fstar/Parser.JSONLD.fst's rdf_direction_mode banner for what
+   each string means; this runner just forwards the raw manifest string
+   to parse_jsonld, which converts it. *)
+let jld_rdf_direction entry =
+  match field "option" entry with
+  | Some opt_obj -> str_field "rdfDirection" opt_obj
+  | None -> None
+
+(* expandContext (toRdf/e077): a manifest-relative path to a context
+   document to apply before the document's own inline @context —
+   resolved to an absolute test-suite IRI the SAME way test_base resolves
+   `input` below, so Parser.JSONLD's parse_jsonld can treat it as an
+   ordinary remote context reference (see that function's banner). *)
+let jld_expand_context entry =
+  match field "option" entry with
+  | Some opt_obj -> str_field "expandContext" opt_obj
+  | None -> None
+
+(* PHASE 8: option.processingMode (toRdf/c029, ep02, tn01, er21, so01,
+   pi01, ter42 — the ~10-test "processingMode json-ld-1.0" negative
+   battery). Forwarded verbatim to Parser.JSONLD's parse_jsonld, which
+   treats exactly the string "json-ld-1.0" as 1.0 mode and anything
+   else (including absence) as the 1.1 default — see that function's
+   banner and JSONLD.Context.active_context's ac_mode10 doc comment. *)
+let jld_processing_mode entry =
+  match field "option" entry with
+  | Some opt_obj -> str_field "processingMode" opt_obj
+  | None -> None
+
+(* ------------------------------------------------------------------ *)
+(* Per-test record. *)
+
+type test_case = {
+  id : string;
+  name : string;
+  kind : test_kind;
+  input : string;          (* manifest-relative path, e.g. "toRdf/0001-in.jsonld" *)
+  expect : string option;  (* manifest-relative path, e.g. "toRdf/0001-out.nq" (Positive only) *)
+  spec_version : string option;
+  base_override : string option;
+  rdf_direction : string option;
+  expand_context : string option;
+  processing_mode : string option;
+  manifest_dir : string;
+}
+
+let build_test_cases manifest_dir root =
+  match arr_field "sequence" root with
+  | None -> []
+  | Some entries ->
+    List.filter_map
+      (fun e ->
+         match str_field "@id" e, str_field "input" e with
+         | Some id, Some input ->
+           let name = match str_field "name" e with Some n -> n | None -> id in
+           Some {
+             id; name;
+             kind = classify (jld_types e);
+             input;
+             expect = str_field "expect" e;
+             spec_version = jld_spec_version e;
+             base_override = jld_base_override e;
+             rdf_direction = jld_rdf_direction e;
+             expand_context = jld_expand_context e;
+             processing_mode = jld_processing_mode e;
+             manifest_dir;
+           }
+         | _ -> None)
+      entries
+
+(* ------------------------------------------------------------------ *)
+(* Outcome + per-test execution. *)
+
+type outcome = Pass | Fail of string | Skip of string
+
+(* PHASE 6 (issue #275): every test's document base is baseIri ^ input
+   (the manifest's own convention) unless option.base overrides it. *)
+let test_base tc =
+  match tc.base_override with
+  | Some b -> b
+  | None -> jsonld_test_base ^ tc.input
+
+let parse_jsonld_tc tc content =
+  let fs_rdf_direction = match tc.rdf_direction with
+    | Some s -> FStar_Pervasives_Native.Some s
+    | None -> FStar_Pervasives_Native.None in
+  (* option.expandContext is manifest-relative (e.g. "toRdf/e077-
+     context.jsonld"); resolve it the same way test_base resolves
+     `input` so the loader (registered against jsonld_test_base) can
+     fetch it. *)
+  let fs_expand_context = match tc.expand_context with
+    | Some rel -> FStar_Pervasives_Native.Some (jsonld_test_base ^ rel)
+    | None -> FStar_Pervasives_Native.None in
+  (* option.processingMode (PHASE 8) and option.specVersion (the 11-test
+     battery documented at this file's top) are two different manifest
+     fields that both mean "run under this JSON-LD processing mode" —
+     forward whichever is present (processingMode taking precedence on
+     the theoretical case a manifest entry sets both) so parse_jsonld's
+     ac_mode10 gating sees "json-ld-1.0" for either spelling. *)
+  let fs_processing_mode = match tc.processing_mode, tc.spec_version with
+    | Some s, _ -> FStar_Pervasives_Native.Some s
+    | None, Some sv -> FStar_Pervasives_Native.Some sv
+    | None, None -> FStar_Pervasives_Native.None in
+  opt_of_fs (Parser_JSONLD.parse_jsonld content (FStar_Pervasives_Native.Some (test_base tc)) fs_rdf_direction fs_expand_context fs_processing_mode)
+
+(* The specVersion=json-ld-1.0 battery (11 tests), split on hard evidence
+   (2026-07-05): each of these was actually RUN (not blanket-skipped)
+   against this program's 1.1-plus-ac_mode10 engine and produced the
+   WRONG result — a false FAIL, not a false PASS — because the fixture
+   exercises a genuine 1.0-only semantic this engine does not implement.
+   The other 3 specVersion=json-ld-1.0 IDs (te026, ter02, ter03) are NOT
+   listed here: they were measured to PASS for real under normal
+   Positive/Negative comparison, so they now run like any other test
+   (no skip, no special-casing) — see this file's top-of-file comment.
+   Kept as an explicit ID allowlist (not a blanket specVersion check)
+   precisely so this list has to be edited, not silently widened, the
+   next time someone touches 1.0-only handling.
+
+   2026-07-05 goal-wave revisit (JSON-LD blank-node-predicate battery):
+   Parser.JSONLD.fst's jld_predicate_iri_wf fix (drop any property whose
+   EXPANDED-FORM key is a blank-node identifier — see that module's
+   banner) made #t0118 and #te038 BOTH genuinely re-measure as MATCH
+   against their own expected .nq fixtures (confirmed directly against
+   Parser_JSONLD.parse_jsonld + RDF_Canonical, bypassing this skip list
+   entirely, before removing their entries here) — so both move from
+   skip to an ordinary run below. This is not really "generalized RDF
+   now works" (this codebase still has no generalized-RDF-aware N-Quads
+   serializer/parser — see jld_predicate_iri_wf's banner): #t0118's own
+   expected output can only round-trip its ONE ordinary (rdf:type)
+   triple through Parser.NQuads' strict-IRIREF-predicate grammar, every
+   OTHER (blank-predicate) line in 0118-out.nq being silently dropped
+   by that parser the exact same way this program now drops them at
+   emission — the two "wrongs" cancel out into a genuine, honest MATCH
+   for this specific fixture shape, not a semantic implementation of
+   the produceGeneralizedRdf flag.
+
+   2026-07-16 skip audit: five more entries flipped to ordinary runs by
+   implementing their 1.0-mode semantics in F* behind ac_mode10 —
+   #te115 + #te116 (JSONLD.Context.fst's @vocab branch now enforces
+   1.0's absolute-IRI-or-bnode requirement on the vocab mapping),
+   #ter24 + #ter32 (JSONLD.Expand.fst's expand_property now raises
+   1.0's "list of lists" error instead of the 1.1 nested-list
+   coercion), and #te014 (JSONLD.Context.fst's expand_iri_gen now
+   applies 1.0's prefix rule — every defined term, expanded-form
+   definitions included, is a compact-IRI prefix candidate — which
+   makes the fixture's {"xsd": {"@id": ...}} definition expand
+   "xsd:date"; re-measured PASS under JLD_NO_SKIP=1).
+
+   2026-07-17 direction wave: #te071 ("Redefine terms looking like
+   compact IRIs", the toRdf twin of expand/#t0071) FLIPPED to an
+   ordinary run. It never needed a 1.0-only semantic: the JSON-LD 1.1
+   API's Create Term Definition already specifies the defined[term]=false
+   guard that makes a term's own compact-IRI-shaped @id re-resolve via
+   the prefix instead of the term's stale mapping. The object-form @id
+   branch of JSONLD.Context.fst's process_term_def_obj was missing the
+   self-strip the simple string form already had; it now applies it, so
+   {"v:termId": {"@id": "v:termId"}} maps to vocab#termId. Measured MATCH
+   afterwards. The allowlist is now empty — no toRdf test needs a
+   documented 1.0-only skip. *)
+let jld_1_0_still_skip (id : string) : string option =
+  if Sys.getenv_opt "JLD_NO_SKIP" <> None then None else
+  match id with
+  | _ -> None
+
+let run_test tc =
+  match jld_1_0_still_skip tc.id with
+  | Some reason -> Skip reason
+  | None ->
+    let input_path = Filename.concat tc.manifest_dir tc.input in
+    (match read_file input_path with
+     | None -> Fail (Printf.sprintf "input file not found: %s" input_path)
+     | Some content ->
+       (* Phase 3a (JSONLD.Context / JSONLD.Expand, 2026-07-04) added
+          inline @context processing, so the Phase-1-era blanket
+          "@context means FAIL" pre-check is gone: parse_jsonld itself
+          now either handles the context or returns None, and the
+          normal compare below scores the result honestly. Phase 6
+          (2026-07-05) added remote-context / "@import" loading and the
+          document base IRI (test_base above); remaining out-of-scope
+          features still surface as parse_jsonld None -> FAIL. *)
+       ignore (contains_substring ~needle:"@context" content);
+       (
+         match tc.kind with
+         | K_Positive ->
+           (match tc.expect with
+            | None -> Fail "manifest entry has no `expect` file"
+            | Some expect_rel ->
+              let expect_path = Filename.concat tc.manifest_dir expect_rel in
+              (match read_file expect_path with
+               | None -> Fail (Printf.sprintf "expected .nq file not found: %s" expect_path)
+               | Some expect_content ->
+                 (match parse_jsonld_tc tc content with
+                  | None -> Fail "parse_jsonld returned None (expected a valid expanded-form dataset)"
+                  | Some got_ds ->
+                    let exp_ds = Parser_NQuads.parse_nquads expect_content in
+                    let got_canon = RDF_Canonical.canonicalize_to_nquads got_ds in
+                    let exp_canon = RDF_Canonical.canonicalize_to_nquads exp_ds in
+                    if got_canon = exp_canon then Pass
+                    else
+                      Fail (Printf.sprintf
+                              "canonical N-Quads differ (dataset isomorphism mismatch)\n      expected:\n%s      got:\n%s"
+                              (head exp_canon 400) (head got_canon 400)))))
+         | K_PositiveSyntax ->
+           (match parse_jsonld_tc tc content with
+            | Some _ -> Pass
+            | None -> Fail "parse_jsonld returned None (input was expected to parse without error)")
+         | K_Negative ->
+           (match parse_jsonld_tc tc content with
+            | None -> Pass
+            | Some _ -> Fail "parse_jsonld succeeded but a parse failure was expected (see manifest expectErrorCode)")
+         | K_Unknown -> Skip "unrecognized @type for a toRdf test entry"))
+
+(* ------------------------------------------------------------------ *)
+(* Manifest load + suite run. *)
+
+let load_manifest manifest_path =
+  match read_file manifest_path with
+  | None ->
+    Printf.eprintf "jsonld_runner: cannot read manifest: %s\n" manifest_path;
+    exit 2
+  | Some raw ->
+    match opt_of_fs (Parser_JSON.parse_json raw) with
+    | None ->
+      Printf.eprintf "jsonld_runner: manifest is not valid JSON: %s\n" manifest_path;
+      exit 2
+    | Some root ->
+      let manifest_dir = Filename.dirname manifest_path in
+      build_test_cases manifest_dir root
+
+let tally_by_kind tests_and_outcomes kind =
+  List.fold_left
+    (fun (p, f, s) (tc, o) ->
+       if tc.kind <> kind then (p, f, s)
+       else match o with
+         | Pass -> (p + 1, f, s)
+         | Fail _ -> (p, f + 1, s)
+         | Skip _ -> (p, f, s + 1))
+    (0, 0, 0) tests_and_outcomes
+
+let run_manifest ~verbose ~list_only manifest_path =
+  Printf.printf "=== JSON-LD 1.1 toRdf Test Runner ===\n";
+  Printf.printf "Manifest: %s\n\n" manifest_path;
+  let tests = load_manifest manifest_path in
+  let total = List.length tests in
+  Printf.printf "Totals: %d test entries\n\n" total;
+  if list_only then
+    List.iter
+      (fun tc ->
+         Printf.printf "  [%s] %-8s %s\n" (kind_label tc.kind) tc.id tc.name)
+      tests
+  else begin
+    let n = ref 0 in
+    let outcomes =
+      List.map
+        (fun tc ->
+           incr n;
+           Printf.eprintf "  [%d/%d] %s%!" !n total tc.id;
+           let t0 = Unix.gettimeofday () in
+           let o = run_test tc in
+           let elapsed = Unix.gettimeofday () -. t0 in
+           let status_tag = match o with
+             | Pass -> "ok" | Fail _ -> "FAIL" | Skip _ -> "skip" in
+           Printf.eprintf " %s%s\n%!" status_tag
+             (if elapsed >= 1.0 then Printf.sprintf " (%.1fs)" elapsed else "");
+           (match o with
+            | Pass -> Printf.printf "  PASS: %s\n" tc.name
+            | Fail msg -> Printf.printf "  FAIL: %s — %s\n" tc.name msg
+            | Skip msg -> if verbose then Printf.printf "  skip: %s — %s\n" tc.name msg);
+           (tc, o))
+        tests
+    in
+    Printf.printf "\n========================================\n";
+    Printf.printf "Suite Results:\n";
+    List.iter
+      (fun kind ->
+         let (p, f, s) = tally_by_kind outcomes kind in
+         if p + f + s > 0 then
+           Printf.printf "  %-25s pass:%d fail:%d skip:%d\n" (kind_label kind) p f s)
+      [ K_Positive; K_Negative; K_PositiveSyntax; K_Unknown ];
+    Printf.printf "========================================\n";
+    let pass, fail, skip =
+      List.fold_left
+        (fun (p, f, s) (_, o) ->
+           match o with
+           | Pass -> (p + 1, f, s)
+           | Fail _ -> (p, f + 1, s)
+           | Skip _ -> (p, f, s + 1))
+        (0, 0, 0) outcomes
+    in
+    Printf.printf "TOTAL: %d pass, %d fail, %d skip (out of %d)\n" pass fail skip total;
+    Printf.printf "========================================\n";
+    (* Exact final-line format consumed by generate-report.sh's
+       generic "N pass, M fail (out of K)" score-line regex; see
+       docs/designissues/2026-07-05-jsonld-phase2-runner.md. *)
+    Printf.printf "jsonld-toRdf: %d pass, %d fail, %d skip (out of %d)\n"
+      pass fail skip total;
+    if fail > 0 then exit 1
+  end
+
+(* ------------------------------------------------------------------ *)
+(* Main. *)
+
+let print_help () =
+  print_string
+    "JSON-LD 1.1 toRdf manifest runner — Phase 2 of the JSON-LD program.\n\
+     \n\
+     Usage:\n\
+     \  ./jsonld_runner                Run the default toRdf manifest\n\
+     \  ./jsonld_runner <manifest>     Run a specific manifest.jsonld\n\
+     \  ./jsonld_runner --list         List parsed test entries (no execution)\n\
+     \  ./jsonld_runner -v|--verbose   Show skip reasons too (FAIL always shown)\n\
+     \  ./jsonld_runner --help         Show this help\n\
+     \n\
+     Status: Phase 2 scaffold. Parser.JSONLD is expanded-form-only\n\
+     (no @context processing); every test whose input contains\n\
+     \"@context\" scores FAIL, not SKIP, per CLAUDE.md anti-pattern\n\
+     #3/#25. See docs/designissues/2026-07-05-jsonld-phase2-runner.md\n\
+     for the expected baseline breakdown.\n"
+
+let () =
+  let args = Array.to_list Sys.argv |> List.tl in
+  let verbose = ref false in
+  let list_only = ref false in
+  let path = ref None in
+  let rec loop = function
+    | [] -> ()
+    | ("-v" | "--verbose") :: rest -> verbose := true; loop rest
+    | ("--help" | "-h") :: _ -> print_help (); exit 0
+    | "--list" :: rest -> list_only := true; loop rest
+    | p :: rest when !path = None -> path := Some p; loop rest
+    | _ ->
+      Printf.eprintf "jsonld_runner: unexpected arguments; try --help\n";
+      exit 2
+  in
+  loop args;
+  let manifest = match !path with
+    | Some p -> p
+    | None -> default_manifest ()
+  in
+  run_manifest ~verbose:!verbose ~list_only:!list_only manifest
