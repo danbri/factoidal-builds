@@ -1,0 +1,71 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master, claude/main]
+    paths: [docs/**]
+  # Bot-pushed commits that use the default GITHUB_TOKEN do NOT
+  # trigger other workflows (GitHub limitation, preventing
+  # infinite loops). So dashboard-refresh's "ci: refresh dashboard"
+  # auto-commits and w3c-tests's "ci(linux-x86_64): generated docs
+  # artifacts" updates land on origin but never fire deploy-pages
+  # via the push trigger above. workflow_run subscribes deploy-pages
+  # to those workflows directly so the dashboard-pages publication
+  # happens whenever upstream successfully refreshes the data.
+  workflow_run:
+    workflows: ["Dashboard Refresh", "W3C Test Suite"]
+    types: [completed]
+    branches: [main, master, claude/main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Eleventy (offline, vendored)
+        # third_party/eleventy/npm-cache is a vendored npm cache
+        # (134 packages, no registry access needed) so the Pages
+        # build never depends on npmjs.org being reachable. See
+        # third_party/eleventy/README.md.
+        run: third_party/eleventy/install.sh docs
+      - name: Build
+        working-directory: docs
+        run: npx @11ty/eleventy --output=_site
+      - name: Check Pages link integrity (advisory)
+        # Broken links should not block stats / test-results from
+        # publishing — those are independent of design-doc cross-refs.
+        # Step is advisory: surfaces broken links as a GitHub workflow
+        # annotation but always exits 0 so the deploy proceeds. Run
+        # locally for the exact list:
+        #   ./tests/local/check_pages_links.sh docs/_site
+        continue-on-error: true
+        run: |
+          if ! ./tests/local/check_pages_links.sh docs/_site; then
+            echo "::warning::Broken links present in docs/_site — see step log; deploy continues."
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

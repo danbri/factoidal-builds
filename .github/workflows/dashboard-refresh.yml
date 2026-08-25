@@ -1,0 +1,288 @@
+name: Dashboard Refresh
+
+# Always-on, lightweight dashboard regeneration. The heavy w3c-tests
+# workflow has a 300s tail-edge debounce that drops dashboard
+# refreshes when pushes are bunched (rapid commit cadence on
+# claude/main is common). This workflow exists so the dashboard at
+# https://danbri.github.io/factoidal/test-results/ refreshes within
+# a minute of any push, regardless of debounce or browser-artifacts
+# job state.
+#
+# What it does:
+#   - Reads the committed *_results.log files in
+#     formal/fstar/ocaml-output/ (these are kept up-to-date by the
+#     heavy w3c-tests pipeline when it runs).
+#   - Runs formal/fstar/generate-report.sh (no --run — pure
+#     regeneration from cached logs; no F*/OCaml needed).
+#   - Commits + pushes docs/test-results/* updates.
+#
+# What it does NOT do:
+#   - Re-run any tests.
+#   - Build any F* / OCaml.
+#
+# Effect: the dashboard's "Last refresh" timestamp tracks every
+# commit, even when the underlying test data is from an earlier
+# run. The TEST data itself updates only when the heavy pipeline
+# completes successfully.
+#
+# This is the structural answer to "the dashboard is stuck at
+# X:YYam HOURS LATER" — separate dashboard liveness from test
+# liveness.
+
+on:
+  push:
+    branches: [main, master, claude/main]
+    # Skip our own self-pushes + the heavy pipeline's pushes — both
+    # write to docs/test-results/* and mustn't ricochet here.
+    paths-ignore:
+      - 'docs/test-results/**'
+      - 'docs/fstar-extracted/**'
+      - 'bin/ci-linux-x86_64/**'
+      - 'bin/ci-darwin-arm64/**'
+      - 'formal/fstar/ocaml-output-ci/**'
+      # Deliberately NOT ignoring the *_results.log files (old or new,
+      # 2026-07-05 wave) — a commit that updates one of those IS new test
+      # data, and this workflow's whole job is to pick that up quickly.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Concurrency: per-ref. Cancel older in-flight refreshes when a newer
+# one comes in — the dashboard reflects the LATEST source, so older
+# refreshes are wasted work.
+concurrency:
+  group: dashboard-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # We need full history so generate-report.sh's git-based
+          # date stamps resolve. fetch-depth: 0 is overkill but cheap.
+          fetch-depth: 0
+
+      - name: Sanity-check inputs
+        run: |
+          set -eu
+          # The committed *_results.log files are the data the
+          # dashboard derives from. If they're missing, this workflow
+          # is a no-op (the heavy pipeline hasn't populated them yet).
+          missing=0
+          for log in sparql_results.log rdf_results.log \
+                     rdfc10_results.log owl_profile_rl_results.log; do
+            if [ ! -f "formal/fstar/ocaml-output/$log" ]; then
+              echo "::warning::missing input: formal/fstar/ocaml-output/$log"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -ge 4 ]; then
+            echo "::error::no committed *_results.log inputs found; nothing to refresh"
+            exit 0
+          fi
+          # 2026-07-05 wave: SHACL / ShEx / JSON-LD / RML / RIF Core / VC.
+          # Informational only — these are newer, optional suites (like
+          # rdfc10/owl above, they're populated by a manual `./w3c-tests.sh`
+          # run + commit today, not this workflow or the heavy pipeline's
+          # native-shadow job) — a missing log here just means the
+          # corresponding dashboard family renders "not measured this
+          # run", never a hard error.
+          for log in shacl_results.log shacl_sparql_results.log \
+                     shex_results.log jsonld_results.log rml_results.log \
+                     rif_results.log vc_results.log; do
+            if [ ! -f "formal/fstar/ocaml-output/$log" ]; then
+              echo "::notice::optional input not present (renders as 'not measured this run'): formal/fstar/ocaml-output/$log"
+            fi
+          done
+          echo "Inputs present (some files may be missing — generate-report.sh handles partial inputs)."
+
+      - name: Regenerate dashboard
+        run: |
+          set -eu
+          cd formal/fstar
+          # No --run — we use the committed logs as-is.
+          ./generate-report.sh
+          echo "Dashboard regenerated."
+          echo "=== latest.json head ==="
+          head -50 ../../docs/test-results/latest.json 2>/dev/null || true
+
+      - name: Regenerate per-module assurance inventory
+        run: |
+          set -eu
+          # Issue #315. Same "no toolchain, read committed artifacts"
+          # contract as the dashboard step above: this reads F* source,
+          # the committed extracted OCaml, the build module list, the
+          # per-suite manifests and the committed *_results.log files.
+          # It never runs F* and never runs a test.
+          tools/assurance-inventory.sh
+          echo "=== assurance inventory totals ==="
+          python3 - <<'EOF'
+          import json
+          t = json.load(open('docs/test-results/assurance-inventory.json'))['totals']
+          for k in ('modules', 'assume_val_active', 'admissions_active',
+                    'lax_or_admit_pragmas', 'w3c_refinement_theorem_count',
+                    'algorithm_correctness_theorem_count'):
+              print(f"  {k}: {t[k]}")
+          print("  tiers:", t['tiers'])
+          EOF
+
+      - name: Gate against lying rows (0 pass + 0 fail with a nonzero universe)
+        run: |
+          # A suite whose committed log was produced in a fixture-less
+          # environment renders as 0/0 and, without this gate, gets
+          # PUBLISHED (shacl/shex shipped that way once). Surface every
+          # such row loudly; fail the publish if any core suite is 0/0.
+          python3 - <<'EOF'
+          import json, sys
+          d = json.load(open('docs/test-results/latest.json'))
+          s = d.get('suites', {})
+          items = s.items() if isinstance(s, dict) else [(x.get('name'), x) for x in s]
+          CORE = {'sparql', 'rdf'}
+          bad_core, zero_rows = [], []
+          for name, v in items:
+              if isinstance(v, list):   # sparql/rdf carry sub-suite lists
+                  p = sum(x.get('pass', 0) for x in v); f = sum(x.get('fail', 0) for x in v)
+              else:
+                  p, f = v.get('pass', 0), v.get('fail', 0)
+              if p == 0 and f == 0:
+                  zero_rows.append(name)
+                  if name in CORE: bad_core.append(name)
+          for n in zero_rows:
+              print(f"::warning::suite '{n}' publishes 0 pass / 0 fail — stale or fixture-less log; "
+                    f"run tools/ensure-test-env.sh then ./w3c-tests.sh and commit fresh logs")
+          if bad_core:
+              print(f"::error::core suite(s) {bad_core} are 0/0 — refusing to publish a lying dashboard")
+              sys.exit(1)
+          print(f"row gate ok: {len(zero_rows)} zero-row warning(s), no core-suite zeros")
+          EOF
+
+      - name: Commit + push refreshed dashboard
+        if: github.ref == 'refs/heads/claude/main' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Save dashboard payload outside the worktree (same pattern
+          # as w3c-tests.yml's browser-artifacts step).
+          PAYLOAD=$(mktemp -d)
+          if [ -d docs/test-results ]; then
+            mkdir -p "$PAYLOAD/docs"
+            cp -a docs/test-results "$PAYLOAD/docs/test-results"
+          fi
+          # The assurance inventory's site page (issue #315) lives outside
+          # docs/test-results/, so it needs its own carry-over.
+          INV_MD=docs/web/conformance/assurance-inventory.md
+          if [ -f "$INV_MD" ]; then
+            mkdir -p "$PAYLOAD/inv"
+            cp -a "$INV_MD" "$PAYLOAD/inv/assurance-inventory.md"
+          fi
+
+          # Assurance-drift fingerprint helper, written once outside the
+          # retry loop (a nested heredoc inside the loop would have to
+          # survive YAML block-scalar de-indentation; a file does not).
+          INV_FP_PY="$PAYLOAD/inv_fp.py"
+          cat > "$INV_FP_PY" <<'PY'
+          import json, sys
+          try:
+              d = json.load(open(sys.argv[1]))
+          except Exception:
+              sys.exit(0)
+          rows = [[r["module"], r["assurance_tier"], r["assume_val_active"],
+                   r["admissions_active"], len(r["lax_or_admit_pragmas"]),
+                   r["local_refinement_lemma_count"],
+                   len(r["algorithm_correctness_theorems"]),
+                   len(r["internal_refinement_theorems"]),
+                   len(r["w3c_refinement_theorems"])]
+                  for r in d.get("modules", [])]
+          print(json.dumps([d.get("totals", {}).get("tiers"), rows],
+                           sort_keys=True))
+          PY
+
+          PUSH_RC=1
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt $attempt for dashboard refresh..."
+
+            # Sync to latest origin tip; discard any local state.
+            git fetch origin "${GITHUB_REF_NAME}"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            git clean -fdq -- docs/test-results
+
+            # Restore freshly-generated dashboard onto the new tip.
+            if [ -d "$PAYLOAD/docs/test-results" ]; then
+              mkdir -p docs
+              rm -rf docs/test-results
+              cp -a "$PAYLOAD/docs/test-results" docs/test-results
+            fi
+            if [ -f "$PAYLOAD/inv/assurance-inventory.md" ]; then
+              mkdir -p docs/web/conformance
+              cp -a "$PAYLOAD/inv/assurance-inventory.md" "$INV_MD"
+            fi
+
+            git add -A docs/test-results "$INV_MD"
+
+            if git diff --cached --quiet; then
+              echo "No dashboard changes vs origin tip; nothing to commit."
+              PUSH_RC=0
+              break
+            fi
+
+            # Commit ONLY when a real test number changed. Every regeneration
+            # rewrites latest.{json,csv} + index.html with a fresh wall-clock
+            # timestamp (and per-test millisecond timings), so the diff above
+            # is ALWAYS non-empty — this workflow used to commit a
+            # timestamp-only "ci: refresh dashboard" on every push, which is
+            # the worthless-timeseries churn scrubbed 2026-07-20.
+            #
+            # latest.csv is the per-suite score table:
+            #   timestamp,commit,branch,category,suite,pass,fail,skip,unsupported
+            # Drop the two volatile leading columns (timestamp, commit), sort,
+            # and compare to the origin tip we just reset onto (HEAD). Identical
+            # fingerprint => no pass/fail/skip count changed => skip the commit.
+            #
+            # TRADE-OFF (see this file's header): the public dashboard's
+            # "Last refresh" timestamp will now bump only when a score actually
+            # changes, not on every push. That is the more honest signal — the
+            # timestamp reflects real test-data changes instead of commit time.
+            score_fp() { cut -d',' -f3- | LC_ALL=C sort; }
+            NEW_FP=$(score_fp < docs/test-results/latest.csv 2>/dev/null || true)
+            OLD_FP=$(git show HEAD:docs/test-results/latest.csv 2>/dev/null | score_fp || true)
+
+            # Same churn-avoidance for the assurance inventory (#315): its
+            # JSON carries the tree's short SHA, so a raw diff is non-empty
+            # on every push. Fingerprint the tier counts + per-module
+            # assurance fields with the volatile keys stripped; commit only
+            # when a real assurance fact moved.
+            inv_fp() { python3 "$INV_FP_PY" "$1" 2>/dev/null || true; }
+            INV_JSON=docs/test-results/assurance-inventory.json
+            NEW_INV=$(inv_fp "$INV_JSON")
+            git show "HEAD:$INV_JSON" > /tmp/inv-old.json 2>/dev/null || true
+            OLD_INV=$(inv_fp /tmp/inv-old.json)
+
+            if [ -n "$NEW_FP" ] && [ "$NEW_FP" = "$OLD_FP" ] \
+               && [ "$NEW_INV" = "$OLD_INV" ]; then
+              echo "Only timestamp/timings changed — no test score or assurance drift. Skipping commit (avoids timeseries churn)."
+              PUSH_RC=0
+              break
+            fi
+
+            git commit -m "ci: refresh dashboard + assurance inventory — measured drift"
+
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              PUSH_RC=0
+              echo "Push succeeded on attempt $attempt."
+              break
+            fi
+            echo "::warning::git push failed on attempt $attempt — origin moved; retrying"
+            sleep $((attempt * 2))
+          done
+
+          rm -rf "$PAYLOAD" || true
+
+          if [ "$PUSH_RC" -ne 0 ]; then
+            echo "::error::Failed to push dashboard refresh after 5 attempts"
+            exit "$PUSH_RC"
+          fi
