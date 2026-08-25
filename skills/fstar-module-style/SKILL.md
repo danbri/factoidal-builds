@@ -1,0 +1,433 @@
+---
+name: fstar-module-style
+description: How Factoidal's F* source is organized and written — the semantic-core vs implementation-pragmatics split, module naming, the planned stratification of RDF.Graph.Executable and SPARQL11.Algebra, interface-file (.fsti) policy, verification requirements (no --lax, no --admit_smt_queries, z3 4.13.3), F* syntax traps (comment nesting, reserved words), extraction-semantics traps (F*-verified totality is NOT OCaml totality — List.Tot.splitAt, split-brained string primitives, fixed fuel constants, accumulator order), and KaRaMeL-compatible style. Use when creating or reorganizing .fst modules, when an F* "Syntax error" makes no sense, when a function that verifies as Tot crashes at runtime after extraction, when deciding where a definition belongs, or when writing F* that should later extract to C.
+---
+
+# F\* module organization and style
+
+The F\* specifications are the product (Iron Rule #1). This skill is
+about keeping them readable as specifications: the standards' meaning
+stated as clearly and abstractly as possible, with implementation
+choices — indexes, fast paths, byte layouts, caches — visibly
+elsewhere. The long-term goal is that someone can read the core of
+RDF, RDFS, OWL, RIF, and SPARQL from the F\* alone.
+
+## Layout today
+
+All ~92 modules live **flat** in `formal/fstar/*.fst` — no `src/`
+tree. `.fsti` interface files started landing 2026-07-05 for the
+foundational core (`RDF.Vocabulary`, `RDF.Indexed`, `RDF.IRI`,
+`RDF.Term`, `RDF.Triple`, `RDF.Graph` — see "Interface files" below
+and the ".fsti reading-order convention" for how to write one).
+Domains are expressed by dotted-name prefixes:
+
+- `RDF.*` — terms, triples, graphs, datasets, formats, canonicalization
+- `SPARQL11.*` / `SPARQL.*` — algebra, parser, protocol, update,
+  planning, HTTP logic
+- `Parser.*` — concrete syntaxes (N-Triples, Turtle, N-Quads, TriG,
+  XML, RDF/XML, RIF-XML, SRX, CSV/JSON results)
+- `OWL.*`, `RIF.*`, `SHACL.*`, `Tableau` — reasoning
+- `Parquet.*`, `RDF.CottasStore.*`, `Parser.Ballyhoo*` — storage
+
+New modules must be wired into **three lists** in `build-ocaml.sh`
+(extract loop, `COMMON_MODULES`, `FSTAR_MODULES`) or you get
+source-without-build-wiring (`workflow-gotchas-debugging` §3).
+
+## The two tiers: spec core vs pragmatics
+
+The codebase is deliberately bimodal. Keep it that way, and when
+adding code, decide which tier it belongs to before writing it.
+
+**Semantic core** (datatypes + declarative semantics; what the W3C
+specs mean): `RDF.Graph.Executable` (terms/graphs), `SPARQL11.Algebra`
+(algebra + evaluation semantics), `SPARQL11.Parser`, `RDF.Canonical`,
+`Tableau`, `OWL.QueryRewrite`, `RIF.Core.*`, `SHACL.Validation`,
+`SPARQL11.IRI.Resolve`, `XML.Wellformedness`, the pure
+`SPARQL.HTTP.*` / `SPARQL.Plan.*` decision logic.
+
+**Pragmatics** (implementation choices; how we make it fast or
+persistent): `Parser.FastString` and the byte-indexed parser hot paths
+(issue #70/#89 banners), `RDF.CottasStore.*` (page cache, mmap
+indexes, presence bitmaps, dict/offset writers), `Parser.Ballyhoo*`
+(HDT backends), `Parquet.Footer`, `RDF.Bytes`, `RDF.List.Helpers`
+(tail-recursion), `SPARQL.Eval.Limits`/`TimeBudget` (circuit
+breakers).
+
+Rules of thumb:
+
+- A pragmatic module should carry a banner comment naming the issue or
+  design doc that motivates it, and should relate back to the abstract
+  definition it accelerates — ideally with a correctness lemma of the
+  shape `denote (optimised x) == denote (naive x)` (the recovery-plan
+  pattern from
+  `docs/designissues/2026-05-07-query-planning-fstar-recovery.md`).
+- Never let a pragmatic concern leak into a core module when it can be
+  a separate module that the core knows nothing about.
+- Descriptive names only; **no new codenames** (Yod6/Tet3-style names
+  are banned — `docs/code-name-glossary.md` is a decoder for the
+  historical ones, not a licence for new ones).
+
+## Planned stratification (the reorganization roadmap)
+
+From `docs/designissues/2026-05-08-foundational-fstar-tier.md`; do
+these opportunistically, one commit-sized slice at a time, with suite
+runs before/after:
+
+- Split `RDF.Graph.Executable` (~3,500 LoC) into `RDF.Term`,
+  `RDF.Triple`, `RDF.Graph` plus `RDFS.Closure`, `OWL.Closure`,
+  `XSD.Axioms` — today an OWL-closure edit fires every CI suite
+  because everything imports the monolith.
+- Split `SPARQL11.Algebra` (~6,000 LoC, 251 KB) along the same lines:
+  algebra datatypes / evaluation semantics / function library /
+  numerics-XSD value space.
+- Maintain the foundational-tier discipline: class F modules
+  (currently `RDF.Graph.Executable`, `RDF.Format`, `Parser.IRI`,
+  `Parser.FastString`, `OWL.Vocabulary`) fire every suite on change;
+  budget ≤10 modules in that class. Domain (D) and consumer (C)
+  classes trigger their own suites via `.github/test-suites/*.yaml`.
+
+### Interface files (`.fsti`) — policy
+
+F\*'s `.fsti` mechanism is one way to separate "what" from "how".
+Adopted 2026-07-05 for the foundational core (`RDF.Vocabulary`,
+`RDF.Indexed`, `RDF.IRI`, `RDF.Term`, `RDF.Triple`, `RDF.Graph`).
+Considerations when introducing more:
+
+- `.fsti` shines when you want to **hide** a representation and force
+  clients through an abstract signature — a good fit for the storage
+  backends (`RDF.CottasStore.*`) where the F\* signature *is* the
+  boundary contract realised by OCaml glue, and for `RDF.IRI` (a real
+  abstraction: nothing outside it inspects the byte-scanning helpers).
+- For the semantic core, plain small modules + explicit lemmas often
+  read better than signature/implementation splits, and they keep
+  extraction wiring simple (one `.fst` = one `.ml`). Some foundational
+  `.fsti`s (`RDF.Vocabulary`, `RDF.Indexed`, `RDF.Term`, `RDF.Triple`,
+  `RDF.Graph`) go the other way on purpose: every declaration is a
+  *transparent* `let`/`type`, not an abstract `val`, because 50+
+  modules pattern-match directly on the constructors and transparent
+  variants extract cleanest to C via KaRaMeL. Transparency is the
+  point there, not a compromise — see the reading-order convention
+  below for how to keep a transparent `.fsti` skimmable anyway.
+- Whatever is chosen, do it module-by-module with the full suite green
+  at each step, and update the three `build-ocaml.sh` lists and the
+  `.fst.checked` cache expectations. Don't convert the tree wholesale.
+
+### `.fsti` reading-order convention
+
+Owner critique, 2026-07-05 (verbatim intent): a skimmable foundational
+`.fsti` "still mixes basic concepts and their relationships with impl
+detail guff — e.g. the reader hits a fuel-recursion helper three lines
+into the IRI concept." The fix is a fixed reading order, enforced by
+convention (not by the compiler — F\* has no visibility modifier
+inside one `.fsti` file):
+
+1. **Banner, ≤10 comment lines.** What this module is, how to read it
+   (concepts first, mechanics at the bottom), and a pointer to where
+   the long journal-style history went — the paired `.fst`'s banner,
+   or the design doc. Don't delete that history; relocate it. The
+   companion `.fst` for a transparent `.fsti` is otherwise empty (the
+   interface *is* the definition), so it's a natural, low-traffic home
+   for the archived narrative.
+2. **Concepts, uninterrupted.** One `///` prose block per notion (cite
+   the spec section, e.g. RDF 1.1 Concepts §3.2), then the `type`/`let`
+   that realizes it. No recursion, no `assert_norm` ceremony, no
+   equality function, no lemma — those all belong in the Appendix.
+   Mark the start with a divider comment ("Concepts — read top to
+   bottom, uninterrupted, to the Appendix.").
+3. **Appendix: mechanical definitions**, divided off with its own
+   banner-style comment. Everything that isn't a new concept lives
+   here: multi-line helpers, `assert_norm` constant ceremony,
+   structural-equality functions, reflexivity lemmas.
+4. **F\* ordering forces exceptions — name them, don't hide them.**
+   Transparent `let`s can't forward-reference: `type wf_iri =
+   s:iri{is_iri s}` needs `is_iri` already declared, so a multi-line
+   fuel-recursion helper that only exists to define `is_iri` cannot
+   physically move to the Appendix below its use. Three techniques, in
+   preference order:
+   - **(a) Restate as a one-line concept fact where the dependency is
+     trivial** (e.g. `is_iri` itself is a one-liner — keep it, it reads
+     as part of the IRI concept, not as guff).
+   - **(b) When a dependency is unavoidable but the concept genuinely
+     needs it before something later in Concepts** (e.g. `RDF.Term`'s
+     `rdf_lang_string` constant is needed by `literal_wf`), keep it
+     inline in Concepts with a one-line note explaining why it isn't in
+     the Appendix with its siblings, rather than silently leaving the
+     reader to wonder.
+   - **(c) When the dependency is genuinely mechanical and has no
+     concept content of its own** (e.g. `RDF.Term`'s
+     `string_has_colon_from` fuel recursion, or `RDF.Indexed`'s generic
+     bucket-map plumbing), collect ALL such helpers into one labelled
+     **Preamble** block between the banner and Concepts — "mechanical,
+     skip on first read" — so Concepts still run uninterrupted
+     afterward. This is the technique that generalises best; use it
+     over (b) whenever more than one helper is involved.
+5. **The acceptance test.** On a phone screen, starting at the first
+   concept header, a reader scrolling down sees ONLY concepts — no
+   recursion, no equality functions, no lemmas — until they hit the
+   Appendix (or, if the module needed one, the Preamble) divider.
+   `RDF.Term.fsti` is the worked example: preamble holds the IRI
+   colon-check machinery, concepts run bnode → IRI → literal → term →
+   subject uninterrupted, appendix holds the xsd:\* constants +
+   equality + lemmas.
+6. **Not every `.fsti` needs all three tiers.** A pure data table
+   (`RDF.Vocabulary.fsti`: every entry is `let name : string = "..."`)
+   has no concept/mechanism split to make — trim the banner and leave
+   it flat. A real abstraction boundary (`RDF.IRI.fsti`: three `val`s,
+   no transparent lets) is already the one-screen surface this
+   convention asks for — trim the banner, nothing else to do. Apply
+   the convention where the smell is actually present; don't manufacture
+   dividers a file doesn't need.
+7. **Gate: this is a reordering + comment-move refactor, never a
+   semantic edit.** Verify every touched `.fsti`/`.fst` under z3
+   4.13.3 (no `--lax`) and diff the OCaml extraction — expect
+   byte-identical output (F\*'s extraction order follows the elaborated
+   dependency graph, not raw file position, so relocating declarations
+   inside a `.fsti` typically doesn't perturb `.ml` output at all) or,
+   if content that was already present pre-refactor happens to be
+   unextracted upstream, a clearly-labelled staleness note distinguishing
+   that from your own change.
+
+## Verification requirements
+
+- **No `--lax`, no `--admit_smt_queries`** (Iron Rule #10). The one
+  legacy exception — `SPARQL11.Parser.fst`'s two admit regions — was
+  eliminated 2026-07-10; the tree now carries zero such pragma
+  regions. Do not introduce new ones. That count is machine-checked
+  rather than asserted: `tools/assurance-inventory.sh --check` derives
+  it from source and exits non-zero on any active admission. That check
+  reports **zero** active admissions as of 2026-07-30, when the last
+  three (`SPARQL11.Algebra.fst` solution-mapping lemmas, #323) were
+  discharged. Keep it that way: an `admit ()` makes its lemma vacuous
+  while leaving the build green, so it is invisible to every gate except
+  this one. Two of those three lemmas were FALSE as stated, which is the
+  more useful lesson — when a proof will not close, first ask whether the
+  statement is true, and if it is not, restate it and prove the
+  refutation too rather than admitting the original.
+- z3 must be exactly **4.13.3**; the Makefile and `build-ocaml.sh`
+  pass `--z3version 4.13.3`.
+- `make verify` covers the **whole corpus** — every `.fst` in
+  `formal/fstar/`, derived from `$(wildcard *.fst)` so it cannot drift
+  from the directory (fixed 2026-07-29, issue #319; before that it
+  named six modules by hand while the README claimed all of them). It
+  now shares the `.checked` cache with `./build-ocaml.sh extract`, so
+  verify-then-extract no longer pays verification twice.
+  `make verify-smoke` is the old six-module fast check, under a name
+  that does not overclaim.
+- Still don't read "make verify passed" as "the W3C Recommendation is
+  proved". It means every module type-checked and every proof
+  obligation *the modules state* was discharged — for most modules that
+  is totality, termination and refinements plus local lemmas. Proof
+  DEPTH is a separate axis from proof COVERAGE; `make verify` fixes
+  coverage only.
+- **A refinement theorem with a `requires` needs a SATISFIABILITY
+  WITNESS for its hypothesis.** An unsatisfiable hypothesis makes the
+  theorem vacuous, and F\* verifies it green with no warning — it
+  happened here: `rdfs_closure_sound`'s first draft assumed `forall (h
+  : rdf_graph). ig_wf_sp (build_indexed h)`, which is false, and passed.
+  Witnesses live in `formal/fstar/RDF.Semantics.HypothesisWitness.fst`;
+  add one there whenever a vertical introduces a new hypothesis
+  predicate. Three rules: (1) the witness must be NON-DEGENERATE — not
+  the empty graph / empty binding / empty index, because "the theorem
+  holds of nothing" is the failure mode being guarded against; (2) if
+  only a degenerate witness is reachable, label it as such in the module
+  and open a follow-up rather than passing it off as a witness; (3) for
+  a bundle of interpretation conditions prove BOTH consistency (`exists
+  i. conds i`) and non-triviality (`exists i g. conds i /\ ~(satisfies i
+  g)`) — consistency alone is met by the all-true relation, which leaves
+  the entailment relation possibly equal to everything. Full write-up:
+  [`docs/designissues/2026-07-30-hypothesis-satisfiability.md`](../../docs/designissues/2026-07-30-hypothesis-satisfiability.md).
+- For interactive proof/diagnosis, use the F\* MCP server
+  (`fstar-mcp` skill) instead of batch `fstar.exe` reruns.
+- Every `assume val` is an acknowledged gap: stub patch in
+  `minimal_regrettable_glue_code_each_with_an_open_issue/` named
+  `<issue>_<description>.sh` + an open GitHub issue (Iron Rule #3).
+
+## Proof-shape traps for engine-vs-spec refinement proofs (2026-08-04)
+
+Learned building the licensing program (`OWL.RL.Refinement.fst`,
+`RDF.Indexed.KeyInjectivity.fst`, `RDF.Entailment.RDFS.ChainWf.fst`)
+in one day; each rule below cost at least one failed verify cycle.
+
+1. **`assert_norm (rule g ig == fold_left step ...)` only reduces
+   through zeta-unfoldable LOCAL step lambdas spelled VERBATIM from
+   the engine text.** A top-level step function — even one whose body
+   is a character-for-character copy — leaves the two sides in
+   different normal forms and the assertion fails (first draft of
+   OWL.RL.Refinement, 2026-08-04). Also verbatim means verbatim: a
+   pair match (`match a, b with`) in the engine does NOT normalize
+   equal to nested single matches in the proof copy — we measured
+   both directions failing.
+
+2. **`FStar.String.concat` (the list form) is an OPAQUE val with no
+   reasoning equations — nothing symbolic can ever be proved about a
+   string built with it.** The strcat operator `^` carries
+   `list_of_concat` / `concat_injective` / `concat_length`. If a
+   function's output needs injectivity or decomposition proofs, build
+   the string with `^` (see `sp_key` / `subject_to_key` in
+   RDF.Indexed.fsti and the do-not-simplify-back comment there). The
+   normalizer evaluates BOTH forms on concrete literals, which is why
+   the gap only bites the first time someone states a symbolic lemma.
+   Also confirmed available as normalizer primitives on literals:
+   `list_of_string`, `^`, char literals like `'\x1f'`, and recursive
+   functions over the resulting `list char`.
+
+3. **SOLVED (2026-08-05, commit fb8d98f): anonymous closures in a
+   rule-step lambda's guards or inner folds make the step obligation
+   undischargeable — NAME them as top-level engine functions.** The
+   failure signature: `inv (step acc x)` yields "Expected squash
+   (inv ...), got unit" at any solver budget, with the branch's
+   semantic content proving fine. Mechanism: each spelling of a
+   `fun`-closure is a DISTINCT function token in the SMT encoding,
+   so a proof that mirrors the rule's branch structure can never
+   transfer guard facts (or fold-function identity) between its copy
+   and the lambda's copy — first-order congruence only works through
+   a shared NAME. Confirmed by pilot: naming scm-eqc2's guard
+   predicate (`term_is_iri`, OWL.Closure.fsti) made the previously
+   impossible `owl_rule_scm_eqc2_sound` discharge with the identical
+   witness chain. Retro-explains all passes: `emit_once_term` (named)
+   in domain/range; `mem`/`=` guards elsewhere. The investigation's
+   false trails, kept as method lessons: toys pass in EVERY encoding
+   (closure identity only bites when proof-side mirroring is needed);
+   "nested folds", "tuple binders" (TupRepro1-10 ladder), "guard
+   depth 4" (flattening alone did not fix it) were all plausible
+   correlates refuted by controlled experiments. PROOF-FRIENDLY
+   GUARD RULE for new engine rules: no anonymous closures in step
+   guards or inner folds — define a named top-level (partially
+   applied) helper; proofs mirror the named application. Remaining
+   band to convert: prp-inv, eq-trans, eq-rep-s/o/p, scm-eqp2
+   (task #36).
+
+4. **Spec-side predicate families can be WIDER than the engine's
+   finite slice, making "licensed implies P" false even when every
+   actual emission satisfies P.** `is_rdf_member_iri` admits
+   `rdf:_<any string>` — including separators — while the engine only
+   folds `rdf:_1..rdf:_5`. Property provenance for such rules must
+   argue from the ENGINE fold (verbatim-lambda + fold_left_inv over
+   the concrete list), not from the licensing predicate
+   (RDF.Entailment.RDFS.ChainWf's container-membership case).
+
+## Syntax traps (memorize these)
+
+**Comment rule (hard, owner-ratified 2026-07-04): all NEW F\* comments
+use `//` line syntax.** No new `(* ... *)` blocks — a multi-paragraph
+note is a run of `//` lines. Rationale: F\* block comments NEST, so a
+stray `*)` inside — e.g. quoting `construct(*)` from ARQ algebra —
+closes the comment early and F\* reports a syntax error hundreds of
+lines later. `//` makes the failure mode unrepresentable. Existing
+`(* *)` blocks may stay until a change touches them.
+
+The same nesting trap exists in hand-written OCaml consumers
+(`bin/<consumer>/*.ml`), and OCaml has NO `//` syntax, so there the
+rule is: never write `*)`, `(*`, or a bare `F` + star inside a
+comment — spell it `F-star`. This bit for real on 2026-07-04: a
+subagent wrote "(parsers belong in F&#42;)" in `jsonld_runner.ml` and the
+build failed with a bewildered syntax error 70 lines of prose later.
+Subagent briefs that ask for `.ml` or `.fst` files MUST carry this
+warning (see `subagent-prompting`).
+
+**Reserved-ish identifiers with misleading errors.** F\* rejects some
+innocuous names and points the error at the line *after* the
+offender: `total` (banned as a let-bound name), `synth` (reserved
+meta-keyword; caught in RIF Phase 3 #223), `in_mem` and anything where
+a trailing `in` can be read as the keyword. Prefix with the domain
+noun (`triples_total`, `mem_dataset`). When an unexplained "Syntax
+error" appears, check the line **above** the reported one first.
+
+**Extraction-facing gotchas** (details in `build-and-test`):
+`Prims.int`/`nat` extract to zarith `Z.t` — a per-operation cost that
+once made the Turtle parser unusable (see `perf-benchmarking`); use
+the byte-indexed `Parser.FastString` primitives on hot paths.
+Recursive string-function base cases must handle the single-element
+case explicitly or lang tags/datatypes get dropped (anti-pattern #9).
+Handle the promoted result types `ER_Num`/`ER_Dec`/`ER_Dbl`/`ER_Bool`
+alongside `ER_Term (T_Literal _)` everywhere (anti-pattern #6).
+
+## Extraction-semantics traps (F-star totality is NOT OCaml totality)
+
+Four members of the same family bit us in production on 2026-07-04.
+The pattern: a function verifies as Tot in F-star, but its extracted
+OCaml realisation has DIFFERENT partiality or byte semantics. The
+suites never catch these until a consumer feeds them the right input.
+
+1. **`List.Tot.splitAt n l` extracts to `BatList.split_nth`, which
+   THROWS when n > length(l).** F-star's version is total (returns
+   the short list). Crashed `turtle_of_graph_auto` live on graphs
+   with fewer than 8 namespaces. Write an explicit `take_at_most`
+   recursion instead. Audit any stdlib call whose F-star docs say
+   "returns X when out of range" — the Batteries realisation may
+   raise instead.
+2. **The string primitives are split-brained.** `String.index` /
+   `list_of_string` decode UTF-8 (codepoint-oriented, BatUTF8);
+   `string_of_char` is byte-oriented `Char.chr` (crashes above 255,
+   Latin-1 mojibake for 128-255); `string_of_list` RE-ENCODES each
+   element as a codepoint. Consequences: never emit a char read via
+   `String.index` with `string_of_char` (use `string_of_list [c]`);
+   never hand-assemble UTF-8 bytes and feed them to `string_of_list`
+   (double encoding); byte-transparent copying needs
+   `Parser.FastString.fs_byte_sub`, not char lists. Issues #271 and
+   the JSON-escape rewrite are the case law.
+3. **Fixed fuel constants silently truncate.** `let fuel = 10000`
+   in a tree walk made 50k-triple RDF/XML documents parse to 4,998
+   triples with NO error (#273). Thread fuel from input size
+   (`String.length input + 1`), never a constant, and regression-test
+   with an input bigger than any constant you removed.
+4. **Accumulator order + a final `List.Tot.rev` is easy to verify
+   and easy to get backwards** — the mirrored-JSON-escape bug shipped
+   for weeks because nothing consumed the output strictly. Prefer
+   run-slicing over char-accumulators for string building; when an
+   accumulator is unavoidable, unit-test exact output strings
+   (`tests/unit/json_escape_unit.ml` pattern).
+
+5. **F-star proves TERMINATION, not STACK DEPTH.** A `Tot` function
+   that recurses down a list verifies with a clean `decreases` and
+   then dies on a large input, because the extracted OCaml still
+   grows one stack frame per element. Added 2026-08-02:
+   `RDFS.Closure.SemiNaive.sorted_diff` was written as
+   `n :: sorted_diff ns older`, passed every W3C suite and every
+   synthetic benchmark shape, and then produced
+
+       Fatal error: exception Stack overflow
+       Called from RDFS_Closure_SemiNaive.sorted_diff
+
+   on QUDT, whose closure is 508,139 triples. Nothing in the
+   verification says a word about stack.
+
+   Rule: in any function that can see a whole graph, the recursive
+   call must be in TAIL position after extraction. `List.Tot.fold_left`
+   and `rev_acc` are tail-recursive; **`List.Tot.append` is not**, so
+   `rev acc @ rest` reintroduces the same bug the accumulator removed —
+   write `List.Tot.rev_acc acc rest`.
+
+   Detection: the W3C suites and small synthetic shapes are all far
+   too small to trigger this. It takes a real six-figure-triple input,
+   which is why `tools/bench-closure.sh` carries one.
+
+Detection heuristic: any F-star module whose OUTPUT is consumed by a
+strict external parser (JSON.parse, a SPARQL client, a W3C fixture
+diff) deserves one exact-bytes unit test. Verified-total is not
+extracted-total, and the dashboard only sees what a suite feeds it.
+
+## KaRaMeL-compatible style (write for C even before we extract to it)
+
+The C/WASM path (`fstar.exe --codegen krml`, see
+`docs/designissues/2026-05-07-c-build-and-roaring-plan.md`) imposes
+constraints OCaml extraction doesn't. For modules that may ever go to
+C, prefer:
+
+- `Tot`/pure functions; no `IO`/`Exn`/`ML` effects.
+- No `noeq` types (OCaml tolerates them; KaRaMeL doesn't).
+- **No string-literal pattern-match arms** — `RDF.Format.fst` failed
+  KaRaMeL with `todo: translate_pat [MLP_Const]`; use `if/else if`
+  chains on strings.
+- Monomorphic top-level functions where feasible.
+- Trivial `assume val` signatures only.
+- Note the precedent: `Parquet.Footer` works on hex-encoded strings
+  rather than raw bytes to sidestep F\*'s weak `bytes` support, at ~2×
+  memory cost — a deliberate, documented trade.
+
+## What this skill does NOT cover
+
+- Toolchain setup and z3 install — `fstar-env`.
+- Extraction/build mechanics — `build-and-test`.
+- What may live in OCaml at all — `ocaml-boundary`.
+- Interactive proof workflow — `fstar-mcp`.

@@ -1,0 +1,30 @@
+name: CSVW csv2rdf
+spec: https://www.w3.org/TR/csv2rdf/
+runner: bin/linux-x86_64/csvw_runner
+runner_args: []
+manifest: third_party/testing/csvw/tests/manifest-rdf.csv
+log_path: formal/fstar/ocaml-output/csvw_results.log
+result_path: docs/test-results/by-suite/csvw.json
+domain: RDF
+foundational: false
+
+# csv2rdf over the vendored W3C corpus (ToRdf / ToRdfWithWarnings /
+# NegativeRdf buckets). Burn-down in progress; residual fails need full
+# @context / metadata-merge processing (see the CSVW program plan).
+triggers:
+  paths:
+    - bin/csvw-runner/**
+    - third_party/testing/csvw/**
+  excludes: []
+
+# What's left, in plain language (source: docs/claude-rules/w3c-completeness-ledger.md,
+# CSVW row, 2026-07-10). Grouped by cause, not by individual test ID.
+remaining:
+  - "metadata discovery over HTTP (Link headers, a metadata directory, the /.well-known/csvm well-known path) is not implemented — this is a networked-protocol feature, parked by owner directive alongside SPARQL Protocol"
+  - "some metadata-normalization warnings are not produced: @base/@type context edge cases (invalid-property pruning and container-shape graceful degradation landed 2026-07-15)"
+  - "schema compatibility and validation gaps: the header=false option, column-name restriction checks, and title-language intersection checks (required/null column handling landed 2026-07-15)"
+  - "complex fixtures combining virtual columns, multiple subjects per row, referenced schemas, and inherited-property combinations are not fully handled"
+  - "rowTitles is not implemented"
+  - "table-level separator handling and ordered-list values are not implemented"
+  - "the duration format pattern needs a regex engine this checker doesn't yet call out to"
+  - "2 cross-table foreign-key validation tests (NegativeRdf) are not handled"

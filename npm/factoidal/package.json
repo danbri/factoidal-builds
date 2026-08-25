@@ -1,0 +1,113 @@
+{
+  "name": "@factoidal/core",
+  "version": "0.2.0",
+  "description": "Factoidal: a linked information system with graph data and the Web at its heart - RDF parsing, SPARQL 1.1 query, canonicalization and entailment for Node and the browser (JS + Wasm), grounded in F* and Lean 4. Parser and algebra spec verified in F*; on-disk backend has unverified OCaml-side optimization layers being migrated back to F*.",
+  "keywords": [
+    "sparql",
+    "rdf",
+    "turtle",
+    "ntriples",
+    "nquads",
+    "trig",
+    "rdf-xml",
+    "fstar",
+    "formal-verification",
+    "semantic-web"
+  ],
+  "homepage": "https://github.com/danbri/factoidal",
+  "bugs": {
+    "url": "https://github.com/danbri/factoidal/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "Dan Brickley <danbri@danbri.org>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danbri/factoidal.git",
+    "directory": "npm/factoidal"
+  },
+  "main": "./index.js",
+  "module": "./index.mjs",
+  "browser": "./browser.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "browser": "./browser.js",
+      "import": "./index.mjs",
+      "require": "./index.js",
+      "default": "./index.js"
+    },
+    "./wasm": {
+      "types": "./wasm.d.ts",
+      "default": "./wasm.js"
+    },
+    "./rdfjs": "./rdfjs.js",
+    "./fn": {
+      "types": "./fn.d.ts",
+      "default": "./fn.js"
+    },
+    "./browser": {
+      "types": "./browser.d.ts",
+      "default": "./browser.js"
+    },
+    "./browser-wasm": {
+      "browser": "./browser-wasm.js",
+      "default": "./browser-wasm.js"
+    },
+    "./factoidal.js": "./factoidal.js",
+    "./factoidal.wasm.js": "./factoidal.wasm.js",
+    "./factoidal.wasm.assets/*": "./factoidal.wasm.assets/*",
+    "./package.json": "./package.json",
+    "./l4": {
+      "types": "./l4.d.ts",
+      "default": "./l4.js"
+    },
+    "./l4-core": {
+      "types": "./l4-core.d.ts",
+      "default": "./l4-core.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.mjs",
+    "index.d.ts",
+    "wasm.js",
+    "wasm.d.ts",
+    "rdfjs.js",
+    "fn.js",
+    "fn.d.ts",
+    "l4.js",
+    "l4.d.ts",
+    "l4-core.js",
+    "l4-core.d.ts",
+    "lib/",
+    "browser.js",
+    "browser.d.ts",
+    "browser-wasm.js",
+    "factoidal.js",
+    "factoidal.wasm.js",
+    "factoidal.wasm.assets/",
+    "factoidal-npm-entry.js",
+    "factoidal-npm-entry.wasm.js",
+    "factoidal-npm-entry.wasm.assets/",
+    "hacl-init.js",
+    "hacl-wasm/",
+    "version.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "cd ../../formal/fstar && ./build-ocaml.sh npm",
+    "test": "node --test 'test/*.test.js'",
+    "test:smoke": "node test/smoke.js && node test/smoke-wasm.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
