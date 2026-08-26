@@ -1,0 +1,267 @@
+---
+name: site-and-dashboard
+description: Update and publish the Factoidal website, test-results dashboard, demo pages, and the Fly.io SPARQL endpoint — and keep every progress/score table in the repo in sync with measured reality. Use when the user asks to "update the site", "refresh the dashboard", "publish the demo", "deploy", or when README/current-state/scorecard numbers have drifted from docs/test-results/latest.json. Stale public numbers are treated as bugs.
+---
+
+# Site, dashboard, demos, and progress tables
+
+The public face of the project is a set of generated artifacts plus a
+few hand-maintained summary tables. The generated parts are engineered
+to never go stale; the hand-maintained parts go stale unless every
+session treats drift as a bug. This skill says which is which and who
+updates what.
+
+## The static site (GitHub Pages)
+
+Built with Eleventy (11ty) from `docs/`; published at
+`https://danbri.github.io/factoidal/`.
+
+- Local build: `cd docs && npm ci && npx @11ty/eleventy --output=_site`
+  (or, fully offline, no registry access needed:
+  `third_party/eleventy/install.sh docs && cd docs && npx @11ty/eleventy --output=_site`
+  — `third_party/eleventy/` vendors Eleventy 3.1.2 and its full
+  dependency tree as an npm cache; see its README.md).
+- Deploy: `.github/workflows/deploy-pages.yml`, triggered by pushes to
+  `docs/**` on the main lines AND by `workflow_run` completion of
+  "Dashboard Refresh" / "W3C Test Suite" (bot commits made with
+  `GITHUB_TOKEN` never re-trigger push workflows — that's why the
+  `workflow_run` subscription exists; don't remove it).
+- Advisory link check: `tests/local/check_pages_links.sh docs/_site`
+  (non-blocking in CI; run it locally after structural edits).
+- Hub-specific link check (headless-browser link walk over the
+  documentation hub + homepage, catches wrong-branch `github.com/blob`
+  URLs and repo-relative markdown links that escape the site root):
+  `tests/web-demos/hub_links_check.sh` (exits nonzero on broken
+  same-site links), `--external` also probes `github.com` links
+  (advisory only, never fails the script — CI may lack egress).
+
+Site content map: `docs/index.md` (front page + build-targets table),
+`docs/web/landing/` (landing page), `docs/web/demos/` (demo pages),
+`docs/fstar-extracted/` (the browser engine — js_of_ocaml +
+wasm_of_ocaml bundles, **rebuilt and committed by CI**; see
+`jsoo-debug-bundle` for the debuggable variant — plus standalone demo
+HTML pages).
+
+## Demo inventory
+
+Every demo doubles as a scaling probe; when one breaks or gets slow,
+that is signal, not noise (the beyond-w3c parity CI exists because a
+demo regression slipped through once).
+
+All `docs/fstar-extracted/demo-*.html` + `index.html` pages load the
+engine through the npm package's browser entry
+(`npm/factoidal/browser.js` / `browser-wasm.js`, mirrored read-only to
+`docs/npm/factoidal/`) rather than hand-rolling their own fetch/eval —
+either directly (`runFactoidalCli`, `queryDataset`, `toRdf`) or via the
+shared `factoidal-sparql-client.js` web component, which itself now
+calls into the package instead of duplicating byte-packing/argv/eval
+logic. `docs/web/demos/*` and `docs/web/landing/` embed the same web
+component in `endpoint="..."` (remote SPARQL Protocol) mode, which
+never touches the local-engine path.
+
+| Demo | Where | What it exercises |
+|---|---|---|
+| UK Parliament | `docs/web/demos/ukparliament/` → Fly.io endpoint | the **big one**: 3,143,406 quads in the WIP COTTAS persistent store, queried over SPARQL Protocol. Scaling truth-teller for the on-disk path |
+| Life-sci | `docs/web/demos/lifesci/` + `docs/fstar-extracted/demo-lifesci*.html` | multi-named-graph Wikidata data in the in-memory engine (browser + `serve-lifesci-demo.sh`); where the index-build cost lesson was learned. In-browser pages use `factoidal-sparql-client`'s js/wasm engine toggle, wired to the npm package's `queryDataset()` (multi-named-graph js_of_ocaml argv building, or a TriG merge for wasm_of_ocaml) |
+| Simple entailment | `docs/web/demos/simple-entailment/` | OWL/RDFS rewriting in the browser |
+| Dep-graph | `docs/web/demos/dep-graph/` | self-hosting: module/namespace graphs of the repo itself |
+| COTTAS in-browser | `docs/fstar-extracted/demo-cottas.html` | Parquet/COTTAS reader compiled to JS, loading a `.cottas` in the page; drives the npm package's `runFactoidalCli()` directly (binary Parquet bytes need the raw argv+files primitive, not the UTF-8-encoding `query()`/`queryDataset()` helpers) |
+| Remote endpoint | `docs/fstar-extracted/demo-remote-endpoint.html` | `factoidal-sparql-client` web component against a remote SPARQL Protocol endpoint |
+| Notebook | `docs/fstar-extracted/demo-notebook.html` | notebook-style multi-query page, three stacked `factoidal-sparql-client` instances |
+| RIF | `docs/fstar-extracted/demo-rif.html` | RIF Core forward-chaining, via the npm package's `rifSmoke()`/`rifEval()` (persistent npm-entry ABI, not the per-call CLI bundle) |
+| JSON-LD Playground | `docs/fstar-extracted/demo-jsonld-playground.html` | toRdf + RDFC-1.0 canonicalize in-browser, loaded via the Pages-mirrored npm package (`docs/npm/factoidal/`, regenerated by `build-ocaml.sh npm`) rather than the shared `factoidal.js` bundle directly — the proof that npm-on-Pages loading (no `npm install`) works |
+
+Demo queries are pinned in `tests/beyond-w3c/fixtures/index.json` and
+run per-PR on native + JS runtimes (see `test-suites`). When adding a
+demo, add its queries there.
+
+## The test-results dashboard (generated — do not hand-edit)
+
+`docs/test-results/{index.html,latest.csv,latest.json,history/*}` are
+produced by `./w3c-tests.sh` (see `test-suites`). Two CI layers keep
+them fresh:
+
+- `w3c-tests.yml` — the heavy pipeline: re-runs the suites on main
+  lines and nightly, commits new logs + dashboard.
+- `dashboard-refresh.yml` — lightweight: regenerates the dashboard
+  **from the committed `*_results.log` files** within ~1 minute of any
+  push, no toolchain, no re-run. This deliberately decouples
+  "dashboard freshness" from "test-data freshness": the page's
+  timestamp is always current; the numbers change only when the heavy
+  pipeline reruns.
+
+**The committed-log trap (2026-07-07).** Because `dashboard-refresh.yml`
+reads the committed `*_results.log` **as-is** (no `--run`), a stale or
+truncated log silently makes its suite VANISH from the page, not error.
+`generate-report.sh` gates each suite on `<SUITE>_PRESENT`, set only
+when it finds the runner's score line (e.g. `^RDFC-1\.0 tests:`) in the
+committed log. RDFC-1.0 read "0 of 0" for weeks because the committed
+`rdfc10_results.log` had lost its score line — the runner passed 86/86
+the whole time. Detection: `grep -c '<score-line>' formal/fstar/
+ocaml-output/<suite>_results.log` — 0 means the next refresh will drop
+it. Fix: run `./w3c-tests.sh --run` (committed binaries, no toolchain)
+to regenerate ALL logs, and **commit the fresh `*_results.log`** — the
+log-reading refresh only reports what's committed. A suite reading 0/0
+or "—" on the page while its runner passes is this trap, not a
+regression.
+
+Rules:
+
+- Never hand-edit anything under `docs/test-results/`.
+- Don't commit locally regenerated dashboard artifacts from feature
+  branches — CI owns them on the main lines. (`--cached` regeneration
+  is fine for local inspection; discard the diff.)
+- The perf baselines `ukparliament-bench*.{csv,json}` in the same
+  directory are **checked-in baselines** updated via the bench harness
+  (see `perf-benchmarking`), not by hand.
+
+## The live SPARQL endpoint (Fly.io)
+
+`fly.toml` (app `factoidal`, region `lhr`) builds the `Dockerfile` and
+serves the UK Parliament COTTAS corpus read-only
+(`READ_ONLY=1`, `MAX_ROWS=50000`, `QUERY_TIMEOUT=30`,
+`WEB_DEMO=ukparliament`). The binary source of truth for deployment is
+the **CI shadow build** `bin/ci-linux-x86_64/factoidal-http` — not
+your local build. Docs: `docs/deploy/flyio.md`,
+`docs/deploy/cloudflare-tunnel.md`; container smoke test:
+`tools/podman-fly-smoke.sh`.
+
+Local demo serving: `serve-lifesci-demo.sh` assembles the life-sci
+Turtle graphs into named graphs and serves them with
+`bin/<platform>/factoidal-http --load-rw-graphs`.
+
+## Progress tables: the registry
+
+| Table | Where | Updated by | Discipline |
+|---|---|---|---|
+| Live scores | `docs/test-results/latest.{json,csv}` + dashboard | CI (generated) | never hand-edit |
+| Perf baselines | `docs/test-results/ukparliament-bench-modern.{csv,json}` | bench harness | update via harness, in the PR that shifts them |
+| State snapshot | `docs/claude-rules/current-state.md` | humans/agents | self-declared stale-within-a-week; refresh before citing it; date every refresh |
+| README "W3C Conformance Status" + status line | `README.md` | humans/agents | must match `latest.json` when touched; full-sentence scores; date perf claims |
+| Front-page build-targets table | `docs/index.md` | humans/agents | update when a target (native/JS/wasm/C) changes status |
+| Scope decisions | `docs/claude-rules/scope.md` | humans/agents | update **in the same commit** as the scope-changing code |
+| Parser perf status | `docs/designissues/parser-speed-status.md`, `turtle-parser-metrics.md` | humans/agents | only with fresh measurements (see `perf-benchmarking`) |
+| Parse/serialize throughput | `docs/test-results/perf-parse-serialize.json` (+ `.fragment.html`, surfaced in the dashboard `index.html`) | `tools/bench-parse-serialize.sh` via the `parse-serialize-bench` job in `ukparliament-bench.yml` | committed-binary only, no toolchain; update via the harness, never by hand |
+| Per-module assurance inventory | `docs/web/conformance/assurance-inventory.md` + `docs/test-results/assurance-inventory.{json,html}` | `tools/assurance-inventory.sh`, run by `dashboard-refresh.yml` | never hand-edit; regenerate and commit in the same PR as any change to `.fst` sources, the build module list, or the per-suite manifests |
+| Conformance pages (per area) | `docs/web/conformance/{rdf,sparql,owl2}.md` | humans/agents | every score from a FRESH run of the committed binaries, dated on the page, never copied from another doc; every residual named with one of the five #308 dispositions and a reason read off the fixture; refresh in the same PR as any change that moves a score in that area |
+
+## The conformance pages (hand-written, measurement-backed)
+
+One page per standards area, each linked from `docs/index.md` and from
+the matching dashboard family footnote in `generate-report.sh`:
+
+- `docs/web/conformance/rdf.md` — the five syntaxes, `rdf-mt`, the RDF
+  1.2 suites, RDFC-1.0.
+- `docs/web/conformance/sparql.md` — SPARQL 1.1 (all six
+  Recommendations) and the SPARQL 1.2 Working Draft.
+- `docs/web/conformance/owl2.md` — the nine OWL 2 catalogs under the RL
+  and DL regimes.
+
+Rules these pages follow, and that any edit to them must keep:
+
+1. **Fresh measurement or nothing.** Re-run the suite with the committed
+   `bin/<platform>/` binary from the repo root and quote what it printed.
+   Do not copy a number out of a doc, a ledger, or a previous version of
+   the page — several such numbers in this repo have been stale.
+2. **Resolve a suite's score by its exact label, never by a log total.**
+   Six manifests (`rdf-turtle`, `rdf-xml`, `rdf-trig`, `rdf-n-triples`,
+   `rdf-n-quads`, `rdf-mt`) declare
+   `log_path: formal/fstar/ocaml-output/sparql_results.log`, which
+   carries the SPARQL score lines, not theirs — the RDF scores are in
+   `rdf_results.log`. Scraping the declared file's total gives 631 where
+   `rdf-turtle` is 313 pass, 0 fail (out of 313). The RDF page documents
+   the mismatch; until the manifests are corrected, read the labelled
+   line.
+3. **Every residual named, dispositioned, and grounded in the fixture.**
+   Open the `.ttl` / `.rq` / manifest entry before writing a reason.
+   Dispositions come from the fixed #308 vocabulary (by-design /
+   planned-family / dependency-blocked / disputed-fixture / environment).
+4. **Proved and measured stay apart.** Any module-level assurance claim
+   must be checkable against the generated assurance inventory; when the
+   two disagree, the prose is the bug.
+5. **No numbers in the dashboard cross-link paragraphs.** They sit beside
+   a live-scraped score; see the prose rules above.
+
+## The assurance inventory (generated — do not hand-edit)
+
+`tools/assurance-inventory.sh` derives, for every `.fst`/`.fsti` under
+`formal/fstar/`, the fields that keep "implemented in F\*", "accepted
+by the verifier" and "proved correct against a formalisation of the
+spec" apart (issue #315, from the #313 claim-discipline epic). It reads
+F\* source, the committed extracted OCaml, `build-ocaml.sh`'s module
+lists, `.github/test-suites/*.yaml` and the committed `*_results.log`
+files. No toolchain, no test run, no F\*.
+
+- Its oracle is **extraction**: a name present in
+  `ocaml-output/<Module>.ml` as a value binding is a shipping function;
+  a definition F\* erases whose return type is `prop`/`Type0`/`logical`
+  is a declarative relation. That is what makes "theorem about the
+  shipping function" machine-visible rather than a judgement call.
+- It fails **downward** by design — ambiguous names are dropped and a
+  module whose extracted `.ml` is missing reads "unclassified", never
+  promoted. A false "has a correctness theorem" is worse than a gap.
+- `tools/assurance-inventory.sh --check` exits non-zero if any active
+  admission or `--lax`/`--admit_smt_queries` region exists. That is how
+  iron rule #10 gets proved instead of asserted.
+- Any prose making a module-level verification claim must be checkable
+  against this table. When the two disagree, the prose is the bug.
+
+When any session notices a hand-maintained number contradicting
+`latest.json` or a fresh measurement, fixing it is in-scope for that
+session — stale public numbers mislead every later reader (this is
+how "379 pass" survived in the README months after the engine hit
+631).
+
+## Prose rules for public pages
+
+- Full-sentence, labelled scores; no bare "972/59" ratios
+  (anti-pattern #25).
+- No sycophantic adjectives (`markdown-style` skill).
+- Until the OCaml-boundary recovery fully lands (Iron Rule #11), READMEs,
+  demo pages, and talks carry the qualifier: "parser and algebra spec
+  verified in F\*; on-disk backend has unverified OCaml-side
+  optimization layers being migrated back to F\*".
+- The former ASK-boolean-unchecked and lenient-bnode-matching caveats
+  are gone (fixed 2026-07-19 — see `test-suites` skill and
+  `docs/claude-rules/current-state.md` "Verification Gaps"); the
+  parser `--admit_smt_queries` caveat ended 2026-07-10, zero admits.
+  Don't republish either retired caveat in new public prose.
+- **Every perf number on the site carries its measurement date and a
+  commit link** (owner directive 2026-07-03). The front page's
+  Performance table is the pattern: what / measured value / date +
+  linked SHA. A perf claim without provenance is treated as stale on
+  sight.
+- **Prose beside a live-scraped score must never hardcode a count the
+  scraper derives** (owner-reported bug 2026-07-09: the VC row rendered
+  a live "109 pass, 5 fail" next to frozen prose saying "all 34 fails
+  are..." -- Stage-1 text beside a Stage-2 number). In
+  `generate-report.sh`, diagnosis/provenance strings interpolate the
+  scraped variable (`${VC_FAIL}` etc.) or carry no number at all;
+  cluster explanations stay qualitative ("a type-redefinition cluster
+  ...") so they age gracefully. When adding a suite row, grep your
+  prose for `[0-9]+ (fails|passes|skips)` before committing. The owner
+  reads these pages to track progress -- a self-contradicting row costs
+  more trust than a missing one.
+- **Aged IOUs on public pages are lies** (owner trust escalation
+  2026-07-09: "we have been working on owl tableau for WEEKS. No stats
+  yet feels like I was gaslit"). A public "not yet implemented" /
+  "planned" / "coming" note older than ~2 weeks must be either done or
+  deleted -- and the inverse rot is just as real: prose can UNDERSTATE
+  landed work (post 17 said delta-log compaction "is not yet
+  implemented" months after `factoidal compact` shipped). When touching
+  a hub post or site page, grep it for `not yet|planned|coming|will be`
+  and check each hit against the CLI/`--help`/dashboard before leaving
+  it standing. Related-log discipline: the committed
+  `*_results.log` is the source of truth the dashboard regenerates
+  from -- a "surgical" edit to `latest.json`/`index.html` without
+  refreshing the log WILL be silently reverted by the next CI
+  dashboard-refresh (this happened with vc 113 -> 109 and csvw 146 ->
+  74 on 2026-07-09). Landing a score change means committing the fresh
+  log, never just the rendered artifacts.
+
+## What this skill does NOT cover
+
+- Running the suites that produce the numbers — `test-suites`.
+- Measuring performance — `perf-benchmarking`.
+- Building the browser bundles — `build-and-test` (`js` / `wasm`
+  steps) and `jsoo-debug-bundle`.
