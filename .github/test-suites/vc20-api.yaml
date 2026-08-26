@@ -1,0 +1,97 @@
+name: VC Data Model 2.0 issuer/verifier HTTP suite (W3C vc-data-model-2.0-test-suite, via shim)
+spec: https://w3c.github.io/vc-data-model-2.0-test-suite/
+runner: tests/vc20-api/run.sh
+runner_args: []
+manifest: third_party/testing/vc
+result_path: docs/test-results/by-suite/vc20-api.json
+domain: VC
+foundational: false
+
+# Task #88 (canivc.com community-compatibility integration). Runs the
+# ALREADY-vendored w3c/vc-data-model-2.0-test-suite's own mocha
+# issuer/verifier test files against bin/vc-api-shim/server.mjs. This
+# is a SEPARATE, complementary measurement from vc.yaml's vc_stage1
+# suite: vc_stage1 runs the SAME vendored tests/input/*.json fixtures
+# directly through VC.Credential.fst's structural checker (bin/vc-runner,
+# no HTTP, no signing — 117 pass, 0 fail of 117 scorable). This suite
+# instead drives the suite's own conformance/contexts/identifiers/types/
+# issuer/credential-subject/validity-period/status/data-schemas/
+# verifiable-presentations/envelopes/advanced-concepts/algorithms test
+# files as real HTTP issue+verify round trips against the shim.
+#
+# Baseline (2026-07-10): 22 pass, 37 fail (out of 59). Single dominant
+# cause (see gap_summary in the result JSON and the scoping doc): the
+# shim performed NO VC Data Model 2.0 structural validation of its own —
+# it only implemented Data Integrity eddsa-rdfc-2022 signing/verifying —
+# so nearly every failure was a "missing expected rejection of malformed
+# input" test (bad credentialStatus/refreshService/credentialSchema/
+# termsOfUse/evidence shape, validUntil-before-validFrom, missing
+# type/context, malformed VP).
+#
+# Track A2 (2026-07-12, docs/designissues/2026-07-11-vc-canivc-eecc-plan.md):
+# 47 pass, 12 fail (out of 59). Wired a new npm ABI export
+# (`vcCheckCredential`, bin/npm-entry/entry_jsoo.ml) to
+# VC_Credential.vc_check_from_string and call it from
+# bin/vc-api-shim/server.mjs's handleIssue/handleVerify before the
+# crypto step — pure wiring, no new F* semantics (rule #11: the shim
+# still never reimplements a check, it only maps the F*-verified
+# verdict to an HTTP rejection). One narrow shim-side carve-out: a
+# document whose first `@context` entry is the legacy VC 1.1 base
+# context (https://www.w3.org/2018/credentials/v1) skips the VCDM
+# 2.0-specific gate entirely (see checkStructural's comment in
+# server.mjs) — needed so the vc-di-eddsa suite's own
+# version-agnostic Data Integrity fixture (validVc.json) still issues;
+# no vc-data-model-2.0-test-suite fixture uses that context, so this
+# cannot mask a real violation here.
+#
+# Track A3 (2026-07-13): 51 pass, 8 fail (out of 59). Added POST
+# /presentations/verify (bin/vc-api-shim/server.mjs's
+# handleVerifyPresentation) plus a `vpVerifiers` entry in
+# tests/vc20-api/run.sh's generated localConfig.cjs. No new npm ABI
+# export was needed — VC_Credential.vc_check_from_string already
+# dispatches VC-shaped vs VP-shaped documents internally (see
+# VC.Credential.fst's vc_check_document), so the existing
+# `vcCheckCredential` export / `checkStructural` helper handles VP
+# structural checks unchanged. The route does structural check first,
+# then the same eddsa-rdfc-2022 Data Integrity proof verification
+# already used for /credentials/verify, applied to the VP's own
+# top-level proof (verifySecuredDocument, shared by both routes).
+# Remaining 8 fails at that point were two families, neither a wiring
+# gap:
+#   - relatedResource digest/id checks (Advanced Concepts, 5 tests) —
+#     VC.Credential.fst did not implement this check at all.
+#   - 3 VP tests whose fixture embeds a `verifiableCredential`
+#     (Verifiable Presentations' "verifiableCredential property MAY be
+#     present" / "holder value" tests, and 4.03-contexts.js's
+#     `presentation-context-combo1-ok.json` case) — the VCDM v2
+#     context defines `verifiableCredential` (and `proof`) with
+#     `"@container": "@graph"`, and the shim's JSON-LD/RDF-dataset
+#     builder dropped that named-graph subtree entirely.
+#
+# Track A4/jsonld-named-graph (2026-07-14): 59 pass, 0 fail (out of
+# 59) — suite fully green. Both remaining families landed: VC.Credential.fst
+# gained the relatedResource structural + digest checks (VCDM 2.0
+# s5.3, +5 tests), and the vc-api-shim's JSON-LD/RDF-dataset builder
+# now recurses inlineContexts into nested @context refs so the VCDM v2
+# `"@container": "@graph"` terms (`verifiableCredential`, `proof`)
+# expand correctly, fixing the 3 VP canonicalization fails.
+
+triggers:
+  paths:
+    - bin/vc-api-shim/**
+    - third_party/testing/vc/**
+    - third_party/contexts/**
+    - tests/vc20-api/**
+    - formal/fstar/VC.DataIntegrity.fst
+    - formal/fstar/VC.Credential.fst
+    - npm/factoidal/index.js
+    - npm/factoidal/lib/api.js
+
+  excludes: []
+
+# What's left, in plain language.
+# 2026-07-14: nothing — suite is 59 pass, 0 fail (out of 59). The two
+# families below (relatedResource checks, VP named-graph expansion)
+# both landed; kept as an empty list rather than deleted so a future
+# regression has this shape to diff against.
+remaining: []

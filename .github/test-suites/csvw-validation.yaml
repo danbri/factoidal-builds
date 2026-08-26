@@ -1,0 +1,27 @@
+name: CSVW validation
+spec: https://www.w3.org/TR/tabular-data-model/
+runner: bin/linux-x86_64/csvw_runner
+runner_args: ["--validate"]
+manifest: third_party/testing/csvw/tests/manifest-validation.ttl
+log_path: formal/fstar/ocaml-output/csvw_validate_results.log
+result_path: docs/test-results/by-suite/csvw-validation.json
+domain: RDF
+foundational: false
+
+# Validation mode over the vendored W3C corpus (Positive / Warning /
+# Negative ValidationTest buckets). A document conforms iff its metadata
+# decodes, the raw-JSON structural checks in formal/fstar/CSVW.Validate.fst
+# find no violation (@id/@type role, required url, columns/tableSchema/
+# titles shape, language-tag well-formedness), and no data cell is
+# ill-formed for its datatype; single-column primaryKey uniqueness is
+# checked too. A NegativeValidationTest passes iff a violation is found.
+triggers:
+  paths:
+    - bin/csvw-runner/**
+    - formal/fstar/CSVW.Validate.fst
+    - third_party/testing/csvw/**
+  excludes: []
+
+# Remaining (281 pass, 1 fail out of 282), grouped by cause:
+remaining:
+  - "test308: a non-built-in absolute-URL datatype STRING expected as an error, but test238 (WarningValidationTest, expects conformance) has an equivalent non-built-in absolute-URL datatype string `http://example.org/datatype` — the two differ only in the URL value, so no value-agnostic rule can fail test308 without regressing test238"

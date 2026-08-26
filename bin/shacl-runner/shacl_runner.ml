@@ -1,0 +1,851 @@
+(* SHACL Core W3C test-suite runner — Phase 3 (issue #181 follow-up).
+
+   Walks the vendored W3C data-shapes-test-suite manifest hierarchy
+   (third_party/testing/shacl/data-shapes-test-suite/tests/core/ by
+   default, or tests/sparql/ for the SPARQL-based-constraints suite),
+   following `mf:include` (a repeated triple, not an RDF list, in this
+   suite — see core/node/manifest.ttl for the pattern) down to leaf
+   test files, each of which declares one or more `sht:Validate`
+   entries directly. For each entry:
+     - loads the dataGraph / shapesGraph (usually the SAME document,
+       self-referenced via `<>`; a few tests split into sibling
+       `*-data.ttl` / `*-shapes.ttl` files, resolved by relative IRI);
+     - parses the shapes graph via the F*-extracted
+       SHACL_Validation.parse_shape_from_graph;
+     - runs SHACL_Validation.validate against the data graph;
+     - by DEFAULT (Phase 3), compares the FULL validation report
+       against the manifest's expected report, per the suite's own
+       "full compliance" isomorphism rule (data-shapes-test-suite/
+       index.html, "Submitting Implementation Reports"): canonicalize
+       both the `expected` graph (built here from the manifest's own
+       `mf:result` blob — R's own triples, each `sh:result` value's
+       own triples, and any `sh:resultPath` blank-node structure) and
+       the `actual` graph (SHACL_Validation.validation_report_to_graph,
+       filtered per the suite's sh:resultMessage carve-out below) via
+       RDF_Canonical.canonicalize_to_nquads and compare the resulting
+       strings.
+     - a manifest entry whose `mf:result` is the bare IRI `sht:Failure`
+       (used by the SPARQL suite's `unsupported-sparql-*`/
+       `pre-binding-006` fixtures for queries this engine is not
+       expected to support, e.g. SERVICE/MINUS/VALUES-block) PASSES
+       iff `SHACL_Validation.validate` set `report_failure` (a SPARQL
+       query that failed to parse), regardless of `conforms`.
+     - `--conforms-only` reverts to the original slice-1 comparison
+       (only the boolean `sh:conforms` flag) — the documented floor
+       this must never regress below (98 of 98 on the core manifest).
+
+   !! THIS IS I/O GLUE — NO SHACL SEMANTIC LOGIC !!
+   See CLAUDE.md iron rule #11 / anti-pattern #15. All shape parsing,
+   target computation, path evaluation, constraint evaluation, and
+   report serialization live in formal/fstar/SHACL.Validation.fst.
+   This file does file I/O, manifest traversal, a bounded graph
+   "describe" closure to build the expected-comparison sub-graph (pure
+   reachability walk over already-parsed triples, not SHACL
+   semantics — the consumer-tool carve-out CLAUDE.md rule #11
+   explicitly allows), and delegates the actual isomorphism check to
+   RDF_Canonical (also F*-extracted).
+
+   Usage:
+     ./shacl_runner                  Run the default core manifest (report-compare)
+     ./shacl_runner <manifest.ttl>   Run a specific manifest.ttl
+     ./shacl_runner --conforms-only  Compare only sh:conforms (slice-1 floor)
+     ./shacl_runner --list           List discovered test entries (no execution)
+     ./shacl_runner -v|--verbose     Show skip reasons + report diffs on FAIL
+     ./shacl_runner --help           Show this help
+*)
+
+open RDF_Graph_Executable
+
+(* ------------------------------------------------------------------ *)
+(* Repo-root resolution (parallel to jsonld_runner.ml / rdfc10_runner.ml). *)
+
+let find_repo_root () =
+  let rec walk d =
+    if d = "/" || d = "" then None
+    else if Sys.file_exists (Filename.concat d "CLAUDE.md") then Some d
+    else walk (Filename.dirname d)
+  in
+  let start =
+    try Filename.dirname (Sys.executable_name)
+    with _ -> Sys.getcwd ()
+  in
+  match walk start with
+  | Some r -> r
+  | None ->
+    (match walk (Sys.getcwd ()) with
+     | Some r -> r
+     | None -> Sys.getcwd ())
+
+let manifest_candidates () =
+  let repo_root = find_repo_root () in
+  [ Filename.concat repo_root
+      "third_party/testing/shacl/data-shapes-test-suite/tests/core/manifest.ttl";
+    "third_party/testing/shacl/data-shapes-test-suite/tests/core/manifest.ttl" ]
+
+let default_manifest () =
+  try List.find Sys.file_exists (manifest_candidates ())
+  with Not_found ->
+    Filename.concat (find_repo_root ())
+      "third_party/testing/shacl/data-shapes-test-suite/tests/core/manifest.ttl"
+
+(* ------------------------------------------------------------------ *)
+(* File I/O + Turtle parsing (base-IRI handling parallels rdfc10_runner). *)
+
+let read_file path =
+  try
+    let ic = open_in_bin path in
+    let n = in_channel_length ic in
+    let b = Bytes.create n in
+    really_input ic b 0 n;
+    close_in ic;
+    Some (Bytes.to_string b)
+  with Sys_error _ -> None
+
+let abs_path p = if Filename.is_relative p then Filename.concat (Sys.getcwd ()) p else p
+
+let file_uri p = "file://" ^ abs_path p
+
+(* Inverse of file_uri, for resolving a dataGraph/shapesGraph IRI that
+   points at a sibling file back to a loadable path. *)
+let path_of_file_iri (iri : string) : string option =
+  let prefix = "file://" in
+  let plen = String.length prefix in
+  if String.length iri >= plen && String.sub iri 0 plen = prefix
+  then Some (String.sub iri plen (String.length iri - plen))
+  else None
+
+let parse_ttl_file (path : string) : (rdf_graph * string) option =
+  match read_file path with
+  | None -> None
+  | Some raw ->
+    let base = file_uri path in
+    (* SHACL 1.2 shapes/data are RDF 1.2 documents: parse in Mode_12 so the
+       `<< >>` triple terms and the `{| ... |}` / `~` reifier annotations
+       expand (needed for sh:reifierShape and the reified sh:severity /
+       sh:message annotations). Mode_12 is a superset of 1.1 Turtle, so
+       plain 1.1 shape files parse unchanged (SHACL 1.1 suite stays green). *)
+    Some (Parser_Turtle.parse_turtle_with_base_12 raw base, base)
+
+(* ------------------------------------------------------------------ *)
+(* Thin RDF-graph accessors over an rdf_term "subject". *)
+
+let term_to_subj_opt (t : rdf_term) : subject option =
+  match term_to_subject t with
+  | FStar_Pervasives_Native.Some s -> Some s
+  | FStar_Pervasives_Native.None -> None
+
+let objs_of (g : rdf_graph) (subj_term : rdf_term) (pred : string) : rdf_term list =
+  match term_to_subj_opt subj_term with
+  | None -> []
+  | Some s -> find_objects g s pred
+
+let obj1_of (g : rdf_graph) (subj_term : rdf_term) (pred : string) : rdf_term option =
+  match objs_of g subj_term pred with
+  | [] -> None
+  | h :: _ -> Some h
+
+let iri_str (t : rdf_term) : string option =
+  match t with T_IRI i -> Some i | _ -> None
+
+let bool_of_lit (t : rdf_term option) : bool option =
+  match t with
+  | Some (T_Literal l) -> Some (l.lexical_form = "true" || l.lexical_form = "1")
+  | _ -> None
+
+let string_of_lit (t : rdf_term option) : string option =
+  match t with
+  | Some (T_Literal l) -> Some l.lexical_form
+  | _ -> None
+
+(* ------------------------------------------------------------------ *)
+(* SHACL test vocabulary. *)
+
+let mf_ns  = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
+let sht_ns = "http://www.w3.org/ns/shacl-test#"
+let sh_ns  = "http://www.w3.org/ns/shacl#"
+let rdf_type_iri = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+
+let mf_include = mf_ns ^ "include"
+let mf_action  = mf_ns ^ "action"
+let mf_result  = mf_ns ^ "result"
+let mf_name    = mf_ns ^ "name"
+(* This suite labels tests with rdfs:label, not mf:name (see any
+   core/*.ttl fixture) — try both, mf:name first per the manifest
+   vocabulary's own spec. *)
+let rdfs_label = "http://www.w3.org/2000/01/rdf-schema#label"
+let sht_Validate    = sht_ns ^ "Validate"
+let sht_dataGraph   = sht_ns ^ "dataGraph"
+let sht_shapesGraph = sht_ns ^ "shapesGraph"
+let sh_conforms     = sh_ns ^ "conforms"
+let sht_Failure     = sht_ns ^ "Failure"
+let sh_result       = sh_ns ^ "result"
+let sh_resultPath   = sh_ns ^ "resultPath"
+let sh_resultMessage = sh_ns ^ "resultMessage"
+let sh_detail       = sh_ns ^ "detail"
+let sh_resultSeverity = sh_ns ^ "resultSeverity"
+let sh_conformanceDisallows = sh_ns ^ "conformanceDisallows"
+let sh_ValidationReport = sh_ns ^ "ValidationReport"
+
+(* SHACL 1.2 sh:conformanceDisallows (validation-reports suite): the test
+   framework must take the sh:conformanceDisallows severities from the
+   expected mf:result and use them to decide conformance — sh:conforms is
+   true unless a result carries one of those (rather than any non-Debug/
+   Trace) severities. This is a test-harness comparison convention, not
+   SHACL evaluation semantics: recompute the report's sh:conforms over the
+   disallowed set and echo the sh:conformanceDisallows triples so the
+   actual report can match the expected one. *)
+let apply_conformance_disallows (expected : rdf_graph) (actual : rdf_graph) : rdf_graph =
+  let disallowed =
+    List.filter_map
+      (fun (tr : triple) ->
+         if tr.p = sh_conformanceDisallows then (match tr.o with T_IRI i -> Some i | _ -> None) else None)
+      expected in
+  match disallowed with
+  | [] -> actual
+  | _ ->
+    let report_subjs =
+      List.filter_map
+        (fun (tr : triple) ->
+           if tr.p = rdf_type_iri && (match tr.o with T_IRI i -> i = sh_ValidationReport | _ -> false)
+           then Some tr.s else None)
+        actual in
+    let sevs =
+      List.filter_map
+        (fun (tr : triple) ->
+           if tr.p = sh_resultSeverity then (match tr.o with T_IRI i -> Some i | _ -> None) else None)
+        actual in
+    let conforms = not (List.exists (fun s -> List.mem s disallowed) sevs) in
+    let without_conforms = List.filter (fun (tr : triple) -> tr.p <> sh_conforms) actual in
+    let bl =
+      T_Literal { lexical_form = (if conforms then "true" else "false"); datatype = xsd_boolean;
+                  lang_tag = FStar_Pervasives_Native.None; direction = FStar_Pervasives_Native.None } in
+    let added =
+      List.concat_map
+        (fun rs ->
+           ({ s = rs; p = sh_conforms; o = bl } : triple)
+           :: List.map (fun d -> ({ s = rs; p = sh_conformanceDisallows; o = T_IRI d } : triple)) disallowed)
+        report_subjs in
+    without_conforms @ added
+
+(* SHACL 1.2 node-expression evaluation tests (shnex suite). Each
+   `sht:EvalNodeExpr` entry evaluates a node expression against the
+   manifest's own graph and compares the result list to mf:result. *)
+let sht_EvalNodeExpr = sht_ns ^ "EvalNodeExpr"
+let sht_nodeExpr     = sht_ns ^ "nodeExpr"
+let sht_focusNode    = sht_ns ^ "focusNode"
+let sht_ignoreOrder  = sht_ns ^ "ignoreOrder"
+let sht_scope_prefix = sht_ns ^ "scope-"
+
+(* SHACL 1.2 Rules evaluation tests (rules/eval suite). Each
+   srt:RulesEvalTest names a .srl ruleset + a data graph; the inferred
+   closure is compared to mf:result. *)
+let srt_ns = "http://www.w3.org/ns/shacl-rules-test#"
+let srt_RulesEvalTest = srt_ns ^ "RulesEvalTest"
+let srt_ruleset = srt_ns ^ "ruleset"
+let srt_data    = srt_ns ^ "data"
+let srt_RulesPositiveSyntaxTest = srt_ns ^ "RulesPositiveSyntaxTest"
+let srt_RulesNegativeSyntaxTest = srt_ns ^ "RulesNegativeSyntaxTest"
+let srt_RulesPositiveWellFormednessTest = srt_ns ^ "RulesPositiveWellFormednessTest"
+let srt_RulesNegativeWellFormednessTest = srt_ns ^ "RulesNegativeWellFormednessTest"
+let srt_RulesPositiveStratificationTest = srt_ns ^ "RulesPositiveStratificationTest"
+let srt_RulesNegativeStratificationTest = srt_ns ^ "RulesNegativeStratificationTest"
+let rdf_first_iri = "http://www.w3.org/1999/02/22-rdf-syntax-ns#first"
+let rdf_rest_iri  = "http://www.w3.org/1999/02/22-rdf-syntax-ns#rest"
+let rdf_nil_iri   = "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"
+
+let rec rdf_list_ml (g : rdf_graph) (head : rdf_term) (fuel : int) : rdf_term list =
+  if fuel <= 0 then []
+  else match head with
+    | T_IRI i when i = rdf_nil_iri -> []
+    | _ ->
+      (match obj1_of g head rdf_first_iri, obj1_of g head rdf_rest_iri with
+       | Some h, Some r -> h :: rdf_list_ml g r (fuel - 1)
+       | _ -> [])
+
+(* ------------------------------------------------------------------ *)
+(* Phase 3 (issue #181 follow-up): full report comparison.
+
+   Per the suite's own "full compliance" rule (data-shapes-test-suite/
+   index.html): `expected` = R's own triples, plus each value of R's
+   sh:result as subject, plus "any triples needed to correctly
+   represent the sh:resultPath" (a bounded blank-node-only walk, since
+   resultPath structures are RDF lists / sh:inversePath-style wrapper
+   bnodes — never a walk into unrelated data-graph triples about a
+   focusNode/value IRI that happens to also appear elsewhere in the
+   manifest document). This is a plain reachability walk over an
+   already-parsed graph — I/O/comparison glue, not SHACL semantics
+   (CLAUDE.md rule #11's consumer-tool carve-out). *)
+
+let triples_with_subject (g : rdf_graph) (t : rdf_term) : triple list =
+  match term_to_subj_opt t with
+  | None -> []
+  | Some s -> List.filter (fun (tr : triple) -> subject_eq tr.s s) g
+
+let rec bnode_path_closure (g : rdf_graph) (frontier : rdf_term list) (acc : triple list) (fuel : int)
+  : triple list =
+  if fuel <= 0 then acc
+  else
+    match frontier with
+    | [] -> acc
+    | t :: rest ->
+      (match t with
+       | T_BNode _ ->
+         let ts = triples_with_subject g t in
+         let objs = List.map (fun (tr : triple) -> tr.o) ts in
+         bnode_path_closure g (rest @ objs) (acc @ ts) (fuel - 1)
+       | _ -> bnode_path_closure g rest acc (fuel - 1))
+
+(* One ValidationResult's expected triples: its own triples, the
+   bnode-closure of its sh:resultPath, and — recursively — every
+   sh:detail sub-result (SHACL 1.2 sh:uniqueMembers / sh:memberShape
+   nest their per-member findings under sh:detail). Without the
+   sh:detail recursion the expected graph carries the `R sh:detail _:d`
+   link but none of _:d's own triples, so a correct actual report can
+   never be isomorphic to it. *)
+let rec result_closure (g : rdf_graph) (rv : rdf_term) (fuel : int) : triple list =
+  if fuel <= 0 then []
+  else
+    let own = triples_with_subject g rv in
+    let path_objs = objs_of g rv sh_resultPath in
+    let path_triples = bnode_path_closure g path_objs [] 50 in
+    let detail_objs = objs_of g rv sh_detail in
+    let detail_triples = List.concat_map (fun d -> result_closure g d (fuel - 1)) detail_objs in
+    own @ path_triples @ detail_triples
+
+let expected_report_graph (g : rdf_graph) (res_term : rdf_term) : rdf_graph =
+  let r_triples = triples_with_subject g res_term in
+  let result_values = objs_of g res_term sh_result in
+  let result_triples = List.concat_map (fun rv -> result_closure g rv 50) result_values in
+  r_triples @ result_triples
+
+(* The suite's sh:resultMessage carve-out: drop every actual
+   sh:resultMessage triple whose literal object does not ALSO appear
+   as a sh:resultMessage object somewhere in `expected` — this is the
+   ONE predicate the comparison treats asymmetrically (see the
+   section-13 doc comment in SHACL.Validation.fst / the suite's own
+   text: "As a general rule, all triples with sh:resultMessage as
+   subject need to be removed from the actual graph, except those
+   with object ?object for which the expected graph contains a triple
+   ?any sh:resultMessage ?object."). *)
+let filter_result_messages (expected : rdf_graph) (actual : rdf_graph) : rdf_graph =
+  let expected_messages =
+    List.filter_map
+      (fun (tr : triple) ->
+         if tr.p = sh_resultMessage then
+           (match tr.o with T_Literal l -> Some l.lexical_form | _ -> None)
+         else None)
+      expected
+  in
+  List.filter
+    (fun (tr : triple) ->
+       if tr.p = sh_resultMessage then
+         (match tr.o with
+          | T_Literal l -> List.mem l.lexical_form expected_messages
+          | _ -> false)
+       else true)
+    actual
+
+let canon_graph (g : rdf_graph) : string =
+  RDF_Canonical.canonicalize_to_nquads { ds_default = g; ds_named = [] }
+
+(* ------------------------------------------------------------------ *)
+(* Per-test record. Fields stay `option` rather than being filtered
+   out at collection time, so a malformed/incomplete manifest entry
+   surfaces as an honest SKIP with a reason instead of silently
+   vanishing from the total (anti-pattern #25 discipline). *)
+
+type test_case = {
+  tc_name : string;
+  tc_file : string;
+  tc_data_graph : rdf_graph option;
+  tc_shapes_graph : rdf_graph option;
+  tc_expect_conforms : bool option;
+  (* Phase 3: None when mf:result isn't a full report blob (or is
+     sht:Failure — see tc_expect_failure) — the report-compare path
+     SKIPs those rather than fabricating a comparison. *)
+  tc_expect_report : rdf_graph option;
+  (* True iff mf:result is the bare IRI sht:Failure (the SPARQL
+     suite's convention for "this engine may legitimately fail on
+     this query"). *)
+  tc_expect_failure : bool;
+  (* SHACL 1.2 sht:EvalNodeExpr payload (node-expression evaluation);
+     None for an ordinary sht:Validate entry. *)
+  tc_node_expr : ne_spec option;
+  (* SHACL 1.2 srt:RulesEvalTest payload (rule inference); None
+     otherwise. *)
+  tc_rules : rules_spec option;
+  (* SHACL 1.2 srt:RulesPositive/NegativeSyntaxTest payload; None
+     otherwise. *)
+  tc_syntax : syntax_spec option;
+}
+and rules_spec = {
+  rs_data : rdf_graph;      (* the input data graph *)
+  rs_srl : string;          (* raw .srl ruleset text *)
+  rs_expected : rdf_graph;  (* expected inferred closure (mf:result) *)
+}
+and syntax_spec = {
+  sy_srl : string;          (* raw .srl ruleset text *)
+  sy_expect_valid : bool;   (* true for a positive test, false for negative *)
+  sy_check : int;           (* 0 = syntax, 1 = well-formedness, 2 = stratification *)
+}
+and ne_spec = {
+  ne_graph : rdf_graph;                  (* graph the expression runs against *)
+  ne_expr : rdf_term;                    (* the sht:nodeExpr node *)
+  ne_focus : rdf_term option;            (* sht:focusNode, if any *)
+  ne_scope : (string * rdf_term) list;   (* sht:scope-<name> bindings *)
+  ne_expected : rdf_term list;           (* mf:result rdf:List *)
+  ne_ignore_order : bool;                (* sht:ignoreOrder true *)
+}
+
+(* Resolve a dataGraph/shapesGraph object to a parsed graph: reuse the
+   current file's own graph when it self-references (`<>`, the
+   overwhelmingly common case), else load the sibling file it names
+   (e.g. path-complex-002-data.ttl / path-complex-002-shapes.ttl). *)
+let resolve_graph_ref ~(own_graph : rdf_graph) ~(own_base : string) (t : rdf_term) : rdf_graph option =
+  match iri_str t with
+  | None -> None
+  | Some iri ->
+    if iri = own_base then Some own_graph
+    else
+      (match path_of_file_iri iri with
+       | Some p ->
+         (match parse_ttl_file p with
+          | Some (g, _) -> Some g
+          | None -> None)
+       | None -> None)
+
+let subjects_typed (g : rdf_graph) (iri : string) : rdf_term list =
+  List.filter_map
+    (fun tr -> if tr.p = rdf_type_iri
+               then (match tr.o with T_IRI i when i = iri -> Some (subject_to_term tr.s) | _ -> None)
+               else None)
+    g
+
+let rec collect_from_file (visited : string list ref) (path : string) : test_case list =
+  let abs = abs_path path in
+  if List.mem abs !visited then []
+  else begin
+    visited := abs :: !visited;
+    match parse_ttl_file path with
+    | None ->
+      Printf.eprintf "shacl_runner: cannot read %s\n" path;
+      []
+    | Some (g, base) ->
+      let root_term = T_IRI base in
+      let included =
+        List.concat_map
+          (fun inc_term ->
+             match iri_str inc_term with
+             | None -> []
+             | Some inc_iri ->
+               (match path_of_file_iri inc_iri with
+                | Some inc_path -> collect_from_file visited inc_path
+                | None -> []))
+          (objs_of g root_term mf_include)
+      in
+      let own_tests =
+        List.map
+          (fun t ->
+             let name =
+               match string_of_lit (obj1_of g t mf_name) with
+               | Some n -> n
+               | None ->
+                 (match string_of_lit (obj1_of g t rdfs_label) with
+                  | Some n -> n
+                  | None -> (match t with T_IRI i -> i | T_BNode b -> "_:" ^ b | _ -> "<test>"))
+             in
+             let action = obj1_of g t mf_action in
+             let result = obj1_of g t mf_result in
+             let dgraph =
+               match action with
+               | None -> None
+               | Some act ->
+                 (match obj1_of g act sht_dataGraph with
+                  | None -> None
+                  | Some dgt -> resolve_graph_ref ~own_graph:g ~own_base:base dgt)
+             in
+             let sgraph =
+               match action with
+               | None -> None
+               | Some act ->
+                 (match obj1_of g act sht_shapesGraph with
+                  | None -> None
+                  | Some sgt -> resolve_graph_ref ~own_graph:g ~own_base:base sgt)
+             in
+             let expect =
+               match result with
+               | None -> None
+               | Some res -> bool_of_lit (obj1_of g res sh_conforms)
+             in
+             let expect_failure =
+               match result with
+               | Some (T_IRI i) -> i = sht_Failure
+               | _ -> false
+             in
+             let expect_report =
+               if expect_failure then None
+               else
+                 match result with
+                 | Some res when Option.is_some expect -> Some (expected_report_graph g res)
+                 | _ -> None
+             in
+             { tc_name = name; tc_file = path;
+               tc_data_graph = dgraph; tc_shapes_graph = sgraph;
+               tc_expect_conforms = expect;
+               tc_expect_report = expect_report;
+               tc_expect_failure = expect_failure;
+               tc_node_expr = None; tc_rules = None; tc_syntax = None })
+          (subjects_typed g sht_Validate)
+      in
+      let node_expr_tests =
+        List.filter_map
+          (fun t ->
+             let name =
+               match string_of_lit (obj1_of g t mf_name) with
+               | Some n -> n
+               | None ->
+                 (match string_of_lit (obj1_of g t rdfs_label) with
+                  | Some n -> n
+                  | None -> (match t with T_IRI i -> i | T_BNode b -> "_:" ^ b | _ -> "<test>"))
+             in
+             match obj1_of g t mf_action with
+             | None -> None
+             | Some act ->
+               (match obj1_of g act sht_nodeExpr with
+                | None -> None
+                | Some expr ->
+                  let focus = obj1_of g act sht_focusNode in
+                  let ignore_order =
+                    match bool_of_lit (obj1_of g act sht_ignoreOrder) with Some b -> b | None -> false in
+                  (* sht:scope-<name> action properties become variable bindings. *)
+                  let scope =
+                    List.filter_map
+                      (fun (tr : triple) ->
+                         let p = tr.p in
+                         let plen = String.length sht_scope_prefix in
+                         if String.length p > plen && String.sub p 0 plen = sht_scope_prefix
+                         then Some (String.sub p plen (String.length p - plen), tr.o)
+                         else None)
+                      (triples_with_subject g act)
+                  in
+                  let expected =
+                    match obj1_of g t mf_result with
+                    | Some rl -> rdf_list_ml g rl 1000
+                    | None -> []
+                  in
+                  Some { tc_name = name; tc_file = path;
+                         tc_data_graph = None; tc_shapes_graph = None;
+                         tc_expect_conforms = None; tc_expect_report = None;
+                         tc_expect_failure = false;
+                         tc_node_expr = Some { ne_graph = g; ne_expr = expr; ne_focus = focus;
+                                               ne_scope = scope; ne_expected = expected;
+                                               ne_ignore_order = ignore_order };
+                         tc_rules = None; tc_syntax = None }))
+          (subjects_typed g sht_EvalNodeExpr)
+      in
+      let rules_tests =
+        List.filter_map
+          (fun t ->
+             let name =
+               match string_of_lit (obj1_of g t rdfs_label) with
+               | Some n -> n
+               | None -> (match string_of_lit (obj1_of g t mf_name) with
+                          | Some n -> n
+                          | None -> (match t with T_IRI i -> i | _ -> "<rules-test>")) in
+             match obj1_of g t mf_action with
+             | None -> None
+             | Some act ->
+               let srl =
+                 match obj1_of g act srt_ruleset with
+                 | Some rt -> (match iri_str rt with
+                               | Some iri -> (match path_of_file_iri iri with
+                                              | Some p -> read_file p | None -> None)
+                               | None -> None)
+                 | None -> None in
+               let data =
+                 match obj1_of g act srt_data with
+                 | Some dt -> resolve_graph_ref ~own_graph:g ~own_base:base dt
+                 | None -> None in
+               let result =
+                 match obj1_of g t mf_result with
+                 | Some rr -> resolve_graph_ref ~own_graph:g ~own_base:base rr
+                 | None -> None in
+               (match srl, data, result with
+                | Some s, Some d, Some r ->
+                  Some { tc_name = name; tc_file = path;
+                         tc_data_graph = None; tc_shapes_graph = None;
+                         tc_expect_conforms = None; tc_expect_report = None;
+                         tc_expect_failure = false; tc_node_expr = None;
+                         tc_rules = Some { rs_data = d; rs_srl = s; rs_expected = r };
+                         tc_syntax = None }
+                | _ -> None))
+          (subjects_typed g srt_RulesEvalTest)
+      in
+      let syntax_tests =
+        let collect_syntax type_iri expect_valid check =
+          List.filter_map
+            (fun t ->
+               let name =
+                 match string_of_lit (obj1_of g t mf_name) with
+                 | Some n -> n
+                 | None -> (match t with T_IRI i -> i | _ -> "<syntax-test>") in
+               let srl =
+                 match obj1_of g t mf_action with
+                 | Some at -> (match iri_str at with
+                               | Some iri -> (match path_of_file_iri iri with
+                                              | Some p -> read_file p | None -> None)
+                               | None -> None)
+                 | None -> None in
+               (match srl with
+                | Some s ->
+                  Some { tc_name = name; tc_file = path;
+                         tc_data_graph = None; tc_shapes_graph = None;
+                         tc_expect_conforms = None; tc_expect_report = None;
+                         tc_expect_failure = false; tc_node_expr = None; tc_rules = None;
+                         tc_syntax = Some { sy_srl = s; sy_expect_valid = expect_valid;
+                                            sy_check = check } }
+                | None -> None))
+            (subjects_typed g type_iri) in
+        collect_syntax srt_RulesPositiveSyntaxTest true 0
+        @ collect_syntax srt_RulesNegativeSyntaxTest false 0
+        @ collect_syntax srt_RulesPositiveWellFormednessTest true 1
+        @ collect_syntax srt_RulesNegativeWellFormednessTest false 1
+        @ collect_syntax srt_RulesPositiveStratificationTest true 2
+        @ collect_syntax srt_RulesNegativeStratificationTest false 2
+      in
+      included @ own_tests @ node_expr_tests @ rules_tests @ syntax_tests
+  end
+
+(* ------------------------------------------------------------------ *)
+(* Per-test execution. *)
+
+type outcome = Pass | Fail of string | Skip of string
+
+(* Render a term for node-expr mismatch diagnostics. *)
+let rec term_key (t : rdf_term) : string =
+  match t with
+  | T_IRI i -> "<" ^ i ^ ">"
+  | T_BNode b -> "_:" ^ b
+  | T_Literal l ->
+    "\"" ^ l.lexical_form ^ "\"^^" ^ l.datatype
+    ^ (match l.lang_tag with FStar_Pervasives_Native.Some lt -> "@" ^ lt | _ -> "")
+  | T_TripleTerm (s, p, o) ->
+    "<<(" ^ (match s with S_IRI i -> "<" ^ i ^ ">" | S_BNode b -> "_:" ^ b)
+    ^ " <" ^ p ^ "> " ^ term_key o ^ ")>>"
+
+(* SHACL 1.2 sht:EvalNodeExpr: evaluate the node expression via the
+   F*-extracted evaluator and compare the result list to mf:result.
+   Ordered by default; sht:ignoreOrder true compares as a multiset. *)
+let run_node_expr_test (ne : ne_spec) : outcome =
+  try
+    let focus =
+      match ne.ne_focus with
+      | Some f -> FStar_Pervasives_Native.Some f
+      | None -> FStar_Pervasives_Native.None in
+    let actual = SHACL_NodeExpr.eval_node_expr_top ne.ne_graph focus ne.ne_scope ne.ne_expr in
+    let ok =
+      if ne.ne_ignore_order
+      then List.sort compare actual = List.sort compare ne.ne_expected
+      else actual = ne.ne_expected in
+    if ok then Pass
+    else Fail (Printf.sprintf "node expr result mismatch: expected [%s], got [%s]"
+                 (String.concat "; " (List.map term_key ne.ne_expected))
+                 (String.concat "; " (List.map term_key actual)))
+  with e -> Fail (Printf.sprintf "exception: %s" (Printexc.to_string e))
+
+(* SHACL 1.2 srt:RulesEvalTest: infer the closure of the data graph
+   under the .srl ruleset and compare (isomorphic) to mf:result. *)
+let run_rules_test (rs : rules_spec) : outcome =
+  try
+    let inferred = SHACL_Rules.run_rules rs.rs_data rs.rs_srl in
+    if canon_graph inferred = canon_graph rs.rs_expected then Pass
+    else Fail (Printf.sprintf "inferred graph not isomorphic to expected\n    expected: %s\n    actual:   %s"
+                 (canon_graph rs.rs_expected) (canon_graph inferred))
+  with e -> Fail (Printf.sprintf "exception: %s" (Printexc.to_string e))
+
+(* SHACL 1.2 srt:RulesPositive/NegativeSyntaxTest: does the .srl parse
+   as a well-formed ruleset? *)
+let run_syntax_test (sy : syntax_spec) : outcome =
+  try
+    let valid =
+      if sy.sy_check = 2 then SHACL_Rules.srl_stratifiable sy.sy_srl
+      else if sy.sy_check = 1 then SHACL_Rules.srl_well_formed sy.sy_srl
+      else SHACL_Rules.srl_valid_syntax sy.sy_srl in
+    if valid = sy.sy_expect_valid then Pass
+    else Fail (Printf.sprintf "expected syntactically %s, got %s"
+                 (if sy.sy_expect_valid then "valid" else "invalid")
+                 (if valid then "valid" else "invalid"))
+  with e -> Fail (Printf.sprintf "exception: %s" (Printexc.to_string e))
+
+(* Slice-1 floor: compare only sh:conforms. Kept as the `--conforms-only`
+   fallback — CLAUDE.md's Phase 3 brief requires this mode to stay at
+   98/98 on the core manifest even as the default (report-compare)
+   mode is free to be stricter and score lower. *)
+let run_test_conforms_only (tc : test_case) : outcome =
+  match tc.tc_rules with
+  | Some rs -> run_rules_test rs
+  | None ->
+  match tc.tc_syntax with
+  | Some sy -> run_syntax_test sy
+  | None ->
+  match tc.tc_node_expr with
+  | Some ne -> run_node_expr_test ne
+  | None ->
+  match tc.tc_data_graph, tc.tc_shapes_graph, tc.tc_expect_conforms with
+  | None, _, _ -> Skip "no dataGraph resolved from mf:action"
+  | _, None, _ -> Skip "no shapesGraph resolved from mf:action"
+  | _, _, None ->
+    if tc.tc_expect_failure then Skip "mf:result is sht:Failure (conforms-only mode ignores it)"
+    else Skip "mf:result has no sh:conforms boolean"
+  | Some data, Some shapes_g, Some expect ->
+    (try
+       let sg = SHACL_Validation.parse_shape_from_graph shapes_g in
+       let report = SHACL_Validation.validate data shapes_g sg in
+       let got = report.SHACL_Validation.conforms in
+       if got = expect then Pass
+       else Fail (Printf.sprintf "expected sh:conforms %b, got %b" expect got)
+     with e -> Fail (Printf.sprintf "exception: %s" (Printexc.to_string e)))
+
+(* Phase 3 default: full validation-report comparison (or sht:Failure
+   acknowledgement) — see the file header + expected_report_graph doc
+   comments for exactly what "full compliance" means here. *)
+let run_test_report (tc : test_case) : outcome =
+  match tc.tc_rules with
+  | Some rs -> run_rules_test rs
+  | None ->
+  match tc.tc_syntax with
+  | Some sy -> run_syntax_test sy
+  | None ->
+  match tc.tc_node_expr with
+  | Some ne -> run_node_expr_test ne
+  | None ->
+  match tc.tc_data_graph, tc.tc_shapes_graph with
+  | None, _ -> Skip "no dataGraph resolved from mf:action"
+  | _, None -> Skip "no shapesGraph resolved from mf:action"
+  | Some data, Some shapes_g ->
+    (try
+       let sg = SHACL_Validation.parse_shape_from_graph shapes_g in
+       let report = SHACL_Validation.validate data shapes_g sg in
+       if tc.tc_expect_failure then
+         (match report.SHACL_Validation.report_failure with
+          | Some _ -> Pass
+          | None ->
+            Fail (Printf.sprintf "expected sht:Failure (validation should not have completed); got sh:conforms %b"
+                    report.SHACL_Validation.conforms))
+       else
+         (match tc.tc_expect_report with
+          | None -> Skip "mf:result is not a full ValidationReport blob (no sh:conforms present)"
+          | Some expected_g ->
+            let actual_raw = SHACL_Validation.validation_report_to_graph report in
+            let actual_g =
+              apply_conformance_disallows expected_g (filter_result_messages expected_g actual_raw) in
+            let exp_canon = canon_graph expected_g in
+            let act_canon = canon_graph actual_g in
+            if exp_canon = act_canon then Pass
+            else
+              Fail (Printf.sprintf
+                      "report not isomorphic to expected\n    expected: %s\n    actual:   %s"
+                      exp_canon act_canon))
+     with e ->
+       if tc.tc_expect_failure then Pass
+       else Fail (Printf.sprintf "exception: %s" (Printexc.to_string e)))
+
+(* ------------------------------------------------------------------ *)
+(* Suite run. *)
+
+let run_manifest ~verbose ~list_only ~conforms_only manifest_path =
+  Printf.printf "=== SHACL W3C Test Runner (%s) ===\n"
+    (if conforms_only then "sh:conforms-only" else "full report comparison");
+  Printf.printf "Manifest: %s\n\n" manifest_path;
+  let tests = collect_from_file (ref []) manifest_path in
+  let total = List.length tests in
+  Printf.printf "Totals: %d test entries\n\n" total;
+  if list_only then
+    List.iter (fun tc -> Printf.printf "  %-40s (%s)\n" tc.tc_name tc.tc_file) tests
+  else begin
+    let run_one = if conforms_only then run_test_conforms_only else run_test_report in
+    let n = ref 0 in
+    let outcomes =
+      List.map
+        (fun tc ->
+           incr n;
+           Printf.eprintf "  [%d/%d] %s%!" !n total tc.tc_name;
+           let o = run_one tc in
+           let tag = match o with Pass -> "ok" | Fail _ -> "FAIL" | Skip _ -> "skip" in
+           Printf.eprintf " %s\n%!" tag;
+           (match o with
+            | Pass -> Printf.printf "  PASS: %s\n" tc.tc_name
+            | Fail msg -> Printf.printf "  FAIL: %s (%s) — %s\n" tc.tc_name tc.tc_file msg
+            | Skip msg -> if verbose then Printf.printf "  skip: %s (%s) — %s\n" tc.tc_name tc.tc_file msg);
+           o)
+        tests
+    in
+    let pass, fail, skip =
+      List.fold_left
+        (fun (p, f, s) o ->
+           match o with
+           | Pass -> (p + 1, f, s)
+           | Fail _ -> (p, f + 1, s)
+           | Skip _ -> (p, f, s + 1))
+        (0, 0, 0) outcomes
+    in
+    Printf.printf "\n========================================\n";
+    Printf.printf "TOTAL: %d pass, %d fail, %d skip (out of %d)\n" pass fail skip total;
+    Printf.printf "========================================\n";
+    (* Exact final-line format consumed by generate-report.sh's generic
+       "N pass, M fail (out of K)" score-line regex — matches the
+       jsonld_runner / rdfc10_runner convention. The label names the
+       suite section (core vs sparql, derived from the manifest path)
+       so the two .github/test-suites manifests get distinct lines. *)
+    let section =
+      let sub = "/sparql/" in
+      let ls = String.length manifest_path and lb = String.length sub in
+      let rec has i = i + lb <= ls && (String.sub manifest_path i lb = sub || has (i + 1)) in
+      if has 0 then "shacl-sparql" else "shacl-core"
+    in
+    let label = if conforms_only then section ^ "-conforms-only" else section in
+    Printf.printf "%s: %d pass, %d fail, %d skip (out of %d)\n" label pass fail skip total;
+    if fail > 0 then exit 1
+  end
+
+(* ------------------------------------------------------------------ *)
+(* Main. *)
+
+let print_help () =
+  print_string
+    "SHACL W3C test-suite runner — Phase 3 (issue #181 follow-up).\n\
+     \n\
+     Usage:\n\
+     \  ./shacl_runner                  Run the default core manifest (report-compare)\n\
+     \  ./shacl_runner <manifest.ttl>   Run a specific manifest.ttl\n\
+     \  ./shacl_runner --conforms-only  Compare only sh:conforms (slice-1 floor)\n\
+     \  ./shacl_runner --list           List discovered test entries (no execution)\n\
+     \  ./shacl_runner -v|--verbose     Show skip reasons + report diffs on FAIL\n\
+     \  ./shacl_runner --help           Show this help\n\
+     \n\
+     Default mode canonicalizes the expected and actual validation-report\n\
+     graphs (RDF.Canonical) and compares them per the suite's own \"full\n\
+     compliance\" isomorphism rule; --conforms-only reverts to comparing\n\
+     only the sh:conforms boolean. See formal/fstar/SHACL.Validation.fst\n\
+     sections 11/13 for constraint coverage and sh:sparql dispatch scope.\n"
+
+let () =
+  let args = Array.to_list Sys.argv |> List.tl in
+  let verbose = ref false in
+  let list_only = ref false in
+  let conforms_only = ref false in
+  let path = ref None in
+  let rec loop = function
+    | [] -> ()
+    | ("-v" | "--verbose") :: rest -> verbose := true; loop rest
+    | ("--help" | "-h") :: _ -> print_help (); exit 0
+    | "--list" :: rest -> list_only := true; loop rest
+    | "--conforms-only" :: rest -> conforms_only := true; loop rest
+    | p :: rest when !path = None -> path := Some p; loop rest
+    | _ ->
+      Printf.eprintf "shacl_runner: unexpected arguments; try --help\n";
+      exit 2
+  in
+  loop args;
+  let manifest = match !path with Some p -> p | None -> default_manifest () in
+  run_manifest ~verbose:!verbose ~list_only:!list_only ~conforms_only:!conforms_only manifest

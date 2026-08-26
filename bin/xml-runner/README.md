@@ -1,0 +1,288 @@
+# bin/xml-runner — W3C XML Conformance Test Suite runner
+
+Assesses `formal/fstar/Parser.XML.fst` (generic XML → AST parser),
+`formal/fstar/XML.Wellformedness.fst`, and `formal/fstar/XML.Namespaces.fst`
+(Namespaces-in-XML layer, added 2026-07-05 wave 2) against the real
+W3C `xmlconf` corpus, vendored at `third_party/testing/xml/xmlconf/`
+(see that directory's `README.md` for provenance). Owner directive
+2026-07-05: "bring in XML test suite to assess our basic XML
+implementation," followed same-day by "Xml '84 fails cluster clean' —
+fix all pls." — the fixes for all 84 wave-1 fails are described below
+in "Wave 1 → wave 2".
+
+This supersedes the bigger from-scratch rewrite sketched in
+[`docs/designissues/2026-05-07-xml-fstar-phase0-audit.md`](../../docs/designissues/2026-05-07-xml-fstar-phase0-audit.md)
+(`XML.Core.fst` + `Parser.XMLDoc.fst`) — that plan was never built.
+`Parser.XML.fst` is the real, currently-extracted generic XML parser
+(it already underlies `Parser.RDFXML`, `Parser.RIFXML`, and
+`Parser.SRX`), so it is what gets assessed — and, as of wave 2, fixed
+— here.
+
+## Build
+
+`./build-ocaml.sh compile` builds it (added 2026-07-30 for issue #330).
+Until then this binary was committed under iron rule #9 but produced
+only by the hand-run scratch recipe below, so nothing in the main build
+refreshed it and `BUILD_STATUS=OK` said nothing about whether it matched
+its source — the same shape as the `factoidal-dump-nq` drift #330
+records. It now has a stanza in `build-ocaml.sh`'s consumer-runner
+block, an entry in `NATIVE_TARGETS` (so a change to
+`bin/xml-runner/xml_runner.ml` can no longer stale-skip the rebuild) and
+one in `NATIVE_SOURCES`.
+
+The scratch recipe below still works and is still the fast way to
+iterate on the runner alone (a full `compile` rebuilds every native
+binary). It is a `mktemp` scratch compile, same isolation pattern as
+`bin/rif-runner`/`bin/vc-runner`, so it does not poison
+`formal/fstar/ocaml-output/`'s `.cmi`/`.cmx` for a concurrent
+`build-ocaml.sh` run. The dependency closure is small — just the
+parser combinator base and the three modules under test, no RDF/OWL/
+SPARQL modules needed. **Copy the result into `bin/<platform>/` only
+if you are not about to run a full `compile`**, which produces the same
+binary through the checked path:
+
+```bash
+eval $(opam env --switch=fstar)
+SCRATCH=$(mktemp -d)
+cp formal/fstar/ocaml-output/Parser_FastString.ml \
+   formal/fstar/ocaml-output/Parser_Combinators.ml \
+   formal/fstar/ocaml-output/Parser_XML.ml \
+   formal/fstar/ocaml-output/XML_Wellformedness.ml \
+   formal/fstar/ocaml-output/XML_Namespaces.ml \
+   bin/xml-runner/xml_runner.ml "$SCRATCH"/
+cd "$SCRATCH"
+ocamlfind ocamlopt -package fstar.lib,zarith -linkpkg -w -8-14-26 \
+  Parser_FastString.ml Parser_Combinators.ml Parser_XML.ml XML_Wellformedness.ml XML_Namespaces.ml \
+  xml_runner.ml -o xml_runner
+cp xml_runner <repo>/bin/linux-x86_64/xml_runner
+```
+
+`Parser_XML.ml`/`XML_Wellformedness.ml`/`XML_Namespaces.ml` are
+extracted and committed in `ocaml-output/` — this runner does **not**
+re-extract; `Parser.XML.fst` and the new
+`XML.Namespaces.fst` are wired into `build-ocaml.sh`'s three module
+lists (extract loop, `COMMON_MODULES`, `FSTAR_MODULES`) alongside
+`XML.Wellformedness.fst` so a future full `build-ocaml.sh extract`
+picks both up normally.
+
+## Run
+
+```bash
+./bin/linux-x86_64/xml_runner                    # default xmlconf dir (repo-root relative)
+./bin/linux-x86_64/xml_runner <xmlconf-dir>       # explicit dir
+./bin/linux-x86_64/xml_runner -v                  # print every FAIL as it runs
+```
+
+## What it does (I/O glue only — no XML logic here, rule #11)
+
+1. Dogfoods `Parser_XML.parse_xml_document` on the master manifest
+   `xmlconf.xml` itself. This **always returns `None`**:
+   `Parser.XML.fst` has no `<!DOCTYPE ...>` production at all (its
+   `skip_misc` only skips whitespace/comments), and `xmlconf.xml`
+   opens with exactly such a DOCTYPE (declaring one entity per
+   sub-manifest file). The runner reports this honestly, then falls
+   back to a targeted textual scan for `<!ENTITY name SYSTEM "path">`
+   declarations — file-path discovery, not an XML/DTD parser.
+2. Each of the 21 discovered **leaf** manifest files parses cleanly
+   via the real extracted parser (none carry a DOCTYPE) — except
+   three (`sun/sun-valid.xml`, `sun/sun-invalid.xml`,
+   `sun/sun-not-wf.xml`) which are bare, unwrapped sibling `<TEST>`
+   lists with no single root element at all (only well-formed in the
+   entity-inclusion context they were written for — confirmed
+   independently: Python's `xml.etree.ElementTree` also rejects them
+   standalone). `Parser.XML.fst` has no "reject trailing content
+   after the root" check, so it silently parses only the *first*
+   `<TEST>` and stops, which would silently drop 27/73/55 tests from
+   those three files — a real bug caught while building this runner.
+   Fix: every leaf manifest's post-prolog body is wrapped in a
+   synthetic `<TESTCASES>...</TESTCASES>` before the dogfood parse
+   (harmless for files that already have their own TESTCASES root,
+   since TESTCASES-in-TESTCASES nests fine and the walker already
+   recurses). This wrapping is manifest bookkeeping only — the actual
+   conformance test **input** documents are always parsed raw.
+3. Every `<TEST>` element is walked out of the parsed AST via
+   `Parser_XML.element_tag`/`element_attrs`/`element_children`/
+   `find_attr`/`text_content` (genuinely dogfooded, not regexed).
+4. Each test's input file is read and classified — see "Scoring
+   semantics" in `xml_runner.ml`'s header comment for the full
+   pass/fail/skip decision tree (mirrors the owner's spec verbatim,
+   citing `testcases.dtd`'s own stated exemptions for non-validating,
+   non-external-entity-reading processors).
+5. `XML_Wellformedness.is_valid_ncname` is called informationally
+   only, on every accepted document's element tags — its NCName
+   production explicitly excludes `:` from Name-start/continue
+   characters (an RDF/XML-domain rule), so applying it as a generic
+   XML well-formedness gate would wrongly reject plain XML 1.0
+   documents that legally use `:` in Names outside a
+   Namespaces-aware reading (several `xmltest/` cases do this on
+   purpose). This finding — that the wellformedness module doesn't
+   generically apply to plain XML conformance — is one of this
+   assessment's results, not a runner bug.
+
+## Score (2026-07-30, EDITION applicability gate)
+
+**1447 pass, 0 fail, 1138 skip (of 2585 discovered `<TEST>` entries), of
+which 313 are NOT-APPLICABLE.**
+
+`testcases.dtd`'s `EDITION` attribute lists the XML 1.0 editions a
+fixture applies to. Editions 1-4 and edition 5 differ on the `Name`
+productions: the 5th edition (2008) replaced the enumerated
+`Letter`/`CombiningChar`/`Extender` tables of Appendix B with the
+`NameStartChar`/`NameChar` ranges XML 1.1 uses. `Parser.XML.fst`
+implements the 5th-edition production, so a fixture whose `EDITION`
+list excludes 5 asserts a rule this parser deliberately does not
+impose. Owner decision 2026-07-30: score those NOT-APPLICABLE, labelled
+`not-applicable: EDITION <list>, parser targets XML 1.0 5th ed` — not a
+bare skip, which a dashboard reader takes for missing capability. Same
+vocabulary and reporting shape as `bin/owl-runner`'s
+`SKIP/semantics-rdf-based-only` and the JSON-LD runners' `specVersion`
+exclusions. The gate runs ahead of every other rule and for every
+`TYPE`: applicability is prior to capability.
+
+Not-applicable counts stay inside the skip total, so the denominator,
+the dashboard rows and `generate-report.sh`'s score-line regexes do not
+move; they get their own column in each bucket table, their own
+honest-breakdown line, and an additive clause on the tally line.
+
+Composition of the 313, against the run immediately before the gate
+(1456 pass, 0 fail, 1129 skip):
+
+| Was | Count | Note |
+|---|---|---|
+| skip "out-of-profile: … editions 1 2 3 4" | 302 | the narrower, not-wf-branch-only version of this check |
+| **PASS** | **9** | the real change: see below |
+| skip "no DTD validation (by design)" | 1 | one `TYPE=error` fixture |
+| skip `declared encoding "iso-8859-1" not decoded` | 1 | |
+
+Fail stays **0** on both sides. The nine ex-passes are
+`ibm-not-wf-P89-ibm89n06..n12` (`SECTIONS B.`, the Appendix-B
+`Extender` production) and `not-wf-sa-140`/`141` (a `CombiningChar`
+and `#x0E5C` beginning a name). Every one of those codepoints is a
+legal `NameStartChar`/`NameChar` under the 5th edition, so the
+documents are well-formed under the spec this parser targets and our
+rejection of them was not a conformance win — seven of them also carry
+a second top-level element the fixture's own comment flags as
+unintended, so the rejection was not even attributable to the tested
+construct. They were passing for the wrong reason, exactly like the
+~302 that #325's UTF-8 fix exposed.
+
+Deleting the check outright (rather than gating on `EDITION`) would
+turn `rmt-016` and `rmt-019` into FAILs — the parser correctly accepts
+two names that are legal in the 5th edition and illegal in the 4th.
+`FACTOIDAL_XML_EDITION_CENSUS=1` prints, per gated fixture, the verdict
+the engine-facing classifier would have produced; that is how the table
+above was measured.
+
+### Previous headline (2026-07-08, Stage-A DTD support: DOCTYPE internal subset + general entities)
+
+**1414 real pass, 0 fail, 1171 skip (of 2585 discovered `<TEST>` entries).**
+
+`Parser.XML.fst` now parses a `<!DOCTYPE name [ internal subset ]>`,
+collects general `<!ENTITY name "value">` declarations, and expands
+`&name;` references (predefined + declared, with char-reference
+resolution inside replacement text and a visited-set + depth guard for
+WFC "No Recursion"). This is a **non-validating (well-formedness) slice**:
+DTD *validity* (content models, `<!ATTLIST>` enforcement, ID/IDREF),
+external-subset loading, and full parameter-entity semantics are still
+out of scope (Stage B / later — see
+`docs/designissues/2026-07-08-xml-dtd-support.md`).
+
+The immediately-prior honest headline was **244 real pass**, of which
+the ~1166 DOCTYPE-bearing `not-wf` rejections were vacuous (rejected
+only because there was no DOCTYPE production at all). Stage A retires the
+vacuous class: those rejections are now genuine well-formedness
+rejections, splitting into real PASSes (violation in the element body /
+entity layer, which the parser detects) and honest SKIPs (violation in
+the DTD internal subset, which this non-validating parser
+parses-but-does-not-validate). **Fail stays 0** — no path accepts a
+genuinely not-well-formed document.
+
+Per TYPE bucket:
+- `valid` (labelled "wf-accept" — a clean parse only exercises
+  well-formedness, not DTD validity): **398 pass, 0 fail, 414 skip (of
+  812)**. Documents with an internal-subset DOCTYPE (general entities /
+  `<!ELEMENT>`/`<!ATTLIST>`/`<!NOTATION>` shapes) now parse to a real
+  wf-accept PASS. The 414 skips are Stage-A boundaries: a rejection is a
+  `Skip` (markup-bearing entity replacement, an external subset we do not
+  load, a DTD-internal construct beyond the WF slice), plus the UTF-16 /
+  unsupported-declared-encoding skips — never a FAIL for a DOCTYPE doc.
+- `invalid`/`error`: **0/0, 242 + 33 = 275 skip**, always
+  `Skip "no DTD validation (by design)"`.
+- `not-wf`: **1016 real pass, 0 fail, 482 skip (of 1498)**. Of the
+  skips, 332 are accepted DOCTYPE documents whose violation lies in the
+  DTD internal subset (parsed-but-not-validated — the Stage-A scope
+  limit); 37 are out-of-profile (not-wf only under XML 1.1 / Namespaces,
+  which the parser accepts as well-formed under its XML 1.0
+  non-namespace profile); the rest are the `ENTITIES != "none"`
+  external-entity exemption (`testcases.dtd`) and encoding skips.
+
+Vacuous DOCTYPE-forced skips: **0** (the class is retired). The runner's
+`PassVacuous` constructor is kept only so the tally / side-check
+machinery type-checks; `classify` never produces it now.
+
+## Wave 1 → wave 2: all 84 fails fixed, cluster by cluster
+
+Owner directive 2026-07-05: "Xml '84 fails cluster clean' — fix all
+pls." All eight clusters from wave 1's assessment below are now
+fixed, entirely in `formal/fstar/Parser.XML.fst` plus a new
+`formal/fstar/XML.Namespaces.fst` module (namespace cluster only);
+`bin/xml-runner/xml_runner.ml` gained I/O-glue-only plumbing to call
+the new namespace checker for the two namespace-testing collections
+and to detect the document's declared XML version. No OCaml parsing
+logic was added (rule #11/#15).
+
+| Construct | Count | Fix (all in `Parser.XML.fst` unless noted) |
+|---|---|---|
+| Non-character codepoints accepted | 19 | New `is_valid_xml_char` (XML `Char` production) plus `is_valid_decoded_char`, which additionally rejects `fs_cp_at`'s "not valid UTF-8 here" `(0xFFFD, 1)` sentinel — needed because a technically-well-shaped-but-illegal 3-/4-byte sequence (an encoded surrogate, an out-of-range codepoint) decodes to that same sentinel, which is itself a legal `Char`. Applied at text content, comments, CDATA, attribute values, PI bodies, and `parse_reference`'s char-ref resolution. Byte-stepping validators (comment/CDATA/PI) skip re-checking UTF-8 continuation bytes (already validated at their lead byte) via `is_utf8_continuation_byte`. |
+| XML declaration grammar | 18 | `parse_xml_declaration` rewritten as a strict, ordered, hand-rolled grammar (`VersionInfo EncodingDecl? SDDecl? S? '?>'`) instead of reusing the generic, unordered, duplicate-tolerant `parse_attributes`. New `is_version_num`/`is_enc_name`/`is_sd_value` value lexicons. `parse_xml_document` no longer skips leading whitespace before attempting the declaration (it must be the document's literal first token). |
+| Namespace-spec violations | 17 | New module `formal/fstar/XML.Namespaces.fst`: QName colon-syntax check, a threaded `ns_scope` (prefix → uri, with `None` for an explicit unbind), reserved-prefix/reserved-URI rules (`xml`, `xmlns`), version-gated empty-value unbind (1.0 forbids prefixed unbind, 1.1 allows it), and post-expansion attribute-uniqueness. Invoked by `xml_runner.ml` only for the `eduni/namespaces/{1.0,1.1}` leaf manifests — Parser.XML's core parse path is untouched, so plain XML 1.0 documents using `:` outside a Namespaces reading (several `xmltest/` cases do this on purpose) are unaffected. |
+| Epilog/trailing content accepted | 11 | New `skip_epilog_misc` (Misc = S \| Comment \| non-reserved-target PI) after the root element; `parse_xml_document` now requires the epilog scan to reach end-of-input, or rejects. |
+| Comment `--`/trailing `-` accepted | 5 | `parse_xml_comment` now rejects if the body contains `--` anywhere or ends in `-` (`bytes_have_double_dash` / `ends_with_dash`). |
+| `]]>` bare in content accepted | 4 | `parse_text_content` now rejects a chunk containing the literal `]]>` sequence (`bytes_have_cdata_close`), checked on the raw pre-decode bytes (correct here: every failing case embeds the literal 3-byte sequence directly). |
+| Attribute value/uniqueness violations accepted | 4 | `parse_attr_value_body` now excludes literal `<`; `parse_attributes` now rejects a repeated `attr_name` (`mem_attr_name`). |
+| PI target-name casing accepted | 3 | `parse_xml_pi` now parses the target `Name` and rejects the reserved, case-insensitive `xml` target (`is_xml_target_name_ci`) outside `parse_xml_declaration`'s own document-initial handling. |
+| 3 singletons | 3 | `o-p05fail5` (Extender `U+00B7` can't start a Name) got a dedicated codepoint check in `parse_xml_name`. `o-p18fail3` (nested CDATA) and `not-wf-sa-042` (invalid end-tag syntax) both fell out for free once the epilog and `]]>`-in-content fixes landed — no separate CDATA-nesting-depth logic was needed. |
+
+## Downstream floor verification (2026-07-05, scratch build — no committed binary other than `xml_runner` itself changed)
+
+`Parser.XML.fst` is consumed by `Parser.RDFXML.fst`, `Parser.RIFXML.fst`,
+and `Parser.SRX.fst`, so every fix above was re-verified against the
+full RDF/SPARQL/RIF suites via a scratch-built `w3c_runner`/`rif_runner`
+(same `COMMON_MODULES` list as `build-ocaml.sh`'s `compile` step, run
+in a `mktemp -d` scratch dir — `bin/linux-x86_64/w3c_runner` and
+`bin/linux-x86_64/rif_runner` were never overwritten):
+
+- RDF 1.1 suite: 1031 pass, 0 fail, 0 skip, 0 unsupported (hard floor, held).
+- SPARQL 1.1 suite: 631 pass, 0 fail, 0 skip, 0 unsupported (hard floor, held).
+- RIF Core corpus: 34 pass, 4 fail, 12 skip (out of 50) — unchanged
+  from the pre-existing documented score (the 4 fails are pre-existing
+  known gaps in `bin/rif-runner/README.md`, not regressions).
+
+## Known imprecision in this harness (disclosed, not fixed)
+
+The encoding-skip heuristic (`encoding_skip_reason` in
+`xml_runner.ml`) treats "declared `encoding=` value is outside
+{utf-8, ascii, us-ascii}" as "SKIP — can't decode these bytes." For a
+handful of `not-wf` tests (`sun/not-wf/encoding04.xml`
+`ibm/not-wf/P81/ibm81n05..09.xml`) the document's actual bytes ARE
+plain ASCII and the test's real point is that the encoding-name
+*token itself* contains illegal characters (`utf:8`, `UTF~8`, …) —
+conflating "unsupported byte encoding" with "syntactically invalid
+encoding name" converts a handful of testable not-wf cases into
+over-conservative skips. Two of the closely related cases
+(`sun/not-wf/encoding01.xml`'s leading-space and jclark's
+`not-wf-sa-101`) DID make it through to a real, correctly-diagnosed
+FAIL, because `String.trim`-ing the declared value before the
+supported-encodings check happened to preserve testability for that
+specific sub-case. Not fixed here (assessment task); a fix would
+separate "BOM/declared encoding requires a real decoder we don't
+have" from "the encoding NAME's own character content is
+syntactically invalid," parsing the latter with the real engine
+either way.
+
+## Cross-references
+
+- Test corpus + provenance: `third_party/testing/xml/README.md`
+- `formal/fstar/Parser.XML.fst`, `formal/fstar/XML.Wellformedness.fst`
+- Pattern reference: `bin/rif-runner/README.md`, `bin/vc-runner/vc_runner.ml`
+- `skills/test-suites/SKILL.md` — suite table entry
