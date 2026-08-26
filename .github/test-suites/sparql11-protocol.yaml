@@ -1,0 +1,41 @@
+name: SPARQL 1.1 Protocol
+spec: https://www.w3.org/TR/sparql11-protocol/
+runner: bin/linux-x86_64/w3c_runner
+runner_args:
+  - protocol
+  - http-rdf-update
+log_path: formal/fstar/ocaml-output/sparql_results.log
+result_path: docs/test-results/by-suite/sparql11-protocol.json
+domain: SPARQL.PROTOCOL
+foundational: false
+
+triggers:
+  paths:
+    # Core protocol module.
+    - formal/fstar/SPARQL.Protocol.fst
+    # HTTP layer.
+    - formal/fstar/SPARQL.HTTP.fst
+    - formal/fstar/SPARQL.HTTP.Admin.fst
+    - formal/fstar/SPARQL.HTTP.BackendInfo.fst
+    - formal/fstar/SPARQL.HTTP.QueriesIndex.fst
+    - formal/fstar/SPARQL.HTTP.Response.fst
+    - formal/fstar/SPARQL.HTTP.StaticFiles.fst
+    - formal/fstar/SPARQL.GraphStore.fst
+    # SPARQL Algebra is needed (Protocol dispatches into Query/Update).
+    - formal/fstar/SPARQL11.Algebra.fst
+    - formal/fstar/SPARQL11.Parser.fst
+    - formal/fstar/SPARQL11.Store.fst
+    # JSON-Escape framing.
+    - formal/fstar/SPARQL.JSON.Escape.fst
+    # Consumer-side HTTP stacks.
+    - bin/factoidal-http/**
+    - bin/factoidal-serve/**
+    - bin/w3c-runner/**
+
+  excludes: []
+
+# What's left, in plain language (source: docs/claude-rules/w3c-completeness-ledger.md,
+# SPARQL 1.1 row, 2026-07-10).
+remaining:
+  - "wire-level replay: the 53 W3C Protocol + Graph Store tests pass by dispatching each test's HTTP request through the verified protocol modules in-process; replaying the same suite against a live factoidal-http socket (which already serves query/update and, with --rw plus a delta log, Graph Store writes) needs a small harness and is not yet automated"
+  - "Graph Store writes over HTTP require the explicit --rw + --delta-log durable mode; the read-only default answers PUT/DELETE with 405 by design — document-and-test coverage for both modes belongs in the wire harness above"

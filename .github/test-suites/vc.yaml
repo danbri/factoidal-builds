@@ -1,0 +1,73 @@
+name: Verifiable Credentials Data Model 2.0 (structural, Stage 1)
+spec: https://www.w3.org/TR/vc-data-model-2.0/
+runner: bin/linux-x86_64/vc_runner
+runner_args: []
+manifest: third_party/testing/vc/tests/input
+log_path: formal/fstar/ocaml-output/vc_results.log
+result_path: docs/test-results/by-suite/vc.json
+domain: VC
+foundational: false
+
+# Stage 1 of the VC program
+# (docs/designissues/2026-07-05-vc-program-plan.md). VC is a SECURING
+# problem (canonicalize -> hash -> sign -> attach a `proof` block), not
+# a construction/validation problem — the closest precedent is RDFC-1.0
+# plus JSON-LD's toRdf pipeline, not SHACL/ShEx. The one new ingredient,
+# public-key cryptography (Ed25519/ECDSA), is explicitly OUT of scope
+# for this stage and this suite: no hand-rolled signature/hash/curve
+# code exists anywhere in this program (see the plan's "Crypto" section
+# — HACL* is the sanctioned future vendor, Stage 3+).
+#
+# This suite has no offline manifest in the upstream sense: the vendored
+# w3c/vc-data-model-2.0-test-suite's own test files (tests/*.js) drive a
+# live HTTP issue/verify endpoint via TestEndpoints, which this project
+# does not stand up (Stage 9, indefinite). What IS reused: every test
+# file's `tests/input/*.json` fixture — 120 files, each named with an
+# explicit "-ok"/"-fail" filename suffix encoding its expected structural
+# verdict. bin/vc-runner/vc_runner.ml walks that directory directly (the
+# "manifest" field above names the fixture directory, not a manifest
+# file — there is none), classifies each fixture by its filename suffix,
+# and scores the F*-extracted VC_Credential.vc_check_from_string result
+# against it. Of the 6 fixtures with neither suffix: the 3
+# "-fail-or-inject" are scored expect-FAIL (a validator that never
+# injects must reject), and the 3 unsuffixed
+# "presentation-self-asserted-vc-*" are WITHDRAWN-UPSTREAM (removed as
+# unsound in w3c/vc-data-model-2.0-test-suite@52b25a8, 2025-02-09) and
+# excluded from the scorable denominator — a withdrawn test is nobody's
+# work to do, so it is not a skip (owner directive 2026-07-10).
+#
+# Stage 1 scope (see formal/fstar/VC.Credential.fst's header comment
+# for the full rule set and what's deferred): @context fixed-sentinel
+# check (base VC 2.0 context IRI must be present and FIRST), type
+# base-membership check (VerifiableCredential/VerifiablePresentation),
+# credentialSubject non-emptiness (credential-shaped documents), and
+# recursive type/credentialSubject checks over a presentation's embedded
+# verifiableCredential array (including the EnvelopedVerifiableCredential
+# exemption). Deferred to Stage 2: issuer presence/shape, validFrom/
+# validUntil ordering, credentialStatus/credentialSchema/termsOfUse/
+# evidence/refreshService inner-shape checks, top-level id
+# cardinality/format, holder shape, and context-driven type
+# redefinition (needs real JSON-LD term resolution this stage does not
+# implement — those fixtures are a documented, known Stage 1 miss, not
+# a bug).
+
+triggers:
+  paths:
+    # Structural decoder + checks.
+    - formal/fstar/VC.Credential.fst
+    # Fixtures are plain JSON, decoded via the shared RFC 8259 parser.
+    - formal/fstar/Parser.JSON.fst
+    # The runner.
+    - bin/vc-runner/**
+    # Vendored w3c/vc-data-model-2.0-test-suite (tests/input/*.json
+    # fixtures; the mocha harness itself is not run).
+    - third_party/testing/vc/**
+
+  excludes: []
+
+# What's left, in plain language (source: docs/claude-rules/w3c-completeness-ledger.md,
+# VC 2.0 + Data Integrity row, 2026-07-10).
+remaining:
+  - "context-driven type redefinition is not checked — it needs real JSON-LD term resolution this stage does not implement"
+  - "full W3C VC Data Integrity conformance against the official corpus is now measured (task #88, 2026-07-10): eddsa-rdfc-2022 create+verify scores 26 pass, 5 fail (out of 31) via a new HTTP shim (bin/vc-api-shim) — see .github/test-suites/vc-di-eddsa.yaml and docs/designissues/2026-07-10-canivc-community-compat.md. Not yet measured: inside the browser/JS bundle specifically (the shim runs under Node only), and eddsa-jcs-2022 (JCS canonicalization is a different transform path, not implemented)"
+  - "the VC Data Model 2.0 suite's own issuer/verifier HTTP tests (distinct from this suite's structural-fixture check) now also run against the shim: 22 pass, 37 fail (out of 59), see .github/test-suites/vc20-api.yaml — the shim has no structural validator of its own, so almost every failure is a missing-rejection-of-malformed-input test"
