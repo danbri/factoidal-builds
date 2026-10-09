@@ -11,7 +11,8 @@ set -euo pipefail
 CORE_URL="https://github.com/${CORE_REPO:-danbri/factoidal-core}"
 REF="${INPUT_REF:-}"
 if [ -z "$REF" ]; then
-  if git ls-remote --exit-code --heads "$CORE_URL" main >/dev/null 2>&1; then
+  # Exact match: `git ls-remote URL main` also matches refs/heads/claude/main.
+  if git ls-remote "$CORE_URL" refs/heads/main | grep -q 'refs/heads/main$'; then
     REF=main
   else
     REF=claude/core-split
@@ -20,7 +21,8 @@ fi
 if [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then
   SHA="$REF"
 else
-  SHA="$(git ls-remote "$CORE_URL" "refs/heads/$REF" "refs/tags/$REF" | awk 'NR==1{print $1}')"
+  SHA="$(git ls-remote "$CORE_URL" "refs/heads/$REF" "refs/tags/$REF" \
+         | awk -v h="refs/heads/$REF" -v t="refs/tags/$REF" '$2==h||$2==t{print $1; exit}')"
 fi
 [ -n "$SHA" ] || { echo "::error::cannot resolve $REF in $CORE_URL"; exit 1; }
 SHORT="${SHA:0:12}"
