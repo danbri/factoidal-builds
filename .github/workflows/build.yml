@@ -281,9 +281,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.opam
-          key: opam-fstar-${{ runner.os }}-v3
+          key: opam-fstar-2025.12.15-${{ runner.os }}-v4
           restore-keys: |
-            opam-fstar-${{ runner.os }}-
+            opam-fstar-2025.12.15-${{ runner.os }}-
 
       - name: Cache F* .checked files
         uses: actions/cache@v4
@@ -316,6 +316,10 @@ jobs:
 
       - name: Setup opam + F*
         shell: bash
+        env:
+          # macOS: let opam install the Homebrew packages F* depends on
+          # (python@3.9 on macos-14) instead of stopping at a prompt.
+          OPAMCONFIRMLEVEL: unsafe-yes
         run: |
           if [ ! -d ~/.opam ]; then
             opam init -y --disable-sandboxing
@@ -323,7 +327,10 @@ jobs:
           fi
           eval $(opam env --switch=fstar)
           opam pin add z3 4.13.3 -y --no-action
-          opam install -y fstar z3.4.13.3 zarith sha digestif uucp
+          opam pin add fstar 2025.12.15 -y --no-action
+          # F* is pinned: core's .checked cache, the toolchain-cache branch and
+          # the extraction drift check all assume this version.
+          opam install -y fstar.2025.12.15 z3.4.13.3 zarith sha digestif uucp
           echo "OPAMSWITCH=fstar" >> "$GITHUB_ENV"
 
       - name: Extract + compile
