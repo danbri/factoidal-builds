@@ -1,0 +1,37 @@
+# fly.toml app configuration file generated for factoidal on 2026-04-27T19:17:07Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'factoidal'
+primary_region = 'lhr'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  CORS = '*'
+  DATA_COTTAS = '/data/ukparliament/v1/data.cottas'
+  HOST = '0.0.0.0'
+  MAX_ROWS = '50000'
+  PORT = '8080'
+  QUERY_TIMEOUT = '30'
+  READ_ONLY = '1'
+  WEB_DEMO = 'ukparliament'
+
+[[mounts]]
+  source = 'factoidal_data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+[[vm]]
+  memory = '2048mb'
+  cpu_kind = 'shared'
+  cpus = 1

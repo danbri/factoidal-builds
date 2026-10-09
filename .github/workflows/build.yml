@@ -365,6 +365,10 @@ jobs:
           ./build-ocaml.sh wasm
           ./build-ocaml.sh npm
 
+      - name: KaRaMeL C delta-log demo (Linux)
+        if: runner.os == 'Linux'
+        run: builds/scripts/build-deltalog-demo.sh core builds
+
       - name: W3C suites + dashboard (Linux)
         if: runner.os == 'Linux'
         working-directory: core/formal/fstar
@@ -389,7 +393,12 @@ jobs:
           set -euo pipefail
           eval $(opam env --switch=fstar)
           mkdir -p "$RUNNER_TEMP/out/meta"
-          builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-native" bin/${{ matrix.platform }}
+          if [ "${{ runner.os }}" = Linux ]; then
+            builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-native" \
+              bin/${{ matrix.platform }} formal/fstar/c-output/deltalog/demo/delta_log_demo
+          else
+            builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-native" bin/${{ matrix.platform }}
+          fi
           if [ "${{ runner.os }}" = Linux ]; then
             builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-web" \
               docs/fstar-extracted docs/test-results docs/npm/factoidal npm/factoidal
