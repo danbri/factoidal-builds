@@ -1,0 +1,421 @@
+name: Build Factoidal from factoidal-core
+
+# Builds one danbri/factoidal-core commit and publishes its artifacts as
+# releases of this repository, one per artifact set:
+#
+#   build-<12 hex>-linux-x86_64   bin/linux-x86_64/  F* CLI + runners, Lean CLI
+#   build-<12 hex>-darwin-arm64   bin/darwin-arm64/  same, macOS arm64
+#   build-<12 hex>-web            npm/ + docs/       F* JS/wasm bundles, Lean wasm,
+#                                                    generated F* dashboard
+#
+# Each release carries <set>.tar.gz and build-info.json (source commit,
+# toolchains, sha256 of every file). core's tools/fetch-builds.sh installs
+# them. A set is published only when every job that contributes to it
+# passed its gates; this repository's git history only gains the
+# latest/<set>.json pointer.
+#
+# Gates per job (a failing gate means no artifact upload, so no release):
+#   lean       full `lake build` (library, proofs, #guards, executables),
+#              HACL* extern probe, native + CLI smoke scripts, and on Linux
+#              the Lean conformance scoreboard when core carries it.
+#   lean-wasm  Wasm/build-wasm.sh (Emscripten 6.0.8, cached work dir from
+#              the toolchain-cache branch) and the npm Lean-engine tests.
+#   fstar      extract + compile; the re-extracted .ml must equal core's
+#              committed .ml (else the binary would not be built from the
+#              committed source); Linux also builds JS + wasm and runs
+#              `build-ocaml.sh test`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core branch, tag or 40-hex commit (empty: main, else claude/core-split)'
+        required: false
+        default: ''
+      force:
+        description: 'Rebuild even when releases for this commit exist'
+        type: boolean
+        default: false
+  schedule:
+    # Poll core four times a day; a commit that already has releases is skipped.
+    - cron: '23 1,7,13,19 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build.yml'
+      - 'scripts/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-factoidal
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.r.outputs.ref }}
+      sha: ${{ steps.r.outputs.sha }}
+      short: ${{ steps.r.outputs.short }}
+      proceed: ${{ steps.r.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_REF: ${{ inputs.core_ref }}
+          FORCE: ${{ inputs.force }}
+          EVENT: ${{ github.event_name }}
+        run: scripts/resolve-core.sh
+
+  lean:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+          - os: macos-14
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+          submodules: ${{ matrix.platform == 'linux-x86_64' && 'recursive' || 'false' }}
+
+      - name: Install elan (toolchain from core's lean-toolchain)
+        run: |
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Cache .lake
+        uses: actions/cache@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-${{ matrix.platform }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**') }}
+          restore-keys: |
+            lake-${{ matrix.platform }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+
+      - name: lake build (library, proofs, #guards, every executable)
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          set -o pipefail
+          lake build 2>&1 | tee "$RUNNER_TEMP/lake-build.log"
+
+      - name: HACL* extern probe (Ed25519 vectors + sha256 differential)
+        working-directory: core/formal/lean4
+        run: lake exe l4vc-probe
+
+      - name: Dispatch ABI and CLI smoke
+        working-directory: core/formal/lean4
+        run: |
+          Wasm/native-smoke.sh
+          Wasm/cli-smoke.sh
+
+      - name: Lean conformance scoreboard
+        if: matrix.platform == 'linux-x86_64'
+        working-directory: core
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/out/meta"
+          if [ -x tools/lean-scoreboard.sh ]; then
+            tools/lean-scoreboard.sh --json "$RUNNER_TEMP/out/meta/lean-scoreboard.json" \
+              2>&1 | tee "$RUNNER_TEMP/out/meta/lean-scoreboard.txt"
+          else
+            echo "core commit carries no tools/lean-scoreboard.sh" | tee "$RUNNER_TEMP/out/meta/lean-scoreboard.txt"
+          fi
+
+      - name: Stage native Lean executables
+        shell: bash
+        run: |
+          set -euo pipefail
+          D="$RUNNER_TEMP/out/stage/bin/${{ matrix.platform }}"
+          mkdir -p "$D" "$RUNNER_TEMP/out/meta"
+          for b in l4factoidal l4w3c l4wasm-cli; do
+            cp core/formal/lean4/.lake/build/bin/$b "$D/"
+          done
+          python3 - "$RUNNER_TEMP/out/meta/toolchains-lean-${{ matrix.platform }}.json" <<'PY'
+          import json, subprocess, sys
+          v = subprocess.run(['lean', '--version'], cwd='core/formal/lean4',
+                             capture_output=True, text=True).stdout.strip()
+          json.dump({'lean': v}, open(sys.argv[1], 'w'))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lean-${{ matrix.platform }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+
+  lean-wasm:
+    needs: [resolve, lean]
+    if: needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+
+      - name: Install elan
+        run: |
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Restore .lake from the lean job
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+
+      - name: Cache emsdk
+        id: emsdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/emsdk
+          key: emsdk-6.0.8-${{ runner.os }}
+
+      - name: Install Emscripten 6.0.8 and libuv headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update && sudo apt-get install -y libuv1-dev
+          if [ ! -x ~/emsdk/emsdk ]; then
+            git clone --depth 1 https://github.com/emscripten-core/emsdk ~/emsdk
+          fi
+          ~/emsdk/emsdk install 6.0.8
+          ~/emsdk/emsdk activate 6.0.8
+
+      - name: Restore the Lean wasm work dir from toolchain-cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          T=$(sed 's|.*:||' core/formal/lean4/lean-toolchain | tr -d ' \n')
+          git -C builds fetch -q origin toolchain-cache
+          if git -C builds cat-file -e "origin/toolchain-cache:l4wasm-work-cache-$T.tar.gz" 2>/dev/null; then
+            git -C builds show "origin/toolchain-cache:l4wasm-work-cache-$T.tar.gz" | tar -xz -C "$HOME"
+            echo "restored l4wasm work dir for $T"
+          else
+            echo "no l4wasm work cache for $T; cold build"
+          fi
+
+      - name: Build the Lean wasm module
+        shell: bash
+        run: |
+          set -euo pipefail
+          source ~/emsdk/emsdk_env.sh
+          mkdir -p core/npm/factoidal/l4-assets core/docs/npm/lean
+          L4_WASM_WORK="$HOME/l4wasm-work" core/formal/lean4/Wasm/build-wasm.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: npm Lean-engine tests against the rebuilt module
+        working-directory: core/npm/factoidal
+        run: node --test test/l4-core.test.js
+
+      - name: Stage Lean web products
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/out/meta"
+          builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage" \
+            docs/web/hub/assets/l4 npm/factoidal/l4-assets npm/factoidal-lean docs/npm/lean
+          echo '{"emscripten": "6.0.8"}' > "$RUNNER_TEMP/out/meta/toolchains-lean-wasm.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lean-wasm
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+
+  fstar:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+          - os: macos-14
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+          submodules: ${{ matrix.platform == 'linux-x86_64' && 'recursive' || 'false' }}
+
+      - name: Cache opam
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-fstar-${{ runner.os }}-v3
+          restore-keys: |
+            opam-fstar-${{ runner.os }}-
+
+      - name: Cache F* .checked files
+        uses: actions/cache@v4
+        with:
+          path: core/formal/fstar/*.fst.checked
+          key: fstar-checked-${{ runner.os }}-${{ hashFiles('core/formal/fstar/*.fst', 'core/formal/fstar/*.fsti') }}
+          restore-keys: |
+            fstar-checked-${{ runner.os }}-
+
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opam libgmp-dev pkg-config
+
+      - name: Install system deps (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          for pkg in opam gmp pkg-config zstd; do
+            brew list --formula "$pkg" >/dev/null 2>&1 || brew install "$pkg"
+          done
+
+      - name: Install binaryen (wasm-merge)
+        if: runner.os == 'Linux'
+        run: |
+          BINARYEN_VERSION=version_129
+          curl -sL "https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz" \
+            | sudo tar -xz -C /usr/local --strip-components=1
+          wasm-merge --version
+
+      - name: Setup opam + F*
+        shell: bash
+        run: |
+          if [ ! -d ~/.opam ]; then
+            opam init -y --disable-sandboxing
+            opam switch create fstar ocaml-base-compiler.4.14.1
+          fi
+          eval $(opam env --switch=fstar)
+          opam pin add z3 4.13.3 -y --no-action
+          opam install -y fstar z3.4.13.3 zarith sha digestif uucp
+          echo "OPAMSWITCH=fstar" >> "$GITHUB_ENV"
+
+      - name: Extract + compile
+        working-directory: core/formal/fstar
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval $(opam env --switch=fstar)
+          ./build-ocaml.sh extract
+          ./build-ocaml.sh compile
+
+      - name: The binary is built from core's committed .ml
+        working-directory: core
+        shell: bash
+        run: |
+          DRIFT=$(git status --porcelain -- 'formal/fstar/ocaml-output/*.ml')
+          if [ -n "$DRIFT" ]; then
+            echo "::error::re-extraction differs from the committed .ml (core's check-extraction gate must be green first):"
+            echo "$DRIFT"
+            git diff --stat -- 'formal/fstar/ocaml-output/*.ml'
+            exit 1
+          fi
+
+      - name: JS + wasm bundles, npm copies (Linux)
+        if: runner.os == 'Linux'
+        working-directory: core/formal/fstar
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval $(opam env --switch=fstar)
+          ./build-ocaml.sh js
+          ./build-ocaml.sh wasm
+          ./build-ocaml.sh npm
+
+      - name: W3C suites + dashboard (Linux)
+        if: runner.os == 'Linux'
+        working-directory: core/formal/fstar
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval $(opam env --switch=fstar)
+          ./build-ocaml.sh test
+
+      - name: Native round trip (macOS)
+        if: runner.os == 'macOS'
+        working-directory: core/formal/fstar/ocaml-output
+        shell: bash
+        run: |
+          set -o pipefail
+          ../../../bin/darwin-arm64/w3c_runner bind 2>&1 | tee "$RUNNER_TEMP/macos_smoke.log"
+          grep -q 'bind' "$RUNNER_TEMP/macos_smoke.log"
+
+      - name: Stage F* products
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval $(opam env --switch=fstar)
+          mkdir -p "$RUNNER_TEMP/out/meta"
+          builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-native" bin/${{ matrix.platform }}
+          if [ "${{ runner.os }}" = Linux ]; then
+            builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-web" \
+              docs/fstar-extracted docs/test-results docs/npm/factoidal npm/factoidal
+          fi
+          python3 - "$RUNNER_TEMP/out/meta/toolchains-fstar-${{ matrix.platform }}.json" <<'PY'
+          import json, subprocess, sys
+          def out(*a):
+              r = subprocess.run(list(a), capture_output=True, text=True)
+              return (r.stdout or r.stderr).strip().splitlines()[0] if (r.stdout or r.stderr) else ''
+          json.dump({'fstar': out('fstar.exe', '--version'), 'ocaml': out('ocamlfind', 'ocamlopt', '-version'),
+                     'opam': out('opam', '--version'), 'z3': out('z3', '--version')}, open(sys.argv[1], 'w'))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fstar-${{ matrix.platform }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+
+  publish:
+    needs: [resolve, lean, lean-wasm, fstar]
+    if: always() && needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+      - name: Assemble, pack and publish each complete set
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          REF: ${{ needs.resolve.outputs.ref }}
+        run: scripts/publish.sh
