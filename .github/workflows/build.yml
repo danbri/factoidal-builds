@@ -237,14 +237,6 @@ jobs:
           mkdir -p core/npm/factoidal/l4-assets core/docs/npm/lean
           L4_WASM_WORK="$HOME/l4wasm-work" core/formal/lean4/Wasm/build-wasm.sh
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: npm Lean-engine tests against the rebuilt module
-        working-directory: core/npm/factoidal
-        run: node --test test/l4-core.test.js
-
       - name: Stage Lean web products
         shell: bash
         run: |
@@ -432,8 +424,58 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  web-gates:
+    # The npm package's own suite runs both engines (F* JS/wasm bundles and
+    # the Lean wasm module) and compares them, so it needs the outputs of
+    # the fstar Linux job and of lean-wasm installed into one core checkout.
+    # The web release is published only when this job passes.
+    needs: [resolve, lean-wasm, fstar]
+    if: needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: fstar-linux-x86_64
+          path: art/fstar
+      - uses: actions/download-artifact@v4
+        with:
+          name: lean-wasm
+          path: art/lean-wasm
+      - name: Install both engines' web products into the checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          for d in art/fstar/stage-web art/lean-wasm/stage; do
+            ( cd "$d" && tar -cf - . ) | ( cd core && tar -xpf - )
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: npm package suite (both engines)
+        working-directory: core/npm/factoidal
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test test/ 2>&1 | tee "$RUNNER_TEMP/npm-suite.txt"
+      - name: Mark web gates passed
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          cp "$RUNNER_TEMP/npm-suite.txt" "$RUNNER_TEMP/out/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-gates
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+
   publish:
-    needs: [resolve, lean, lean-wasm, fstar]
+    needs: [resolve, lean, lean-wasm, fstar, web-gates]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:

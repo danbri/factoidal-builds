@@ -18,6 +18,12 @@ declare -A NEEDS=(
   [darwin-arm64]="fstar-darwin-arm64/stage-native lean-darwin-arm64/stage"
   [web]="fstar-linux-x86_64/stage-web lean-wasm/stage"
 )
+# Artifacts that must exist (a gate job passed) but carry no content.
+declare -A REQUIRES=(
+  [linux-x86_64]=""
+  [darwin-arm64]=""
+  [web]="web-gates"
+)
 declare -A TOOLS=(
   [linux-x86_64]="fstar-linux-x86_64/meta/toolchains-fstar-linux-x86_64.json lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json"
   [darwin-arm64]="fstar-darwin-arm64/meta/toolchains-fstar-darwin-arm64.json lean-darwin-arm64/meta/toolchains-lean-darwin-arm64.json"
@@ -28,7 +34,7 @@ PUBLISHED=()
 SKIPPED=()
 for SET in linux-x86_64 darwin-arm64 web; do
   MISSING=""
-  for d in ${NEEDS[$SET]}; do
+  for d in ${NEEDS[$SET]} ${REQUIRES[$SET]}; do
     [ -d "$ART/$d" ] || MISSING="$MISSING $d"
   done
   if [ -n "$MISSING" ]; then
