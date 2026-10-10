@@ -303,9 +303,12 @@ jobs:
         run: |
           # bash: build-ocaml.sh uses bash 4 features (declare -A); macOS
           # ships bash 3.2, and Homebrew's bash comes first on PATH.
-          for pkg in opam gmp pkg-config zstd bash; do
+          # coreutils: build-ocaml.sh calls sha256sum and nproc (GNU names);
+          # its gnubin directory goes first on PATH for every later step.
+          for pkg in opam gmp pkg-config zstd bash coreutils; do
             brew list --formula "$pkg" >/dev/null 2>&1 || brew install "$pkg"
           done
+          echo "$(brew --prefix coreutils)/libexec/gnubin" >> "$GITHUB_PATH"
 
       - name: Install binaryen (wasm-merge)
         if: runner.os == 'Linux'
