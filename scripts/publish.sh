@@ -78,7 +78,7 @@ for SET in linux-x86_64 darwin-arm64 web; do
     --title "$SET build of factoidal-core ${SHORT}" \
     --notes "Built from https://github.com/${CORE_REPO:-danbri/factoidal-core}/commit/$SHA ($REF) by $RUN_URL. Install with tools/fetch-builds.sh in a factoidal-core checkout; build-info.json lists the sha256 of every file." \
     "$OUT/$SET/$SET.tar.gz" "$OUT/$SET/build-info.json" "${EXTRA[@]}"
-  python3 - "$SET" "$TAG" "$SHA" "$REF" "$RUN_URL" > "latest/$SET.json" <<'PY'
+  python3 - "$SET" "$TAG" "$SHA" "$REF" "$RUN_URL" > "$OUT/latest-$SET.json" <<'PY'
 import datetime, json, sys
 s, tag, sha, ref, run = sys.argv[1:6]
 print(json.dumps({'set': s, 'tag': tag, 'source_commit': sha, 'source_ref': ref,
@@ -91,16 +91,28 @@ done
 
 echo "published: ${PUBLISHED[*]:-none}; skipped: ${SKIPPED[*]:-none}"
 if [ ${#PUBLISHED[@]} -gt 0 ]; then
+  # The pointers are derived data, so each attempt writes them on top of the
+  # CURRENT main in a separate worktree and pushes; nothing is rebased. (Run
+  # 25 failed here: its checkout predated another run's pointer commit and
+  # the rebase conflicted on latest/*.json, although every release was
+  # published.) The job's own checkout is not reset: bash is still reading
+  # this script from it.
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  git add latest/*.json
-  if ! git diff --cached --quiet; then
-    git commit -q -m "latest: ${PUBLISHED[*]} -> factoidal-core $SHORT"
-    for i in 1 2 3 4; do
-      git push -q origin HEAD:main && break
-      sleep $((i * 4)); git pull -q --rebase origin main
-    done
-  fi
+  PUSHED=false
+  for i in 1 2 3 4; do
+    PTR="$OUT/pointer-$i"
+    git fetch -q origin main
+    git worktree add -q --detach "$PTR" origin/main
+    mkdir -p "$PTR/latest"
+    for s in "${PUBLISHED[@]}"; do cp "$OUT/latest-$s.json" "$PTR/latest/$s.json"; done
+    git -C "$PTR" add latest/*.json
+    if git -C "$PTR" diff --cached --quiet; then PUSHED=true; break; fi
+    git -C "$PTR" commit -q -m "latest: ${PUBLISHED[*]} -> factoidal-core $SHORT"
+    if git -C "$PTR" push -q origin HEAD:main; then PUSHED=true; break; fi
+    sleep $((i * 4))
+  done
+  $PUSHED || { echo "::error::could not push the latest/*.json pointers after 4 attempts"; exit 1; }
 fi
 # The run is red when any set was skipped, so a failed gate is visible.
 [ ${#SKIPPED[@]} -eq 0 ]
