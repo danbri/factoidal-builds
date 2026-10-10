@@ -353,8 +353,8 @@ jobs:
         run: |
           set -euo pipefail
           eval $(opam env --switch=fstar)
-          ./build-ocaml.sh extract
-          ./build-ocaml.sh compile
+          bash ./build-ocaml.sh extract
+          bash ./build-ocaml.sh compile
 
       - name: The binary is built from core's committed .ml
         working-directory: core
@@ -375,9 +375,9 @@ jobs:
         run: |
           set -euo pipefail
           eval $(opam env --switch=fstar)
-          ./build-ocaml.sh js
-          ./build-ocaml.sh wasm
-          ./build-ocaml.sh npm
+          bash ./build-ocaml.sh js
+          bash ./build-ocaml.sh wasm
+          bash ./build-ocaml.sh npm
 
       - name: KaRaMeL C delta-log demo (Linux)
         if: runner.os == 'Linux'
@@ -390,7 +390,7 @@ jobs:
         run: |
           set -euo pipefail
           eval $(opam env --switch=fstar)
-          ./build-ocaml.sh test
+          bash ./build-ocaml.sh test
 
       - name: Native round trip (macOS)
         if: runner.os == 'macOS'
