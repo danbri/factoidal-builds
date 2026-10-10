@@ -369,6 +369,9 @@ jobs:
           eval $(opam env --switch=fstar)
           bash ./build-ocaml.sh js
           bash ./build-ocaml.sh wasm
+          # factoidal.wasm.js and the two npm-entry wasm mirrors: the npm
+          # step refuses to copy when package.json lists them and they are absent.
+          bash ./build-ocaml.sh wasm-factoidal
           bash ./build-ocaml.sh npm
 
       - name: KaRaMeL C delta-log demo (Linux)
