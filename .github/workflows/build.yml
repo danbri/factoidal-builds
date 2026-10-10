@@ -137,6 +137,12 @@ jobs:
       - name: Dispatch ABI and CLI smoke
         working-directory: core/formal/lean4
         run: |
+          # The macOS checkout skips submodules; cli-smoke runs W3C SPARQL 1.1
+          # query files through `l4factoidal query` (issue 741 cases) and counts
+          # missing files as a failure (run 34 failed: cli-smoke 62 pass, 1 fail).
+          if [ ! -r ../../third_party/testing/w3c/sparql/sparql11/manifest-all.ttl ]; then
+            git -C ../.. submodule update --init --depth 1 third_party/testing/w3c
+          fi
           Wasm/native-smoke.sh
           Wasm/cli-smoke.sh
 
