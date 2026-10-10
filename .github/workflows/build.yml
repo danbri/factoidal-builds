@@ -430,6 +430,9 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          # The macOS checkout skips submodules; the round trip needs the
+          # W3C manifests (run 12 failed: no manifest.ttl in bind).
+          git -C ../../.. submodule update --init --depth 1 third_party/testing/w3c
           ../../../bin/darwin-arm64/w3c_runner bind 2>&1 | tee "$RUNNER_TEMP/macos_smoke.log"
           grep -q 'bind' "$RUNNER_TEMP/macos_smoke.log"
 
