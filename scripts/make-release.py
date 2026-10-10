@@ -32,6 +32,24 @@ def sha256(path):
             h.update(b)
     return h.hexdigest()
 
+# actions/upload-artifact does not keep file modes, so every staged file
+# arrives here as 0644. The mode is decided from the content instead: a file
+# that starts with an executable signature is 0755, every other file 0644.
+# The rule is deterministic, so the tarball digest stays a function of the
+# file bytes. (Run 16, 2026-10-10: the first linux-x86_64 release installed
+# its binaries without the execute bit.)
+EXEC_MAGIC = (
+    b'\x7fELF',              # ELF (Linux)
+    b'\xcf\xfa\xed\xfe',  # Mach-O 64-bit, little-endian (macOS arm64/x86_64)
+    b'\xfe\xed\xfa\xcf',  # Mach-O 64-bit, big-endian
+    b'\xca\xfe\xba\xbe',  # Mach-O universal
+    b'#!',                    # script with an interpreter line
+)
+def exec_mode(path):
+    with open(path, 'rb') as f:
+        head = f.read(4)
+    return 0o755 if any(head.startswith(m) for m in EXEC_MAGIC) else 0o644
+
 files = {}
 paths = []
 for dp, dns, fns in os.walk(stage):
@@ -41,9 +59,11 @@ for dp, dns, fns in os.walk(stage):
         if os.path.islink(p):
             continue
         rel = os.path.relpath(p, stage)
+        mode = exec_mode(p)
+        os.chmod(p, mode)
         st = os.stat(p)
         files[rel] = {'sha256': sha256(p), 'size': st.st_size,
-                      'mode': oct(st.st_mode & 0o777)[2:]}
+                      'mode': oct(mode)[2:]}
         paths.append(rel)
 if not paths:
     sys.exit(f'make-release: {stage} is empty')
@@ -55,6 +75,7 @@ raw = io.BytesIO()
 with tarfile.open(fileobj=raw, mode='w', format=tarfile.PAX_FORMAT) as tf:
     for rel in paths:
         ti = tf.gettarinfo(os.path.join(stage, rel), arcname=rel)
+        ti.mode = int(files[rel]['mode'], 8)
         ti.uid = ti.gid = 0
         ti.uname = ti.gname = ''
         ti.mtime = 0
