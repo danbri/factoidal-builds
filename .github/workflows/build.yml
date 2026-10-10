@@ -134,8 +134,15 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/out/meta"
           if [ -x tools/lean-scoreboard.sh ]; then
+            # The scoreboard exits non-zero while any suite has a failing
+            # case. That is a measurement, published in the web release; it
+            # does not stop the build. The exit code is recorded with it.
+            SB_RC=0
             tools/lean-scoreboard.sh --json "$RUNNER_TEMP/out/meta/lean-scoreboard.json" \
-              2>&1 | tee "$RUNNER_TEMP/out/meta/lean-scoreboard.txt"
+              > "$RUNNER_TEMP/out/meta/lean-scoreboard.txt" 2>&1 || SB_RC=$?
+            cat "$RUNNER_TEMP/out/meta/lean-scoreboard.txt"
+            echo "scoreboard exit code: $SB_RC" | tee -a "$RUNNER_TEMP/out/meta/lean-scoreboard.txt"
+            [ -s "$RUNNER_TEMP/out/meta/lean-scoreboard.json" ] || { echo "::error::scoreboard wrote no JSON"; exit 1; }
           else
             echo "core commit carries no tools/lean-scoreboard.sh" | tee "$RUNNER_TEMP/out/meta/lean-scoreboard.txt"
           fi
@@ -302,7 +309,9 @@ jobs:
       - name: Install system deps (macOS)
         if: runner.os == 'macOS'
         run: |
-          for pkg in opam gmp pkg-config zstd; do
+          # bash: build-ocaml.sh uses bash 4 features (declare -A); macOS
+          # ships bash 3.2, and Homebrew's bash comes first on PATH.
+          for pkg in opam gmp pkg-config zstd bash; do
             brew list --formula "$pkg" >/dev/null 2>&1 || brew install "$pkg"
           done
 
@@ -330,7 +339,12 @@ jobs:
           opam pin add fstar 2025.12.15 -y --no-action
           # F* is pinned: core's .checked cache, the toolchain-cache branch and
           # the extraction drift check all assume this version.
-          opam install -y fstar.2025.12.15 z3.4.13.3 zarith sha digestif uucp
+          opam install -y fstar.2025.12.15 z3.4.13.3 zarith sha digestif uucp ocamlfind
+          if [ "$RUNNER_OS" = Linux ]; then
+            # JS and wasm bundles (build-ocaml.sh js / wasm): the same set as
+            # core's tools/install-toolchain-cache.sh.
+            opam install -y js_of_ocaml js_of_ocaml-compiler zarith_stubs_js wasm_of_ocaml-compiler
+          fi
           echo "OPAMSWITCH=fstar" >> "$GITHUB_ENV"
 
       - name: Extract + compile
