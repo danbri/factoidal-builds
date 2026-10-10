@@ -61,6 +61,10 @@ for SET in linux-x86_64 darwin-arm64 web; do
     cp "$ART/lean-linux-x86_64/meta/lean-scoreboard.txt" "$OUT/$SET/"
     EXTRA+=("$OUT/$SET/lean-scoreboard.txt")
   fi
+  if [ "$SET" = web ] && [ -f "$ART/web-gates/l4diff.txt" ]; then
+    cp "$ART/web-gates/l4diff.txt" "$OUT/$SET/"
+    EXTRA+=("$OUT/$SET/l4diff.txt")
+  fi
   if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
     echo "replacing existing release $TAG (forced rebuild)"
     gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
