@@ -125,7 +125,14 @@ jobs:
 
       - name: HACL* extern probe (Ed25519 vectors + sha256 differential)
         working-directory: core/formal/lean4
-        run: lake exe l4vc-probe
+        run: |
+          # The macOS checkout skips submodules; section 6 of the probe reads
+          # the VCDM 2.0 fixtures and counts a missing directory as a failure
+          # (run 19 failed: vc-credential-structural 0 pass, 1 fail).
+          if [ ! -d ../../third_party/testing/vc/tests/input ]; then
+            git -C ../.. submodule update --init --depth 1 third_party/testing/vc
+          fi
+          lake exe l4vc-probe
 
       - name: Dispatch ABI and CLI smoke
         working-directory: core/formal/lean4
