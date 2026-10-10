@@ -276,16 +276,20 @@ jobs:
           path: core
           submodules: ${{ matrix.platform == 'linux-x86_64' && 'recursive' || 'false' }}
 
-      - name: Cache opam
-        uses: actions/cache@v4
+      # restore + explicit save (below), so a run that fails after the
+      # toolchain install still keeps the ~20-minute opam/F* install.
+      - name: Restore opam
+        id: opam-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.opam
           key: opam-fstar-2025.12.15-${{ runner.os }}-v4
           restore-keys: |
             opam-fstar-2025.12.15-${{ runner.os }}-
 
-      - name: Cache F* .checked files
-        uses: actions/cache@v4
+      - name: Restore F* .checked files
+        id: checked-cache
+        uses: actions/cache/restore@v4
         with:
           path: core/formal/fstar/*.fst.checked
           key: fstar-checked-${{ runner.os }}-${{ hashFiles('core/formal/fstar/*.fst', 'core/formal/fstar/*.fsti') }}
@@ -342,6 +346,13 @@ jobs:
           fi
           echo "OPAMSWITCH=fstar" >> "$GITHUB_ENV"
 
+      - name: Save opam
+        if: steps.opam-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.opam
+          key: opam-fstar-2025.12.15-${{ runner.os }}-v4
+
       - name: Extract + compile
         working-directory: core/formal/fstar
         shell: bash
@@ -350,6 +361,15 @@ jobs:
           eval $(opam env --switch=fstar)
           bash ./build-ocaml.sh extract
           bash ./build-ocaml.sh compile
+
+      # .checked files are keyed by F* on their source digests, so a partial
+      # set saved from a failed extraction is still valid input next time.
+      - name: Save F* .checked files
+        if: always() && steps.checked-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: core/formal/fstar/*.fst.checked
+          key: fstar-checked-${{ runner.os }}-${{ hashFiles('core/formal/fstar/*.fst', 'core/formal/fstar/*.fsti') }}
 
       - name: The binary is built from core's committed .ml
         working-directory: core
