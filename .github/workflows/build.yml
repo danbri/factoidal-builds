@@ -47,6 +47,7 @@ on:
     paths:
       - '.github/workflows/build.yml'
       - 'scripts/**'
+      - 'requests/**'
 
 permissions:
   contents: write
@@ -74,6 +75,8 @@ jobs:
           INPUT_REF: ${{ inputs.core_ref }}
           FORCE: ${{ inputs.force }}
           EVENT: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
         run: scripts/resolve-core.sh
 
   lean:
