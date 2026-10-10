@@ -123,6 +123,19 @@ jobs:
           set -o pipefail
           lake build 2>&1 | tee "$RUNNER_TEMP/lake-build.log"
 
+      - name: Tail-recursion gate (danbri/factoidal issue 746)
+        if: matrix.platform == 'linux-x86_64'
+        working-directory: core
+        shell: bash
+        run: |
+          # The audit reads every generated .c file; a restored .lake cache can
+          # hold the IR of modules that no longer exist, so drop those first.
+          find formal/lean4/.lake/build/ir -name '*.c' | while read -r c; do
+            rel=${c#formal/lean4/.lake/build/ir/}
+            [ -f "formal/lean4/${rel%.c}.lean" ] || rm -f "$c"
+          done
+          python3 tools/lean-tail-recursion-audit.py --gate
+
       - name: HACL* extern probe (Ed25519 vectors + sha256 differential)
         working-directory: core/formal/lean4
         run: |
