@@ -65,6 +65,10 @@ for SET in linux-x86_64 darwin-arm64 web; do
     cp "$ART/web-gates/engine-compare.txt" "$OUT/$SET/"
     EXTRA+=("$OUT/$SET/engine-compare.txt")
   fi
+  if [ "$SET" = web ] && [ -f "$ART/web-gates/known-defects.txt" ]; then
+    cp "$ART/web-gates/known-defects.txt" "$OUT/$SET/"
+    EXTRA+=("$OUT/$SET/known-defects.txt")
+  fi
   if [ "$SET" = web ] && [ -f "$ART/web-gates/l4diff.txt" ]; then
     cp "$ART/web-gates/l4diff.txt" "$OUT/$SET/"
     EXTRA+=("$OUT/$SET/l4diff.txt")
