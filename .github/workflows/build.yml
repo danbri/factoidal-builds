@@ -588,8 +588,10 @@ jobs:
           for b in factoidal owl_runner; do
             cp ../art/fstar/stage-native/bin/linux-x86_64/$b bin/linux-x86_64/$b
           done
-          cp ../art/lean-linux/stage/bin/linux-x86_64/l4factoidal bin/linux-x86_64/l4factoidal
-          chmod +x bin/linux-x86_64/factoidal bin/linux-x86_64/owl_runner bin/linux-x86_64/l4factoidal
+          for b in l4factoidal l4w3c; do
+            cp ../art/lean-linux/stage/bin/linux-x86_64/$b bin/linux-x86_64/$b
+          done
+          chmod +x bin/linux-x86_64/factoidal bin/linux-x86_64/owl_runner bin/linux-x86_64/l4factoidal bin/linux-x86_64/l4w3c
           tests/known-defects/run.sh 2>&1 | tee "$RUNNER_TEMP/out/known-defects.txt"
       - name: Mark web gates passed
         run: |
