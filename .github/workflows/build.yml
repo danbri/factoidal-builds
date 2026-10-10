@@ -320,9 +320,20 @@ jobs:
       - name: Install binaryen (wasm-merge)
         if: runner.os == 'Linux'
         run: |
+          set -euo pipefail
           BINARYEN_VERSION=version_129
-          curl -sL "https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz" \
-            | sudo tar -xz -C /usr/local --strip-components=1
+          URL="https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz"
+          # Run 12 failed on a cut-off download (gzip: unexpected end of
+          # file): fetch to a file, test the archive, retry.
+          for i in 1 2 3 4; do
+            if curl -fsSL --retry 3 --retry-all-errors -o "$RUNNER_TEMP/binaryen.tar.gz" "$URL" \
+               && gzip -t "$RUNNER_TEMP/binaryen.tar.gz"; then
+              break
+            fi
+            [ "$i" -eq 4 ] && { echo "::error::binaryen download failed 4 times"; exit 1; }
+            sleep $((i * i * 4))
+          done
+          sudo tar -xzf "$RUNNER_TEMP/binaryen.tar.gz" -C /usr/local --strip-components=1
           wasm-merge --version
 
       - name: Setup opam + F*
