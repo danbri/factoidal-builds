@@ -509,7 +509,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node --test test/ 2>&1 | tee "$RUNNER_TEMP/npm-suite.txt"
+          # The package's own test script (node --test with its globs; Node 22
+          # does not take a bare directory). esbuild is its one dev dependency
+          # (the bundler test); --ignore-scripts keeps the install inert.
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test 2>&1 | tee "$RUNNER_TEMP/npm-suite.txt"
       - name: Mark web gates passed
         run: |
           mkdir -p "$RUNNER_TEMP/out"
