@@ -37,8 +37,11 @@ on:
         type: boolean
         default: false
   schedule:
-    # Poll core four times a day; a commit that already has releases is skipped.
-    - cron: '23 1,7,13,19 * * *'
+    # Poll core every hour; a commit that already has releases is skipped
+    # (the resolve job ends the run in seconds). A push to core cannot start
+    # this workflow without a cross-repository token, so the poll is how core
+    # changes reach a build.
+    - cron: '23 * * * *'
   push:
     branches: [main]
     paths:
