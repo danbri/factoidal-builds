@@ -11,7 +11,7 @@ here (`docs/designissues/2026-10-09-core-builds-split.md` in
 |---|---|
 | `w3c-tests.yml` | `.github/workflows/build.yml` (build, gates, releases) |
 | `beyond-w3c.yml`, `conformance-rerun.yml`, `dashboard-refresh.yml` | the `build-ocaml.sh test` step and the Lean scoreboard in `build.yml`; the dashboard now ships in the `web` release |
-| `npm-publish.yml`, `npm-publish-lean.yml` | port needs an owner step on npmjs.com: the trusted publisher must name repository `factoidal-builds` and this workflow file |
+| `npm-publish.yml`, `npm-publish-lean.yml` | `npm-publish.yml` is ported as `.github/workflows/npm-publish.yml` (publishes from a `web` release); it needs the owner step on npmjs.com named there. `npm-publish-lean.yml` (`@factoidal/lean`, superseded) is not ported |
 | `deploy-pages.yml` | port needs a decision on where the site is served from (Pages of this repository, or of `danbri/factoidal`) |
 | `fly-deploy.yml` | port needs a `FLY_API_TOKEN` secret in this repository |
 | `ukparliament-bench.yml` (+ `ukparliament_bench_diff.py`) | port: run against a release instead of committed binaries |

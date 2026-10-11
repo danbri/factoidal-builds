@@ -1,0 +1,251 @@
+# Publish @factoidal/core to npmjs.com from a `web` release of this
+# repository, by TRUSTED PUBLISHING (OIDC). There is no npm token anywhere,
+# and none will work: the owner's npmjs.com account is security-key-only.
+#
+# https://docs.npmjs.com/trusted-publishers
+# Requirements met here: GitHub-hosted runner; `id-token: write`; npm CLI
+# >= 11.5.1 (Node 24 ships npm 11.x; a step fails loudly when npm is older,
+# so npm cannot fall back to token authentication); `--provenance`.
+#
+# ONE-TIME CHANGE ON NPMJS.COM (owner), before the first run:
+#   npmjs.com -> package @factoidal/core -> Settings -> Trusted Publisher
+#   -> GitHub Actions, with EXACTLY:
+#     Organization or user: danbri
+#     Repository:           factoidal-builds
+#     Workflow filename:    npm-publish.yml
+#     Environment name:     (leave blank)
+#     Allowed actions:      npm publish
+#   The fields are case-sensitive and npm checks them only at publish time,
+#   so an error shows as a failed publish step and nothing earlier.
+#   The current entry names repository `factoidal` (the old
+#   danbri/factoidal workflow). When the entry is changed to
+#   `factoidal-builds`, publishing from danbri/factoidal stops working.
+#
+# What is published: the npm/factoidal tree of ONE factoidal-core commit,
+# with the built files (Lean wasm engine under l4-assets/) from the `web`
+# release `build-<12 hex>-web` of that commit. That release exists only when
+# the `web-gates` job of its build run passed (scripts/publish.sh requires
+# the web-gates artifact); this workflow also reads the run's jobs and
+# refuses a release whose web-gates job did not succeed. web-gates runs the
+# package's own `npm test` on the same bytes; tools/fetch-builds.sh checks
+# every installed file against the release's build-info.json sha256.
+#
+# repository.url: npm rejects a provenance publish whose package.json
+# `repository.url` names a different GitHub repository from the one that
+# ran the workflow. core's package.json names danbri/factoidal. The pack
+# step therefore sets repository.url to this repository in the packed copy
+# only, and logs the change. The published package.json then differs from
+# the core commit in that one member.
+#
+# Run: Actions -> npm-publish -> Run workflow, or
+#   gh workflow run npm-publish.yml --repo danbri/factoidal-builds \
+#     -f core_ref=<40-hex or empty> -f dist_tag=next -f confirm=<version>
+name: npm-publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core commit (40 hex). Empty: the newest web release.'
+        required: false
+        default: ''
+      dist_tag:
+        description: 'npm dist-tag. Give "latest" only to make this the default install.'
+        required: true
+        default: 'next'
+      confirm:
+        description: 'The exact version being published (package.json "version", e.g. 0.9.0)'
+        required: true
+
+permissions:
+  id-token: write   # OIDC: required for trusted publishing and provenance
+  contents: read
+  actions: read     # read the build run's jobs (web-gates conclusion)
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  PKG: '@factoidal/core'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check inputs
+        env:
+          CORE_REF: ${{ inputs.core_ref }}
+          DIST_TAG: ${{ inputs.dist_tag }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          if [ -n "$CORE_REF" ] && ! [[ "$CORE_REF" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::core_ref must be empty or a 40-hex commit, got '$CORE_REF'"; exit 1
+          fi
+          # A dist-tag that parses as a version is refused by npm; keep tags simple.
+          if ! [[ "$DIST_TAG" =~ ^[a-z][a-z0-9-]*$ ]]; then
+            echo "::error::dist_tag must match ^[a-z][a-z0-9-]*\$, got '$DIST_TAG'"; exit 1
+          fi
+          if ! [[ "$CONFIRM" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::confirm must be the version string being published, got '$CONFIRM'"; exit 1
+          fi
+
+      - name: Resolve the web release and check its web-gates job
+        id: rel
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CORE_REF: ${{ inputs.core_ref }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, sys, urllib.request
+          repo = os.environ['GITHUB_REPOSITORY']; token = os.environ['GH_TOKEN']
+          want = os.environ['CORE_REF']
+          def api(path):
+              req = urllib.request.Request('https://api.github.com/' + path, headers={
+                  'Authorization': 'Bearer ' + token,
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(req) as r:
+                  return json.load(r)
+          def fail(msg):
+              print('::error::' + msg); sys.exit(1)
+          rels = []
+          for page in range(1, 11):
+              batch = api(f'repos/{repo}/releases?per_page=100&page={page}')
+              rels += batch
+              if len(batch) < 100: break
+          web = [r for r in rels if not r.get('draft')
+                 and re.fullmatch(r'build-[0-9a-f]{12}-web', r.get('tag_name', ''))]
+          if want:
+              web = [r for r in web if r['tag_name'] == f'build-{want[:12]}-web']
+              if not web: fail(f'no web release build-{want[:12]}-web in {repo}')
+          if not web: fail(f'no web release in {repo}')
+          rel = max(web, key=lambda r: r.get('published_at') or '')
+          tag = rel['tag_name']
+          asset = next((a for a in rel['assets'] if a['name'] == 'build-info.json'), None)
+          if asset is None: fail(f'{tag} has no build-info.json')
+          names = {a['name'] for a in rel['assets']}
+          if 'web.tar.gz' not in names: fail(f'{tag} has no web.tar.gz')
+          with urllib.request.urlopen(asset['browser_download_url']) as r:
+              info = json.load(r)
+          sha = info.get('source_commit', '')
+          if info.get('set') != 'web': fail(f'{tag}: build-info.json set is {info.get("set")!r}, not web')
+          if not re.fullmatch(r'[0-9a-f]{40}', sha): fail(f'{tag}: bad source_commit {sha!r}')
+          if want and sha != want: fail(f'{tag}: source_commit {sha} != core_ref {want}')
+          if info.get('source_repo', os.environ['CORE_REPO']) != os.environ['CORE_REPO']:
+              fail(f'{tag}: source_repo {info.get("source_repo")} is not {os.environ["CORE_REPO"]}')
+          # The release must come from a build.yml run of THIS repository
+          # whose web-gates job succeeded.
+          m = re.fullmatch(rf'https://github\.com/{re.escape(repo)}/actions/runs/(\d+)', info.get('run_url', ''))
+          if not m: fail(f'{tag}: run_url {info.get("run_url")!r} is not a run of {repo}')
+          jobs = api(f'repos/{repo}/actions/runs/{m.group(1)}/jobs?per_page=100&filter=latest')['jobs']
+          gates = [j for j in jobs if j['name'] == 'web-gates']
+          if not gates: fail(f'{tag}: run {m.group(1)} has no web-gates job')
+          if any(j.get('conclusion') != 'success' for j in gates):
+              fail(f'{tag}: web-gates conclusion {[j.get("conclusion") for j in gates]}, not success')
+          print(f'release {tag}: core {sha}, run {info["run_url"]}, web-gates success')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'tag={tag}\nsha={sha}\nrun_url={info["run_url"]}\n')
+          PY
+
+      - name: Check out factoidal-core at the release's commit
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ steps.rel.outputs.sha }}
+          path: core
+
+      - name: Install the web release (sha256 of every file checked)
+        working-directory: core
+        env:
+          SHA: ${{ steps.rel.outputs.sha }}
+        run: |
+          set -euo pipefail
+          bash tools/fetch-builds.sh --set web --commit "$SHA"
+          test "$(cat .factoidal-builds/web.tag)" = "${{ steps.rel.outputs.tag }}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check npm version (trusted publishing needs >= 11.5.1)
+        run: |
+          node --version
+          npm --version
+          npm --version | awk -F. '{ if ($1 < 11 || ($1 == 11 && $2 < 5) || ($1 == 11 && $2 == 5 && $3 < 1)) { print "npm too old for trusted publishing"; exit 1 } }'
+
+      - name: Check version against confirm and the registry
+        id: ver
+        working-directory: core/npm/factoidal
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          NAME=$(node -p 'require("./package.json").name')
+          V=$(node -p 'require("./package.json").version')
+          [ "$NAME" = "$PKG" ] || { echo "::error::package name is $NAME, not $PKG"; exit 1; }
+          if [ "$V" != "$CONFIRM" ]; then
+            echo "::error::package.json version is $V; confirm was '$CONFIRM'. Nothing published."; exit 1
+          fi
+          if npm view "$PKG@$V" version >/dev/null 2>&1; then
+            echo "::error::$PKG@$V is already on npmjs.com; bump the version in core first"; exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Set repository.url to this repository (provenance check)
+        working-directory: core/npm/factoidal
+        run: |
+          set -euo pipefail
+          echo "core package.json repository: $(node -p 'JSON.stringify(require("./package.json").repository)')"
+          npm pkg set "repository.url=git+https://github.com/${GITHUB_REPOSITORY}.git"
+          npm pkg delete repository.directory
+          echo "packed package.json repository: $(node -p 'JSON.stringify(require("./package.json").repository)')"
+
+      - name: Pack
+        id: pack
+        working-directory: core/npm/factoidal
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pack"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/pack" --json > "$RUNNER_TEMP/pack/pack.json"
+          TGZ="$RUNNER_TEMP/pack/$(node -p 'require(process.argv[1])[0].filename' "$RUNNER_TEMP/pack/pack.json")"
+          echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
+          sha256sum "$TGZ"
+
+      - name: Check tarball contents
+        env:
+          TGZ: ${{ steps.pack.outputs.tgz }}
+        run: |
+          set -euo pipefail
+          tar -tzf "$TGZ" | sort > "$RUNNER_TEMP/pack/files.txt"
+          echo "files: $(wc -l < "$RUNNER_TEMP/pack/files.txt")"
+          cat "$RUNNER_TEMP/pack/files.txt"
+          BAD=$(grep -Ei 'jsoo|ocaml|npm-entry|hacl-wasm' "$RUNNER_TEMP/pack/files.txt" || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::tarball contains F* artifacts:"; echo "$BAD"; exit 1
+          fi
+          for f in package/l4-assets/l4factoidal.wasm package/l4-assets/l4factoidal-core.wasm; do
+            grep -qx "$f" "$RUNNER_TEMP/pack/files.txt" || { echo "::error::tarball lacks $f"; exit 1; }
+          done
+
+      - name: Publish (OIDC; provenance)
+        env:
+          TGZ: ${{ steps.pack.outputs.tgz }}
+          DIST_TAG: ${{ inputs.dist_tag }}
+        run: |
+          set -euo pipefail
+          echo "publishing $PKG@${{ steps.ver.outputs.version }} from core ${{ steps.rel.outputs.sha }} (${{ steps.rel.outputs.tag }}) with dist-tag $DIST_TAG"
+          npm publish "$TGZ" --provenance --access public --tag "$DIST_TAG"
+
+      - name: Upload the tarball
+        if: always() && steps.pack.outputs.tgz != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/pack/
+          retention-days: 30

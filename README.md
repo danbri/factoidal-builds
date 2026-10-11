@@ -35,6 +35,33 @@ picks the newest release whose commit is in your history, checks the
 tarball digest and every file, and installs it; `tools/ensure-test-env.sh`
 calls it.
 
+## Publishing to npm
+
+`.github/workflows/npm-publish.yml` publishes `@factoidal/core` from a `web`
+release, by trusted publishing (OIDC, no token). Manual dispatch only:
+
+```bash
+gh workflow run npm-publish.yml --repo danbri/factoidal-builds \
+  -f core_ref=<40-hex core commit, or empty for the newest web release> \
+  -f dist_tag=next -f confirm=<version in npm/factoidal/package.json>
+```
+
+It refuses a release whose build run's `web-gates` job did not succeed,
+installs the release into a core checkout with `tools/fetch-builds.sh`
+(sha256 of every file checked), requires `confirm` to equal the package
+version and the version to be new on npmjs.com, sets `repository.url` to
+this repository in the packed copy (npm provenance requires it), packs, and
+refuses a tarball that holds an F\* bundle (`jsoo`, `ocaml`, `npm-entry`,
+`hacl-wasm`) or lacks `l4-assets/l4factoidal.wasm` and
+`l4-assets/l4factoidal-core.wasm`. The tarball is a workflow artifact. Use
+`dist_tag=latest` only to make the version the default install.
+
+One-time owner step on npmjs.com before the first run: package
+`@factoidal/core` → Settings → Trusted Publisher → GitHub Actions, with
+organization `danbri`, repository `factoidal-builds`, workflow filename
+`npm-publish.yml`, environment blank, allowed action `npm publish`. After
+this change, the old workflow in `danbri/factoidal` can no longer publish.
+
 ## Git history here
 
 `main` holds only the workflow, `scripts/`, `legacy-workflows/` (the eleven
