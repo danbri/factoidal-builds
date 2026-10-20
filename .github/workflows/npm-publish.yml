@@ -159,6 +159,13 @@ jobs:
           ref: ${{ steps.rel.outputs.sha }}
           path: core
 
+      # Before the install: tools/fetch-builds.sh runs node to stamp
+      # l4-assets/version.json from the release (core c0303937 and later).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
       - name: Install the web release (sha256 of every file checked)
         working-directory: core
         env:
@@ -167,11 +174,6 @@ jobs:
           set -euo pipefail
           bash tools/fetch-builds.sh --set web --commit "$SHA"
           test "$(cat .factoidal-builds/web.tag)" = "${{ steps.rel.outputs.tag }}"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Check npm version (trusted publishing needs >= 11.5.1)
         run: |
@@ -232,6 +234,31 @@ jobs:
           for f in package/l4-assets/l4factoidal.wasm package/l4-assets/l4factoidal-core.wasm; do
             grep -qx "$f" "$RUNNER_TEMP/pack/files.txt" || { echo "::error::tarball lacks $f"; exit 1; }
           done
+          # l4-assets/version.json must be the release stamp of the wasm files
+          # that are in THIS tarball (0.10.0 audit, finding 1: the package
+          # carried a version.json of a 2026-09-08 build).
+          X="$RUNNER_TEMP/pack/x"; rm -rf "$X"; mkdir -p "$X"
+          tar -xzf "$TGZ" -C "$X" package/l4-assets/version.json \
+            package/l4-assets/l4factoidal.wasm package/l4-assets/l4factoidal-core.wasm
+          python3 - "$X/package/l4-assets" "${{ steps.rel.outputs.sha }}" <<'PY'
+          import hashlib, json, os, sys
+          d, sha = sys.argv[1], sys.argv[2]
+          v = json.load(open(os.path.join(d, 'version.json')))
+          def fail(msg):
+              print('::error::' + msg); sys.exit(1)
+          if v.get('stamped') is not True:
+              fail('l4-assets/version.json is not stamped (tools/fetch-builds.sh --set web did not stamp it)')
+          for f, sk, bk in (('l4factoidal.wasm', 'wasmSha256', 'wasmBytes'),
+                            ('l4factoidal-core.wasm', 'coreWasmSha256', 'coreWasmBytes')):
+              b = open(os.path.join(d, f), 'rb').read()
+              h = hashlib.sha256(b).hexdigest()
+              if v.get(sk) != h or v.get(bk) != len(b):
+                  fail(f'version.json {sk}={v.get(sk)} {bk}={v.get(bk)}; packed {f} is {h} ({len(b)} bytes)')
+              print(f'{f}: {h} ({len(b)} bytes) matches version.json')
+          if v.get('gitSha') != sha:
+              fail(f'version.json gitSha {v.get("gitSha")} is not the release commit {sha}')
+          print(f'version.json: engine {v.get("engineVersion")}, built {v.get("builtAt")} from {v.get("gitSha")}')
+          PY
 
       - name: Publish (OIDC; provenance)
         env:
