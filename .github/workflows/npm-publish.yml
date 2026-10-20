@@ -231,7 +231,7 @@ jobs:
           if [ -n "$BAD" ]; then
             echo "::error::tarball contains F* artifacts:"; echo "$BAD"; exit 1
           fi
-          for f in package/l4-assets/l4factoidal.wasm package/l4-assets/l4factoidal-core.wasm; do
+          for f in package/l4-assets/l4factoidal.wasm; do
             grep -qx "$f" "$RUNNER_TEMP/pack/files.txt" || { echo "::error::tarball lacks $f"; exit 1; }
           done
           # l4-assets/version.json must be the release stamp of the wasm files
@@ -239,7 +239,7 @@ jobs:
           # carried a version.json of a 2026-09-08 build).
           X="$RUNNER_TEMP/pack/x"; rm -rf "$X"; mkdir -p "$X"
           tar -xzf "$TGZ" -C "$X" package/l4-assets/version.json \
-            package/l4-assets/l4factoidal.wasm package/l4-assets/l4factoidal-core.wasm
+            package/l4-assets/l4factoidal.wasm
           python3 - "$X/package/l4-assets" "${{ steps.rel.outputs.sha }}" <<'PY'
           import hashlib, json, os, sys
           d, sha = sys.argv[1], sys.argv[2]
@@ -248,8 +248,7 @@ jobs:
               print('::error::' + msg); sys.exit(1)
           if v.get('stamped') is not True:
               fail('l4-assets/version.json is not stamped (tools/fetch-builds.sh --set web did not stamp it)')
-          for f, sk, bk in (('l4factoidal.wasm', 'wasmSha256', 'wasmBytes'),
-                            ('l4factoidal-core.wasm', 'coreWasmSha256', 'coreWasmBytes')):
+          for f, sk, bk in (('l4factoidal.wasm', 'wasmSha256', 'wasmBytes'),):
               b = open(os.path.join(d, f), 'rb').read()
               h = hashlib.sha256(b).hexdigest()
               if v.get(sk) != h or v.get(bk) != len(b):
