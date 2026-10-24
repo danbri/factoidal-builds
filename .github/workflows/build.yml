@@ -136,6 +136,17 @@ jobs:
           done
           python3 tools/lean-tail-recursion-audit.py --gate
 
+      - name: FOUNDATION binding gates (danbri/factoidal issue 975)
+        if: matrix.platform == 'linux-x86_64'
+        working-directory: core
+        shell: bash
+        run: |
+          # The dataflow registry and its generated inventory, the FOUNDATION
+          # import gate (foundation/manifest.toml) and the entry-point gate
+          # (every npm export, wasm op and CLI command is bound to a registered
+          # stage, or is on the unbound list, which may only shrink).
+          bash tests/dataflow/run.sh
+
       - name: HACL* extern probe (Ed25519 vectors + sha256 differential)
         working-directory: core/formal/lean4
         run: |
