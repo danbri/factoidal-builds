@@ -23,7 +23,8 @@ name: Build Factoidal from factoidal-core
 #   fstar      extract + compile; the re-extracted .ml must equal core's
 #              committed .ml (else the binary would not be built from the
 #              committed source); Linux also builds JS + wasm and runs
-#              `build-ocaml.sh test`.
+#              `build-ocaml.sh test`. Two jobs: fstar (Linux) and
+#              fstar-macos; web-gates waits only for fstar.
 
 on:
   workflow_dispatch:
@@ -302,6 +303,10 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  # The F* build is two jobs with one step list (a YAML anchor), so that
+  # web-gates waits only for the Linux job, the one whose web products it
+  # tests. The macOS job (38 min in run 40132069195, against 26 min on
+  # Linux) is still needed by publish for the darwin-arm64 set.
   fstar:
     needs: resolve
     if: needs.resolve.outputs.proceed == 'true'
@@ -311,11 +316,9 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux-x86_64
-          - os: macos-14
-            platform: darwin-arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 300
-    steps:
+    steps: &fstar-steps
       - uses: actions/checkout@v4
         with:
           path: builds
@@ -514,6 +517,19 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  fstar-macos:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 300
+    steps: *fstar-steps
+
   web-gates:
     # The npm package's own suite runs both engines (F* JS/wasm bundles and
     # the Lean wasm module) and compares them, so it needs the outputs of
@@ -634,7 +650,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [resolve, lean, lean-wasm, fstar, web-gates]
+    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
