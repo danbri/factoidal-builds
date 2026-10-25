@@ -9,6 +9,19 @@
 # Env: SHA, SHORT, REF, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID.
 # Layout read: art/<artifact>/{stage,stage-native,stage-web,meta}/...
 set -euo pipefail
+
+# Only commits on factoidal-core main are published (owner, 2026-10-25:
+# "only main moves factoidal-builds, releases and npm"). A build of a PR head
+# runs every gate job and stops here: no release, no latest/*.json pointer.
+# The GitHub compare API gives "identical" or "behind" when SHA is main's head
+# or an ancestor of it.
+CORE="${CORE_REPO:-danbri/factoidal-core}"
+ON_MAIN=$(gh api "repos/$CORE/compare/main...$SHA" -q .status 2>/dev/null || echo unknown)
+case "$ON_MAIN" in
+  identical|behind) echo "core $SHA is on main ($ON_MAIN): publishing" ;;
+  *) echo "core $SHA is not on core main (compare status: $ON_MAIN): gates only, nothing published"; exit 0 ;;
+esac
+
 ART=art
 OUT=release-out
 mkdir -p "$OUT" latest
