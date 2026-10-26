@@ -48,18 +48,41 @@ fi
 [ -n "$SHA" ] || { echo "::error::cannot resolve $REF in $CORE_URL"; exit 1; }
 SHORT="${SHA:0:12}"
 
-# A commit is "already built" when its linux-x86_64 release exists.
+# A commit is "already built" only when EVERY set has a release
+# (danbri/factoidal issue 1038, P1). Before, the linux-x86_64 release alone
+# counted, so a commit whose web set failed (web-gates red) was never built
+# again: 25 of 102 built core commits had no web set on 2026-10-26.
+SETS="linux-x86_64 darwin-arm64 web"
+HAVE=""; MISSING=""; NEWEST=""
+for s in $SETS; do
+  AT="$(gh release view "build-$SHORT-$s" --repo "$GITHUB_REPOSITORY" \
+        --json publishedAt -q .publishedAt 2>/dev/null || true)"
+  if [ -n "$AT" ]; then
+    HAVE="$HAVE $s"
+    [[ "$AT" > "$NEWEST" ]] && NEWEST="$AT"
+  else
+    MISSING="$MISSING $s"
+  fi
+done
 EXISTS=false
-if gh release view "build-$SHORT-linux-x86_64" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-  EXISTS=true
+[ -z "$MISSING" ] && EXISTS=true
+# A scheduled run retries a partly built commit at most once per
+# RETRY_HOURS (default 24), counted from its newest set release (a retry
+# publishes the sets that pass again, so that time moves). A gate that
+# fails every time therefore costs one build a day, not one an hour.
+RETRY_DUE=true
+if [ -n "$HAVE" ] && [ -n "$MISSING" ] && [ -n "$NEWEST" ]; then
+  AGE_H=$(python3 -c 'import sys,datetime as d; t=d.datetime.strptime(sys.argv[1],"%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=d.timezone.utc); print(int((d.datetime.now(d.timezone.utc)-t).total_seconds()//3600))' "$NEWEST")
+  if [ "$AGE_H" -lt "${RETRY_HOURS:-24}" ]; then RETRY_DUE=false; fi
+  echo "::warning::core $SHORT is partly built: has${HAVE}; missing${MISSING}; newest set release ${AGE_H} h old (retry after ${RETRY_HOURS:-24} h: due=$RETRY_DUE)"
 fi
 PROCEED=true
 case "$EVENT" in
-  schedule) [ "$EXISTS" = true ] && PROCEED=false ;;
+  schedule) { [ "$EXISTS" = true ] || [ "$RETRY_DUE" = false ]; } && PROCEED=false ;;
   workflow_dispatch) [ "$EXISTS" = true ] && [ "${FORCE:-false}" != true ] && PROCEED=false ;;
   push) PROCEED=true ;;   # a change to this repository's build scripts
 esac
-echo "core $REF = $SHA (requested by requests/build.txt: $REQUESTED; releases exist: $EXISTS) -> proceed=$PROCEED"
+echo "core $REF = $SHA (requested by requests/build.txt: $REQUESTED; all sets released: $EXISTS; missing:${MISSING:- none}) -> proceed=$PROCEED"
 {
   echo "ref=$REF"; echo "sha=$SHA"; echo "short=$SHORT"; echo "proceed=$PROCEED"
 } >> "$GITHUB_OUTPUT"

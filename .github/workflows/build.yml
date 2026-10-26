@@ -574,6 +574,26 @@ jobs:
           # (the bundler test); --ignore-scripts keeps the install inert.
           npm ci --ignore-scripts --no-audit --no-fund
           npm test 2>&1 | tee "$RUNNER_TEMP/npm-suite.txt"
+      - name: The npm suite skipped no test
+        shell: bash
+        run: |
+          # A skipped test is not a pass (danbri/factoidal issue 1038, P3): a
+          # test that skips on a capability probe passes silently on a wasm
+          # that lacks the capability. node --test prints "# skipped N" (TAP,
+          # the default when stdout is not a terminal) or "ℹ skipped N" (spec).
+          set -euo pipefail
+          F="$RUNNER_TEMP/npm-suite.txt"
+          SKIP=$(grep -E '^(#|ℹ) (skip|skipped) [0-9]+$' "$F" | tail -n 1 | awk '{print $NF}' || true)
+          TODO=$(grep -E '^(#|ℹ) todo [0-9]+$' "$F" | tail -n 1 | awk '{print $NF}' || true)
+          if [ -z "$SKIP" ]; then
+            echo "::error::no skip count in the npm suite summary (format changed?)"; exit 1
+          fi
+          echo "npm suite: skipped $SKIP, todo ${TODO:-?}"
+          if [ "$SKIP" -ne 0 ]; then
+            echo "::error::the npm suite skipped $SKIP test(s); a skip is not a pass:"
+            grep -E '# SKIP|﹣' "$F" || true
+            exit 1
+          fi
       - name: Engine comparison, Lean npm package vs F* npm-entry bundle
         working-directory: core
         shell: bash
