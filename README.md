@@ -42,7 +42,7 @@ release, by trusted publishing (OIDC, no token). Manual dispatch only:
 
 ```bash
 gh workflow run npm-publish.yml --repo danbri/factoidal-builds \
-  -f core_ref=<40-hex core commit, or empty for the newest web release> \
+  -f core_ref=<40-hex core commit; required> \
   -f dist_tag=next -f confirm=<version in npm/factoidal/package.json>
 ```
 

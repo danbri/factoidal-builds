@@ -39,16 +39,15 @@
 #
 # Run: Actions -> npm-publish -> Run workflow, or
 #   gh workflow run npm-publish.yml --repo danbri/factoidal-builds \
-#     -f core_ref=<40-hex or empty> -f dist_tag=next -f confirm=<version>
+#     -f core_ref=<40-hex core commit> -f dist_tag=next -f confirm=<version>
 name: npm-publish
 
 on:
   workflow_dispatch:
     inputs:
       core_ref:
-        description: 'factoidal-core commit (40 hex). Empty: the newest web release.'
-        required: false
-        default: ''
+        description: 'factoidal-core commit (40 hex) whose web release is published. Required.'
+        required: true
       dist_tag:
         description: 'npm dist-tag. Give "latest" only to make this the default install.'
         required: true
@@ -82,8 +81,11 @@ jobs:
           CONFIRM: ${{ inputs.confirm }}
         run: |
           set -euo pipefail
-          if [ -n "$CORE_REF" ] && ! [[ "$CORE_REF" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::core_ref must be empty or a 40-hex commit, got '$CORE_REF'"; exit 1
+          # No default (danbri/factoidal issue 1038, P7): an empty core_ref
+          # used to take the newest web release, which need not be the
+          # commit whose package.json version was confirmed.
+          if ! [[ "$CORE_REF" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::core_ref must be a 40-hex factoidal-core commit, got '$CORE_REF'"; exit 1
           fi
           # A dist-tag that parses as a version is refused by npm; keep tags simple.
           if ! [[ "$DIST_TAG" =~ ^[a-z][a-z0-9-]*$ ]]; then
