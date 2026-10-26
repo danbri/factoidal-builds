@@ -55,7 +55,10 @@ gh workflow run npm-publish.yml --repo danbri/factoidal-builds \
 It refuses a release whose build run's `web-gates` job did not succeed,
 installs the release into a core checkout with `tools/fetch-builds.sh`
 (sha256 of every file checked), requires `confirm` to equal the package
-version and the version to be new on npmjs.com, sets `repository.url` to
+version and the version to be new on npmjs.com, runs core's
+`tools/npm-release-check.mjs` (the version agrees in `package.json`,
+`package-lock.json` and `lib/version.mjs`, and `CHANGELOG.md` has a dated
+heading for it), sets `repository.url` to
 this repository in the packed copy (npm provenance requires it), packs with
 `--ignore-scripts`, and refuses a tarball that holds an F\* bundle (`jsoo`,
 `ocaml`, `npm-entry`, `hacl-wasm`), lacks `l4-assets/l4factoidal.wasm`, or

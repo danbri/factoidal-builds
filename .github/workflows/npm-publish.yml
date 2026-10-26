@@ -201,6 +201,21 @@ jobs:
           fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
 
+      - name: Release check (version in four files, dated changelog heading)
+        working-directory: core
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          # danbri/factoidal issue 1038, P5: package.json, package-lock.json
+          # (two places) and lib/version.mjs carry the same version, and
+          # CHANGELOG.md has "## <version> (YYYY-MM-DD)". A core commit from
+          # before the tool cannot be published.
+          set -euo pipefail
+          if [ ! -f tools/npm-release-check.mjs ]; then
+            echo "::error::core commit has no tools/npm-release-check.mjs; publish a later commit"; exit 1
+          fi
+          node tools/npm-release-check.mjs --dir npm/factoidal --expect "$CONFIRM"
+
       - name: Set repository.url to this repository (provenance check)
         working-directory: core/npm/factoidal
         run: |
