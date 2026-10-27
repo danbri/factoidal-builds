@@ -55,6 +55,20 @@ for SET in linux-x86_64 darwin-arm64 web; do
     SKIPPED+=("$SET")
     continue
   fi
+  # A web release that a published npm version names is never replaced
+  # (danbri/factoidal issue 1038, P7): its version.json names this tag and
+  # its run, and a consumer checks the wasm against them. A forced rebuild
+  # of such a commit keeps the old web release; the run is red so the
+  # refusal is seen. Exit 2 of the check (registry not readable) refuses too.
+  if [ "$SET" = web ] && gh release view "build-$SHORT-web" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+    NAMED_RC=0
+    python3 scripts/npm-names-release.py "build-$SHORT-web" "$SHA" || NAMED_RC=$?
+    if [ "$NAMED_RC" -ne 1 ]; then
+      echo "::error::web not replaced: build-$SHORT-web exists and an npm version names it (or the registry could not be read; check exit $NAMED_RC). The existing release is kept."
+      SKIPPED+=("$SET")
+      continue
+    fi
+  fi
   STAGE="$OUT/stage-$SET"
   mkdir -p "$STAGE"
   for d in ${NEEDS[$SET]}; do
