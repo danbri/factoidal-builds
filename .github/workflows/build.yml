@@ -25,6 +25,10 @@ name: Build Factoidal from factoidal-core
 #              committed source); Linux also builds JS + wasm and runs
 #              `build-ocaml.sh test`. Two jobs: fstar (Linux) and
 #              fstar-macos; web-gates waits only for fstar.
+#   web-gates  the npm package suite on both engines, the engine comparison,
+#              the known-defects cases, and the Touchstone LWS client lab
+#              (tools/lws-touchstone-client.sh; JDK 25 and Maven; any
+#              non-zero exit fails the job and so the web release).
 
 on:
   workflow_dispatch:
@@ -574,6 +578,42 @@ jobs:
           # (the bundler test); --ignore-scripts keeps the install inert.
           npm ci --ignore-scripts --no-audit --no-fund
           npm test 2>&1 | tee "$RUNNER_TEMP/npm-suite.txt"
+      # Touchstone client lab (https://github.com/ebremer/touchstone, module
+      # harness-clients, 53 client rules): our LWS client does what each task
+      # says. tools/lws-touchstone-client.sh clones Touchstone at the commit
+      # it pins, builds the lab with Maven, starts it on a loopback port and
+      # runs tests/lws/client/touchstone-session.mjs against the Lean wasm
+      # engine installed above. Exit 0: no rule failed and every rule that
+      # did not pass is listed in tests/lws/client/touchstone-xfail.tsv
+      # (issue 1043). Exit 1: a failure or an unlisted non-pass. Exit 2: the
+      # lab could not run. Any non-zero exit fails the job.
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Maven repository cache (Touchstone lab dependencies)
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2-touchstone
+          key: touchstone-m2-${{ hashFiles('core/tools/lws-touchstone-client.sh') }}
+      - name: LWS client, Touchstone client lab
+        working-directory: core
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/out"
+          if [ ! -f tools/lws-touchstone-client.sh ]; then
+            echo "core commit has no tools/lws-touchstone-client.sh" | tee "$RUNNER_TEMP/out/lws-touchstone-client.txt"
+            exit 0
+          fi
+          mvn -version
+          export TOUCHSTONE_M2="$HOME/.m2-touchstone"
+          export TOUCHSTONE_OUT="$RUNNER_TEMP/out/touchstone-client"
+          # pipefail: LAB_RC is the script's exit code, not tee's.
+          LAB_RC=0
+          bash tools/lws-touchstone-client.sh 2>&1 | tee "$RUNNER_TEMP/out/lws-touchstone-client.txt" || LAB_RC=$?
+          echo "lws-touchstone-client exit code: $LAB_RC" | tee -a "$RUNNER_TEMP/out/lws-touchstone-client.txt"
+          exit "$LAB_RC"
       - name: Engine comparison, Lean npm package vs F* npm-entry bundle
         working-directory: core
         shell: bash
