@@ -1,0 +1,146 @@
+# Build and publish the release image of the npm package @factoidal/core to
+# ghcr.io/danbri/factoidal (tags :VERSION, and :latest or :next as the npm
+# dist-tags name the version).
+#
+# The Dockerfile is deploy/image/ of danbri/factoidal-core. It downloads
+# @factoidal/core@VERSION from the npm registry and stops when the tarball's
+# sha512 differs from the registry's dist.integrity. The image runs the
+# `factoidal` command, so one image serves every command (lws-serve,
+# solid-serve, authz-serve, xmpp-serve, ...).
+#
+# Runs: after npm-publish.yml completes successfully (the newest published
+# version), or by hand with a version. Before the push, the image must pass
+# `--version` and `lws-serve --help` (exit 0).
+#
+# npm-publish.yml does not record the core commit it was built from outside
+# the package (the package's l4-assets/version.json holds gitSha). The image
+# needs only deploy/image/, so this workflow uses core's main branch.
+#
+# Run: gh workflow run image.yml --repo danbri/factoidal-builds -f version=0.16.0
+name: image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version to build (empty: the version the npm registry calls latest)'
+        required: false
+        default: ''
+  workflow_run:
+    workflows: [npm-publish]
+    types: [completed]
+
+permissions:
+  packages: write
+  contents: read
+
+concurrency:
+  group: image
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  PKG: '@factoidal/core'
+  IMAGE: ghcr.io/danbri/factoidal
+
+jobs:
+  image:
+    # A workflow_run event fires for failed publishes too; build only after a success.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+
+      - name: Resolve the version and its integrity
+        id: ver
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          V="$INPUT_VERSION"
+          if [ -z "$V" ]; then
+            if [ "$EVENT" = workflow_run ]; then
+              # The version just published may carry a dist-tag other than
+              # latest (npm-publish defaults to next): take the newest by
+              # publication time.
+              V=$(npm view "$PKG" time --json | node -e '
+                const t = JSON.parse(require("fs").readFileSync(0, "utf8"));
+                delete t.created; delete t.modified;
+                console.log(Object.entries(t).sort((a, b) => a[1] < b[1] ? 1 : -1)[0][0])')
+            else
+              V=$(npm view "$PKG" dist-tags.latest)
+            fi
+          fi
+          if ! [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::version '$V' is not a version string"; exit 1
+          fi
+          INTEGRITY=$(npm view "$PKG@$V" dist.integrity)
+          case "$INTEGRITY" in
+            sha512-*) ;;
+            *) echo "::error::dist.integrity of $PKG@$V is '$INTEGRITY'"; exit 1 ;;
+          esac
+          # The image tags follow the npm dist-tags: :latest only for the
+          # version npm calls latest, :next only for the one it calls next.
+          TAGS="$IMAGE:$V"
+          [ "$(npm view "$PKG" dist-tags.latest)" = "$V" ] && TAGS="$TAGS,$IMAGE:latest"
+          [ "$(npm view "$PKG" dist-tags.next 2>/dev/null || true)" = "$V" ] && TAGS="$TAGS,$IMAGE:next"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "integrity=$INTEGRITY" >> "$GITHUB_OUTPUT"
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+          echo "$PKG@$V $INTEGRITY"
+
+      - name: Check out factoidal-core (deploy/image)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: main
+          path: core
+          sparse-checkout: deploy/image
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build the image (loaded locally, not pushed)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: core/deploy/image
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}:${{ steps.ver.outputs.version }}
+          build-args: |
+            FACTOIDAL_VERSION=${{ steps.ver.outputs.version }}
+            FACTOIDAL_INTEGRITY=${{ steps.ver.outputs.integrity }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test (a failing command stops the job before any push)
+        env:
+          REF: ${{ env.IMAGE }}:${{ steps.ver.outputs.version }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          OUT=$(docker run --rm "$REF" --version)
+          echo "$OUT"
+          echo "$OUT" | head -n 1 | grep -qx "@factoidal/core $VERSION" \
+            || { echo "::error::--version does not report $VERSION"; exit 1; }
+          docker run --rm "$REF" lws-serve --help > /dev/null
+
+      - name: Push :VERSION, and :latest or :next when npm names this version so
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: core/deploy/image
+          push: true
+          tags: ${{ steps.ver.outputs.tags }}
+          build-args: |
+            FACTOIDAL_VERSION=${{ steps.ver.outputs.version }}
+            FACTOIDAL_INTEGRITY=${{ steps.ver.outputs.integrity }}
+          cache-from: type=gha
