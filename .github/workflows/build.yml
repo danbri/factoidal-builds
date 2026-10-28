@@ -152,6 +152,24 @@ jobs:
           # stage, or is on the unbound list, which may only shrink).
           bash tests/dataflow/run.sh
 
+      # The case list for the packed-package OWL checks of web-gates: the
+      # source boundary gate on the exact core commit built here (the other
+      # OWL source gates run in core's verify-lean4.yml). Its report is the
+      # --cases input of tools/check-owl-public-artifact.mjs.
+      - name: OWL consistency public producer and proof bypass controls
+        if: matrix.platform == 'linux-x86_64'
+        working-directory: core
+        run: python3 tools/check-owl-public-boundary.py --json "$RUNNER_TEMP/owl-public-boundary.json"
+
+      - name: Preserve the OWL boundary report even after failure
+        if: always() && matrix.platform == 'linux-x86_64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: owl-reader-assurance-linux
+          path: ${{ runner.temp }}/owl-public-boundary.json
+          if-no-files-found: error
+          retention-days: 30
+
       - name: HACL* extern probe (Ed25519 vectors + sha256 differential)
         working-directory: core/formal/lean4
         run: |
@@ -568,6 +586,54 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: owl-reader-assurance-linux
+          path: art/owl-assurance
+      - name: Pack and extract the OWL test artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/owl-package"
+          ( cd core/npm/factoidal && npm pack --ignore-scripts --json --pack-destination "$RUNNER_TEMP/owl-package" ) > "$RUNNER_TEMP/owl-package/pack.json"
+          python3 - "$RUNNER_TEMP/owl-package" <<'PY'
+          import hashlib, json, pathlib, sys, tarfile
+          dest = pathlib.Path(sys.argv[1])
+          packed = json.loads((dest / 'pack.json').read_text())
+          entry = packed[0] if isinstance(packed, list) else packed['@factoidal/core']
+          filename = entry['filename']
+          assert pathlib.Path(filename).name == filename
+          archive = dest / filename
+          with tarfile.open(archive) as stream:
+              stream.extractall(dest, filter='data')
+          (dest / 'sha256.json').write_text(json.dumps({
+              'filename': filename, 'bytes': archive.stat().st_size,
+              'sha256': hashlib.sha256(archive.read_bytes()).hexdigest()
+          }, indent=2) + '\n')
+          PY
+      - name: OWL artifact runner refusal and hard-timeout controls
+        run: >-
+          node core/tools/test-owl-public-artifact.mjs
+          --cases art/owl-assurance/owl-public-boundary.json
+          --json "${{ runner.temp }}/owl-artifact-controls.json"
+      - name: Checked OWL consistency through packed Wasm and npm facade
+        run: >-
+          node core/tools/check-owl-public-artifact.mjs
+          --package "${{ runner.temp }}/owl-package/package"
+          --cases art/owl-assurance/owl-public-boundary.json
+          --json "${{ runner.temp }}/owl-public-artifact.json"
+      - name: Preserve OWL package evidence even after failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owl-public-artifact
+          path: |
+            ${{ runner.temp }}/owl-public-artifact.json
+            ${{ runner.temp }}/owl-artifact-controls.json
+            ${{ runner.temp }}/owl-package/pack.json
+            ${{ runner.temp }}/owl-package/sha256.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: npm package suite (both engines)
         working-directory: core/npm/factoidal
         shell: bash
