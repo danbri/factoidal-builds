@@ -9,6 +9,19 @@
 # Env: SHA, SHORT, REF, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID.
 # Layout read: art/<artifact>/{stage,stage-native,stage-web,meta}/...
 set -euo pipefail
+
+# Only commits on factoidal-core main are published (owner, 2026-10-25:
+# "only main moves factoidal-builds, releases and npm"). A build of a PR head
+# runs every gate job and stops here: no release, no latest/*.json pointer.
+# The GitHub compare API gives "identical" or "behind" when SHA is main's head
+# or an ancestor of it.
+CORE="${CORE_REPO:-danbri/factoidal-core}"
+ON_MAIN=$(gh api "repos/$CORE/compare/main...$SHA" -q .status 2>/dev/null || echo unknown)
+case "$ON_MAIN" in
+  identical|behind) echo "core $SHA is on main ($ON_MAIN): publishing" ;;
+  *) echo "core $SHA is not on core main (compare status: $ON_MAIN): gates only, nothing published"; exit 0 ;;
+esac
+
 ART=art
 OUT=release-out
 mkdir -p "$OUT" latest
@@ -41,6 +54,20 @@ for SET in linux-x86_64 darwin-arm64 web; do
     echo "::warning::$SET not published: missing artifacts:$MISSING (a gate failed or a job did not run)"
     SKIPPED+=("$SET")
     continue
+  fi
+  # A web release that a published npm version names is never replaced
+  # (danbri/factoidal issue 1038, P7): its version.json names this tag and
+  # its run, and a consumer checks the wasm against them. A forced rebuild
+  # of such a commit keeps the old web release; the run is red so the
+  # refusal is seen. Exit 2 of the check (registry not readable) refuses too.
+  if [ "$SET" = web ] && gh release view "build-$SHORT-web" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+    NAMED_RC=0
+    python3 scripts/npm-names-release.py "build-$SHORT-web" "$SHA" || NAMED_RC=$?
+    if [ "$NAMED_RC" -ne 1 ]; then
+      echo "::error::web not replaced: build-$SHORT-web exists and an npm version names it (or the registry could not be read; check exit $NAMED_RC). The existing release is kept."
+      SKIPPED+=("$SET")
+      continue
+    fi
   fi
   STAGE="$OUT/stage-$SET"
   mkdir -p "$STAGE"

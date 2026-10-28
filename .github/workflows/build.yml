@@ -23,7 +23,12 @@ name: Build Factoidal from factoidal-core
 #   fstar      extract + compile; the re-extracted .ml must equal core's
 #              committed .ml (else the binary would not be built from the
 #              committed source); Linux also builds JS + wasm and runs
-#              `build-ocaml.sh test`.
+#              `build-ocaml.sh test`. Two jobs: fstar (Linux) and
+#              fstar-macos; web-gates waits only for fstar.
+#   web-gates  the npm package suite on both engines, the engine comparison,
+#              the known-defects cases, and the Touchstone LWS client lab
+#              (tools/lws-touchstone-client.sh; JDK 25 and Maven; any
+#              non-zero exit fails the job and so the web release).
 
 on:
   workflow_dispatch:
@@ -136,39 +141,33 @@ jobs:
           done
           python3 tools/lean-tail-recursion-audit.py --gate
 
-      # Required source-level contracts on the exact core commit built here.
-      # Missing tools fail; unsupported/unknown W3C cases stay separate from
-      # definitive answers. These checks do not certify the legacy DL route.
-      - name: OWL gate parser and resource-failure controls
+      - name: FOUNDATION binding gates (danbri/factoidal issue 975)
         if: matrix.platform == 'linux-x86_64'
         working-directory: core
-        run: python3 -m unittest discover -s tests/assurance -p 'test_*.py' -v
+        shell: bash
+        run: |
+          # The dataflow registry and its generated inventory, the FOUNDATION
+          # import gate (foundation/manifest.toml) and the entry-point gate
+          # (every npm export, wasm op and CLI command is bound to a registered
+          # stage, or is on the unbound list, which may only shrink).
+          bash tests/dataflow/run.sh
 
-      - name: OWL reader contracts and proof mutation gate
-        if: matrix.platform == 'linux-x86_64'
-        working-directory: core
-        run: python3 tools/check-owl-reader-contracts.py --json "$RUNNER_TEMP/owl-reader-contracts.json"
-
-      - name: W3C OWL restricted-reader measurement
-        if: matrix.platform == 'linux-x86_64'
-        working-directory: core
-        run: python3 tools/check-atomic-direct-corpus.py --json "$RUNNER_TEMP/atomic-direct-w3c.json"
-
+      # The case list for the packed-package OWL checks of web-gates: the
+      # source boundary gate on the exact core commit built here (the other
+      # OWL source gates run in core's verify-lean4.yml). Its report is the
+      # --cases input of tools/check-owl-public-artifact.mjs.
       - name: OWL consistency public producer and proof bypass controls
         if: matrix.platform == 'linux-x86_64'
         working-directory: core
         run: python3 tools/check-owl-public-boundary.py --json "$RUNNER_TEMP/owl-public-boundary.json"
 
-      - name: Preserve OWL assurance evidence even after failure
+      - name: Preserve the OWL boundary report even after failure
         if: always() && matrix.platform == 'linux-x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: owl-reader-assurance-linux
-          path: |
-            ${{ runner.temp }}/owl-reader-contracts.json
-            ${{ runner.temp }}/atomic-direct-w3c.json
-            ${{ runner.temp }}/owl-public-boundary.json
-          if-no-files-found: warn
+          path: ${{ runner.temp }}/owl-public-boundary.json
+          if-no-files-found: error
           retention-days: 30
 
       - name: HACL* extern probe (Ed25519 vectors + sha256 differential)
@@ -326,6 +325,10 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  # The F* build is two jobs with one step list (a YAML anchor), so that
+  # web-gates waits only for the Linux job, the one whose web products it
+  # tests. The macOS job (38 min in run 40132069195, against 26 min on
+  # Linux) is still needed by publish for the darwin-arm64 set.
   fstar:
     needs: resolve
     if: needs.resolve.outputs.proceed == 'true'
@@ -335,11 +338,9 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux-x86_64
-          - os: macos-14
-            platform: darwin-arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 300
-    steps:
+    steps: &fstar-steps
       - uses: actions/checkout@v4
         with:
           path: builds
@@ -538,6 +539,19 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  fstar-macos:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 300
+    steps: *fstar-steps
+
   web-gates:
     # The npm package's own suite runs both engines (F* JS/wasm bundles and
     # the Lean wasm module) and compares them, so it needs the outputs of
@@ -630,6 +644,62 @@ jobs:
           # (the bundler test); --ignore-scripts keeps the install inert.
           npm ci --ignore-scripts --no-audit --no-fund
           npm test 2>&1 | tee "$RUNNER_TEMP/npm-suite.txt"
+      - name: The npm suite skipped no test
+        shell: bash
+        run: |
+          # A skipped test is not a pass (danbri/factoidal issue 1038, P3): a
+          # test that skips on a capability probe passes silently on a wasm
+          # that lacks the capability. node --test prints "# skipped N" (TAP,
+          # the default when stdout is not a terminal) or "ℹ skipped N" (spec).
+          set -euo pipefail
+          F="$RUNNER_TEMP/npm-suite.txt"
+          SKIP=$(grep -E '^(#|ℹ) (skip|skipped) [0-9]+$' "$F" | tail -n 1 | awk '{print $NF}' || true)
+          TODO=$(grep -E '^(#|ℹ) todo [0-9]+$' "$F" | tail -n 1 | awk '{print $NF}' || true)
+          if [ -z "$SKIP" ]; then
+            echo "::error::no skip count in the npm suite summary (format changed?)"; exit 1
+          fi
+          echo "npm suite: skipped $SKIP, todo ${TODO:-?}"
+          if [ "$SKIP" -ne 0 ]; then
+            echo "::error::the npm suite skipped $SKIP test(s); a skip is not a pass:"
+            grep -E '# SKIP|﹣' "$F" || true
+            exit 1
+          fi
+      # Touchstone client lab (https://github.com/ebremer/touchstone, module
+      # harness-clients, 53 client rules): our LWS client does what each task
+      # says. tools/lws-touchstone-client.sh clones Touchstone at the commit
+      # it pins, builds the lab with Maven, starts it on a loopback port and
+      # runs tests/lws/client/touchstone-session.mjs against the Lean wasm
+      # engine installed above. Exit 0: no rule failed and every rule that
+      # did not pass is listed in tests/lws/client/touchstone-xfail.tsv
+      # (issue 1043). Exit 1: a failure or an unlisted non-pass. Exit 2: the
+      # lab could not run. Any non-zero exit fails the job.
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Maven repository cache (Touchstone lab dependencies)
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2-touchstone
+          key: touchstone-m2-${{ hashFiles('core/tools/lws-touchstone-client.sh') }}
+      - name: LWS client, Touchstone client lab
+        working-directory: core
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/out"
+          if [ ! -f tools/lws-touchstone-client.sh ]; then
+            echo "core commit has no tools/lws-touchstone-client.sh" | tee "$RUNNER_TEMP/out/lws-touchstone-client.txt"
+            exit 0
+          fi
+          mvn -version
+          export TOUCHSTONE_M2="$HOME/.m2-touchstone"
+          export TOUCHSTONE_OUT="$RUNNER_TEMP/out/touchstone-client"
+          # pipefail: LAB_RC is the script's exit code, not tee's.
+          LAB_RC=0
+          bash tools/lws-touchstone-client.sh 2>&1 | tee "$RUNNER_TEMP/out/lws-touchstone-client.txt" || LAB_RC=$?
+          echo "lws-touchstone-client exit code: $LAB_RC" | tee -a "$RUNNER_TEMP/out/lws-touchstone-client.txt"
+          exit "$LAB_RC"
       - name: Engine comparison, Lean npm package vs F* npm-entry bundle
         working-directory: core
         shell: bash
@@ -706,7 +776,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [resolve, lean, lean-wasm, fstar, web-gates]
+    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
