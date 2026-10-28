@@ -611,14 +611,44 @@ jobs:
               'sha256': hashlib.sha256(archive.read_bytes()).hexdigest()
           }, indent=2) + '\n')
           PY
+      # The two OWL package tools of a core commit older than OWL_TOOLS_SHA
+      # (factoidal-core PR 178) stop before any case: they expect 20 cases
+      # where the boundary report has 23, and a `reason` on a `true` answer.
+      # For such a commit the tools of OWL_TOOLS_SHA run instead; the case
+      # list still comes from the commit built here. Cost of not having this:
+      # the 0.20.0 commit 0c9a222b could not get its web release.
+      - name: OWL package check tools for this core commit
+        id: owltools
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+          OWL_TOOLS_SHA: e655516c98ace27d604c199bd48ef88f05e7b97c
+        run: |
+          set -euo pipefail
+          status=$(gh api "repos/$CORE_REPO/compare/$OWL_TOOLS_SHA...$CORE_SHA" --jq .status)
+          if [ "$status" = ahead ] || [ "$status" = identical ]; then
+            echo "dir=core/tools" >> "$GITHUB_OUTPUT"
+            echo "core $CORE_SHA carries the OWL package tools ($status against $OWL_TOOLS_SHA)"
+          else
+            dir="$RUNNER_TEMP/owl-tools"
+            mkdir -p "$dir"
+            for f in check-owl-public-artifact.mjs test-owl-public-artifact.mjs; do
+              gh api -H 'Accept: application/vnd.github.raw' \
+                "repos/$CORE_REPO/contents/tools/$f?ref=$OWL_TOOLS_SHA" > "$dir/$f"
+              test -s "$dir/$f"
+            done
+            echo "dir=$dir" >> "$GITHUB_OUTPUT"
+            echo "::warning::core $CORE_SHA is $status against $OWL_TOOLS_SHA; the OWL package tools of $OWL_TOOLS_SHA run"
+          fi
       - name: OWL artifact runner refusal and hard-timeout controls
         run: >-
-          node core/tools/test-owl-public-artifact.mjs
+          node ${{ steps.owltools.outputs.dir }}/test-owl-public-artifact.mjs
           --cases art/owl-assurance/owl-public-boundary.json
           --json "${{ runner.temp }}/owl-artifact-controls.json"
       - name: Checked OWL consistency through packed Wasm and npm facade
         run: >-
-          node core/tools/check-owl-public-artifact.mjs
+          node ${{ steps.owltools.outputs.dir }}/check-owl-public-artifact.mjs
           --package "${{ runner.temp }}/owl-package/package"
           --cases art/owl-assurance/owl-public-boundary.json
           --json "${{ runner.temp }}/owl-public-artifact.json"
