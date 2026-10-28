@@ -1,0 +1,176 @@
+name: Single-file executables
+
+# Builds the `factoidal` CLI as one executable file per platform with
+# `deno compile`, from the published `web` release of one factoidal-core
+# commit, checks the files on Linux x86_64, macOS arm64 and Windows x86_64,
+# and publishes release build-<12 hex>-exe:
+#
+#   exe/factoidal-linux-x86_64        exe/factoidal-darwin-x86_64
+#   exe/factoidal-linux-aarch64       exe/factoidal-darwin-arm64
+#   exe/factoidal-windows-x86_64.exe  exe/factoidal-windows-aarch64.exe
+#   exe/SHA256SUMS
+#
+# Stage 1 of factoidal-core docs/designissues/2026-10-28-single-file-app.md
+# (owner, 2026-10-28: "2y"). The build and the checks are core's
+# tools/build-exe.sh and tools/check-exe.sh at the same commit, so a commit
+# without them is skipped.
+#
+# Runs after each successful run of build.yml (the newest web release, from
+# latest/web.json) and on manual dispatch. Like build.yml it publishes only
+# for commits on core main. The `exe` set is not a set of
+# tools/fetch-builds.sh: it is for people who want the CLI without Node.
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: '40-hex factoidal-core commit with a web release (empty: the commit of latest/web.json)'
+        required: false
+        default: ''
+      force:
+        description: 'Rebuild even when build-<commit>-exe exists'
+        type: boolean
+        default: false
+  workflow_run:
+    workflows: ['Build Factoidal from factoidal-core']
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: exe-factoidal
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  DENO_VERSION: '2.9.6'
+
+jobs:
+  resolve:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.r.outputs.sha }}
+      short: ${{ steps.r.outputs.short }}
+      proceed: ${{ steps.r.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_REF: ${{ inputs.core_ref }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          SHA="${INPUT_REF:-}"
+          [ -n "$SHA" ] || SHA="$(python3 -c 'import json; print(json.load(open("latest/web.json"))["source_commit"])')"
+          if ! printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'; then echo "::error::core_ref must be a 40-hex commit, got '$SHA'"; exit 1; fi
+          SHORT="${SHA:0:12}"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "short=$SHORT" >> "$GITHUB_OUTPUT"
+          PROCEED=true
+          if ! gh release view "build-$SHORT-web" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::no web release build-$SHORT-web: nothing to build"; PROCEED=false
+          elif ! gh api "repos/$CORE_REPO/contents/tools/build-exe.sh?ref=$SHA" >/dev/null 2>&1; then
+            echo "::notice::core $SHORT has no tools/build-exe.sh: skipped"; PROCEED=false
+          elif [ "${FORCE:-false}" != true ] && gh release view "build-$SHORT-exe" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::build-$SHORT-exe exists (dispatch with force to rebuild)"; PROCEED=false
+          fi
+          echo "proceed=$PROCEED" >> "$GITHUB_OUTPUT"
+          echo "core $SHA: proceed=$PROCEED"
+
+  build:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the web release (sha256 of every file checked)
+        working-directory: core
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash tools/fetch-builds.sh --set web --commit "${{ needs.resolve.outputs.sha }}"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+      - name: deno compile, six targets
+        run: |
+          set -euo pipefail
+          bash core/tools/build-exe.sh "$PWD/stage/exe"
+          deno --version | head -1 | python3 -c 'import json,sys; print(json.dumps({"deno": sys.stdin.read().strip()}))' > toolchains-exe.json
+          mkdir -p meta && cp toolchains-exe.json meta/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe
+          path: |
+            stage
+            meta
+          retention-days: 7
+
+  check:
+    needs: [resolve, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            file: factoidal-linux-x86_64
+            args: ''
+          - os: macos-14
+            file: factoidal-darwin-arm64
+            args: ''
+          - os: windows-latest
+            file: factoidal-windows-x86_64.exe
+            args: '--quick'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: exe
+          path: art
+      - name: tools/check-exe.sh
+        run: |
+          set -euo pipefail
+          F="$PWD/art/stage/exe/${{ matrix.file }}"
+          chmod +x "$F"
+          LINE="$(grep " ${{ matrix.file }}\$" art/stage/exe/SHA256SUMS)"
+          if command -v sha256sum >/dev/null; then (cd art/stage/exe && echo "$LINE" | sha256sum -c -)
+          else (cd art/stage/exe && echo "$LINE" | shasum -a 256 -c -); fi
+          bash core/tools/check-exe.sh "$F" ${{ matrix.args }}
+
+  publish:
+    needs: [resolve, build, check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: exe
+          path: art
+      - name: Publish build-<commit>-exe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+        run: bash scripts/publish-exe.sh
