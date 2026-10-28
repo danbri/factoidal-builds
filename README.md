@@ -41,6 +41,22 @@ picks the newest release whose commit is in your history, checks the
 tarball digest and every file, and installs it; `tools/ensure-test-env.sh`
 calls it.
 
+## Single-file executables (`exe` set)
+
+`.github/workflows/exe.yml` builds the `factoidal` CLI as one executable file
+per platform with `deno compile` (Linux, macOS and Windows on x86_64 and
+arm64; the engine wasm included), from the `web` release of a core commit.
+It uses core's `tools/build-exe.sh` and `tools/check-exe.sh` at that commit,
+so commits without them are skipped. It runs after each successful
+`build.yml` run (the commit of `latest/web.json`) and on manual dispatch
+(`core_ref`, `force`). Gates: `tools/check-exe.sh` on Linux x86_64 and macOS
+arm64 (help, version, a store and a query, `serve` over HTTP, the desktop
+WebDAV harness) and on Windows x86_64 with `--quick` (no WebDAV harness).
+Release `build-<12 hex>-exe` carries the six files, `SHA256SUMS`,
+`exe.tar.gz` and `build-info.json`; `latest/exe.json` points to it. Only
+commits on core `main` are published. The files are not signed. Design:
+core `docs/designissues/2026-10-28-single-file-app.md`.
+
 ## Publishing to npm
 
 `.github/workflows/npm-publish.yml` publishes `@factoidal/core` from a `web`
