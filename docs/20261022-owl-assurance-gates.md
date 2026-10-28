@@ -30,6 +30,19 @@ Merge order: the core tools needed the issue 960 verdicts
 https://github.com/danbri/factoidal-core/pull/178. Merge it first: with the
 2026-10-22 tools both web steps stop before any case runs.
 
+Older core commits: the merge order above covers new commits only. A build of
+a core commit that does not contain PR 178 (merge `e655516c`) runs that
+commit's 2026-10-22 tools, which stop before any case. The 0.20.0 commit
+`0c9a222b` is such a commit, so after this workflow landed its web release
+could not be made (run
+https://github.com/danbri/factoidal-builds/actions/runs/40655703183 was
+cancelled for this reason on 2026-10-28). The step "OWL package check tools
+for this core commit" now asks the GitHub compare API whether the built
+commit contains `e655516c`. If it does not, the two tools of `e655516c` run
+and the step prints a warning; the case list still comes from the built
+commit. Between `0c9a222b` and `e655516c` no OWL Lean module, OWL wasm op,
+boundary tool or OWL part of `lib/api.mjs` changed.
+
 Measured locally on 2026-10-28 (core `main` `ebc1b36a` plus the repair, the
 packed 0.20.0 package): boundary gate 23 of 23 cases, 5 of 5 proof mutations
 rejected; package check 23 pass, 0 fail (out of 23, 2 expected failures);
