@@ -1,41 +1,38 @@
-# OWL source and packed-artifact gates
+# OWL packed-artifact gates
 
-Date: 2026-10-22. Draft; depends on
-[factoidal-core PR #2](https://github.com/danbri/factoidal-core/pull/2),
-branch `claude/owl-checked-consistency-review`.
-Do not merge this workflow before the required core tools are available in
-the source revision selected for a build. Missing tools intentionally fail.
-This change does not request a build dispatch, merge or publication.
+First written 2026-10-22; revised 2026-10-28 (owner, 2026-10-28: "Yes" to
+"make builds PR 1 ready to merge, keep only the packed-package steps").
 
-The Linux native job runs durable parser/resource-failure controls, 45 reader
-cases with seven production proof mutations, the W3C restricted-reader
-measurement, and 20 actual-public-producer cases with three proof mutations.
-Source reports are uploaded even when a gate fails. The W3C run's unsupported
-and unknown counts remain separate: no wrong verdict observed is not a
-conformance or completeness pass.
+The OWL source gates (reader contracts, the W3C restricted-reader
+measurement, the public-producer boundary) run in core's own CI
+(`danbri/factoidal-core` `.github/workflows/verify-lean4.yml`). This workflow
+adds what core CI cannot check: the package that the build makes.
 
-The web gate downloads that build's source case report, packs the npm package
-after installing the built Wasm, extracts it, records the tarball SHA-256,
-and runs the public consistency checks on the unpacked artifact. It also
-tests the runner itself against a synthetic baseline, a generic exception
-without an ABI envelope and a synchronous hang that traps SIGTERM. The
-runner uses SIGKILL; the control has a separate outer deadline. Synthetic
-package controls are not engine conformance evidence.
+- Linux native job: `tools/check-owl-public-boundary.py` on the exact core
+  commit built here. Its report (23 cases on 2026-10-28) is the case list for
+  the web gate and is uploaded even when the gate fails.
+- Web gate: after the built wasm is installed into the checkout, `npm pack`,
+  extract, record the tarball SHA-256, then:
+  - `tools/test-owl-public-artifact.mjs`: runner controls on a synthetic
+    package (baseline, a generic exception with no ABI envelope, a
+    synchronous hang that ignores SIGTERM and needs SIGKILL);
+  - `tools/check-owl-public-artifact.mjs`: every case through the low-level
+    op and the public `owlIsConsistent` of the unpacked package, each in a
+    child process with a 15 s deadline. Known defects are expected failures
+    with an issue; one that passes fails the run. On 2026-10-28:
+    https://github.com/danbri/factoidal/issues/1118 (two RDF 1.2 cases).
 
-The existing npm suite is retained unchanged. Failures propagate: no
-continue-on-error or expected-failure conversion is added. Reports and pack
-metadata are uploaded with always(). Web publication already requires the
-successful web-gates artifact in scripts/publish.sh; that requirement remains.
-Other artifact sets retain their existing independent completeness rules.
-The separate npm-publish workflow is not modified by this PR.
+Failures propagate: no continue-on-error. The existing npm suite is
+unchanged; web publication still requires the web-gates job.
 
-Validation: both workflow YAML files and all 11 changed/related shell snippets
-parse locally; the embedded Python pack step compiles. Core's actual source,
-packed-artifact and runner-control results are preserved in its
-`docs/audits/owl-assurance-20261022/` directory. There has been no remote run
-of these workflow edits. Local checks do not establish remote enforcement.
+Merge order: the core tools needed the issue 960 verdicts
+(https://github.com/danbri/factoidal/issues/960) and 23 cases; that repair is
+https://github.com/danbri/factoidal-core/pull/178. Merge it first: with the
+2026-10-22 tools both web steps stop before any case runs.
 
-The core proposal remains a draft: its restricted consistency path reduces
-coverage, four broader OWL regression expectations still fail, and the broad
-50-case artifact audit is not green. These gates must not be described as
-approval of a release, complete OWL, or the separate legacy entailment API.
+Measured locally on 2026-10-28 (core `main` `ebc1b36a` plus the repair, the
+packed 0.20.0 package): boundary gate 23 of 23 cases, 5 of 5 proof mutations
+rejected; package check 23 pass, 0 fail (out of 23, 2 expected failures);
+runner controls 3 pass, 0 fail (out of 3). No remote run of this workflow yet.
+These gates check a restricted consistency API only; they are no claim of OWL
+completeness or of the entailment API.
