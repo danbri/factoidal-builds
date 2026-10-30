@@ -7,6 +7,7 @@ name: Build Factoidal from factoidal-core
 #   build-<12 hex>-darwin-arm64   bin/darwin-arm64/  same, macOS arm64
 #   build-<12 hex>-web            npm/ + docs/       F* JS/wasm bundles, Lean wasm,
 #                                                    generated F* dashboard
+#   build-<12 hex>-foafnaut-darwin-arm64  experimental native graphics demos
 #
 # Each release carries <set>.tar.gz and build-info.json (source commit,
 # toolchains, sha256 of every file). core's tools/fetch-builds.sh installs
@@ -72,6 +73,7 @@ jobs:
       sha: ${{ steps.r.outputs.sha }}
       short: ${{ steps.r.outputs.short }}
       proceed: ${{ steps.r.outputs.proceed }}
+      foafnaut: ${{ steps.r.outputs.foafnaut }}
     steps:
       - uses: actions/checkout@v4
       - id: r
@@ -323,6 +325,108 @@ jobs:
         with:
           name: lean-wasm
           path: ${{ runner.temp }}/out/
+          retention-days: 7
+
+  # The experimental lab is an independent artifact set. Its failure must
+  # not withhold a passing core web/native set. The small engines reuse the
+  # same pinned runtime cache; no full library extraction is needed here.
+  foafnaut-engines:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - name: Install elan
+        run: |
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/emsdk
+          key: emsdk-6.0.8-${{ runner.os }}
+      - name: Install Emscripten 6.0.8 and libuv headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update && sudo apt-get install -y libuv1-dev
+          if [ ! -x ~/emsdk/emsdk ]; then
+            git clone --depth 1 https://github.com/emscripten-core/emsdk ~/emsdk
+          fi
+          ~/emsdk/emsdk install 6.0.8
+          ~/emsdk/emsdk activate 6.0.8
+      - name: Restore the Lean runtime cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          T=$(sed 's|.*:||' core/formal/lean4/lean-toolchain | tr -d ' \n')
+          git -C builds fetch -q origin toolchain-cache
+          if git -C builds cat-file -e "origin/toolchain-cache:l4wasm-work-cache-$T.tar.gz" 2>/dev/null; then
+            git -C builds show "origin/toolchain-cache:l4wasm-work-cache-$T.tar.gz" | tar -xz -C "$HOME"
+          else
+            echo "No cache for $T; build-engines.sh will bootstrap only runtime/Init/Std"
+          fi
+      - name: Build and check the Foafnaut engines
+        shell: bash
+        run: |
+          set -euo pipefail
+          source ~/emsdk/emsdk_env.sh
+          bash core/labs/demos/foafnaut/build-engines.sh --runtime-cache "$HOME/l4wasm-work"
+          bash core/labs/demos/foafnaut/test.sh --skip-build
+          python3 core/tests/external/svg/suite.py --check-fixtures
+          python3 -m unittest discover -s core/tests/external/svg -p test_suite.py -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foafnaut-engines
+          # Never upload the runtime cache, generated C or object files.
+          path: |
+            core/labs/demos/foafnaut/.build/engines/*.mjs
+            core/labs/demos/foafnaut/.build/engines/*.wasm
+            core/labs/demos/foafnaut/.build/native-artifact.json
+            core/labs/demos/foafnaut/.build/source-SHA256SUMS
+            core/labs/demos/foafnaut/.build/tool-versions.txt
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  foafnaut:
+    needs: [resolve, lean, foafnaut-engines]
+    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          name: foafnaut-engines
+          path: core/labs/demos/foafnaut/.build
+      - name: Package, relocate and check the native demos
+        run: bash builds/scripts/build-foafnaut.sh core "$RUNNER_TEMP/foafnaut-out"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foafnaut-darwin-arm64
+          path: ${{ runner.temp }}/foafnaut-out/
+          if-no-files-found: error
           retention-days: 7
 
   # The F* build is two jobs with one step list (a YAML anchor), so that
@@ -806,7 +910,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates]
+    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates, foafnaut]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -821,4 +925,5 @@ jobs:
           SHA: ${{ needs.resolve.outputs.sha }}
           SHORT: ${{ needs.resolve.outputs.short }}
           REF: ${{ needs.resolve.outputs.ref }}
+          FOAFNAUT: ${{ needs.resolve.outputs.foafnaut }}
         run: scripts/publish.sh

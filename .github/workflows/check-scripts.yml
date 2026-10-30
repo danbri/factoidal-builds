@@ -1,0 +1,21 @@
+name: Build-script release controls
+on:
+  pull_request:
+    paths: ['scripts/**', 'tests/**', '.github/workflows/**']
+  push:
+    branches: [main]
+    paths: ['scripts/**', 'tests/**', '.github/workflows/**']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release selection, publication refusal and archive provenance
+        run: python3 -m unittest discover -s tests -v
+      - name: Shell syntax
+        run: |
+          for script in scripts/resolve-core.sh scripts/publish.sh scripts/build-foafnaut.sh; do
+            bash -n "$script"
+          done
