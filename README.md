@@ -2,8 +2,9 @@
 
 Builds and compiled artifacts for Factoidal. The source is
 [danbri/factoidal-core](https://github.com/danbri/factoidal-core): the F\*
-tree (`formal/fstar`) and the Lean 4 tree (`formal/lean4`). Nothing here is
-source, and nothing here is edited by hand.
+tree (`formal/fstar`), the Lean 4 tree (`formal/lean4`) and the experimental
+graphics lab (`labs/demos/foafnaut`). This repository owns build automation
+and generated releases; application source stays in factoidal-core.
 
 ## What runs
 
@@ -12,7 +13,8 @@ branch `main`, else `claude/core-split`) on manual dispatch, on a push here
 that changes `requests/build.txt` (that commit; see `requests/README.md`) or
 the build scripts, and on an hourly schedule. Scheduled runs have not
 started in this repository so far (`requests/README.md`). A commit counts as
-built only when all three sets have a release; a scheduled run retries a
+built only when all required sets have a release (the three core sets,
+plus Foafnaut when that commit contains the lab); a scheduled run retries a
 partly built commit at most once in 24 hours (`scripts/resolve-core.sh`).
 Releases are published only for commits on core `main`; a build of any
 other commit runs the gates and publishes nothing. Jobs and their gates:
@@ -23,6 +25,8 @@ other commit runs the gates and publishes nothing. Jobs and their gates:
 | `lean-wasm` (Linux) | `Wasm/build-wasm.sh` with Emscripten 6.0.8 | the build itself and its check that the wasm copies agree. It runs no tests: the npm tests run in `web-gates` |
 | `fstar` (Linux), `fstar-macos` | `build-ocaml.sh extract`, `compile`; Linux also `js`, `wasm`, `npm` | the re-extracted `.ml` equal core's committed `.ml`; Linux runs `build-ocaml.sh test` (W3C suites, dashboard) |
 | `web-gates` (Linux) | nothing; installs the `fstar` web products and the `lean-wasm` module into one checkout | `npm test` in `npm/factoidal` (Node 22), with no skipped test; `tests/engine-compare/run.sh`; `tests/known-defects/run.sh`. The `l4diff` differential is a measurement, not a gate |
+| `foafnaut-engines` (Linux, when present) | four small Lean WASM engines with the shared runtime cache | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests |
+| `foafnaut` (macOS arm64) | three Deno-compiled graphics executables, Cocoa sidecar, launchers and SVG fixtures | requires the Lean gates and engines job; repeats portable tests, relocates the package, checks all compiled CPU engines and native library loading. No GPU/window or SVG visual pass is inferred |
 | `publish` | packs each complete set | a set whose jobs did not all pass is not published, and the run is red; the `web` set also needs `web-gates` |
 
 ## Releases
@@ -33,6 +37,7 @@ One release per (core commit, set), tagged `build-<12 hex core commit>-<set>`:
 |---|---|
 | `linux-x86_64`, `darwin-arm64` | `bin/<platform>/`: the F\* CLI, HTTP server and suite runners, and the Lean CLI `l4factoidal`, `l4w3c`, `l4wasm-cli` |
 | `web` | F\* JS and wasm bundles (`docs/fstar-extracted/`, `npm/factoidal/`), the Lean wasm module (`docs/web/hub/assets/l4/`, `npm/factoidal/l4-assets/`, `npm/factoidal-lean/`), the generated F\* dashboard (`docs/test-results/`), and the Lean scoreboard (`lean-scoreboard.json`, `.txt`) |
+| `foafnaut-darwin-arm64` (when present) | `foafnaut/`: native UI (springs, layout, vectors), Lean-generated still renderer, SVG subset renderer, Cocoa sidecar, `.command` launchers, sample SVGs and source/toolchain provenance |
 
 Each release carries `<set>.tar.gz` (deterministic: sorted, mtime 0) and
 `build-info.json` (source commit, toolchain versions, run URL, sha256 and
@@ -40,6 +45,34 @@ size of every file). In a factoidal-core checkout, `tools/fetch-builds.sh`
 picks the newest release whose commit is in your history, checks the
 tarball digest and every file, and installs it; `tools/ensure-test-env.sh`
 calls it.
+
+The separate Foafnaut archive is extracted into any writable directory;
+it is not installed by `tools/fetch-builds.sh`. Open
+`foafnaut/Native Demos.command` or `foafnaut/SVG Demo.command`. The executables
+include Deno and Lean WASM, so users need no Node, Deno or Lean installation.
+The UI executable requires its adjacent `libnative-window.dylib` and a macOS
+desktop session. Launchers change into their own directory for the narrow
+relative native-library permission. They request the native-surface permission
+before opening the UI. Binaries are currently unsigned, macOS ARM64 only.
+
+Foafnaut is built automatically for each resolved core commit containing
+`labs/demos/foafnaut/build-engines.sh`, through the same dispatch/request/poll
+process as the core sets. It gets tag `build-<12 hex>-foafnaut-darwin-arm64`
+and `latest/foafnaut-darwin-arm64.json`. An API failure checking source
+availability fails the resolver; it does not silently skip the demo gates.
+Old core commits keep their three-set requirement. A failed demo job withholds
+that set and marks the run red; passing core sets can still publish. Only core
+main commits publish; PR builds remain validation only.
+
+The GPU checks and official SVG visual comparisons require a real GPU run.
+The source lab documents its supported SVG profile and the pinned WPT runner;
+fixture integrity and CPU acceptance are not SVG conformance. The build uses
+Deno 2.9.4 and Emscripten 6.0.8; only the small engines cross jobs, not generated
+C, object files or the runtime cache. No demo binary is committed to git.
+
+`python3 -m unittest discover -s tests -v` checks release selection, refusal
+on missing gates/API errors, main-only publication and archive provenance
+with fake GitHub/git commands. `check-scripts.yml` runs those controls on PRs.
 
 ## Single-file executables (`exe` set)
 
