@@ -7,6 +7,7 @@ OUT=${2:?output directory required}
 mkdir -p "$OUT/stage" "$OUT/meta"
 OUT=$(cd "$OUT" && pwd)
 LAB="$CORE/labs/demos/foafnaut"
+POLICY_CHECK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check-foafnaut-policy.py"
 PACKAGE="$OUT/stage/foafnaut"
 bash "$LAB/build-executables.sh" "$PACKAGE"
 cp "$LAB/.build/source-SHA256SUMS" "$LAB/.build/tool-versions.txt" "$PACKAGE/"
@@ -28,6 +29,14 @@ cp -R "$PACKAGE/." "$CHECK/"
   ./native-webgpu-svg-darwin-arm64 svg-fixtures/gallery.svg --emit-artifact "$CHECK/svg.json"
   if [ -f "$LAB/FoafNaut.lean" ]; then
     ./native-webgpu-ui-darwin-arm64 --demo foafnaut --emit-artifact "$CHECK/foaf.json"
+  fi
+  # Source capability detection preserves older lab packages. A capable source
+  # cannot silently omit the exported report, storage artifact or web assets.
+  if [ -f "$LAB/PolicyBridge.lean" ]; then
+    ./native-webgpu-ui-darwin-arm64 --demo foafnaut --emit-svg "$CHECK/checked.svg"
+    ./native-webgpu-svg-darwin-arm64 "$CHECK/checked.svg" --emit-artifact "$CHECK/checked-native.json"
+    python3 "$POLICY_CHECK" "$CHECK"
+    cp "$CHECK/checked.svg.policy.json" "$OUT/meta/foafnaut-policy.json"
   fi
   python3 - "$CHECK" <<'PY'
 import json, pathlib, sys

@@ -71,6 +71,15 @@ fixture integrity and CPU acceptance are not SVG conformance. The build uses
 Deno 2.9.4 and Emscripten 6.0.8; only the small engines cross jobs, not generated
 C, object files or the runtime cache. No demo binary is committed to git.
 
+For cores containing `PolicyBridge.lean`, the relocation smoke also exports a
+checked FOAFNaut SVG and its policy report, then passes that exact SVG to the
+relocated native SVG executable. The gate requires a valid read-only-storage
+artifact, validated application/configuration bounds, accepted nonempty node
+reports and the shipped browser policy demo, engines and RDF fixture. These
+are CPU/package checks; GPU output and browser execution remain untested here.
+Older cores without PolicyBridge keep the existing smoke path. Details:
+[checked policy packaging](docs/20261030-foafnaut-policy-packaging.md).
+
 `python3 -m unittest discover -s tests -v` checks release selection, refusal
 on missing gates/API errors, main-only publication and archive provenance
 with fake GitHub/git commands. `check-scripts.yml` runs those controls on PRs.
