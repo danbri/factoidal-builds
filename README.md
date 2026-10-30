@@ -11,8 +11,7 @@ and generated releases; application source stays in factoidal-core.
 `.github/workflows/build.yml` builds one factoidal-core commit (default
 branch `main`, else `claude/core-split`) on manual dispatch, on a push here
 that changes `requests/build.txt` (that commit; see `requests/README.md`) or
-the build scripts, and on an hourly schedule. Scheduled runs have not
-started in this repository so far (`requests/README.md`). A commit counts as
+the build scripts, and on an hourly schedule. A commit counts as
 built only when all required sets have a release (the three core sets,
 plus Foafnaut when that commit contains the lab); a scheduled run retries a
 partly built commit at most once in 24 hours (`scripts/resolve-core.sh`).
@@ -25,7 +24,7 @@ other commit runs the gates and publishes nothing. Jobs and their gates:
 | `lean-wasm` (Linux) | `Wasm/build-wasm.sh` with Emscripten 6.0.8 | the build itself and its check that the wasm copies agree. It runs no tests: the npm tests run in `web-gates` |
 | `fstar` (Linux), `fstar-macos` | `build-ocaml.sh extract`, `compile`; Linux also `js`, `wasm`, `npm` | the re-extracted `.ml` equal core's committed `.ml`; Linux runs `build-ocaml.sh test` (W3C suites, dashboard) |
 | `web-gates` (Linux) | nothing; installs the `fstar` web products and the `lean-wasm` module into one checkout | `npm test` in `npm/factoidal` (Node 22), with no skipped test; `tests/engine-compare/run.sh`; `tests/known-defects/run.sh`. The `l4diff` differential is a measurement, not a gate |
-| `foafnaut-engines` (Linux, when present) | four small Lean WASM engines with the shared runtime cache | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests |
+| `foafnaut-engines` (Linux, when present) | small Lean WASM engines with the shared runtime cache, including the RDF-driven graph when present | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests |
 | `foafnaut` (macOS arm64) | three Deno-compiled graphics executables, Cocoa sidecar, launchers and SVG fixtures | requires the Lean gates and engines job; repeats portable tests, relocates the package, checks all compiled CPU engines and native library loading. No GPU/window or SVG visual pass is inferred |
 | `publish` | packs each complete set | a set whose jobs did not all pass is not published, and the run is red; the `web` set also needs `web-gates` |
 
@@ -37,7 +36,7 @@ One release per (core commit, set), tagged `build-<12 hex core commit>-<set>`:
 |---|---|
 | `linux-x86_64`, `darwin-arm64` | `bin/<platform>/`: the F\* CLI, HTTP server and suite runners, and the Lean CLI `l4factoidal`, `l4w3c`, `l4wasm-cli` |
 | `web` | F\* JS and wasm bundles (`docs/fstar-extracted/`, `npm/factoidal/`), the Lean wasm module (`docs/web/hub/assets/l4/`, `npm/factoidal/l4-assets/`, `npm/factoidal-lean/`), the generated F\* dashboard (`docs/test-results/`), and the Lean scoreboard (`lean-scoreboard.json`, `.txt`) |
-| `foafnaut-darwin-arm64` (when present) | `foafnaut/`: native UI (springs, layout, vectors), Lean-generated still renderer, SVG subset renderer, Cocoa sidecar, `.command` launchers, sample SVGs and source/toolchain provenance |
+| `foafnaut-darwin-arm64` (when present) | `foafnaut/`: native UI (springs, layout, vectors, and the RDF-driven FOAFNaut browser when present), Lean-generated still renderer, SVG subset renderer, Cocoa sidecar, `.command` launchers, sample SVGs and source/toolchain provenance |
 
 Each release carries `<set>.tar.gz` (deterministic: sorted, mtime 0) and
 `build-info.json` (source commit, toolchain versions, run URL, sha256 and
@@ -48,12 +47,14 @@ calls it.
 
 The separate Foafnaut archive is extracted into any writable directory;
 it is not installed by `tools/fetch-builds.sh`. Open
-`foafnaut/Native Demos.command` or `foafnaut/SVG Demo.command`. The executables
+`foafnaut/Native Demos.command`, `foafnaut/FOAFNaut.command` (when included), or
+`foafnaut/SVG Demo.command`. The executables
 include Deno and Lean WASM, so users need no Node, Deno or Lean installation.
 The UI executable requires its adjacent `libnative-window.dylib` and a macOS
-desktop session. Launchers change into their own directory for the narrow
-relative native-library permission. They request the native-surface permission
-before opening the UI. Binaries are currently unsigned, macOS ARM64 only.
+desktop session. Launchers change into their own directory for relative
+file permissions. The current UI compiles with FFI permission granted at the
+owner's request, so the native surface does not prompt on every launch.
+Binaries are currently unsigned, macOS ARM64 only.
 
 Foafnaut is built automatically for each resolved core commit containing
 `labs/demos/foafnaut/build-engines.sh`, through the same dispatch/request/poll

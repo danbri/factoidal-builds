@@ -18,16 +18,22 @@ cp -R "$PACKAGE/." "$CHECK/"
 (
   cd "$CHECK"
   shasum -a 256 -c SHA256SUMS
-  for demo in springs layout vectors; do
+  DEMOS=(springs layout vectors)
+  if [ -f "$LAB/FoafNaut.lean" ]; then DEMOS+=(foafnaut); fi
+  for demo in "${DEMOS[@]}"; do
     ./native-webgpu-ui-darwin-arm64 --demo "$demo" --check-engine
   done
   ./native-webgpu-ui-darwin-arm64 --diagnose
   ./native-webgpu-lean-darwin-arm64 --emit-artifact "$CHECK/still.json"
   ./native-webgpu-svg-darwin-arm64 svg-fixtures/gallery.svg --emit-artifact "$CHECK/svg.json"
+  if [ -f "$LAB/FoafNaut.lean" ]; then
+    ./native-webgpu-ui-darwin-arm64 --demo foafnaut --emit-artifact "$CHECK/foaf.json"
+  fi
   python3 - "$CHECK" <<'PY'
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
-for name in ('still', 'svg'):
+names = ['still', 'svg'] + (['foaf'] if (root / 'foaf.json').exists() else [])
+for name in names:
     artifact = json.loads((root / f'{name}.json').read_text())
     assert artifact['width'] > 0 and artifact['height'] > 0, name
     assert artifact['wgsl'] and artifact['data'] and artifact['checks'], name
