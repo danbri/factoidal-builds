@@ -1,0 +1,12 @@
+# Synthetic display fixture. Unicode/escaping cases remain in people.ttl.
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix ex: <https://example.org/friends/> .
+
+ex:alice a foaf:Person ; foaf:name "Alice" ; foaf:knows ex:bob, ex:carol, ex:dan .
+ex:bob a foaf:Person ; foaf:name "Bob" ; foaf:knows ex:erin .
+ex:carol a foaf:Person ; foaf:name "Carol" ; foaf:knows ex:farah .
+ex:dan a foaf:Person ; foaf:name "Dan" ; foaf:knows ex:grace .
+ex:erin a foaf:Person ; foaf:name "Erin" ; foaf:knows ex:hiro .
+ex:farah a foaf:Person ; foaf:name "Farah" ; foaf:knows ex:alice .
+ex:grace a foaf:Person ; foaf:name "Grace" ; foaf:knows ex:hiro .
+ex:hiro a foaf:Person ; foaf:name "Hiro" .

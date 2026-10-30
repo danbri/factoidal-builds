@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-10-30T11:31:09.288963+00:00",
+  "sourceRepository": "https://github.com/danbri/factoidal-core",
+  "sourceCommit": "b2888a06b1989112ab99b10eb4f4e12f8d1ce582",
+  "scope": "Static Lean-checked SVG and native CPU compilation; not a GPU capture or browser visual comparison",
+  "binaries": {
+    "native-webgpu-ui-darwin-arm64": "03180314d67d94c9bb367ba3b964fff9907b2d3bc6b5038942d6f0788cb5e423",
+    "native-webgpu-svg-darwin-arm64": "3dccdea405ce2b3661cfc2dd16dda1f602dcd453b0663294830b855aaefe25f1"
+  },
+  "files": {
+    "foafnaut.svg": "335e03372bd4f0d233d6414ee8eb4c4ffbef572cc58f071264a93536850ce313",
+    "foafnaut.svg.policy.json": "49dda47cb1503fdad2ea04d53ebdeed1531aa760e158b0dd8e3e883fc02135d5",
+    "demo.ttl": "08b618f661561a38cce6fba80da2a727d76c9105f79671106e30547877bf183a",
+    "native-compilation.json": "86103b92d0b8bebdc2f19d1a5bc63f68817eb53f6bef84f1bc7f2e2770928c62"
+  },
+  "commands": [
+    "./native-webgpu-ui-darwin-arm64 --demo foafnaut --emit-svg foafnaut.svg",
+    "./native-webgpu-svg-darwin-arm64 foafnaut.svg --emit-artifact native-plan.json"
+  ]
+}

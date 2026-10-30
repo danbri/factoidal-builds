@@ -33,6 +33,13 @@ Shared defects in the Lean CPU expressions and WGSL generation can escape.
 The SVG profile supports selected basic shapes and painting, while paths,
 transforms, text/CSS, scripting and many other features remain unsupported.
 
+## Checked FOAFNaut layout export
+
+[View the RDF graph as SVG and its Lean policy report](checked-layout/README.md).
+This later static export shares geometry with hit testing and uses bounded
+application policy settings. Its CPU compilation is recorded separately from
+the earlier GPU image above.
+
 ## Official SVG tests are a separate result
 
 The pinned WPT slice currently reports **38 unsupported / 0 visual matches**.
