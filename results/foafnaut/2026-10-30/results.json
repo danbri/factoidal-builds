@@ -1,0 +1,151 @@
+{
+  "schema": "foafnaut-gallery-evidence-v1",
+  "generatedAt": "2026-10-30T01:32:15.518923+00:00",
+  "captureTimeFromLog": "2026-10-30T01:06:15Z",
+  "adapterFromLog": "Apple M1",
+  "width": 640,
+  "height": 420,
+  "primitiveCount": 9,
+  "uniformFloatCount": 200,
+  "engine": {
+    "kind": "development executable, not a release binary",
+    "platform": "darwin-arm64",
+    "sha256": "037c77d5ddd3a01611eee627b80958cb64cba06281c9303515f1559d334dba3d"
+  },
+  "sourcePortForReview": {
+    "repository": "danbri/factoidal-core",
+    "commit": "dfd67b6f99182d911292a74b5749facaa2815d2b",
+    "note": "Source port for review, not a claim that this later commit built the captured development executable."
+  },
+  "input": {
+    "file": "gallery.svg",
+    "sha256": "80b04192159d0ac6c3acd8fff8493b6f96ed0fe44589f07085c1e7f57586ab43",
+    "note": "Owner-edited SVG; expected samples regenerated with the same development executable."
+  },
+  "reference": {
+    "file": "lean-reference.json",
+    "sha256": "6ac365118ae9b18993dd3926a5b41bab170d12ad5046a39275ccc16d3ce36889",
+    "generation": "CPU-only --emit-artifact after capture; same executable and current SVG; no new GPU render"
+  },
+  "image": {
+    "file": "gallery.png",
+    "sha256": "b75c99db9e98154b82c43984aa0bcdb74448e61281d94815ac9fbcc8badb3225",
+    "savedPpmSha256": "ff0f9e52fb18c1afbc42704ff781564eb2aca3375a93083e0765679c31428a40",
+    "pixelRgbSha256": "d9e2e9bbeb1da3b29071c3d86cd0a12fccf8b7b1a6a145b0bece337442038432",
+    "encoding": "Lossless PNG conversion of saved P6 GPU RGB output; no browser rerendering"
+  },
+  "sampleChecks": [
+    {
+      "x": 1,
+      "y": 1,
+      "expectedRgb": [
+        18,
+        24,
+        39
+      ],
+      "actualRgb": [
+        18,
+        24,
+        39
+      ],
+      "maxChannelError": 0,
+      "passWithinTolerance": true
+    },
+    {
+      "x": 160,
+      "y": 105,
+      "expectedRgb": [
+        53,
+        211,
+        167
+      ],
+      "actualRgb": [
+        53,
+        211,
+        167
+      ],
+      "maxChannelError": 0,
+      "passWithinTolerance": true
+    },
+    {
+      "x": 320,
+      "y": 210,
+      "expectedRgb": [
+        4,
+        209,
+        212
+      ],
+      "actualRgb": [
+        4,
+        209,
+        212
+      ],
+      "maxChannelError": 0,
+      "passWithinTolerance": true
+    },
+    {
+      "x": 480,
+      "y": 210,
+      "expectedRgb": [
+        137,
+        12,
+        20
+      ],
+      "actualRgb": [
+        136,
+        12,
+        19
+      ],
+      "maxChannelError": 1,
+      "passWithinTolerance": true
+    },
+    {
+      "x": 320,
+      "y": 315,
+      "expectedRgb": [
+        4,
+        209,
+        212
+      ],
+      "actualRgb": [
+        4,
+        209,
+        212
+      ],
+      "maxChannelError": 0,
+      "passWithinTolerance": true
+    },
+    {
+      "x": 638,
+      "y": 418,
+      "expectedRgb": [
+        18,
+        24,
+        39
+      ],
+      "actualRgb": [
+        18,
+        24,
+        39
+      ],
+      "maxChannelError": 0,
+      "passWithinTolerance": true
+    }
+  ],
+  "perChannelTolerance": 1,
+  "samplePassCount": 6,
+  "sampleTotal": 6,
+  "officialWpt": {
+    "total": 38,
+    "unsupported": 38,
+    "visualMatches": 0,
+    "details": "https://github.com/danbri/factoidal-core/blob/dfd67b6f99182d911292a74b5749facaa2815d2b/tests/external/svg/baseline-2026-10-30.json"
+  },
+  "limits": [
+    "Six sampled pixels, not a full-image independent reference comparison.",
+    "Shared Lean expression logic generates GPU WGSL and CPU expectations; this is not a formal GPU equivalence proof.",
+    "PPM/PNG contain RGB only; alpha checking is recorded by the original renderer log.",
+    "This development capture is not CI or validation of a newly packaged executable.",
+    "The capture log strips terminal escape codes and normalizes local paths; historical log did not hash the image/input at capture time."
+  ]
+}
