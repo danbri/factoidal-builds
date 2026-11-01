@@ -20,3 +20,26 @@ The paired dash value/unit implementation adds SVGDashUnits to that required
 closure. Thirteen packaging tests now pass, including refusal when this module
 is omitted. This guards the new source dependency; it does not establish fresh
 binary correspondence or change the development-only release restriction.
+
+## CI artifact integration
+
+The `foafnaut-engines` job now packages the browser runtime after the fresh
+engine build and its tests succeed. It installs Node 22 and passes the resolved
+core SHA to the packager, then uploads `svg-browser-runtime-development` with
+seven-day retention. A packaging failure fails this job; missing upload files
+are errors. The package still says development and is not a release asset or
+a published demo page. No release pointer or provenance qualification changes.
+
+This step applies to core revisions containing SVGDashUnits, which marks the
+source generation supported by the current required closure. Earlier revisions
+retain their existing native build path and do not get this browser artifact.
+This compatibility condition must not hide missing dependencies in a supported
+revision: the packager still checks every required source and engine input.
+
+Local validation parses the workflow YAML and checks build/test → package →
+upload ordering. The packaging refusal tests and build-script tests are local
+checks. The modified workflow has not run on GitHub yet; a download link exists
+only after source/workflow integration and a successful CI run. Once available,
+extract the artifact into the browser demo's configured runtime directory,
+preserving `engines/` and `provenance.json`. It contains runtime assets, not the
+HTML application or proof of visual conformance.

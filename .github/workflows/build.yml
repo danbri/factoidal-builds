@@ -385,6 +385,28 @@ jobs:
           bash core/labs/demos/foafnaut/test.sh --skip-build
           python3 core/tests/external/svg/suite.py --check-fixtures
           python3 -m unittest discover -s core/tests/external/svg -p test_suite.py -v
+      # Older core revisions lack the typed dash producer required by this
+      # packager. Keep their existing native build path usable.
+      - uses: actions/setup-node@v4
+        if: hashFiles('core/labs/demos/foafnaut/SVGDashUnits.lean') != ''
+        with:
+          node-version: '22'
+      - name: Package the SVG browser development runtime
+        if: hashFiles('core/labs/demos/foafnaut/SVGDashUnits.lean') != ''
+        env:
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          node builds/scripts/package-svg-runtime.mjs \
+            --core core --source-commit "$CORE_SHA" \
+            --out "$RUNNER_TEMP/svg-browser-runtime" --kind development
+      - name: Upload the SVG browser development runtime
+        if: hashFiles('core/labs/demos/foafnaut/SVGDashUnits.lean') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: svg-browser-runtime-development
+          path: ${{ runner.temp }}/svg-browser-runtime/
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: foafnaut-engines
