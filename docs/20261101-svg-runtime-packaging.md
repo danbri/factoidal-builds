@@ -15,3 +15,8 @@ publishes the browser demo nor dispatches a release.
 Updated the required closure for SVGDash after dashed-stroke support. Twelve
 packaging tests pass, including separate missing-CSS and missing-dash-module
 refusal tests. No runtime package was built or published by this check.
+
+The paired dash value/unit implementation adds SVGDashUnits to that required
+closure. Thirteen packaging tests now pass, including refusal when this module
+is omitted. This guards the new source dependency; it does not establish fresh
+binary correspondence or change the development-only release restriction.

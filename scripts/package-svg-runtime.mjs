@@ -22,7 +22,7 @@ export const REQUIRED_RUNTIME_FILES=Object.freeze([
 export const REQUIRED_SOURCE_FILES=Object.freeze([
   ...['Document','Parser','Wellformedness','Namespaces','NamespaceView']
     .map(name=>`formal/lean4/L4Factoidal/XML/${name}.lean`),
-  ...['Graphics','SVGPath','SVGCSS','SVGDash','SVG','RenderPlan'].map(name=>`${LAB}/${name}.lean`),
+  ...['Graphics','SVGPath','SVGCSS','SVGDash','SVGDashUnits','SVG','RenderPlan'].map(name=>`${LAB}/${name}.lean`),
   'formal/lean4/L4Factoidal/Math/Affine.lean',
   'formal/lean4/L4Factoidal/Tdb2/Format.lean',
 ]);
