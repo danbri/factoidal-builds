@@ -8,6 +8,7 @@ name: Build Factoidal from factoidal-core
 #   build-<12 hex>-web            npm/ + docs/       F* JS/wasm bundles, Lean wasm,
 #                                                    generated F* dashboard
 #   build-<12 hex>-foafnaut-darwin-arm64  experimental native graphics demos
+#   build-<12 hex>-foafnaut-web   experimental SVG WebGPU runtime
 #
 # Each release carries <set>.tar.gz and build-info.json (source commit,
 # toolchains, sha256 of every file). core's tools/fetch-builds.sh installs
@@ -74,6 +75,7 @@ jobs:
       short: ${{ steps.r.outputs.short }}
       proceed: ${{ steps.r.outputs.proceed }}
       foafnaut: ${{ steps.r.outputs.foafnaut }}
+      foafnaut_web: ${{ steps.r.outputs.foafnaut_web }}
     steps:
       - uses: actions/checkout@v4
       - id: r
@@ -388,25 +390,9 @@ jobs:
       # Older core revisions lack the shared stroke producer required by this
       # packager. Keep their existing native build path usable.
       - uses: actions/setup-node@v4
-        if: hashFiles('core/labs/demos/foafnaut/SVGStroke.lean') != ''
+        if: needs.resolve.outputs.foafnaut_web == 'true'
         with:
           node-version: '22'
-      - name: Package the SVG browser development runtime
-        if: hashFiles('core/labs/demos/foafnaut/SVGStroke.lean') != ''
-        env:
-          CORE_SHA: ${{ needs.resolve.outputs.sha }}
-        run: |
-          node builds/scripts/package-svg-runtime.mjs \
-            --core core --source-commit "$CORE_SHA" \
-            --out "$RUNNER_TEMP/svg-browser-runtime" --kind development
-      - name: Upload the SVG browser development runtime
-        if: hashFiles('core/labs/demos/foafnaut/SVGStroke.lean') != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: svg-browser-runtime-development
-          path: ${{ runner.temp }}/svg-browser-runtime/
-          if-no-files-found: error
-          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: foafnaut-engines
@@ -418,6 +404,34 @@ jobs:
             core/labs/demos/foafnaut/.build/source-SHA256SUMS
             core/labs/demos/foafnaut/.build/tool-versions.txt
           include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Package the SVG browser runtime from the fresh tested build
+        if: needs.resolve.outputs.foafnaut_web == 'true'
+        env:
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/foafnaut-web/stage/docs/web/hub/svg-webgpu/runtime"
+          mkdir -p "$(dirname "$STAGE")" "$RUNNER_TEMP/foafnaut-web/meta"
+          node builds/scripts/package-svg-runtime.mjs \
+            --core core --source-commit "$CORE_SHA" \
+            --out "$STAGE" --kind development
+          python3 - core/labs/demos/foafnaut/.build/tool-versions.txt core/labs/demos/foafnaut/toolchain-versions.env "$RUNNER_TEMP/foafnaut-web/meta/toolchains-foafnaut-web.json" <<'PY'
+          import json, pathlib, subprocess, sys
+          lines = pathlib.Path(sys.argv[1]).read_text().splitlines()
+          versions = dict(line.split('=', 1) for line in pathlib.Path(sys.argv[2]).read_text().splitlines()
+                          if line and not line.startswith('#'))
+          value = {'lean_build': lines[0], 'emscripten': versions['EMSCRIPTEN_VERSION'],
+                   'deno': subprocess.check_output(['deno', '--version'], text=True).splitlines()[0]}
+          json.dump(value, open(sys.argv[3], 'w'), indent=2)
+          PY
+      - name: Upload the checked SVG browser runtime release candidate
+        if: needs.resolve.outputs.foafnaut_web == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: foafnaut-web
+          path: ${{ runner.temp }}/foafnaut-web/
           if-no-files-found: error
           retention-days: 7
 
@@ -932,7 +946,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates, foafnaut]
+    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates, foafnaut-engines, foafnaut]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -948,4 +962,5 @@ jobs:
           SHORT: ${{ needs.resolve.outputs.short }}
           REF: ${{ needs.resolve.outputs.ref }}
           FOAFNAUT: ${{ needs.resolve.outputs.foafnaut }}
+          FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' }}
         run: scripts/publish.sh

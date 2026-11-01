@@ -24,7 +24,7 @@ other commit runs the gates and publishes nothing. Jobs and their gates:
 | `lean-wasm` (Linux) | `Wasm/build-wasm.sh` with Emscripten 6.0.8 | the build itself and its check that the wasm copies agree. It runs no tests: the npm tests run in `web-gates` |
 | `fstar` (Linux), `fstar-macos` | `build-ocaml.sh extract`, `compile`; Linux also `js`, `wasm`, `npm` | the re-extracted `.ml` equal core's committed `.ml`; Linux runs `build-ocaml.sh test` (W3C suites, dashboard) |
 | `web-gates` (Linux) | nothing; installs the `fstar` web products and the `lean-wasm` module into one checkout | `npm test` in `npm/factoidal` (Node 22), with no skipped test; `tests/engine-compare/run.sh`; `tests/known-defects/run.sh`. The `l4diff` differential is a measurement, not a gate |
-| `foafnaut-engines` (Linux, when present) | small Lean WASM engines with the shared runtime cache, including the RDF-driven graph when present | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests |
+| `foafnaut-engines` (Linux, when present) | small Lean WASM engines with the shared runtime cache, including the RDF-driven graph when present | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests; packages a browser runtime only from these fresh tested engines |
 | `foafnaut` (macOS arm64) | three Deno-compiled graphics executables, Cocoa sidecar, launchers and SVG fixtures | requires the Lean gates and engines job; repeats portable tests, relocates the package, checks all compiled CPU engines and native library loading. No GPU/window or SVG visual pass is inferred |
 | `publish` | packs each complete set | a set whose jobs did not all pass is not published, and the run is red; the `web` set also needs `web-gates` |
 
@@ -37,6 +37,7 @@ One release per (core commit, set), tagged `build-<12 hex core commit>-<set>`:
 | `linux-x86_64`, `darwin-arm64` | `bin/<platform>/`: the F\* CLI, HTTP server and suite runners, and the Lean CLI `l4factoidal`, `l4w3c`, `l4wasm-cli` |
 | `web` | F\* JS and wasm bundles (`docs/fstar-extracted/`, `npm/factoidal/`), the Lean wasm module (`docs/web/hub/assets/l4/`, `npm/factoidal/l4-assets/`, `npm/factoidal-lean/`), the generated F\* dashboard (`docs/test-results/`), and the Lean scoreboard (`lean-scoreboard.json`, `.txt`) |
 | `foafnaut-darwin-arm64` (when present) | `foafnaut/`: native UI (springs, layout, vectors, and the RDF-driven FOAFNaut browser when present), Lean-generated still renderer, SVG subset renderer, Cocoa sidecar, `.command` launchers, sample SVGs and source/toolchain provenance |
+| `foafnaut-web` (when the SVG hub page and `SVGStroke.lean` are present) | `docs/web/hub/svg-webgpu/runtime/`: Lean-generated SVG and render-plan WASM plus minimal JS host adapters |
 
 Each release carries `<set>.tar.gz` (deterministic: sorted, mtime 0) and
 `build-info.json` (source commit, toolchain versions, run URL, sha256 and
@@ -64,6 +65,17 @@ availability fails the resolver; it does not silently skip the demo gates.
 Old core commits keep their three-set requirement. A failed demo job withholds
 that set and marks the run red; passing core sets can still publish. Only core
 main commits publish; PR builds remain validation only.
+
+When the same core commit contains `docs/web/hub/svg-webgpu/index.njk` and
+`labs/demos/foafnaut/SVGStroke.lean`, the Linux engine job uploads the
+`foafnaut-web` release candidate. This set
+contains only the SVG browser runtime under
+`docs/web/hub/svg-webgpu/runtime/`; the page, CSS and fixtures stay in
+factoidal-core. `publish.sh` checks that the exact core commit is on core
+`main`, verifies all runtime files, and records the release build-run URL
+before creating the release. The package evidence records a fresh Lean/WASM
+build and named source tests, not SVG conformance or GPU correctness. This set
+is independent of the native macOS graphics package.
 
 The GPU checks and official SVG visual comparisons require a real GPU run.
 The source lab documents its supported SVG profile and the pinned WPT runner;

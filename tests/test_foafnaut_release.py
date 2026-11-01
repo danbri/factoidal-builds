@@ -57,7 +57,8 @@ class ReleaseTests(unittest.TestCase):
                         INPUT_REF=SHA, SHA=SHA, SHORT=SHA[:12], REF='main',
                         EVENT='workflow_dispatch', FORCE='false', GITHUB_REPOSITORY='test/builds',
                         GITHUB_RUN_ID='123', GITHUB_OUTPUT=str(self.root / 'outputs'),
-                        TEST_LOG=str(self.root / 'gh.jsonl'), TEST_FOAF='true', TEST_STATUS='identical')
+                        TEST_LOG=str(self.root / 'gh.jsonl'), TEST_FOAF='true',
+                        TEST_SVG_STROKE='false', TEST_SVG_PAGE='false', TEST_STATUS='identical')
         self.command('gh', '''#!/usr/bin/env python3
 import json, os, sys
 from pathlib import Path
@@ -67,15 +68,23 @@ if a[0] == 'api':
     if os.environ.get('TEST_API_FAIL') == '1': sys.exit(2)
     if '/compare/' in a[1]: print(os.environ['TEST_STATUS'])
     else:
+        previous = Path(os.environ['TEST_LOG']).read_text().splitlines()
+        api_count = sum(1 for line in previous if json.loads(line)[0] == 'api') - 1
+        probe = api_count // 4
         rev = a[1].split('/')[-1]
-        parts = ['labs', 'demos', 'foafnaut', 'build-engines.sh']
+        choices = [
+            (os.environ['TEST_FOAF'], ['labs','demos','foafnaut','build-engines.sh']),
+            (os.environ['TEST_SVG_STROKE'], ['labs','demos','foafnaut','SVGStroke.lean']),
+            (os.environ['TEST_SVG_PAGE'], ['docs','web','hub','svg-webgpu','index.njk']),
+        ]
+        enabled, parts = choices[min(probe, 2)]
         index = int(rev) if len(rev) == 1 else 0
-        tree = [] if os.environ['TEST_FOAF'] == 'false' else [{
-            'path':parts[index], 'sha':str(index+1), 'type':'blob' if index==3 else 'tree', 'mode':'100755'}]
+        tree = [] if enabled == 'false' and index == len(parts)-1 else [{
+            'path':parts[index], 'sha':str(index+1), 'type':'blob' if index==len(parts)-1 else 'tree', 'mode':'100755'}]
         print(json.dumps({'tree':tree}))
 elif a[:2] == ['release','view']:
     if os.environ.get('TEST_EXISTING') == 'all': print('2020-01-01T00:00:00Z')
-    elif os.environ.get('TEST_EXISTING') == 'legacy' and not a[2].endswith('foafnaut-darwin-arm64'):
+    elif os.environ.get('TEST_EXISTING') == 'legacy' and not a[2].endswith(('foafnaut-darwin-arm64','foafnaut-web')):
         print('2020-01-01T00:00:00Z')
     else: sys.exit(1)
 elif a[:2] != ['release','create']: sys.exit('Unexpected gh command: '+repr(a))
@@ -101,14 +110,22 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('proceed=false', (self.root / 'outputs').read_text())
         self.assertIn('foafnaut=false', (self.root / 'outputs').read_text())
+        self.assertIn('foafnaut_web=false', (self.root / 'outputs').read_text())
 
     def test_resolver_retries_missing_demo_set(self):
-        result = self.run_script('resolve-core.sh', TEST_EXISTING='legacy')
+        result = self.run_script('resolve-core.sh', TEST_EXISTING='legacy',
+                                 TEST_SVG_STROKE='true', TEST_SVG_PAGE='true')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('proceed=true', (self.root / 'outputs').read_text())
         self.assertIn('foafnaut=true', (self.root / 'outputs').read_text())
+        self.assertIn('foafnaut_web=true', (self.root / 'outputs').read_text())
 
-    def test_resolver_skips_complete_four_sets(self):
+    def test_resolver_rejects_page_without_svg_engine(self):
+        result = self.run_script('resolve-core.sh', TEST_SVG_PAGE='true')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('page exists without the Lean SVGStroke', result.stdout)
+
+    def test_resolver_skips_complete_sets(self):
         result = self.run_script('resolve-core.sh', TEST_EXISTING='all')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('proceed=false', (self.root / 'outputs').read_text())
@@ -160,6 +177,40 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         self.assertEqual(creates[0][2], f'build-{SHA[:12]}-foafnaut-darwin-arm64')
         pointer = json.loads((self.root / 'release-out/latest-foafnaut-darwin-arm64.json').read_text())
         self.assertEqual(pointer['source_commit'], SHA)
+
+    def test_svg_runtime_is_finalized_only_inside_main_release_set(self):
+        from hashlib import sha256
+        files = ['svg_engine.mjs', 'gpu_transport.mjs', 'render_plan.mjs',
+                 'engines/svg-engine.mjs', 'engines/svg-engine.wasm',
+                 'engines/render-plan.mjs', 'engines/render-plan.wasm']
+        root = self.root / 'art/foafnaut-web/stage/docs/web/hub/svg-webgpu/runtime'
+        rows = []
+        for name in files:
+            body = b'\0asm\x01\0\0\0x' if name.endswith('.wasm') else f'fixture {name}'.encode()
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(body)
+            rows.append({'path':name,'bytes':len(body),'sha256':sha256(body).hexdigest()})
+        (root / 'provenance.json').write_text(json.dumps({
+            'format':'factoidal-svg-webgpu-runtime-v1','kind':'development','sourceCommit':SHA,
+            'files':rows,'evidence':{'qualification':'development only'}}))
+        meta = self.root / 'art/foafnaut-web/meta'
+        meta.mkdir(parents=True)
+        (meta / 'toolchains-foafnaut-web.json').write_text('{"lean":"test","emscripten":"test"}')
+        result = self.run_script('publish.sh', FOAFNAUT='false', FOAFNAUT_WEB='true',
+                                 GITHUB_REPOSITORY='danbri/factoidal-builds')
+        self.assertEqual(result.returncode, 1, result.stderr)
+        out = self.root / 'release-out/foafnaut-web'
+        info = json.loads((out / 'build-info.json').read_text())
+        self.assertEqual(info['source_commit'], SHA)
+        creates = [json.loads(line) for line in (self.root / 'gh.jsonl').read_text().splitlines()
+                   if json.loads(line)[:2] == ['release','create']]
+        self.assertEqual([cmd[2] for cmd in creates], [f'build-{SHA[:12]}-foafnaut-web'])
+        archive = out / 'foafnaut-web.tar.gz'
+        with tarfile.open(archive) as tf:
+            manifest = json.load(tf.extractfile('docs/web/hub/svg-webgpu/runtime/provenance.json'))
+        self.assertEqual(manifest['kind'], 'release')
+        self.assertIn('/actions/runs/123', manifest['evidence']['releaseBuildRun'])
 
 
 if __name__ == '__main__':
