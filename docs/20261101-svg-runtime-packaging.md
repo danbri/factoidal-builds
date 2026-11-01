@@ -30,7 +30,7 @@ seven-day retention. A packaging failure fails this job; missing upload files
 are errors. The package still says development and is not a release asset or
 a published demo page. No release pointer or provenance qualification changes.
 
-This step applies to core revisions containing SVGDashUnits, which marks the
+This step applies to core revisions containing SVGStroke, which marks the
 source generation supported by the current required closure. Earlier revisions
 retain their existing native build path and do not get this browser artifact.
 This compatibility condition must not hide missing dependencies in a supported
@@ -43,3 +43,10 @@ only after source/workflow integration and a successful CI run. Once available,
 extract the artifact into the browser demo's configured runtime directory,
 preserving `engines/` and `provenance.json`. It contains runtime assets, not the
 HTML application or proof of visual conformance.
+
+Shared linear-contour stroking adds SVGStroke to the required closure and its
+missing-module refusal test. The CI compatibility condition now uses that source
+generation. Older supported-source generations need their corresponding older
+packager; no omitted current producer dependency is accepted.
+The resulting fourteen packaging controls pass locally. No runtime artifact was
+published by this dependency update.
