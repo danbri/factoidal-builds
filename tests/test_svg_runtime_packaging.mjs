@@ -81,10 +81,10 @@ test('shortened, duplicate and traversing source manifests are refused',async t=
   await f.put(`${LAB}/.build/source-SHA256SUMS`,'0'.repeat(64)+'  ../outside\n');
   await assert.rejects(f.run(),/Unsafe source path/);
 });
-test('omitting the CSS producer dependency is refused',async t=>{
+for(const module of ['SVGCSS','SVGDash'])test(`omitting the ${module} producer dependency is refused`,async t=>{
   const f=await fixture(t);
-  await f.put(`${LAB}/.build/source-SHA256SUMS`,f.manifest.split('\n').filter(line=>!line.endsWith('/SVGCSS.lean')).join('\n'));
-  await assert.rejects(f.run(),/omits required dependency: .*SVGCSS\.lean/);
+  await f.put(`${LAB}/.build/source-SHA256SUMS`,f.manifest.split('\n').filter(line=>!line.endsWith('/'+module+'.lean')).join('\n'));
+  await assert.rejects(f.run(),new RegExp('omits required dependency: .*'+module+'\\.lean'));
   await assert.rejects(access(f.out));
 });
 test('missing engines and non-WASM bytes fail instead of producing an incomplete runtime',async t=>{

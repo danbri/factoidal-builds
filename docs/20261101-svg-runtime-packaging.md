@@ -11,3 +11,7 @@ The script-check workflow runs these on Node22. No rendering or source-to-binary
 correspondence is proved by packaging. Release mode intentionally refuses until
 a fresh-build workflow provides the required build evidence. This patch neither
 publishes the browser demo nor dispatches a release.
+
+Updated the required closure for SVGDash after dashed-stroke support. Twelve
+packaging tests pass, including separate missing-CSS and missing-dash-module
+refusal tests. No runtime package was built or published by this check.
