@@ -14,6 +14,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Release selection, publication refusal and archive provenance
         run: python3 -m unittest discover -s tests -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: SVG browser runtime packaging controls
+        run: node --test tests/test_svg_runtime_packaging.mjs
       - name: Shell syntax
         run: |
           for script in scripts/resolve-core.sh scripts/publish.sh scripts/build-foafnaut.sh; do
