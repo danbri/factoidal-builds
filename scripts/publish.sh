@@ -6,7 +6,7 @@
 # uploads its artifact as its last step, after all its gates, so a missing
 # artifact means a failed gate (or a cancelled job) and the set is skipped.
 #
-# Env: SHA, SHORT, REF, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID.
+# Env: SHA, SHORT, REF, FOAFNAUT, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID.
 # Layout read: art/<artifact>/{stage,stage-native,stage-web,meta}/...
 set -euo pipefail
 
@@ -30,22 +30,31 @@ declare -A NEEDS=(
   [linux-x86_64]="fstar-linux-x86_64/stage-native lean-linux-x86_64/stage"
   [darwin-arm64]="fstar-darwin-arm64/stage-native lean-darwin-arm64/stage"
   [web]="fstar-linux-x86_64/stage-web lean-wasm/stage"
+  [foafnaut-darwin-arm64]="foafnaut-darwin-arm64/stage"
+  [foafnaut-web]="foafnaut-web/stage"
 )
 # Artifacts that must exist (a gate job passed) but carry no content.
 declare -A REQUIRES=(
   [linux-x86_64]=""
   [darwin-arm64]=""
   [web]="web-gates"
+  [foafnaut-darwin-arm64]=""
+  [foafnaut-web]=""
 )
 declare -A TOOLS=(
   [linux-x86_64]="fstar-linux-x86_64/meta/toolchains-fstar-linux-x86_64.json lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json"
   [darwin-arm64]="fstar-darwin-arm64/meta/toolchains-fstar-darwin-arm64.json lean-darwin-arm64/meta/toolchains-lean-darwin-arm64.json"
   [web]="fstar-linux-x86_64/meta/toolchains-fstar-linux-x86_64.json lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json lean-wasm/meta/toolchains-lean-wasm.json"
+  [foafnaut-darwin-arm64]="foafnaut-darwin-arm64/meta/toolchains-foafnaut.json"
+  [foafnaut-web]="foafnaut-web/meta/toolchains-foafnaut-web.json"
 )
 
 PUBLISHED=()
 SKIPPED=()
-for SET in linux-x86_64 darwin-arm64 web; do
+SETS="linux-x86_64 darwin-arm64 web"
+if [ "${FOAFNAUT:-false}" = true ]; then SETS="$SETS foafnaut-darwin-arm64"; fi
+if [ "${FOAFNAUT_WEB:-false}" = true ]; then SETS="$SETS foafnaut-web"; fi
+for SET in $SETS; do
   MISSING=""
   for d in ${NEEDS[$SET]} ${REQUIRES[$SET]}; do
     [ -d "$ART/$d" ] || MISSING="$MISSING $d"
@@ -74,6 +83,12 @@ for SET in linux-x86_64 darwin-arm64 web; do
   for d in ${NEEDS[$SET]}; do
     ( cd "$ART/$d" && tar -cf - . ) | ( cd "$STAGE" && tar -xpf - )
   done
+  if [ "$SET" = foafnaut-web ]; then
+    node scripts/finalize-svg-runtime.mjs \
+      --runtime "$STAGE/docs/web/hub/svg-webgpu/runtime" \
+      --source-commit "$SHA" \
+      --build-run "${GITHUB_SERVER_URL:-https://github.com}/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+  fi
   TOOLARGS=()
   for t in ${TOOLS[$SET]}; do TOOLARGS+=("$ART/$t"); done
   python3 scripts/make-release.py "$STAGE" "$SET" "$SHA" "$REF" "$OUT/$SET" "${TOOLARGS[@]}"
@@ -105,9 +120,16 @@ for SET in linux-x86_64 darwin-arm64 web; do
     gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
   fi
   RUN_URL="${GITHUB_SERVER_URL:-https://github.com}/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+  INSTALL="Install with tools/fetch-builds.sh in a factoidal-core checkout."
+  if [ "$SET" = foafnaut-darwin-arm64 ]; then
+    INSTALL="Experimental macOS ARM64 demos: extract the archive and open 'foafnaut/Native Demos.command' or 'foafnaut/SVG Demo.command'. No Node, Deno or Lean installation required. Unsigned; GPU/window behavior needs a desktop session. CI checks CPU engines, packaging and native loading, not visual conformance."
+  fi
+  if [ "$SET" = foafnaut-web ]; then
+    INSTALL="Experimental SVG WebGPU browser runtime. Install with tools/fetch-builds.sh --set foafnaut-web in factoidal-core. The page and fixtures are core source; this set carries only the same-run Lean/WASM runtime. Its evidence records source/build identity and tests, not SVG conformance or GPU correctness."
+  fi
   gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
     --title "$SET build of factoidal-core ${SHORT}" \
-    --notes "Built from https://github.com/${CORE_REPO:-danbri/factoidal-core}/commit/$SHA ($REF) by $RUN_URL. Install with tools/fetch-builds.sh in a factoidal-core checkout; build-info.json lists the sha256 of every file." \
+    --notes "Built from https://github.com/${CORE_REPO:-danbri/factoidal-core}/commit/$SHA ($REF) by $RUN_URL. $INSTALL build-info.json lists the sha256 of every file." \
     "$OUT/$SET/$SET.tar.gz" "$OUT/$SET/build-info.json" "${EXTRA[@]}"
   python3 - "$SET" "$TAG" "$SHA" "$REF" "$RUN_URL" > "$OUT/latest-$SET.json" <<'PY'
 import datetime, json, sys

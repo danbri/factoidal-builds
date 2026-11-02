@@ -1,0 +1,26 @@
+name: Build-script release controls
+on:
+  pull_request:
+    paths: ['scripts/**', 'tests/**', '.github/workflows/**']
+  push:
+    branches: [main]
+    paths: ['scripts/**', 'tests/**', '.github/workflows/**']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release selection, publication refusal and archive provenance
+        run: python3 -m unittest discover -s tests -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: SVG browser runtime packaging and release controls
+        run: node --test tests/test_svg_runtime_packaging.mjs tests/test_finalize_svg_runtime.mjs
+      - name: Shell syntax
+        run: |
+          for script in scripts/resolve-core.sh scripts/publish.sh scripts/build-foafnaut.sh; do
+            bash -n "$script"
+          done

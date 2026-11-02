@@ -6,7 +6,8 @@
 #   EVENT (github.event_name), GH_TOKEN, GITHUB_OUTPUT, GITHUB_REPOSITORY.
 # Default ref: `main` if core has it, else `claude/core-split` (the branch
 # the 2026-10-09 split was pushed to; the owner renames it to main).
-# Outputs: ref, sha, short (12 hex), proceed (true|false).
+# Outputs: ref, sha, short (12 hex), proceed, foafnaut (true|false),
+#   foafnaut_web (true|false; requires the page and Lean engine source).
 set -euo pipefail
 CORE_URL="https://github.com/${CORE_REPO:-danbri/factoidal-core}"
 REF="${INPUT_REF:-}"
@@ -53,6 +54,21 @@ SHORT="${SHA:0:12}"
 # counted, so a commit whose web set failed (web-gates red) was never built
 # again: 25 of 102 built core commits had no web set on 2026-10-26.
 SETS="linux-x86_64 darwin-arm64 web"
+FOAFNAUT=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+  "$SHA" labs/demos/foafnaut/build-engines.sh)
+if [ "$FOAFNAUT" = true ]; then SETS="$SETS foafnaut-darwin-arm64"; fi
+SVG_STROKE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+  "$SHA" labs/demos/foafnaut/SVGStroke.lean)
+SVG_PAGE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+  "$SHA" docs/web/hub/svg-webgpu/index.njk)
+if [ "$SVG_PAGE" = true ] && [ "$SVG_STROKE" != true ]; then
+  echo "::error::SVG browser page exists without the Lean SVGStroke engine source"; exit 1
+fi
+FOAFNAUT_WEB="$SVG_PAGE"
+if [ "$FOAFNAUT_WEB" = true ] && [ "$FOAFNAUT" != true ]; then
+  echo "::error::SVG browser sources exist without the foafnaut engine build entry point"; exit 1
+fi
+if [ "$FOAFNAUT_WEB" = true ]; then SETS="$SETS foafnaut-web"; fi
 HAVE=""; MISSING=""; NEWEST=""
 for s in $SETS; do
   AT="$(gh release view "build-$SHORT-$s" --repo "$GITHUB_REPOSITORY" \
@@ -84,5 +100,5 @@ case "$EVENT" in
 esac
 echo "core $REF = $SHA (requested by requests/build.txt: $REQUESTED; all sets released: $EXISTS; missing:${MISSING:- none}) -> proceed=$PROCEED"
 {
-  echo "ref=$REF"; echo "sha=$SHA"; echo "short=$SHORT"; echo "proceed=$PROCEED"
+  echo "ref=$REF"; echo "sha=$SHA"; echo "short=$SHORT"; echo "proceed=$PROCEED"; echo "foafnaut=$FOAFNAUT"; echo "foafnaut_web=$FOAFNAUT_WEB"
 } >> "$GITHUB_OUTPUT"
