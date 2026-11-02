@@ -68,20 +68,33 @@ if a[0] == 'api':
     if os.environ.get('TEST_API_FAIL') == '1': sys.exit(2)
     if '/compare/' in a[1]: print(os.environ['TEST_STATUS'])
     else:
-        previous = Path(os.environ['TEST_LOG']).read_text().splitlines()
-        api_count = sum(1 for line in previous if json.loads(line)[0] == 'api') - 1
-        probe = api_count // 4
-        rev = a[1].split('/')[-1]
         choices = [
-            (os.environ['TEST_FOAF'], ['labs','demos','foafnaut','build-engines.sh']),
-            (os.environ['TEST_SVG_STROKE'], ['labs','demos','foafnaut','SVGStroke.lean']),
-            (os.environ['TEST_SVG_PAGE'], ['docs','web','hub','svg-webgpu','index.njk']),
+            ('TEST_FOAF', 'labs/demos/foafnaut/build-engines.sh'),
+            ('TEST_SVG_STROKE', 'labs/demos/foafnaut/SVGStroke.lean'),
+            ('TEST_SVG_PAGE', 'docs/web/hub/svg-webgpu/index.njk'),
+            ('TEST_HTML_PAGE', 'docs/web/hub/html-webgpu/index.njk'),
+            ('TEST_HTML_ENGINE', 'labs/demos/foafnaut/WebRender.lean'),
+            ('TEST_HTML_BUILD', 'labs/demos/foafnaut/build-web-render.sh'),
         ]
-        enabled, parts = choices[min(probe, 2)]
-        index = int(rev) if len(rev) == 1 else 0
-        tree = [] if enabled == 'false' and index == len(parts)-1 else [{
-            'path':parts[index], 'sha':str(index+1), 'type':'blob' if index==len(parts)-1 else 'tree', 'mode':'100755'}]
-        print(json.dumps({'tree':tree}))
+        import hashlib
+        paths = [path for key,path in choices if os.environ.get(key) == 'true']
+        prefixes = {''}
+        for path in paths:
+            parts = path.split('/')
+            prefixes.update('/'.join(parts[:i]) for i in range(1,len(parts)))
+        identity = lambda prefix: os.environ['SHA'] if not prefix else hashlib.sha1(prefix.encode()).hexdigest()
+        prefix = next((p for p in prefixes if identity(p) == a[1].split('/')[-1]), None)
+        if prefix is None: sys.exit('Unknown tree')
+        children = {}
+        for path in paths:
+            parent = prefix+'/' if prefix else ''
+            if not path.startswith(parent): continue
+            tail = path[len(parent):]
+            name = tail.split('/')[0]
+            full = parent+name
+            children[name] = {'path':name, 'sha':identity(full),
+                'type':'tree' if '/' in tail else 'blob', 'mode':'040000' if '/' in tail else '100755'}
+        print(json.dumps({'tree':list(children.values())}))
 elif a[:2] == ['release','view']:
     if os.environ.get('TEST_EXISTING') == 'all': print('2020-01-01T00:00:00Z')
     elif os.environ.get('TEST_EXISTING') == 'legacy' and not a[2].endswith(('foafnaut-darwin-arm64','foafnaut-web')):
@@ -124,6 +137,21 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         result = self.run_script('resolve-core.sh', TEST_SVG_PAGE='true')
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('page exists without the Lean SVGStroke', result.stdout)
+
+    def test_html_alone_enables_browser_release(self):
+        result = self.run_script('resolve-core.sh', TEST_EXISTING='legacy',
+            TEST_HTML_PAGE='true', TEST_HTML_ENGINE='true', TEST_HTML_BUILD='true')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('foafnaut_web=true', (self.root / 'outputs').read_text())
+        self.assertIn('proceed=true', (self.root / 'outputs').read_text())
+
+    def test_html_page_requires_lean_engine_and_builder(self):
+        for engine,builder in [('false','true'),('true','false')]:
+            with self.subTest(engine=engine,builder=builder):
+                result = self.run_script('resolve-core.sh', TEST_HTML_PAGE='true',
+                    TEST_HTML_ENGINE=engine, TEST_HTML_BUILD=builder)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('HTML browser page exists without', result.stdout)
 
     def test_resolver_skips_complete_sets(self):
         result = self.run_script('resolve-core.sh', TEST_EXISTING='all')
@@ -194,6 +222,17 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         (root / 'provenance.json').write_text(json.dumps({
             'format':'factoidal-svg-webgpu-runtime-v1','kind':'development','sourceCommit':SHA,
             'files':rows,'evidence':{'qualification':'development only'}}))
+        html = self.root / 'art/foafnaut-web/stage/docs/web/hub/html-webgpu/runtime'
+        html.mkdir(parents=True)
+        html_rows = []
+        for name in ['web-render.mjs','web-render.wasm','render-plan.mjs','render-plan.wasm',
+                     'gpu-transport.mjs','render-plan-host.mjs','source-witness.json']:
+            body = b'\0asm\x01\0\0\0x' if name.endswith('.wasm') else f'fixture {name}'.encode()
+            (html / name).write_bytes(body)
+            html_rows.append({'path':name,'bytes':len(body),'sha256':sha256(body).hexdigest()})
+        (html / 'manifest.json').write_text(json.dumps({
+            'format':'factoidal-html-webgpu-runtime-v1','kind':'development','sourceCommit':SHA,
+            'files':html_rows,'evidence':{'qualification':'development only'}}))
         meta = self.root / 'art/foafnaut-web/meta'
         meta.mkdir(parents=True)
         (meta / 'toolchains-foafnaut-web.json').write_text('{"lean":"test","emscripten":"test"}')
@@ -209,7 +248,10 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         archive = out / 'foafnaut-web.tar.gz'
         with tarfile.open(archive) as tf:
             manifest = json.load(tf.extractfile('docs/web/hub/svg-webgpu/runtime/provenance.json'))
+            html_manifest = json.load(tf.extractfile('docs/web/hub/html-webgpu/runtime/manifest.json'))
         self.assertEqual(manifest['kind'], 'release')
+        self.assertEqual(html_manifest['kind'], 'release')
+        self.assertIn('/actions/runs/123', html_manifest['evidence']['releaseBuildRun'])
         self.assertIn('/actions/runs/123', manifest['evidence']['releaseBuildRun'])
 
 

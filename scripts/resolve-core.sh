@@ -64,9 +64,21 @@ SVG_PAGE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/facto
 if [ "$SVG_PAGE" = true ] && [ "$SVG_STROKE" != true ]; then
   echo "::error::SVG browser page exists without the Lean SVGStroke engine source"; exit 1
 fi
+HTML_PAGE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+  "$SHA" docs/web/hub/html-webgpu/index.njk)
 FOAFNAUT_WEB="$SVG_PAGE"
+if [ "$HTML_PAGE" = true ]; then
+  HTML_ENGINE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+    "$SHA" labs/demos/foafnaut/WebRender.lean)
+  HTML_BUILD=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+    "$SHA" labs/demos/foafnaut/build-web-render.sh)
+  if [ "$HTML_ENGINE" != true ] || [ "$HTML_BUILD" != true ]; then
+    echo "::error::HTML browser page exists without the Lean engine or build entry point"; exit 1
+  fi
+  FOAFNAUT_WEB=true
+fi
 if [ "$FOAFNAUT_WEB" = true ] && [ "$FOAFNAUT" != true ]; then
-  echo "::error::SVG browser sources exist without the foafnaut engine build entry point"; exit 1
+  echo "::error::Browser sources exist without the foafnaut engine build entry point"; exit 1
 fi
 if [ "$FOAFNAUT_WEB" = true ]; then SETS="$SETS foafnaut-web"; fi
 HAVE=""; MISSING=""; NEWEST=""

@@ -163,3 +163,18 @@ ported), and `latest/<set>.json` pointers written by the `publish` job.
 
 Old releases may be deleted at any time; they are reproducible from the
 source commit named in `build-info.json`.
+
+### Lean HTML/CSS browser runtime
+
+When the pinned core includes `docs/web/hub/html-webgpu/index.njk`, the optional
+`foafnaut-web` set also builds the targeted Lean HTML/CSS renderer and checks its
+actual WASM ABI, deterministic artifacts, reference probes and link picker.
+`package-html-runtime.mjs` validates the committed Lean import closure, generated
+C and engine hashes before staging the seven runtime files and a manifest.
+Only the existing main-ancestry-gated publisher can finalize a development
+manifest as a release. The public page uses relative worker/runtime URLs.
+These checks establish build identity and named behavior, not full HTML/SVG
+conformance, compiler correctness or native GPU presentation. The packager tests
+use explicitly synthetic fixture modules; they do not count as rendering tests.
+
+Tracking: https://github.com/danbri/factoidal/issues/1230 .

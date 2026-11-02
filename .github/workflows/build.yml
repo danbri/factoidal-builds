@@ -393,6 +393,19 @@ jobs:
         if: needs.resolve.outputs.foafnaut_web == 'true'
         with:
           node-version: '22'
+      - name: Build and check the Lean HTML browser runtime
+        if: needs.resolve.outputs.foafnaut_web == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f core/docs/web/hub/html-webgpu/index.njk ]; then
+            source ~/emsdk/emsdk_env.sh
+            export FACTOIDAL_WASM_RUNTIME_CACHE="$HOME/l4wasm-work"
+            bash core/labs/demos/foafnaut/build-web-render.sh --wasm
+            node core/labs/demos/foafnaut/web-render/check-wasm.mjs \
+              core/labs/demos/foafnaut/.build/web-render/engines/web-render.mjs \
+              "$RUNNER_TEMP/html-wasm-abi.json"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: foafnaut-engines
@@ -426,7 +439,19 @@ jobs:
                    'deno': subprocess.check_output(['deno', '--version'], text=True).splitlines()[0]}
           json.dump(value, open(sys.argv[3], 'w'), indent=2)
           PY
-      - name: Upload the checked SVG browser runtime release candidate
+      - name: Package the HTML browser runtime from the fresh checked build
+        if: needs.resolve.outputs.foafnaut_web == 'true'
+        env:
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ -f core/docs/web/hub/html-webgpu/index.njk ]; then
+            node builds/scripts/package-html-runtime.mjs \
+              --core core --source-commit "$CORE_SHA" --kind development \
+              --out "$RUNNER_TEMP/foafnaut-web/stage/docs/web/hub/html-webgpu/runtime"
+            cp "$RUNNER_TEMP/html-wasm-abi.json" "$RUNNER_TEMP/foafnaut-web/meta/html-wasm-abi.json"
+          fi
+      - name: Upload the checked browser runtime release candidate
         if: needs.resolve.outputs.foafnaut_web == 'true'
         uses: actions/upload-artifact@v4
         with:
