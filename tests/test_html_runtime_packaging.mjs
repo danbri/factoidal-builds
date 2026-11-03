@@ -9,7 +9,7 @@ import {execFileSync} from 'node:child_process';
 import {packageHtmlRuntime,stripHtmlBridge,HTML_RUNTIME_FILES} from '../scripts/package-html-runtime.mjs';
 import {finalizeHtmlRuntime} from '../scripts/finalize-html-runtime.mjs';
 const LAB='labs/demos/foafnaut',BUILD=LAB+'/.build/web-render',hash=b=>createHash('sha256').update(b).digest('hex');
-async function fixture(t,{rdf=false,font=false,initializer}={}){
+async function fixture(t,{rdf=false,font=false,document=false,initializer}={}){
  const root=await mkdtemp(join(tmpdir(),'html-runtime-test-'));t.after(()=>rm(root,{recursive:true,force:true}));
  const core=join(root,'core'),out=join(root,'runtime');await mkdir(core);
  const put=async(p,b)=>{await mkdir(join(core,p,'..'),{recursive:true});await writeFile(join(core,p),b);};
@@ -22,6 +22,14 @@ async function fixture(t,{rdf=false,font=false,initializer}={}){
   ['formal/lean4/lean-toolchain']:'fake Lean version\n'};
  if(rdf||font){sources[LAB+'/WebRenderRDF.lean']='import WebRender\nimport L4Factoidal.Rendering.RdfFixture\n';sources['formal/lean4/L4Factoidal/Rendering/RdfFixture.lean']='-- fake RDF parser dependency\n';sources[LAB+'/web_render_shim.c']='initialize_WebRenderRDF(1);\n';}
  if(font){sources[LAB+'/WebRenderFont.lean']='import WebRender\nimport L4Factoidal.Rendering.FontFixture\n';sources['formal/lean4/L4Factoidal/Rendering/FontFixture.lean']='-- fake supplied font dependency\n';sources[LAB+'/web_render_shim.c']+='initialize_WebRenderFont(1);\n';}
+ if(document){
+  sources[LAB+'/WebDocument.lean']='import WebRenderScript\nimport WebRenderFontRequests\n';
+  sources[LAB+'/WebRenderScript.lean']='import WebRender\nimport L4Factoidal.DOM.ScriptFixture\n';
+  sources[LAB+'/WebRenderFontRequests.lean']='import WebRender\nimport L4Factoidal.Rendering.FontRequestsFixture\n';
+  sources['formal/lean4/L4Factoidal/DOM/ScriptFixture.lean']='-- fake DOM mutation dependency\n';
+  sources['formal/lean4/L4Factoidal/Rendering/FontRequestsFixture.lean']='-- fake computed font request dependency\n';
+  sources[LAB+'/web_render_shim.c']+='initialize_WebDocument(1);\n';
+ }
  if(initializer)sources[LAB+'/web_render_shim.c']=`initialize_${initializer}(1);\n`;
  for(const[p,b]of Object.entries(sources))await put(p,b);
  await put(LAB+'/gpu_transport.ts','import {x} from "./render_plan.ts";\nexport const y:number=x;\n');
@@ -62,6 +70,17 @@ test('multiple initializers require both RDF and supplied-font source closures',
   const g=await fixture(t,{font:true});delete g.witness.files[path];await g.save();await assert.rejects(g.run(),/omits source dependency/);
  }
  const h=await fixture(t,{initializer:'Unreviewed'});await assert.rejects(h.run(),/initializer requires review/);
+});
+test('document initializer requires script and font-request transitive source witnesses',async t=>{
+ const f=await fixture(t,{font:true,document:true});
+ const manifest=await f.run();assert.deepEqual(manifest.files.map(row=>row.path),HTML_RUNTIME_FILES);
+ for(const path of [LAB+'/WebDocument.lean',LAB+'/WebRenderScript.lean',LAB+'/WebRenderFontRequests.lean',
+   'formal/lean4/L4Factoidal/DOM/ScriptFixture.lean','formal/lean4/L4Factoidal/Rendering/FontRequestsFixture.lean']){
+  const g=await fixture(t,{font:true,document:true});delete g.witness.files[path];await g.save();
+  await assert.rejects(g.run(),/omits source dependency/);await assert.rejects(access(g.out));
+ }
+ const h=await fixture(t,{document:true});await h.put(LAB+'/WebRenderScript.lean','-- changed mutation implementation\n');
+ await assert.rejects(h.run(),/Uncommitted source/);
 });
 test('wrong revision, dirty source and direct release labels fail',async t=>{
  const f=await fixture(t);await assert.rejects(f.run({sourceCommit:'f'.repeat(40)}),/source differs/);

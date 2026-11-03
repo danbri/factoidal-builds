@@ -38,6 +38,22 @@ This CLI needs no Lean, Node or Deno installation. It does not open a GPU window
 The separate public WebGPU viewer paints the same scene. Named CPU/relocation
 checks do not establish complete HTML/CSS/SVG conformance or native GPU behavior.
 EOF
+  if [ -f "$LAB/WebDocument.lean" ]; then
+    cat > "$PACKAGE/html-document-request.json" <<'EOF'
+{"op":"render","url":"https://example.invalid/","resources":[],"commands":[]}
+EOF
+    cat >> "$PACKAGE/HTML_RENDERER.txt" <<'EOF'
+
+This source also supports the document transaction ABI:
+./lean-html-scene-darwin-arm64 html-fixtures/boxes.html 120 160 --document html-document-request.json
+
+The request supplies resolved resource bytes and DOM command history. The CLI
+does not fetch URLs or execute page JavaScript. This bundle does not include the
+local browser UI/server or the QuickJS WASM runtime. The document input above
+has no external resource or supplied-font requirements.
+EOF
+    (cd "$PACKAGE" && shasum -a 256 html-document-request.json >> SHA256SUMS)
+  fi
   (cd "$PACKAGE" && shasum -a 256 lean-html-scene-darwin-arm64 native-html-source-witness.json HTML_RENDERER.txt html-fixtures/* >> SHA256SUMS)
 fi
 
@@ -62,6 +78,9 @@ cp -R "$PACKAGE/." "$CHECK/"
     if [ -f html-fixtures/graph.nt ]; then
       ./lean-html-scene-darwin-arm64 html-fixtures/graph.nt 380 340 --rdf > "$CHECK/rdf.json"
     fi
+    if [ -f html-document-request.json ]; then
+      ./lean-html-scene-darwin-arm64 html-fixtures/boxes.html 120 160 --document html-document-request.json > "$CHECK/html-document.json"
+    fi
   fi
   if [ -f "$LAB/FoafNaut.lean" ]; then
     ./native-webgpu-ui-darwin-arm64 --demo foafnaut --emit-artifact "$CHECK/foaf.json"
@@ -78,9 +97,10 @@ cp -R "$PACKAGE/." "$CHECK/"
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 names = ['still', 'svg'] + (['foaf'] if (root / 'foaf.json').exists() else [])
-names += [name for name in ['html','rdf'] if (root / f'{name}.json').exists()]
+names += [name for name in ['html','rdf','html-document'] if (root / f'{name}.json').exists()]
 for name in names:
     artifact = json.loads((root / f'{name}.json').read_text())
+    assert 'error' not in artifact, f'{name}: {artifact.get("error")}'
     assert artifact['width'] > 0 and artifact['height'] > 0, name
     assert artifact['wgsl'] and artifact['data'] and artifact['checks'], name
     if name == 'rdf': assert artifact['rdf'] == {'syntax':'N-Triples 1.1','triples':3}

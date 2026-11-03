@@ -171,6 +171,10 @@ When the pinned core includes `docs/web/hub/html-webgpu/index.njk`, the optional
 actual WASM ABI, deterministic artifacts, reference probes and link picker.
 `package-html-runtime.mjs` validates the committed Lean import closure, generated
 C and engine hashes before staging the seven runtime files and a manifest.
+The reviewed `WebDocument` initializer includes the transitive Lean script
+boundary and font request modules in that source witness. The seven-file
+runtime remains the scene engine and GPU transport; it does not include the
+local browser UI/server or QuickJS dependency.
 Only the existing main-ancestry-gated publisher can finalize a development
 manifest as a release. The public page uses relative worker/runtime URLs.
 These checks establish build identity and named behavior, not full HTML/SVG
@@ -185,4 +189,11 @@ fixtures. Clean native packaging installs the pinned Lean toolchain and rebuilds
 the small source/proof closure; it does not require a warm developer checkout.
 The relocated CLI is exercised on HTML and N-Triples before packaging. This is a
 CPU/scene producer, and is explicitly documented separately from a GPU window.
+When the source includes `WebDocument.lean`, the bundle also includes a small
+document request JSON and checks the CLI's `--document` path after relocation.
+Resource bytes and DOM commands must be supplied in that request; the CLI does
+not fetch pages or execute scripts. The complete local browser MVP needs its
+UI/server, QuickJS reactor and font broker in addition to this CLI.
 Remote macOS candidate execution remains necessary before publishing a bundle.
+
+Record: [document closure and native packaging](docs/20261103-html-document-runtime-packaging.md).

@@ -110,7 +110,7 @@ class PolicyEvidenceTests(unittest.TestCase):
 
 
 class PackagingPathTests(unittest.TestCase):
-    def exercise(self, capable, missing_web=False, html=False, missing_html=False, stamped=False):
+    def exercise(self, capable, missing_web=False, html=False, missing_html=False, stamped=False, document=False, document_error=False):
         with tempfile.TemporaryDirectory(prefix='foaf release control ') as temp:
             root = Path(temp)
             core, output, golden, payload, commands = [root / n for n in ('core', 'output', 'golden', 'payload', 'bin')]
@@ -129,6 +129,7 @@ class PackagingPathTests(unittest.TestCase):
             (lab / 'toolchain-versions.env').write_text('EMSCRIPTEN_VERSION=6.0.8\n')
             if html:
                 (lab / 'WebRenderRDF.lean').touch()
+                if document: (lab / 'WebDocument.lean').touch()
                 fixtures = lab / 'web-render/fixtures'
                 fixtures.mkdir(parents=True)
                 (fixtures / 'boxes.html').write_text('<div>fixture</div>')
@@ -142,6 +143,11 @@ from pathlib import Path
 a=sys.argv[1:]; golden=Path(os.environ['TEST_GOLDEN'])
 with open(os.environ['TEST_CALLS'],'a') as f:f.write(json.dumps([Path(sys.argv[0]).name]+a)+'\\n')
 if Path(sys.argv[0]).name=='lean-html-scene-darwin-arm64':
+ if '--document' in a:
+  request=json.loads(Path(a[a.index('--document')+1]).read_text())
+  assert request=={'op':'render','url':'https://example.invalid/','resources':[],'commands':[]}
+  if os.environ.get('TEST_DOCUMENT_ERROR')=='1':
+   print(json.dumps({'error':'document frontend unavailable'}));sys.exit(0)
  result={'width':int(a[1]),'height':int(a[2]),'wgsl':'synthetic fixture','data':[1],'checks':[1]}
  if '--rdf' in a: result['rdf']={'syntax':'N-Triples 1.1','triples':3}
  print(json.dumps(result))
@@ -172,7 +178,7 @@ elif '--emit-artifact' in a:
             for name in ('deno','xcrun'):
                 p=commands/name;p.write_text('#!/bin/sh\necho "tool fixture"\n');p.chmod(0o755)
             env=dict(os.environ,PATH=f'{commands}:{os.environ["PATH"]}',TEST_PAYLOAD=str(payload),
-                     TEST_GOLDEN=str(golden),TEST_CALLS=str(root/'calls'))
+                     TEST_GOLDEN=str(golden),TEST_CALLS=str(root/'calls'),TEST_DOCUMENT_ERROR='1' if document_error else '0')
             result=subprocess.run(['bash',str(ROOT/'scripts/build-foafnaut.sh'),str(core),str(output)],env=env,text=True,capture_output=True)
             calls=[json.loads(line) for line in (root/'calls').read_text().splitlines()] if (root/'calls').exists() else []
             if result.returncode == 0:
@@ -186,6 +192,10 @@ elif '--emit-artifact' in a:
                 self.assertIn('lean-html-scene-darwin-arm64',(package/'SHA256SUMS').read_text())
                 self.assertTrue((package/'html-fixtures/graph.nt').is_file())
                 self.assertIn('does not open a GPU window',(package/'HTML_RENDERER.txt').read_text())
+                if document:
+                    self.assertTrue((package/'html-document-request.json').is_file())
+                    self.assertIn('html-document-request.json',(package/'SHA256SUMS').read_text())
+                    self.assertIn('does not include the\nlocal browser UI/server or the QuickJS',(package/'HTML_RENDERER.txt').read_text())
             saved=(output/'meta/foafnaut-policy.json').exists()
             return result,calls,saved
 
@@ -200,6 +210,18 @@ elif '--emit-artifact' in a:
         result,_,_=self.exercise(False,html=True,missing_html=True)
         self.assertNotEqual(result.returncode,0)
         self.assertIn('web-render-native',result.stderr)
+
+    def test_document_capability_checks_packaged_request_after_relocation(self):
+        result,calls,_=self.exercise(False,html=True,document=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        native=[call for call in calls if call[0]=='lean-html-scene-darwin-arm64']
+        self.assertEqual(native[-1],['lean-html-scene-darwin-arm64','html-fixtures/boxes.html','120','160',
+                                    '--document','html-document-request.json'])
+
+    def test_document_cli_error_refuses_native_package_qualification(self):
+        result,_,_=self.exercise(False,html=True,document=True,document_error=True)
+        self.assertNotEqual(result.returncode,0)
+        self.assertIn('html-document: document frontend unavailable',result.stdout+result.stderr)
 
     def test_older_core_keeps_legacy_packaging_path(self):
         result,calls,saved=self.exercise(False)
