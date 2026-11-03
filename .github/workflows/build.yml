@@ -416,6 +416,7 @@ jobs:
             core/labs/demos/foafnaut/.build/native-artifact.json
             core/labs/demos/foafnaut/.build/source-SHA256SUMS
             core/labs/demos/foafnaut/.build/tool-versions.txt
+            core/labs/demos/foafnaut/.build/runtime-object-witness.txt
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
@@ -509,6 +510,8 @@ jobs:
         with:
           name: foafnaut-darwin-arm64
           path: ${{ runner.temp }}/foafnaut-out/
+          # The staged browser demo imports four checked files from web/.build/engines.
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
 
