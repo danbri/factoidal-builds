@@ -88,6 +88,12 @@ for SET in $SETS; do
       --runtime "$STAGE/docs/web/hub/svg-webgpu/runtime" \
       --source-commit "$SHA" \
       --build-run "${GITHUB_SERVER_URL:-https://github.com}/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+    if [ -d "$STAGE/docs/web/hub/html-webgpu/runtime" ]; then
+      node scripts/finalize-html-runtime.mjs \
+        --runtime "$STAGE/docs/web/hub/html-webgpu/runtime" \
+        --source-commit "$SHA" \
+        --build-run "${GITHUB_SERVER_URL:-https://github.com}/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+    fi
   fi
   TOOLARGS=()
   for t in ${TOOLS[$SET]}; do TOOLARGS+=("$ART/$t"); done
@@ -125,7 +131,7 @@ for SET in $SETS; do
     INSTALL="Experimental macOS ARM64 demos: extract the archive and open 'foafnaut/Native Demos.command' or 'foafnaut/SVG Demo.command'. No Node, Deno or Lean installation required. Unsigned; GPU/window behavior needs a desktop session. CI checks CPU engines, packaging and native loading, not visual conformance."
   fi
   if [ "$SET" = foafnaut-web ]; then
-    INSTALL="Experimental SVG WebGPU browser runtime. Install with tools/fetch-builds.sh --set foafnaut-web in factoidal-core. The page and fixtures are core source; this set carries only the same-run Lean/WASM runtime. Its evidence records source/build identity and tests, not SVG conformance or GPU correctness."
+    INSTALL="Experimental SVG and Lean HTML/CSS WebGPU browser runtimes. Install with tools/fetch-builds.sh --set foafnaut-web in factoidal-core. The page and fixtures are core source; this set carries only the same-run Lean/WASM runtime. Its evidence records source/build identity and tests, not SVG conformance or GPU correctness."
   fi
   gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
     --title "$SET build of factoidal-core ${SHORT}" \

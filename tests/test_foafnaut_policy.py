@@ -110,7 +110,7 @@ class PolicyEvidenceTests(unittest.TestCase):
 
 
 class PackagingPathTests(unittest.TestCase):
-    def exercise(self, capable, missing_web=False):
+    def exercise(self, capable, missing_web=False, html=False, missing_html=False):
         with tempfile.TemporaryDirectory(prefix='foaf release control ') as temp:
             root = Path(temp)
             core, output, golden, payload, commands = [root / n for n in ('core', 'output', 'golden', 'payload', 'bin')]
@@ -127,13 +127,25 @@ class PackagingPathTests(unittest.TestCase):
             (lab / '.build/source-SHA256SUMS').write_text('source fixture\n')
             (lab / '.build/tool-versions.txt').write_text('Lean fixture\n')
             (lab / 'toolchain-versions.env').write_text('EMSCRIPTEN_VERSION=6.0.8\n')
+            if html:
+                (lab / 'WebRenderRDF.lean').touch()
+                fixtures = lab / 'web-render/fixtures'
+                fixtures.mkdir(parents=True)
+                (fixtures / 'boxes.html').write_text('<div>fixture</div>')
+                (fixtures / 'graph.nt').write_text('synthetic source fixture')
+                producer = 'exit 0\n' if missing_html else 'mkdir -p "$(dirname "$0")/.build/web-render"\ncp "$TEST_PAYLOAD/native-webgpu-lean-darwin-arm64" "$(dirname "$0")/.build/web-render/web-render-native"\nprintf "synthetic witness" > "$(dirname "$0")/.build/web-render/source-witness.json"\n'
+                (lab / 'build-web-render.sh').write_text('#!/bin/sh\n'+producer)
             (lab / 'build-executables.sh').write_text('#!/bin/sh\nmkdir -p "$1"\ncp -R "$TEST_PAYLOAD/." "$1/"\n')
             binary = '''#!/usr/bin/env python3
 import json,os,sys
 from pathlib import Path
 a=sys.argv[1:]; golden=Path(os.environ['TEST_GOLDEN'])
 with open(os.environ['TEST_CALLS'],'a') as f:f.write(json.dumps([Path(sys.argv[0]).name]+a)+'\\n')
-if '--emit-svg' in a:
+if Path(sys.argv[0]).name=='lean-html-scene-darwin-arm64':
+ result={'width':int(a[1]),'height':int(a[2]),'wgsl':'synthetic fixture','data':[1],'checks':[1]}
+ if '--rdf' in a: result['rdf']={'syntax':'N-Triples 1.1','triples':3}
+ print(json.dumps(result))
+elif '--emit-svg' in a:
  p=Path(a[a.index('--emit-svg')+1]);p.write_bytes((golden/'checked.svg').read_bytes())
  Path(str(p)+'.policy.json').write_bytes((golden/'checked.svg.policy.json').read_bytes())
 elif '--emit-artifact' in a:
@@ -155,9 +167,27 @@ elif '--emit-artifact' in a:
             env=dict(os.environ,PATH=f'{commands}:{os.environ["PATH"]}',TEST_PAYLOAD=str(payload),
                      TEST_GOLDEN=str(golden),TEST_CALLS=str(root/'calls'))
             result=subprocess.run(['bash',str(ROOT/'scripts/build-foafnaut.sh'),str(core),str(output)],env=env,text=True,capture_output=True)
-            calls=[json.loads(line) for line in (root/'calls').read_text().splitlines()]
+            calls=[json.loads(line) for line in (root/'calls').read_text().splitlines()] if (root/'calls').exists() else []
+            if html and not missing_html and result.returncode==0:
+                package=output/'stage/foafnaut'
+                self.assertTrue((package/'lean-html-scene-darwin-arm64').is_file())
+                self.assertIn('lean-html-scene-darwin-arm64',(package/'SHA256SUMS').read_text())
+                self.assertTrue((package/'html-fixtures/graph.nt').is_file())
+                self.assertIn('does not open a GPU window',(package/'HTML_RENDERER.txt').read_text())
             saved=(output/'meta/foafnaut-policy.json').exists()
             return result,calls,saved
+
+    def test_html_native_producer_is_packaged_and_checked_after_relocation(self):
+        result,calls,_=self.exercise(False,html=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        native=[call for call in calls if call[0]=='lean-html-scene-darwin-arm64']
+        self.assertEqual(native,[['lean-html-scene-darwin-arm64','html-fixtures/boxes.html','120','160'],
+                                 ['lean-html-scene-darwin-arm64','html-fixtures/graph.nt','380','340','--rdf']])
+
+    def test_html_capability_cannot_silently_omit_native_binary(self):
+        result,_,_=self.exercise(False,html=True,missing_html=True)
+        self.assertNotEqual(result.returncode,0)
+        self.assertIn('web-render-native',result.stderr)
 
     def test_older_core_keeps_legacy_packaging_path(self):
         result,calls,saved=self.exercise(False)

@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '22'
       - name: SVG browser runtime packaging and release controls
-        run: node --test tests/test_svg_runtime_packaging.mjs tests/test_finalize_svg_runtime.mjs
+        run: node --test tests/test_svg_runtime_packaging.mjs tests/test_finalize_svg_runtime.mjs tests/test_html_runtime_packaging.mjs
       - name: Shell syntax
         run: |
           for script in scripts/resolve-core.sh scripts/publish.sh scripts/build-foafnaut.sh; do
