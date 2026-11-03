@@ -42,6 +42,27 @@ def fixture(root):
     return report, artifact
 
 
+def compound_fixture(root, extended=False):
+    """One path paint contains two closed contours, not eight new primitives."""
+    report, artifact = fixture(root)
+    (root / 'checked.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">'
+        '<rect width="100" height="100"/><path d="M0 0h4v4h-4zM8 0h4v4h-4z"/></svg>')
+    header = [0, 0, 12, 4, 6, 8, 0, 6 if extended else 0,
+              1, 0, 0, 1, 0, 0, 0, 0, 2 if extended else 0, 1,
+              1 if extended else 0, 1 if extended else 0]
+    edges = [0, 0, 4, 0, 4, 0, 4, 4, 4, 4, 0, 4, 0, 4, 0, 0,
+             8, 0, 12, 0, 12, 0, 12, 4, 12, 4, 8, 4, 8, 4, 8, 0]
+    tail = []
+    if extended:
+        # One disk stroke piece, inverse translate(3,0), one active clip.
+        tail = [0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+                1, 0, -3, 0, 0, 1, 0, 0,
+                1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 100, 100]
+    artifact['data'] = artifact['data'][:28] + header + edges + tail
+    (root / 'checked-native.json').write_text(json.dumps(artifact))
+    return report, artifact
+
+
 class PolicyEvidenceTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -107,6 +128,55 @@ class PolicyEvidenceTests(unittest.TestCase):
         path = self.root / 'checked.svg.policy.json'
         path.write_text(path.read_text().replace('"enforced": true', '"enforced": false, "enforced": true'))
         with self.assertRaisesRegex(ValueError, 'duplicate JSON key'): CHECK.validate(self.root)
+
+    def test_compound_path_is_one_retained_paint(self):
+        _, artifact = compound_fixture(self.root)
+        result = CHECK.validate(self.root)
+        self.assertEqual((result['primitives'], result['storage_floats']), (2, 80))
+        artifact['primitiveCount'] = 3
+        (self.root / 'checked-native.json').write_text(json.dumps(artifact))
+        with self.assertRaisesRegex(ValueError, 'primitive count differs'):
+            CHECK.validate(self.root)
+
+    def test_complete_path_stroke_transform_clip_record(self):
+        _, artifact = compound_fixture(self.root, extended=True)
+        for kind in (2, 4, 7):
+            with self.subTest(stroke_piece=kind):
+                artifact['data'][84] = kind
+                artifact['data'][88:92] = [5, 10, 0, 0] if kind == 7 else [0, 0, 0, 0]
+                (self.root / 'checked-native.json').write_text(json.dumps(artifact))
+                result = CHECK.validate(self.root)
+                self.assertEqual((result['primitives'], result['storage_floats']), (2, 120))
+
+    def test_path_and_extended_payload_faults_rejected(self):
+        _, original = compound_fixture(self.root, extended=True)
+        mutations = [
+            lambda a: a['data'].__setitem__(32, 7),  # tag7 is only a stroke piece
+            lambda a: a['data'].__setitem__(33, 7),  # wrong edge cursor
+            lambda a: a['data'].__setitem__(33, 9),
+            lambda a: a['data'].__setitem__(34, 0.5),
+            lambda a: a['data'].__setitem__(35, 6.5),
+            lambda a: a['data'].__setitem__(35, 2),  # undeclared clip payload
+            lambda a: a['data'].__setitem__(35, 4),  # undeclared affine payload
+            lambda a: a['data'].__setitem__(46, 1.5),
+            lambda a: a['data'].__setitem__(47, 0),  # pieces require active flag
+            lambda a: a['data'].__setitem__(84, 3),  # unsupported stroke piece
+            lambda a: a['data'].__setitem__(85, 1),  # nonzero reserved field
+            lambda a: a['data'].__setitem__(88, 1),  # nonzero disk padding
+            lambda a: a['data'].__setitem__(103, 1), # affine padding
+            lambda a: a['data'].__setitem__(111, 2), # clip active flag
+            lambda a: a['data'].__setitem__(115, 1), # clip padding
+            lambda a: a['data'].__setitem__(118, 0), # empty active clip
+            lambda a: a.update(data=a['data'][:-4]),
+            lambda a: a.update(data=a['data']+[0, 0, 0, 0]),
+        ]
+        for i, mutate in enumerate(mutations):
+            with self.subTest(fault=i):
+                artifact = copy.deepcopy(original)
+                mutate(artifact)
+                (self.root / 'checked-native.json').write_text(json.dumps(artifact))
+                with self.assertRaises(ValueError):
+                    CHECK.validate(self.root)
 
 
 class PackagingPathTests(unittest.TestCase):
