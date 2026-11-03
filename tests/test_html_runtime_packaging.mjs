@@ -9,7 +9,7 @@ import {execFileSync} from 'node:child_process';
 import {packageHtmlRuntime,stripHtmlBridge,HTML_RUNTIME_FILES} from '../scripts/package-html-runtime.mjs';
 import {finalizeHtmlRuntime} from '../scripts/finalize-html-runtime.mjs';
 const LAB='labs/demos/foafnaut',BUILD=LAB+'/.build/web-render',hash=b=>createHash('sha256').update(b).digest('hex');
-async function fixture(t){
+async function fixture(t,{rdf=false}={}){
  const root=await mkdtemp(join(tmpdir(),'html-runtime-test-'));t.after(()=>rm(root,{recursive:true,force:true}));
  const core=join(root,'core'),out=join(root,'runtime');await mkdir(core);
  const put=async(p,b)=>{await mkdir(join(core,p,'..'),{recursive:true});await writeFile(join(core,p),b);};
@@ -20,6 +20,7 @@ async function fixture(t){
   [LAB+'/build-web-render.sh']:'fake build input\n',[LAB+'/web_render_shim.c']:'fake C shim\n',
   [LAB+'/render_plan_shim.c']:'fake C shim\n',[LAB+'/toolchain-versions.env']:'fake toolchain\n',
   ['formal/lean4/lean-toolchain']:'fake Lean version\n'};
+ if(rdf){sources[LAB+'/WebRenderRDF.lean']='import WebRender\nimport L4Factoidal.Rendering.RdfFixture\n';sources['formal/lean4/L4Factoidal/Rendering/RdfFixture.lean']='-- fake RDF parser dependency\n';sources[LAB+'/web_render_shim.c']='initialize_WebRenderRDF(1);\n';}
  for(const[p,b]of Object.entries(sources))await put(p,b);
  await put(LAB+'/gpu_transport.ts','import {x} from "./render_plan.ts";\nexport const y:number=x;\n');
  await put(LAB+'/render_plan.ts','import create from "./.build/engines/render-plan.mjs";\nexport const x:number=1;\nexport {create};\n');
@@ -45,6 +46,13 @@ test('exact complete package relocates canonical hosts and validates source clos
  assert.match(await readFile(join(f.out,'gpu-transport.mjs'),'utf8'),/render-plan-host\.mjs/);
  assert.match(await readFile(join(f.out,'render-plan-host.mjs'),'utf8'),/from "\.\/render-plan\.mjs"/);
  assert.equal(m.kind,'development');assert.match(m.evidence.qualification,/not a compiler/);
+});
+test('RDF shim entry requires the entire additional Lean import closure',async t=>{
+ const f=await fixture(t,{rdf:true});await f.run();
+ const g=await fixture(t,{rdf:true});delete g.witness.files['formal/lean4/L4Factoidal/Rendering/RdfFixture.lean'];await g.save();
+ await assert.rejects(g.run(),/omits source dependency/);
+ const h=await fixture(t,{rdf:true});delete h.witness.files[LAB+'/WebRenderRDF.lean'];await h.save();
+ await assert.rejects(h.run(),/omits source dependency/);
 });
 test('wrong revision, dirty source and direct release labels fail',async t=>{
  const f=await fixture(t);await assert.rejects(f.run({sourceCommit:'f'.repeat(40)}),/source differs/);

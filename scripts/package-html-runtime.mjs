@@ -49,7 +49,9 @@ async function closure(core){
    if(name.startsWith('--'))break;await visit(name);
   }
  }
- await visit('WebRender');await visit('RenderPlan');return files;
+ const shim=(await bytes(core,LAB+'/web_render_shim.c')).toString();
+ await visit(/initialize_WebRenderRDF\s*\(/u.test(shim)?'WebRenderRDF':'WebRender');
+ await visit('RenderPlan');return files;
 }
 export async function packageHtmlRuntime({coreDir,outDir,sourceCommit,kind='development'}){
  if(kind!=='development')throw Error('Only a trusted fresh-build publisher can finalize a release');
