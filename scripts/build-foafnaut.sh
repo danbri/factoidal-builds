@@ -10,7 +10,11 @@ LAB="$CORE/labs/demos/foafnaut"
 POLICY_CHECK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check-foafnaut-policy.py"
 PACKAGE="$OUT/stage/foafnaut"
 bash "$LAB/build-executables.sh" "$PACKAGE"
-cp "$LAB/.build/source-SHA256SUMS" "$LAB/.build/tool-versions.txt" "$PACKAGE/"
+# A newer core packager includes a checksummed inventory with additional sources.
+# Keep that inventory intact; add these files only for older core revisions.
+for name in source-SHA256SUMS tool-versions.txt; do
+  if [ ! -f "$PACKAGE/$name" ]; then cp "$LAB/.build/$name" "$PACKAGE/"; fi
+done
 # The HTML/CSS producer is a native Lean CLI, not a claim that a GPU window ran.
 if [ -f "$LAB/build-web-render.sh" ]; then
   bash "$LAB/build-web-render.sh" --native

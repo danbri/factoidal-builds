@@ -110,7 +110,7 @@ class PolicyEvidenceTests(unittest.TestCase):
 
 
 class PackagingPathTests(unittest.TestCase):
-    def exercise(self, capable, missing_web=False, html=False, missing_html=False):
+    def exercise(self, capable, missing_web=False, html=False, missing_html=False, stamped=False):
         with tempfile.TemporaryDirectory(prefix='foaf release control ') as temp:
             root = Path(temp)
             core, output, golden, payload, commands = [root / n for n in ('core', 'output', 'golden', 'payload', 'bin')]
@@ -160,7 +160,14 @@ elif '--emit-artifact' in a:
                 p=payload/name;p.write_text(binary);p.chmod(0o755)
             (payload/'libnative-window.dylib').write_text('fake sidecar')
             (payload/'svg-fixtures').mkdir();(payload/'svg-fixtures/gallery.svg').write_text('<svg/>')
-            sums=subprocess.check_output(['shasum','-a','256',*names,'libnative-window.dylib'],cwd=payload)
+            # Newer core packagers extend the Linux inventory with native sources,
+            # then checksum the final files. Older packagers leave both files out.
+            metadata = ['source-SHA256SUMS', 'tool-versions.txt']
+            if stamped:
+                (payload/metadata[0]).write_text('source fixture\nnative source fixture\n')
+                (payload/metadata[1]).write_text('Lean fixture\n')
+            sums=subprocess.check_output(['shasum','-a','256',*names,'libnative-window.dylib',
+                                          *(metadata if stamped else [])],cwd=payload)
             (payload/'SHA256SUMS').write_bytes(sums)
             for name in ('deno','xcrun'):
                 p=commands/name;p.write_text('#!/bin/sh\necho "tool fixture"\n');p.chmod(0o755)
@@ -168,6 +175,11 @@ elif '--emit-artifact' in a:
                      TEST_GOLDEN=str(golden),TEST_CALLS=str(root/'calls'))
             result=subprocess.run(['bash',str(ROOT/'scripts/build-foafnaut.sh'),str(core),str(output)],env=env,text=True,capture_output=True)
             calls=[json.loads(line) for line in (root/'calls').read_text().splitlines()] if (root/'calls').exists() else []
+            if result.returncode == 0:
+                package = output/'stage/foafnaut'
+                for name in metadata:
+                    expected = payload/name if stamped else lab/'.build'/name
+                    self.assertEqual((package/name).read_bytes(), expected.read_bytes())
             if html and not missing_html and result.returncode==0:
                 package=output/'stage/foafnaut'
                 self.assertTrue((package/'lean-html-scene-darwin-arm64').is_file())
@@ -194,6 +206,10 @@ elif '--emit-artifact' in a:
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertFalse(saved)
         self.assertFalse(any('--emit-svg' in a for a in calls))
+
+    def test_relocation_preserves_checksums_of_native_source_inventory(self):
+        result,_,_=self.exercise(True, stamped=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     def test_capable_core_exports_and_compiles_same_relocated_svg(self):
         result,calls,saved=self.exercise(True)
