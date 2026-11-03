@@ -178,3 +178,11 @@ conformance, compiler correctness or native GPU presentation. The packager tests
 use explicitly synthetic fixture modules; they do not count as rendering tests.
 
 Tracking: https://github.com/danbri/factoidal/issues/1230 .
+
+The capable macOS bundle also stages `lean-html-scene-darwin-arm64`, the actual
+Lean native HTML/RDF scene and CPU-pixel CLI, its named source witness and input
+fixtures. Clean native packaging installs the pinned Lean toolchain and rebuilds
+the small source/proof closure; it does not require a warm developer checkout.
+The relocated CLI is exercised on HTML and N-Triples before packaging. This is a
+CPU/scene producer, and is explicitly documented separately from a GPU window.
+Remote macOS candidate execution remains necessary before publishing a bundle.

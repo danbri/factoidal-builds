@@ -11,6 +11,32 @@ POLICY_CHECK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check-foafnaut-polic
 PACKAGE="$OUT/stage/foafnaut"
 bash "$LAB/build-executables.sh" "$PACKAGE"
 cp "$LAB/.build/source-SHA256SUMS" "$LAB/.build/tool-versions.txt" "$PACKAGE/"
+# The HTML/CSS producer is a native Lean CLI, not a claim that a GPU window ran.
+if [ -f "$LAB/build-web-render.sh" ]; then
+  bash "$LAB/build-web-render.sh" --native
+  cp "$LAB/.build/web-render/web-render-native" "$PACKAGE/lean-html-scene-darwin-arm64"
+  cp "$LAB/.build/web-render/source-witness.json" "$PACKAGE/native-html-source-witness.json"
+  mkdir -p "$PACKAGE/html-fixtures"
+  cp "$LAB/web-render/fixtures/"*.html "$PACKAGE/html-fixtures/"
+  if [ -f "$LAB/WebRenderRDF.lean" ]; then
+    cp "$LAB/web-render/fixtures/graph.nt" "$PACKAGE/html-fixtures/"
+  fi
+  cat > "$PACKAGE/HTML_RENDERER.txt" <<'EOF'
+Lean HTML/CSS scene producer for macOS ARM64
+
+./lean-html-scene-darwin-arm64 html-fixtures/boxes.html 120 160
+./lean-html-scene-darwin-arm64 html-fixtures/boxes.html 120 160 --pixels
+./lean-html-scene-darwin-arm64 html-fixtures/graph.nt 380 340 --rdf
+
+The first emits a checked scene artifact; --pixels emits CPU reference RGB JSON.
+The RDF example is present when this source includes the N-Triples frontend.
+This CLI needs no Lean, Node or Deno installation. It does not open a GPU window.
+The separate public WebGPU viewer paints the same scene. Named CPU/relocation
+checks do not establish complete HTML/CSS/SVG conformance or native GPU behavior.
+EOF
+  (cd "$PACKAGE" && shasum -a 256 lean-html-scene-darwin-arm64 native-html-source-witness.json HTML_RENDERER.txt html-fixtures/* >> SHA256SUMS)
+fi
+
 
 # A fresh location, with spaces, catches embedded development checkout paths.
 CHECK=$(mktemp -d "${TMPDIR:-/tmp}/foafnaut relocation.XXXXXX")
@@ -27,6 +53,12 @@ cp -R "$PACKAGE/." "$CHECK/"
   ./native-webgpu-ui-darwin-arm64 --diagnose
   ./native-webgpu-lean-darwin-arm64 --emit-artifact "$CHECK/still.json"
   ./native-webgpu-svg-darwin-arm64 svg-fixtures/gallery.svg --emit-artifact "$CHECK/svg.json"
+  if [ -x ./lean-html-scene-darwin-arm64 ]; then
+    ./lean-html-scene-darwin-arm64 html-fixtures/boxes.html 120 160 > "$CHECK/html.json"
+    if [ -f html-fixtures/graph.nt ]; then
+      ./lean-html-scene-darwin-arm64 html-fixtures/graph.nt 380 340 --rdf > "$CHECK/rdf.json"
+    fi
+  fi
   if [ -f "$LAB/FoafNaut.lean" ]; then
     ./native-webgpu-ui-darwin-arm64 --demo foafnaut --emit-artifact "$CHECK/foaf.json"
   fi
@@ -42,10 +74,12 @@ cp -R "$PACKAGE/." "$CHECK/"
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 names = ['still', 'svg'] + (['foaf'] if (root / 'foaf.json').exists() else [])
+names += [name for name in ['html','rdf'] if (root / f'{name}.json').exists()]
 for name in names:
     artifact = json.loads((root / f'{name}.json').read_text())
     assert artifact['width'] > 0 and artifact['height'] > 0, name
     assert artifact['wgsl'] and artifact['data'] and artifact['checks'], name
+    if name == 'rdf': assert artifact['rdf'] == {'syntax':'N-Triples 1.1','triples':3}
 print('Relocated compiled engines and native library load passed; no GPU rendering claimed')
 PY
 ) 2>&1 | tee "$OUT/meta/foafnaut-smoke.txt"

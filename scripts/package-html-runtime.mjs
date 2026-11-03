@@ -50,7 +50,9 @@ async function closure(core){
   }
  }
  const shim=(await bytes(core,LAB+'/web_render_shim.c')).toString();
- await visit(/initialize_WebRenderRDF\s*\(/u.test(shim)?'WebRenderRDF':'WebRender');
+ const initializers=[...shim.matchAll(/initialize_([A-Za-z][A-Za-z0-9_]*)\s*\(\s*1\s*\)/gu)].map(m=>m[1]);
+ if(!initializers.length||initializers.some(name=>!['WebRender','WebRenderRDF','WebRenderFont'].includes(name)))throw Error('Renderer initializer requires review');
+ for(const name of new Set(initializers))await visit(name);
  await visit('RenderPlan');return files;
 }
 export async function packageHtmlRuntime({coreDir,outDir,sourceCommit,kind='development'}){

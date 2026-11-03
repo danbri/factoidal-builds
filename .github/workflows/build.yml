@@ -481,6 +481,10 @@ jobs:
         with:
           name: foafnaut-engines
           path: core/labs/demos/foafnaut/.build
+      - name: Install pinned Lean for fresh native source preparation
+        run: |
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Package, relocate and check the native demos
         run: bash builds/scripts/build-foafnaut.sh core "$RUNNER_TEMP/foafnaut-out"
       - uses: actions/upload-artifact@v4
