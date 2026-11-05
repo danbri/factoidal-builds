@@ -73,6 +73,10 @@ cp -R "$PACKAGE/." "$CHECK/"
   ./native-webgpu-ui-darwin-arm64 --diagnose
   ./native-webgpu-lean-darwin-arm64 --emit-artifact "$CHECK/still.json"
   ./native-webgpu-svg-darwin-arm64 svg-fixtures/gallery.svg --emit-artifact "$CHECK/svg.json"
+  # The native HTML window program: CPU engine check only, no GPU or window claim.
+  if [ -x ./native-webgpu-html-darwin-arm64 ]; then
+    ./native-webgpu-html-darwin-arm64 --check-engine
+  fi
   if [ -x ./lean-html-scene-darwin-arm64 ]; then
     ./lean-html-scene-darwin-arm64 html-fixtures/boxes.html 120 160 > "$CHECK/html.json"
     if [ -f html-fixtures/graph.nt ]; then
