@@ -9,6 +9,8 @@ OUT=$(cd "$OUT" && pwd)
 LAB="$CORE/labs/demos/foafnaut"
 POLICY_CHECK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check-foafnaut-policy.py"
 PACKAGE="$OUT/stage/foafnaut"
+# The native engine first: a core that makes libweb-render.dylib ships it beside the window program.
+if [ -f "$LAB/build-web-render.sh" ]; then bash "$LAB/build-web-render.sh" --native; fi
 bash "$LAB/build-executables.sh" "$PACKAGE"
 # A newer core packager includes a checksummed inventory with additional sources.
 # Keep that inventory intact; add these files only for older core revisions.
@@ -17,7 +19,6 @@ for name in source-SHA256SUMS tool-versions.txt; do
 done
 # The HTML/CSS producer is a native Lean CLI, not a claim that a GPU window ran.
 if [ -f "$LAB/build-web-render.sh" ]; then
-  bash "$LAB/build-web-render.sh" --native
   cp "$LAB/.build/web-render/web-render-native" "$PACKAGE/lean-html-scene-darwin-arm64"
   cp "$LAB/.build/web-render/source-witness.json" "$PACKAGE/native-html-source-witness.json"
   mkdir -p "$PACKAGE/html-fixtures"
