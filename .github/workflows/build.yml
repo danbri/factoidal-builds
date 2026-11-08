@@ -513,7 +513,7 @@ jobs:
     needs: [resolve, lean, foafnaut-engines]
     if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 60  # 30 was cancelled at 30 min on 2026-11-08 (run 42520417546): the package tests grew
     steps:
       - uses: actions/checkout@v4
         with:
