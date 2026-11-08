@@ -454,6 +454,52 @@ jobs:
               --out "$RUNNER_TEMP/foafnaut-web/stage/docs/web/hub/html-webgpu/runtime"
             cp "$RUNNER_TEMP/html-wasm-abi.json" "$RUNNER_TEMP/foafnaut-web/meta/html-wasm-abi.json"
           fi
+      # WasmVM guest modules, one step for all of them: WebAssembly that Lean's WasmVM
+      # engine runs inside the Foafnaut engine. Core's own pinned scripts build them from
+      # the same source commit; they are published beside the engine runtime and never
+      # committed to core (Iron Rule 9). Now: QuickJS-NG for page scripts
+      # (tools/wasmvm/build-quickjs.sh; the Hub and the native window load it only when the
+      # engine answers scriptSession info). HarfBuzz (build-harfbuzz.sh) and the media
+      # decoders (build-media.sh) build the same way and join this step when the engine
+      # loads them. A core revision without the page-mode guest (no prelude.js) gets none.
+      - name: Build the WasmVM guest modules
+        if: needs.resolve.outputs.foafnaut_web == 'true'
+        env:
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f core/tools/wasmvm/build-quickjs.sh ] && [ -f core/tools/wasmvm/quickjs/prelude.js ]; then
+            source ~/emsdk/emsdk_env.sh
+            OUT="$RUNNER_TEMP/foafnaut-web/stage/docs/web/hub/wasm-guests"
+            mkdir -p "$OUT"
+            EMCC="$(command -v emcc)" bash core/tools/wasmvm/build-quickjs.sh "$RUNNER_TEMP/qjs-wasm"
+            cp "$RUNNER_TEMP/qjs-wasm/qjs-wasmvm.wasm" "$OUT/qjs-wasmvm.wasm"
+            # MIT: a distributed build carries the notice.
+            cp "$RUNNER_TEMP/qjs-wasm/src/quickjs-0.18.0/LICENSE" "$OUT/qjs-wasmvm.LICENSE"
+            node -e '
+              const fs=require("fs"),b=fs.readFileSync(process.argv[1]);
+              const names=WebAssembly.Module.exports(new WebAssembly.Module(b)).map(e=>e.name);
+              for(const n of ["qjs_new","qjs_eval","qjs_call","qjs_dispatch","qjs_run_job","qjs_page_mode","qjs_page","_initialize"])
+                if(!names.includes(n))throw Error("guest module lacks export "+n);
+              console.log("qjs-wasmvm.wasm: "+b.length+" bytes, exports checked");' "$OUT/qjs-wasmvm.wasm"
+            python3 - "$OUT" "$CORE_SHA" core <<'PY'
+          import hashlib, json, pathlib, sys
+          out, sha, core = pathlib.Path(sys.argv[1]), sys.argv[2], pathlib.Path(sys.argv[3])
+          h = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+          builder = core / 'tools/wasmvm/build-quickjs.sh'
+          inputs = [builder, core / 'tools/wasmvm/quickjs/qjs_wasmvm_entry.c', core / 'tools/wasmvm/quickjs/prelude.js']
+          manifest = {'format': 'factoidal-wasm-guests-v1', 'sourceCommit': sha,
+            'files': [{'path': p.name, 'bytes': p.stat().st_size, 'sha256': h(p)} for p in sorted(out.iterdir())],
+            'guests': {'qjs-wasmvm.wasm': {'what': 'QuickJS-NG v0.18.0 for page scripts, run by WasmVM in the Foafnaut engine',
+              'licence': 'MIT (qjs-wasmvm.LICENSE)',
+              'inputs': [{'path': str(p.relative_to(core)), 'sha256': h(p)} for p in inputs]}},
+            'qualification': 'Built from the named core commit by its pinned script (tarball SHA-256 checked); exports checked. Not a JavaScript conformance claim.'}
+          (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY
+          else
+            echo "core has no page-mode QuickJS guest; no WasmVM guest modules"
+          fi
       - name: Upload the checked browser runtime release candidate
         if: needs.resolve.outputs.foafnaut_web == 'true'
         uses: actions/upload-artifact@v4
