@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Package only after portable CPU tests and checks of relocated executables.
-# No GPU or WindowServer availability is inferred from these checks.
+# The offscreen sweeps (when the core has sweeps.sh) are the only GPU gate: they
+# draw into a texture and show no window; the package checks below claim no GPU.
 set -euo pipefail
 CORE=$(cd "${1:?core checkout required}" && pwd)
 OUT=${2:?output directory required}
@@ -12,6 +13,15 @@ PACKAGE="$OUT/stage/foafnaut"
 # The native engine first: a core that makes libweb-render.dylib ships it beside the window program.
 if [ -f "$LAB/build-web-render.sh" ]; then bash "$LAB/build-web-render.sh" --native; fi
 bash "$LAB/build-executables.sh" "$PACKAGE"
+# Every window sweep with --offscreen (core labs/demos/foafnaut/sweeps.sh, issue 1268): no window
+# is shown, frames go to a WebGPU texture (the runner's "Apple Paravirtual device"), events go
+# through the window library's queue. Needs the window library that build-executables.sh just
+# made; an older core has no sweeps.sh. Any failed sweep fails the job.
+if [ -f "$LAB/sweeps.sh" ]; then
+  bash "$LAB/sweeps.sh" 2>&1 | tee "$OUT/meta/foafnaut-sweeps.txt"
+else
+  echo 'NOT RUN: offscreen sweeps (this core has no labs/demos/foafnaut/sweeps.sh)' | tee "$OUT/meta/foafnaut-sweeps.txt"
+fi
 # A newer core packager includes a checksummed inventory with additional sources.
 # Keep that inventory intact; add these files only for older core revisions.
 for name in source-SHA256SUMS tool-versions.txt; do
@@ -123,6 +133,6 @@ target.write_text(json.dumps({
     'emscripten': versions['EMSCRIPTEN_VERSION'],
     'clang': subprocess.check_output(['xcrun', 'clang', '--version'], text=True).splitlines()[0],
     'foafnaut_platform': 'darwin-arm64',
-    'foafnaut_gpu_gate': 'not run: CPU/packaging/native-load gates only',
+    'foafnaut_gpu_gate': 'offscreen sweeps (sweeps.sh)' if (lab / 'sweeps.sh').exists() else 'not run: CPU/packaging/native-load gates only',
 }, indent=2) + '\n')
 PY

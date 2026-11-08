@@ -513,7 +513,7 @@ jobs:
     needs: [resolve, lean, foafnaut-engines]
     if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
