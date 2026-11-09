@@ -121,9 +121,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: core/formal/lean4/.lake
-          key: lake-${{ matrix.platform }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**') }}
+          key: lake-${{ matrix.platform }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
           restore-keys: |
             lake-${{ matrix.platform }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+
+      - name: Rebuild modules that include_str non-Lean files
+        # Lake does not track include_str inputs (tools/wasmvm/quickjs/prelude.js and
+        # webassembly.js, read by WasmVM/Hosts/LeanJS.lean). A .lake restored from an
+        # older cache (restore-keys) would keep a stale BubblePopJS prelude, so its
+        # outputs are always removed; Lake rebuilds LeanJS and its dependents.
+        shell: bash
+        run: |
+          find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null || true
 
       - name: lake build (library, proofs, #guards, every executable)
         working-directory: core/formal/lean4
@@ -271,9 +280,18 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
-          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**') }}
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
           restore-keys: |
             lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+
+      - name: Rebuild modules that include_str non-Lean files
+        # Lake does not track include_str inputs (tools/wasmvm/quickjs/prelude.js and
+        # webassembly.js, read by WasmVM/Hosts/LeanJS.lean). A .lake restored from an
+        # older cache (restore-keys) would keep a stale BubblePopJS prelude, so its
+        # outputs are always removed; Lake rebuilds LeanJS and its dependents.
+        shell: bash
+        run: |
+          find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null || true
 
       - name: Cache emsdk
         id: emsdk-cache
