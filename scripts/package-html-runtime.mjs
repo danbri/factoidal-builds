@@ -21,6 +21,11 @@ async function bytes(root,path){
  if(rel==='..'||rel.startsWith('..'+sep)||isAbsolute(rel))throw Error('Source escapes checkout');
  return readFile(name);
 }
+// Sources the web-render build generates, with the committed files each is made from.
+const GENERATED_INPUTS=new Map([
+ ['formal/lean4/L4Factoidal/WasmVM/Hosts/LeanJSRealmData.lean',
+  ['tools/wasmvm/quickjs/prelude.js','formal/lean4/L4Factoidal/WasmVM/Hosts/LeanJSRealmGen.lean','formal/lean4/L4Factoidal/JS/Snapshot.lean']],
+]);
 function git(core,args){return execFileSync('git',['-C',core,...args],{stdio:['ignore','pipe','pipe']});}
 async function committed(core,path,head){
  const data=await bytes(core,path),row=git(core,['ls-tree',head,'--',safe(path)]).toString().trim();
@@ -83,7 +88,17 @@ export async function packageHtmlRuntime({coreDir,outDir,sourceCommit,kind='deve
  for(const path of [LAB+'/build-web-render.sh',LAB+'/web_render_shim.c',LAB+'/render_plan_shim.c',
    LAB+'/toolchain-versions.env','formal/lean4/lean-toolchain'])if(!Object.hasOwn(witness.files,path))throw Error(`Build witness omits required input: ${path}`);
  for(const [path,expected]of Object.entries(witness.files)){
-  if(!/^[0-9a-f]{64}$/u.test(expected)||hash(await committed(core,path,head))!==expected)throw Error(`Stale source build witness: ${path}`);
+  if(!/^[0-9a-f]{64}$/u.test(expected))throw Error(`Stale source build witness: ${path}`);
+  // A source the build GENERATES (not in git) is checked against the witness, and the
+  // committed inputs it is generated from must be in the witness too (2026-11-09:
+  // LeanJSRealmData.lean, BubblePopJS's realm, made by `bubblepop-realm` from prelude.js).
+  const gen=GENERATED_INPUTS.get(path);
+  if(gen){
+   if(hash(await bytes(core,path))!==expected)throw Error(`Stale generated source witness: ${path}`);
+   for(const from of gen)await committed(core,from,head); // each generator input must be committed at HEAD
+   continue;
+  }
+  if(hash(await committed(core,path,head))!==expected)throw Error(`Stale source build witness: ${path}`);
  }
  // Generated C is validated locally; it is not included in the public package.
  for(const [path,expected]of Object.entries(witness.generatedC))if(hash(await bytes(core,path))!==expected)throw Error(`Stale generated C witness: ${path}`);
