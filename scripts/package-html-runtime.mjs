@@ -37,6 +37,18 @@ export function stripHtmlBridge(source,name){
  if(seen!==targets.size||[...out.matchAll(/^[ \t]*import\b/gmu)].length!==seen||/\bimport\s*\(/u.test(out))throw Error('Transport imports require review');
  return out;
 }
+function leanHeader(text){
+ const out=[];let depth=0;
+ for(const line of text.split(/\r?\n/u)){
+  const t=line.trim();
+  if(depth>0){depth+=(t.match(/\/-/gu)||[]).length-(t.match(/-\//gu)||[]).length;continue;}
+  if(t===''||t.startsWith('--'))continue;
+  if(t.startsWith('/-')&&!t.startsWith('/-!')){depth=(t.match(/\/-/gu)||[]).length-(t.match(/-\//gu)||[]).length;continue;}
+  if(/^import\s/u.test(t)){out.push(t);continue;}
+  break;
+ }
+ return out.join('\n');
+}
 async function closure(core){
  const files=new Set(),seen=new Set();
  async function visit(module){
@@ -45,7 +57,10 @@ async function closure(core){
    !module.includes('.')&&!['Init','Std','Lean'].includes(module)?LAB+'/'+module+'.lean':null;
   if(!path)return;
   const text=(await bytes(core,path)).toString();files.add(path);
-  for(const match of text.matchAll(/^import\s+([^\r\n]+)/gmu))for(const name of match[1].split(/\s+/u)){
+  // Lean imports come first in a file: read only that header (blank lines, -- comments,
+  // /- -/ blocks and import lines) and stop at the first other line, so prose that starts
+  // with 'import' in a doc comment is never read as an import (release run 42607752962).
+  for(const match of leanHeader(text).matchAll(/^import\s+([^\r\n]+)/gmu))for(const name of match[1].split(/\s+/u)){
    if(name.startsWith('--'))break;await visit(name);
   }
  }
