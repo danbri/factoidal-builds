@@ -203,7 +203,8 @@ jobs:
 
       - name: Publish the tested tarball (OIDC; provenance)
         env:
-          TGZ: pack/${{ needs.pack.outputs.tgz }}
+          # ./ is needed: npm reads pack/name.tgz as a GitHub repository.
+          TGZ: ./pack/${{ needs.pack.outputs.tgz }}
           WANT: ${{ needs.pack.outputs.sha256 }}
           VERSION: ${{ needs.pack.outputs.version }}
           DIST_TAG: ${{ inputs.dist_tag }}
