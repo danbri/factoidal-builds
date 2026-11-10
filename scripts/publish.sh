@@ -133,6 +133,8 @@ for SET in $SETS; do
   if [ "$SET" = foafnaut-web ]; then
     INSTALL="Experimental SVG and Lean HTML/CSS WebGPU browser runtimes. Install with tools/fetch-builds.sh --set foafnaut-web in factoidal-core. The page and fixtures are core source; this set carries only the same-run Lean/WASM runtime. Its evidence records source/build identity and tests, not SVG conformance or GPU correctness."
   fi
+  # Native sets link GNU MP statically: its licence and source pointer go with them.
+  case "$SET" in linux-x86_64|darwin-arm64|foafnaut-darwin-arm64) EXTRA+=("notices/GMP-NOTICE.txt");; esac
   gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
     --title "$SET build of factoidal-core ${SHORT}" \
     --notes "Built from https://github.com/${CORE_REPO:-danbri/factoidal-core}/commit/$SHA ($REF) by $RUN_URL. $INSTALL build-info.json lists the sha256 of every file." \
