@@ -101,6 +101,7 @@ info = {
     'built_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
     'run_url': f'{server}/{repo}/actions/runs/{run}' if run else '',
     'toolchains': toolchains,
+    **({'hygiene': json.load(open(os.environ['HYGIENE_JSON']))} if os.environ.get('HYGIENE_JSON') else {}),
     'artifacts': {
         f'{set_name}.tar.gz': {
             'sha256': sha256(tar_path),

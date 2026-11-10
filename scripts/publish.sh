@@ -64,6 +64,13 @@ for SET in $SETS; do
     SKIPPED+=("$SET")
     continue
   fi
+  # The engine build's Lean hygiene ratchet (core labs/demos/foafnaut/LabHygiene.lean,
+  # theorem lab_ratchet): no counts in the record, no foafnaut-web release.
+  if [ "$SET" = foafnaut-web ] && ! python3 -c 'import json,sys; h=json.load(open(sys.argv[1])); assert h["theorem"] and h["counts"]["lab"]' "$ART/foafnaut-web/meta/hygiene.json" 2>/dev/null; then
+    echo "::warning::foafnaut-web not published: the engine build record has no hygiene field (LabHygiene.lean did not run)"
+    SKIPPED+=("$SET")
+    continue
+  fi
   # A web release that a published npm version names is never replaced
   # (danbri/factoidal issue 1038, P7): its version.json names this tag and
   # its run, and a consumer checks the wasm against them. A forced rebuild
@@ -97,7 +104,8 @@ for SET in $SETS; do
   fi
   TOOLARGS=()
   for t in ${TOOLS[$SET]}; do TOOLARGS+=("$ART/$t"); done
-  python3 scripts/make-release.py "$STAGE" "$SET" "$SHA" "$REF" "$OUT/$SET" "${TOOLARGS[@]}"
+  HYGIENE_JSON=$([ "$SET" = foafnaut-web ] && echo "$ART/foafnaut-web/meta/hygiene.json" || true) \
+    python3 scripts/make-release.py "$STAGE" "$SET" "$SHA" "$REF" "$OUT/$SET" "${TOOLARGS[@]}"
 
   TAG="build-$SHORT-$SET"
   EXTRA=()
