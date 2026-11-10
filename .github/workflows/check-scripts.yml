@@ -21,6 +21,7 @@ jobs:
         run: node --test tests/test_svg_runtime_packaging.mjs tests/test_finalize_svg_runtime.mjs tests/test_html_runtime_packaging.mjs
       - name: Shell syntax
         run: |
-          for script in scripts/resolve-core.sh scripts/publish.sh scripts/build-foafnaut.sh; do
+          for script in scripts/resolve-core.sh scripts/publish.sh scripts/build-foafnaut.sh scripts/wpt-score-history.sh; do
             bash -n "$script"
           done
+          python3 -m py_compile scripts/wpt-score-job.py
