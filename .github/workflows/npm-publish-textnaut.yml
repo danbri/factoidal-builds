@@ -1,0 +1,215 @@
+# Publish @foafos/textnaut to npmjs.com by TRUSTED PUBLISHING (OIDC). No npm
+# token exists for this package.
+#
+# https://docs.npmjs.com/trusted-publishers
+# Requirements met here: GitHub-hosted runner; `id-token: write` on the
+# publish job; Node >= 22.14; npm CLI >= 11.5.1 (checked below).
+#
+# Owner steps, once, in this order:
+#   1. Publish a placeholder version from a logged-in machine, so that the
+#      package exists on npmjs.com.
+#   2. npmjs.com -> @foafos/textnaut -> Settings -> Trusted publishing ->
+#      GitHub Actions, with EXACTLY:
+#        Organization or user: danbri
+#        Repository:           factoidal-builds
+#        Workflow filename:    npm-publish-textnaut.yml
+#        Environment name:     (leave blank)
+#   3. Run this workflow with dry_run=false within 2 days. npm removes a new
+#      configuration that has no successful publish in that time.
+#
+# The two jobs are separate so that the job that holds the OIDC permission
+# runs no code from factoidal-core: `pack` checks out the commit, runs the
+# package's tests and makes the tarball; `publish` only publishes those bytes.
+#
+# repository.url: npm rejects a provenance publish whose package.json names a
+# different GitHub repository from the one that ran the workflow, so the pack
+# job sets it to this repository in the packed copy only.
+#
+# Run a test with no publish (the default):
+#   gh workflow run npm-publish-textnaut.yml --repo danbri/factoidal-builds \
+#     -f core_ref=<40-hex core commit> -f dist_tag=next -f confirm=<version>
+# Publish: add -f dry_run=false
+name: npm-publish-textnaut
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core commit (40 hex) on main. Required.'
+        required: true
+      dist_tag:
+        description: 'npm dist-tag. Give "latest" only to make this the default install.'
+        required: true
+        default: 'next'
+      confirm:
+        description: 'The exact version being published (package.json "version")'
+        required: true
+      dry_run:
+        description: 'Test and pack only; publish nothing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-textnaut
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  PKG: '@foafos/textnaut'
+  PKG_DIR: npm/textnaut
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      tgz: ${{ steps.pack.outputs.tgz }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
+    steps:
+      - name: Check inputs
+        env:
+          CORE_REF: ${{ inputs.core_ref }}
+          DIST_TAG: ${{ inputs.dist_tag }}
+          CONFIRM: ${{ inputs.confirm }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$CORE_REF" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::core_ref must be a 40-hex factoidal-core commit, got '$CORE_REF'"; exit 1
+          fi
+          if ! [[ "$DIST_TAG" =~ ^[a-z][a-z0-9-]*$ ]]; then
+            echo "::error::dist_tag must match ^[a-z][a-z0-9-]*\$, got '$DIST_TAG'"; exit 1
+          fi
+          if ! [[ "$CONFIRM" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::confirm must be the version string being published, got '$CONFIRM'"; exit 1
+          fi
+          STATUS=$(gh api "repos/$CORE_REPO/compare/$CORE_REF...main" --jq .status)
+          case "$STATUS" in
+            ahead|identical) ;;
+            *) echo "::error::$CORE_REF is not on main of $CORE_REPO (compare status: $STATUS)"; exit 1 ;;
+          esac
+
+      - name: Check out factoidal-core at the commit
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ inputs.core_ref }}
+          path: core
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # Textnaut runs on Deno, and the package's tests run the installed program.
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: '2.9.4'
+
+      - name: Check name and version against confirm and the registry
+        id: ver
+        working-directory: core/${{ env.PKG_DIR }}
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          NAME=$(node -p 'require("./package.json").name')
+          V=$(node -p 'require("./package.json").version')
+          [ "$NAME" = "$PKG" ] || { echo "::error::package name is $NAME, not $PKG"; exit 1; }
+          if [ "$V" != "$CONFIRM" ]; then
+            echo "::error::package.json version is $V; confirm was '$CONFIRM'. Nothing published."; exit 1
+          fi
+          if npm view "$PKG@$V" version >/dev/null 2>&1; then
+            echo "::error::$PKG@$V is already on npmjs.com; bump the version in core first"; exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Run the package's tests (installs the tarball and runs it on the pinned engine)
+        working-directory: core/${{ env.PKG_DIR }}
+        run: npm test
+
+      - name: Set repository.url to this repository (provenance check)
+        working-directory: core/${{ env.PKG_DIR }}
+        run: |
+          set -euo pipefail
+          npm pkg set "repository.url=git+https://github.com/${GITHUB_REPOSITORY}.git"
+          npm pkg delete repository.directory
+          echo "packed package.json repository: $(node -p 'JSON.stringify(require("./package.json").repository)')"
+
+      - name: Pack
+        id: pack
+        working-directory: core/${{ env.PKG_DIR }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pack"
+          # prepack copies the program from labs/demos/foafnaut into app/.
+          npm pack --pack-destination "$RUNNER_TEMP/pack" --json > "$RUNNER_TEMP/pack.json"
+          NAME=$(node -p 'require(process.argv[1])[0].filename' "$RUNNER_TEMP/pack.json")
+          SHA=$(sha256sum "$RUNNER_TEMP/pack/$NAME" | cut -d' ' -f1)
+          echo "tgz=$NAME" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "$NAME $SHA"
+
+      - name: Check tarball contents
+        env:
+          TGZ: ${{ steps.pack.outputs.tgz }}
+        run: |
+          set -euo pipefail
+          tar -tzf "$RUNNER_TEMP/pack/$TGZ" | sort > "$RUNNER_TEMP/files.txt"
+          echo "files: $(wc -l < "$RUNNER_TEMP/files.txt")"
+          cat "$RUNNER_TEMP/files.txt"
+          for f in package/bin/textnaut.mjs package/engine-pin.json package/app/textnaut/textnaut.ts package/LICENSE package/NOTICE; do
+            grep -qx "$f" "$RUNNER_TEMP/files.txt" || { echo "::error::tarball lacks $f"; exit 1; }
+          done
+          BAD=$(grep -Ei '\.wasm$|\.dylib$|\.test\.' "$RUNNER_TEMP/files.txt" || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::tarball has files that do not belong:"; echo "$BAD"; exit 1
+          fi
+
+      - name: Upload the tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/pack/
+          retention-days: 30
+
+  publish:
+    needs: pack
+    if: ${{ inputs.dry_run == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write   # OIDC: required for trusted publishing and provenance
+      contents: read
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check npm version (trusted publishing needs >= 11.5.1)
+        run: |
+          node --version
+          npm --version
+          npm --version | awk -F. '{ if ($1 < 11 || ($1 == 11 && $2 < 5) || ($1 == 11 && $2 == 5 && $3 < 1)) { print "npm too old for trusted publishing"; exit 1 } }'
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-tarball
+          path: pack
+
+      - name: Publish the tested tarball (OIDC; provenance)
+        env:
+          TGZ: pack/${{ needs.pack.outputs.tgz }}
+          WANT: ${{ needs.pack.outputs.sha256 }}
+          VERSION: ${{ needs.pack.outputs.version }}
+          DIST_TAG: ${{ inputs.dist_tag }}
+        run: |
+          set -euo pipefail
+          GOT=$(sha256sum "$TGZ" | cut -d' ' -f1)
+          [ "$GOT" = "$WANT" ] || { echo "::error::tarball sha256 $GOT, pack job made $WANT"; exit 1; }
+          echo "publishing $PKG@$VERSION with dist-tag $DIST_TAG"
+          npm publish "$TGZ" --provenance --access public --tag "$DIST_TAG"
