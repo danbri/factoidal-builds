@@ -1,0 +1,210 @@
+name: Foafnaut WPT score
+
+# The Web Platform Tests score of the Foafnaut engine, each day, with no person.
+#
+# For each page script engine (BubblePopJS, QuickJS-NG in WasmVM) it runs
+# factoidal-core's tests/browser-wpt/wpt-score.py twice:
+#   pinned  at the WPT commit of core's last record (tests/browser-wpt/
+#           wpt-score-YYYYMMDD.json): a change in this number is our change
+#   latest  at the newest WPT commit that has a Chrome stable run on wpt.fyi:
+#           its difference from `pinned` is WPT's change
+# The engine is the newest release of this repository whose core commit is in
+# the history of core `main` (sets foafnaut-web and foafnaut-darwin-arm64 of one
+# commit; every file checked against build-info.json). Nothing is built here.
+#
+# Why macOS: the only native engine library that a release holds is
+# libweb-render.dylib (macOS arm64), and core's tool starts its runner with the
+# native library only. The Wasm engine of set foafnaut-web runs on Linux, but
+# core's tool has no option for it yet, and it is slower and gives fewer passes
+# on heavy tests (docs/20261110-wpt-score-job.md has the numbers). `engine: wasm` in a
+# manual run uses ubuntu-latest and needs the core change named there.
+#
+# Records: each job uploads its score JSON, record and logs as an artifact and
+# writes its line to the job summary. The `record` job appends one line a score
+# to history.jsonl on the branch `wpt-scores` (token of this workflow, no other
+# secret). Runs of a subset (`smoke`) are not recorded there.
+#
+# The same steps run on any machine: scripts/wpt-score-job.py --help.
+
+on:
+  schedule:
+    # Each day at 02:47 UTC. GitHub starts scheduled runs late or not at all
+    # when it is busy; a missed day is seen in history.jsonl.
+    - cron: '47 2 * * *'
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core branch or commit for the tool and the release choice'
+        required: false
+        default: 'main'
+      engine:
+        description: 'native (macOS, released dylib) or wasm (Linux, released Wasm engine; needs core support)'
+        type: choice
+        options: [native, wasm]
+        default: native
+      smoke:
+        description: 'Small subset run (4 directories, about 5 minutes a job); not recorded in history'
+        type: boolean
+        default: false
+      n:
+        description: 'Names drawn a stratum (the 2026-11-09 record used 25)'
+        required: false
+        default: '10'
+      keep:
+        description: 'Largest names of a stratum that always run (the record used 5)'
+        required: false
+        default: '3'
+      max_minutes:
+        description: 'Wall-clock limit of the test run of each job, in minutes (at most 270)'
+        required: false
+        default: '240'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wpt-score
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  score:
+    name: ${{ matrix.wpt }} ${{ matrix.script_engine }}
+    runs-on: ${{ inputs.engine == 'wasm' && 'ubuntu-latest' || 'macos-15' }}
+    # The test run stops itself at max_minutes (default 240); the rest is the WPT
+    # fetch, the start check and the score.
+    timeout-minutes: 320
+    strategy:
+      fail-fast: false
+      matrix:
+        wpt: [pinned, latest]
+        script_engine: [bubblepop, quickjs]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ inputs.core_ref || 'main' }}
+          path: core
+          # Commit history without file contents: the release choice needs ancestry.
+          fetch-depth: 0
+          filter: blob:none
+      - name: Read core's Deno version
+        id: pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          DENO=$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)
+          [ -n "$DENO" ] || { echo "::error::no DENO_VERSION in core/labs/demos/foafnaut/toolchain-versions.env"; exit 1; }
+          echo "deno=v$DENO" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          # WPT's server ran on Python 3.13.18 in the local runs of 2026-11-10.
+          python-version: '3.13'
+      - name: Fetch the newest released engine
+        timeout-minutes: 15
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENGINE: ${{ inputs.engine || 'native' }}
+        run: |
+          set -euo pipefail
+          python3 builds/scripts/wpt-score-job.py fetch-engine --core core \
+            --engine "$ENGINE" --dest "$RUNNER_TEMP/engine" 2>&1 | tee "$RUNNER_TEMP/fetch-engine.log"
+      - name: Run the score
+        id: run
+        timeout-minutes: 300
+        shell: bash
+        env:
+          WPT: ${{ matrix.wpt }}
+          SCRIPT_ENGINE: ${{ matrix.script_engine }}
+          SMOKE: ${{ inputs.smoke || 'false' }}
+          N: ${{ inputs.n || '10' }}
+          KEEP: ${{ inputs.keep || '3' }}
+          MAX_MINUTES: ${{ inputs.max_minutes || '240' }}
+          WPT_SCORE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -uo pipefail
+          for v in "$N" "$KEEP" "$MAX_MINUTES"; do
+            [[ "$v" =~ ^[0-9]+$ ]] || { echo "::error::n, keep and max_minutes are whole numbers; got '$v'"; exit 2; }
+          done
+          [ "$MAX_MINUTES" -le 270 ] || { echo "::error::max_minutes is at most 270 (the step stops at 300)"; exit 2; }
+          ARGS=(--core core --engine-dir "$RUNNER_TEMP/engine" --wpt "$WPT" --script-engine "$SCRIPT_ENGINE"
+                --work "$RUNNER_TEMP/wpt-work" --out "$RUNNER_TEMP/wpt-out"
+                --n "$N" --keep "$KEEP" --max-minutes "$MAX_MINUTES" --jobs 3)
+          if [ "$SMOKE" = true ]; then ARGS+=(--smoke); fi
+          mkdir -p "$RUNNER_TEMP/wpt-out"
+          # The script puts a wall-clock limit on each command that it starts.
+          python3 builds/scripts/wpt-score-job.py run "${ARGS[@]}" 2>&1 | tee "$RUNNER_TEMP/wpt-out/job-$WPT-$SCRIPT_ENGINE.log"
+          RC=${PIPESTATUS[0]}
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          exit "$RC"
+      - name: Job summary
+        if: always()
+        shell: bash
+        env:
+          RUN_RC: ${{ steps.run.outputs.rc }}
+        run: |
+          set -uo pipefail
+          if ls "$RUNNER_TEMP"/wpt-out/record-*.json > /dev/null 2>&1; then
+            python3 builds/scripts/wpt-score-job.py summarize --records "$RUNNER_TEMP/wpt-out" --markdown "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No score for ${{ matrix.wpt }} ${{ matrix.script_engine }}: the run step ended with exit ${RUN_RC:-unknown} before a record was written. See the log in the artifact." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wpt-score-${{ matrix.wpt }}-${{ matrix.script_engine }}
+          path: |
+            ${{ runner.temp }}/wpt-out/
+            ${{ runner.temp }}/engine/engine.json
+            ${{ runner.temp }}/fetch-engine.log
+          if-no-files-found: warn
+          retention-days: 90
+
+  record:
+    name: Summary and history
+    needs: score
+    # Also after a failed score job: the other jobs' scores are still recorded.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wpt-score-*
+          path: ${{ runner.temp }}/records
+      - name: Summary of all scores
+        id: all
+        shell: bash
+        run: |
+          set -uo pipefail
+          COUNT=$(find "$RUNNER_TEMP/records" -name 'record-*.json' | wc -l | tr -d ' ')
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No score was recorded in this run." >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::no record-*.json in the artifacts of the score jobs"; exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/flat"
+          find "$RUNNER_TEMP/records" -name 'record-*.json' -exec cp {} "$RUNNER_TEMP/flat/" \;
+          python3 scripts/wpt-score-job.py summarize --records "$RUNNER_TEMP/flat" --markdown "$GITHUB_STEP_SUMMARY"
+          if [ "$COUNT" -ne 4 ]; then
+            echo "::warning::$COUNT of 4 scores were recorded"
+            echo "$COUNT of 4 scores were recorded; see the failed jobs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append to history.jsonl on the branch wpt-scores
+        if: steps.all.outputs.count != '0' && inputs.smoke != true
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/wpt-score-history.sh "$RUNNER_TEMP/flat"
