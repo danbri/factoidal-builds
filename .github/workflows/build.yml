@@ -471,6 +471,10 @@ jobs:
               --core core --source-commit "$CORE_SHA" --kind development \
               --out "$RUNNER_TEMP/foafnaut-web/stage/docs/web/hub/html-webgpu/runtime"
             cp "$RUNNER_TEMP/html-wasm-abi.json" "$RUNNER_TEMP/foafnaut-web/meta/html-wasm-abi.json"
+            # The Lean hygiene ratchet's counts from the engine build record; publish.sh
+            # refuses a foafnaut-web set without them.
+            python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); "hygiene" in r and json.dump(r["hygiene"],open(sys.argv[2],"w"),indent=2)' \
+              core/labs/demos/foafnaut/.build/web-render/source-witness.json "$RUNNER_TEMP/foafnaut-web/meta/hygiene.json"
           fi
       # WasmVM guest modules, one step for all of them: WebAssembly that Lean's WasmVM
       # engine runs inside the Foafnaut engine. Core's own pinned scripts build them from

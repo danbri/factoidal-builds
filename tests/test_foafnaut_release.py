@@ -236,12 +236,15 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         meta = self.root / 'art/foafnaut-web/meta'
         meta.mkdir(parents=True)
         (meta / 'toolchains-foafnaut-web.json').write_text('{"lean":"test","emscripten":"test"}')
+        hygiene = {'counts': {'lab': {'unsafe': 29}}, 'commit': SHA, 'theorem': 'lab_ratchet'}
+        (meta / 'hygiene.json').write_text(json.dumps(hygiene))
         result = self.run_script('publish.sh', FOAFNAUT='false', FOAFNAUT_WEB='true',
                                  GITHUB_REPOSITORY='danbri/factoidal-builds')
         self.assertEqual(result.returncode, 1, result.stderr)
         out = self.root / 'release-out/foafnaut-web'
         info = json.loads((out / 'build-info.json').read_text())
         self.assertEqual(info['source_commit'], SHA)
+        self.assertEqual(info['hygiene'], hygiene)
         creates = [json.loads(line) for line in (self.root / 'gh.jsonl').read_text().splitlines()
                    if json.loads(line)[:2] == ['release','create']]
         self.assertEqual([cmd[2] for cmd in creates], [f'build-{SHA[:12]}-foafnaut-web'])
@@ -253,6 +256,16 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         self.assertEqual(html_manifest['kind'], 'release')
         self.assertIn('/actions/runs/123', html_manifest['evidence']['releaseBuildRun'])
         self.assertIn('/actions/runs/123', manifest['evidence']['releaseBuildRun'])
+
+    def test_foafnaut_web_without_hygiene_is_not_published(self):
+        (self.root / 'art/foafnaut-web/stage').mkdir(parents=True)
+        (self.root / 'art/foafnaut-web/meta').mkdir(parents=True)
+        result = self.run_script('publish.sh', FOAFNAUT='false', FOAFNAUT_WEB='true',
+                                 GITHUB_REPOSITORY='danbri/factoidal-builds')
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('foafnaut-web not published: the engine build record has no hygiene field',
+                      result.stdout + result.stderr)
+        self.assertFalse((self.root / 'release-out/foafnaut-web/build-info.json').exists())
 
 
 if __name__ == '__main__':
