@@ -104,8 +104,8 @@ other conformance suites against released binaries; it builds nothing.
 
 - After each `build.yml` run that publishes releases: macOS WPT (4 shards) and the
   suites. After each `foafnaut-linux.yml` run: Linux WPT (16 shards).
-- Four times a day (01:41, 07:41, 13:41, 19:41 UTC): the newest complete release, also
-  when nothing changed (`repeat_of`); 13:41 adds the macOS cross-check. A new aligned WPT
+- Four times a day (01:41, 07:41, 13:41, 19:41 UTC): the newest complete release on
+  macOS and Linux, also when nothing changed (`repeat_of`). A new aligned WPT
   commit on wpt.fyi makes the trigger `browser-release` and records the other browsers.
 - Manual: `gh workflow run release-tests.yml -f release=build-<sha12> -f wpt_commit=<40 hex>`.
 

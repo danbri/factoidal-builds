@@ -611,9 +611,25 @@ def cmd_wpt_shard(a):
             return
         if memory["min_available_mb"] is None or avail < memory["min_available_mb"]:
             memory["min_available_mb"] = avail
-        if time.time() - memory["last_log"] > 300:
+        if time.time() - memory["last_log"] > 60:
+            # One line a minute for a diagnosis when a runner stops with no result:
+            # free memory and disk, the largest test processes, the test each part is on.
             memory["last_log"] = time.time()
-            log(f"memory available {avail} MB")
+            disk = shutil.disk_usage(work).free // (1 << 20)
+            memory["min_disk_free_mb"] = min(memory.get("min_disk_free_mb") or disk, disk)
+            ps = subprocess.run(["ps", "-eo", "rss=,args="], capture_output=True, text=True).stdout.splitlines()
+            top = sorted((int(l.split(None, 1)[0]) // 1024 for l in ps if l.strip() and l.split(None, 1)[0].isdigit()), reverse=True)[:3]
+            on = []
+            for i in range(a.jobs):
+                lp = os.path.join(work, "results", f"part{i}.log")
+                try:
+                    with open(lp, "rb") as f:
+                        f.seek(max(0, os.path.getsize(lp) - 4000))
+                        starts = [l for l in f.read().decode(errors="replace").splitlines() if l.startswith("START ")]
+                    on.append(starts[-1][6:] if starts else "-")
+                except OSError:
+                    on.append("-")
+            log(f"memory available {avail} MB; disk free {disk} MB; largest processes {top} MB; on {on}")
         if avail < a.min_free_mb:
             ps = subprocess.run(["ps", "-eo", "pid=,rss=,args="], capture_output=True, text=True).stdout.splitlines()
             procs = [(int(l.split(None, 2)[1]), int(l.split(None, 2)[0]), l.split(None, 2)[2]) for l in ps
