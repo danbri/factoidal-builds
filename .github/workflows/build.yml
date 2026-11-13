@@ -59,8 +59,15 @@ on:
 permissions:
   contents: write
 
+# One group for each ref: a dispatch of a branch or commit has a group of its own, so the
+# hourly poll, pushes here and builds of other refs never cancel its pending run
+# (GitHub keeps one pending run in a group and cancels the earlier one). Schedule,
+# push and a dispatch with an empty core_ref share the group of main, where a newer
+# pending run replacing an older one costs nothing: both build the newest main commit.
+# Builds of different refs may run at once: caches are content-keyed, and only main
+# commits publish releases (one per commit) and the latest/*.json pointers.
 concurrency:
-  group: build-factoidal
+  group: build-factoidal-${{ github.event_name == 'workflow_dispatch' && inputs.core_ref || 'main' }}
   cancel-in-progress: false
 
 env:
