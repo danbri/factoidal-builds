@@ -453,7 +453,7 @@ def cmd_resolve(a):
     else:
         plan["snapshot_branch"], plan["snapshot_note"] = "", "nothing run"
     count = {"macos-arm64": a.shards, "linux-x86_64": a.linux_shards}
-    jobs = {"macos-arm64": 3, "linux-x86_64": 4}
+    jobs = {"macos-arm64": 3, "linux-x86_64": 3}
     include = [{"platform": p, "shard": k, "shards": count[p], "jobs": jobs[p], "runs_on": RUNNER_LABEL[p]}
                for p in platforms for k in range(count[p])] if do_wpt else []
     plan.update({"wpt": do_wpt, "suites": do_suites, "platforms": platforms if do_wpt else [],
