@@ -828,7 +828,7 @@ SUITES = [
     ("owl2_profile_ql", "owl", "owl_profile_ql_results.log", "owl_runner", ["third_party/testing/owl/profile-QL.rdf", "--regime", "rl"], 600, []),
     ("owl2_dl_inconsistency", "owl", "owl_type_inconsistency_results.log", "owl_runner", ["third_party/testing/owl/type-inconsistency.rdf", "--regime", "dl"], 1800, []),
     ("owl_syntax_dl_species", "owl", "owl_syntax_dl_results.log", "owl_runner", ["third_party/testing/owl/syntax-dl.rdf", "--species"], 600, []),
-    ("rml_core", "misc", "rml_results.log", "rml_runner", [], 600, ["rml"]),
+    ("rml_core", "misc", "rml_results.log", "rml_runner", [], 600, ["rml", "rml-modules/rml-core"]),
     ("rif_core", "misc", "rif_results.log", "rif_runner", [], 600, []),
     ("vc_stage1", "misc", "vc_results.log", "vc_runner", [], 300, ["vc"]),
     ("did_key", "misc", "did_results.log", "did_runner", [], 300, ["did"]),
@@ -896,7 +896,9 @@ def suite_validity(st, t):
         return ["the suite did not run (group job missing)"]
     if st.get("error"):
         r.append(st["error"])
-    if st.get("exit") not in (0, 1):
+    # 0: all passed; 1: some failed; 2: w3c_runner's "a sub-suite discovered nothing",
+    # which still prints the score of the rest (kept in meta.json status.exit).
+    if st.get("exit") not in (0, 1, 2) or (st.get("exit") == 2 and not (t or {}).get("total")):
         r.append(f"runner exit {st.get('exit')}")
     if t is None:
         r.append("no score line in the log")
