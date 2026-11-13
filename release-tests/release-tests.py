@@ -630,6 +630,37 @@ def cmd_wpt_shard(a):
                      "--native-engine", lib, "--jobs", str(a.jobs), "--max-hours", f"{a.max_minutes / 60:.3f}"] + extra,
                     tool_log, a.max_minutes * 60 + 300, env=env, cwd=work, monitor=monitor)
     run_seconds = round(time.time() - t_run)
+    # One retry pass, in new processes, for the names that could not reach the WPT server.
+    # Seen 2026-11-13 (run 43477054739): one runner process lost every connection to a
+    # healthy server after preload/prefetch-cache.html and failed the remaining 6,653
+    # names "fetch failed"; the other processes went on. The retry results replace the
+    # first ones (zz-retry.jsonl sorts last); meta.json keeps both counts.
+    first = read_results(results)
+    retry_names = sorted("/" + n for n, (c, line) in first.items() if SERVER_FAILURE.search(line))
+    retry = {"names": len(retry_names), "seconds": 0}
+    if retry_names and len(retry_names) <= a.retry_max:
+        for _ in range(40):
+            if not any(port_open(p) for p in WPT_PORTS):
+                break
+            time.sleep(1)
+        rdir = os.path.join(work, "retry")
+        os.makedirs(rdir, exist_ok=True)
+        with open(os.path.join(rdir, "retry.list"), "w") as f:
+            f.write("\n".join(retry_names) + "\n")
+        t_retry = time.time()
+        retry["tool_exit"] = run_logged([sys.executable, tool, "run", "--list", os.path.join(rdir, "retry.list"), "--dir", rdir,
+                                         "--wpt-root", wpt_root, "--native-engine", lib, "--jobs", str(a.jobs),
+                                         "--max-hours", f"{a.retry_minutes / 60:.3f}"] + extra,
+                                        os.path.join(out, "retry-tool.log"), a.retry_minutes * 60 + 300, env=env, cwd=work, monitor=monitor)
+        retry["seconds"] = round(time.time() - t_retry)
+        got = read_results(rdir)
+        with open(os.path.join(results, "zz-retry.jsonl"), "w") as f:
+            for n, (c, line) in sorted(got.items()):
+                f.write(line if line.endswith("\n") else line + "\n")
+        retry["results"] = len(got)
+        retry["still_failing"] = sum(1 for c, line in got.values() if SERVER_FAILURE.search(line))
+    elif retry_names:
+        retry["skipped"] = f"more than {a.retry_max} names: not retried"
     text = open(tool_log, errors="replace").read()
     done = read_results(results)
     want = {n.lstrip("/") for n in mine}
@@ -649,7 +680,7 @@ def cmd_wpt_shard(a):
         elif fn.endswith(".log"):
             with open(src, "rb") as fi, gzip.open(os.path.join(out, fn + ".gz"), "wb") as fo:
                 shutil.copyfileobj(fi, fo)
-    finish(tool_exit=rc, run_seconds=run_seconds, names_run=ran, outcomes=outcomes, server_failures=server_failures,
+    finish(tool_exit=rc, run_seconds=run_seconds, retry=retry, names_run=ran, outcomes=outcomes, server_failures=server_failures,
            wptserve={"probes_ok": probes["ok"], "probes_failed": probes["failed"], "failed_streak_max": probes["streak_max"],
                      "exited_during_run": "wptserve exited" in text, "stopped_at_limit": "stopped at --max-hours" in text},
            jobs=a.jobs, max_minutes=a.max_minutes)
@@ -755,6 +786,7 @@ def cmd_wpt_merge(a):
         "wpt_commit": inputs["wpt_commit"], "names_total": inputs["names"], "names_run": totals.get("namesRun", 0),
         "passed": passed, "denominator": den, "shards": plan["shards"], "shards_present": len(present), "shards_missing": missing,
         "server_failures": server_failures, "shard_health": health,
+        "server_failures_first_pass": sum((x.get("retry") or {}).get("names", 0) for x in metas),
     }
     reasons = wpt_validity(m)
     out_cols = outcome_columns(totals.get("outcomes", {}))
@@ -775,6 +807,7 @@ def cmd_wpt_merge(a):
     meta = {"format": "factoidal-release-test-run-v1", "row": row, "plan": plan, "inputs": inputs,
             "validity": {"valid": not reasons, "reasons": reasons, "rules": wpt_validity.__doc__,
                          "server_failure_limit": SERVER_FAILURE_MAX, "probe_failure_limit": PROBE_FAILURES_MAX},
+            "server_failures_first_pass": m["server_failures_first_pass"],
             "totals": totals, "shards": metas,
             "directories": {k: {kk: v[kk] for kk in ("names", "run", "chrome", "passed", "reported", "share", "outcomes")} for k, v in dirs.items()}}
     json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"), indent=1)
@@ -1162,6 +1195,8 @@ def main():
     s.add_argument("--jobs", type=int, default=3)
     s.add_argument("--max-minutes", type=int, default=150)
     s.add_argument("--pydeps", help="directory with PyYAML for wptserve's Test262 pages")
+    s.add_argument("--retry-max", type=int, default=15000, help="retry the server-failure names once when at most this many")
+    s.add_argument("--retry-minutes", type=int, default=40)
     m = sub.add_parser("wpt-merge")
     for k in ("--plan", "--inputs", "--shards-dir", "--core", "--out"):
         m.add_argument(k, required=True)

@@ -20,7 +20,11 @@ on `main`). Every file here can be fetched without credentials:
   `release-tests.py`):
   1. every name that Chrome runs at the WPT commit was run (`names_run` = `names_total`);
   2. names with a test-server failure ("fetch failed", "Connection refused") are less
-     than 0.5% of the names;
+     than 0.5% of the names, after one retry pass: each shard runs its server-failure
+     names once more in new processes, and those results replace the first ones
+     (meta.json: `server_failures_first_pass`, `shards[].retry`). A runner process can
+     lose its connections to a healthy server and fail every later test;
+     the retry is the same as the rerun of the 2026-11-13 local run;
   3. the engine commit, the release tag and the WPT commit are known;
   4. every shard gave results;
   5. in every shard the WPT server answered for the whole run (a probe every 30 s, no 2
@@ -59,7 +63,7 @@ on `main`). Every file here can be fetched without credentials:
 | `share_ex_encoding_pct` | WPT: the same without `encoding/` (half of WPT's subtests are there) |
 | `ok`, `error`, `timeout`, `skip`, `crash`, `stall`, `no_result`, `other` | WPT: page outcomes (testharness status of each name). Other suites: `skip` = skipped + unsupported |
 | `failed` | other suites: tests failed |
-| `server_failures` | WPT: names whose result mentions "fetch failed" or "Connection refused" |
+| `server_failures` | WPT: names whose result mentions "fetch failed" or "Connection refused", after the retry pass |
 | `valid` | `true` or `false` (rules above) |
 | `invalid_reason` | why not valid, `; `-separated |
 | `kind` | `full` (every name run, no sampling) or `differential` |
