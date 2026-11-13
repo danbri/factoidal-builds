@@ -342,11 +342,14 @@ def cmd_resolve(a):
     why = None
     if event == "workflow_run":
         trigger = "factoidal-release"
+        if a.build_workflow == "Foafnaut Linux engine":
+            # The Linux engine is published after build.yml: run Linux WPT for it.
+            platforms, suites_wanted = ["linux-x86_64"], {"wpt"}
         mark = f"/actions/runs/{a.build_run_id}"
         hits = [k for k, v in by.items() if any(mark in (r.get("body") or "") for r in v["sets"].values())]
         if not hits:
             log(f"build run {a.build_run_id} published no release: nothing to test")
-            gh_output(wpt="false", suites="false", rivals="false", shards="[]", platforms="[]")
+            gh_output(wpt="false", suites="false", rivals="false", matrix=json.dumps({"include": []}), platforms="[]")
             json.dump({**plan, "nothing": "no release from that build run"}, open(a.out, "w"), indent=1)
             return
         short = sorted(hits, key=lambda k: max(r.get("published_at") or "" for r in by[k]["sets"].values()))[-1]
@@ -362,6 +365,10 @@ def cmd_resolve(a):
         short, why = m[1], f"named by the dispatch ({a.release})"
     # The candidate: the newest commit with every set that the asked runs need.
     need = sorted({ENGINE_SET[p] for p in platforms} | {"foafnaut-web"}) if "wpt" in suites_wanted else []
+    if not short and "wpt" in suites_wanted and not newest_complete(by, need)[0] and "linux-x86_64" in platforms:
+        platforms = [p for p in platforms if p != "linux-x86_64"] or ["macos-arm64"]
+        plan["platform_note"] = "no release has a Linux engine yet: macOS only"
+        need = sorted({ENGINE_SET[p] for p in platforms} | {"foafnaut-web"})
     if not short:
         waited = 0
         while True:
@@ -426,8 +433,13 @@ def cmd_resolve(a):
     runs = read_csv_url("runs.csv")
     # Same commit as the last valid run of this kind: still run (the repeat shows flakiness).
     prev = [r for r in runs if r["suite"] == "wpt" and r["valid"] == "true" and r["factoidal_commit"] == commit
-            and r["wpt_commit"] == wpt_commit]
+            and r["wpt_commit"] == wpt_commit and r["platform"] in platforms]
     plan["repeat_of"] = prev[-1]["run_id"] if prev else ""
+    if "wpt" in suites_wanted:
+        missing_p = [p for p in platforms if ENGINE_SET[p] not in sets]
+        if missing_p and len(missing_p) < len(platforms):
+            plan["platform_note"] = f"{', '.join(missing_p)}: no engine release for this commit"
+            platforms = [p for p in platforms if p not in missing_p]
     do_wpt = "wpt" in suites_wanted and all(ENGINE_SET[p] in sets for p in platforms) and "foafnaut-web" in sets
     if do_wpt and trigger == "factoidal-release" and prev and not a.force:
         log(f"WPT already measured validly for {short} at {wpt_commit[:10]} ({prev[-1]['run_id']}); not run again on the release trigger")
@@ -440,16 +452,20 @@ def cmd_resolve(a):
         plan["snapshot_branch"], plan["snapshot_note"] = snapshot(commit, plan["candidate_chosen_utc"], runs)
     else:
         plan["snapshot_branch"], plan["snapshot_note"] = "", "nothing run"
-    shards = list(range(a.shards))
-    plan.update({"wpt": do_wpt, "suites": do_suites, "platforms": platforms if do_wpt else [], "shards": a.shards})
+    count = {"macos-arm64": a.shards, "linux-x86_64": a.linux_shards}
+    jobs = {"macos-arm64": 3, "linux-x86_64": 4}
+    include = [{"platform": p, "shard": k, "shards": count[p], "jobs": jobs[p], "runs_on": RUNNER_LABEL[p]}
+               for p in platforms for k in range(count[p])] if do_wpt else []
+    plan.update({"wpt": do_wpt, "suites": do_suites, "platforms": platforms if do_wpt else [],
+                 "shards_by_platform": {p: count[p] for p in platforms}, "shards": a.shards})
     with open(a.out, "w") as f:
         json.dump(plan, f, indent=1)
     gh_output(wpt=str(do_wpt).lower(), suites=str(do_suites).lower(), rivals=str(do_wpt).lower(),
-              shards=json.dumps(shards if do_wpt else []), shard_count=a.shards, platforms=json.dumps(platforms if do_wpt else []),
+              matrix=json.dumps({"include": include}), platforms=json.dumps(platforms if do_wpt else []),
               core_commit=commit, core_short=short, wpt_commit=wpt_commit, trigger=trigger)
     summary(f"### Release tests plan\n\nTrigger `{trigger}`; core `{commit[:12]}` ({plan['commit_subject']}, "
             f"committed {plan['commit_committer_utc']}), {why}. WPT `{wpt_commit[:10]}`"
-            f"{' (newest aligned)' if plan['wpt_aligned'] else ''}. WPT run: {do_wpt} on {', '.join(platforms)} in {a.shards} shards; "
+            f"{' (newest aligned)' if plan['wpt_aligned'] else ''}. WPT run: {do_wpt} on " + ", ".join(f"{p} ({count[p]} shards)" for p in platforms) + "; "
             f"other suites: {do_suites}." + (f" Repeat of `{plan['repeat_of']}`." if plan["repeat_of"] else ""))
 
 
@@ -694,6 +710,7 @@ def cmd_wpt_merge(a):
     plan = json.load(open(a.plan))
     inputs = json.load(open(os.path.join(a.inputs, "inputs.json")))
     shard_dirs, health, metas = [], [], []
+    plan["shards"] = plan.get("shards_by_platform", {}).get(a.platform, plan["shards"])
     for k in range(plan["shards"]):
         d = os.path.join(a.shards_dir, f"wpt-shard-{a.platform}-{k}")
         mp = os.path.join(d, "shard-meta.json")
@@ -1123,7 +1140,9 @@ def main():
     r.add_argument("--suites", default="wpt,w3c")
     r.add_argument("--platforms", default="macos-arm64")
     r.add_argument("--script-engine", default="bubblepop", choices=["bubblepop", "quickjs"])
-    r.add_argument("--shards", type=int, default=4)
+    r.add_argument("--shards", type=int, default=4, help="macOS shards")
+    r.add_argument("--linux-shards", type=int, default=16)
+    r.add_argument("--build-workflow", default="", help="workflow_run: the name of the workflow that ended")
     r.add_argument("--force", action="store_true")
     r.add_argument("--wait-minutes", type=int, default=0, help="schedule only: how long to wait for a running build")
     r.add_argument("--build-minutes", type=int, default=100, help="the usual length of a build.yml run")

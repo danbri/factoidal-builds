@@ -40,10 +40,13 @@ name: Release tests
 
 on:
   workflow_run:
-    workflows: ['Build Factoidal from factoidal-core']
+    workflows: ['Build Factoidal from factoidal-core', 'Foafnaut Linux engine']
     types: [completed]
   schedule:
-    - cron: '41 1,7,13,19 * * *'
+    # 13:41: Linux and the macOS cross-check; the others Linux only (macOS when no
+    # release has a Linux engine yet).
+    - cron: '41 13 * * *'
+    - cron: '41 1,7,19 * * *'
   workflow_dispatch:
     inputs:
       release:
@@ -59,18 +62,22 @@ on:
         required: false
         default: 'wpt,w3c'
       platforms:
-        description: 'WPT platforms, comma list: macos-arm64 (released dylib), linux-x86_64 (when released)'
+        description: 'WPT platforms, comma list: macos-arm64, linux-x86_64'
         required: false
-        default: 'macos-arm64'
+        default: 'linux-x86_64,macos-arm64'
       script_engine:
         description: 'bubblepop (the score) or quickjs (differential check only, never a score)'
         type: choice
         options: [bubblepop, quickjs]
         default: bubblepop
       shards:
-        description: 'WPT shards (one runner each)'
+        description: 'WPT shards on macOS (one runner each)'
         required: false
         default: '4'
+      linux_shards:
+        description: 'WPT shards on Linux'
+        required: false
+        default: '16'
       force:
         description: 'Run also when a valid run of this commit exists'
         type: boolean
@@ -90,8 +97,7 @@ jobs:
       wpt: ${{ steps.r.outputs.wpt }}
       suites: ${{ steps.r.outputs.suites }}
       rivals: ${{ steps.r.outputs.rivals }}
-      shards: ${{ steps.r.outputs.shards }}
-      shard_count: ${{ steps.r.outputs.shard_count }}
+      matrix: ${{ steps.r.outputs.matrix }}
       platforms: ${{ steps.r.outputs.platforms }}
       core_commit: ${{ steps.r.outputs.core_commit }}
       wpt_commit: ${{ steps.r.outputs.wpt_commit }}
@@ -103,6 +109,8 @@ jobs:
           CORE_SNAPSHOT_TOKEN: ${{ secrets.CORE_SNAPSHOT_TOKEN }}
           EVENT: ${{ github.event_name }}
           BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
+          BUILD_WORKFLOW: ${{ github.event.workflow_run.name }}
+          CRON: ${{ github.event.schedule }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           IN_RELEASE: ${{ inputs.release }}
           IN_WPT: ${{ inputs.wpt_commit }}
@@ -110,14 +118,22 @@ jobs:
           IN_PLATFORMS: ${{ inputs.platforms }}
           IN_ENGINE: ${{ inputs.script_engine }}
           IN_SHARDS: ${{ inputs.shards }}
+          IN_LSHARDS: ${{ inputs.linux_shards }}
           IN_FORCE: ${{ inputs.force }}
         run: |
           set -euo pipefail
-          SHARDS=${IN_SHARDS:-4}
-          [[ "$SHARDS" =~ ^[0-9]+$ ]] && [ "$SHARDS" -ge 1 ] && [ "$SHARDS" -le 32 ] || { echo "::error::shards is 1 to 32"; exit 2; }
-          ARGS=(--event "$EVENT" --build-run-id "${BUILD_RUN_ID:-}" --run-url "$RUN_URL" --release "${IN_RELEASE:-}"
-                --wpt-commit "${IN_WPT:-}" --suites "${IN_SUITES:-wpt,w3c}" --platforms "${IN_PLATFORMS:-macos-arm64}"
-                --script-engine "${IN_ENGINE:-bubblepop}" --shards "$SHARDS" --out "$RUNNER_TEMP/plan.json")
+          SHARDS=${IN_SHARDS:-4}; LSHARDS=${IN_LSHARDS:-16}
+          for v in "$SHARDS" "$LSHARDS"; do
+            [[ "$v" =~ ^[0-9]+$ ]] && [ "$v" -ge 1 ] && [ "$v" -le 32 ] || { echo "::error::shards are 1 to 32"; exit 2; }
+          done
+          case "$EVENT" in
+            schedule) if [ "$CRON" = '41 13 * * *' ]; then PLATFORMS=linux-x86_64,macos-arm64; else PLATFORMS=linux-x86_64; fi; SUITES=wpt,w3c;;
+            workflow_run) if [ "$BUILD_WORKFLOW" = 'Foafnaut Linux engine' ]; then PLATFORMS=linux-x86_64; SUITES=wpt; else PLATFORMS=macos-arm64; SUITES=wpt,w3c; fi;;
+            *) PLATFORMS=${IN_PLATFORMS:-linux-x86_64,macos-arm64}; SUITES=${IN_SUITES:-wpt,w3c};;
+          esac
+          ARGS=(--event "$EVENT" --build-run-id "${BUILD_RUN_ID:-}" --build-workflow "${BUILD_WORKFLOW:-}" --run-url "$RUN_URL"
+                --release "${IN_RELEASE:-}" --wpt-commit "${IN_WPT:-}" --suites "$SUITES" --platforms "$PLATFORMS"
+                --script-engine "${IN_ENGINE:-bubblepop}" --shards "$SHARDS" --linux-shards "$LSHARDS" --out "$RUNNER_TEMP/plan.json")
           if [ "${IN_FORCE:-false}" = true ]; then ARGS+=(--force); fi
           if [ "$EVENT" = schedule ]; then ARGS+=(--wait-minutes 60); fi
           python3 release-tests/release-tests.py resolve "${ARGS[@]}"
@@ -139,15 +155,14 @@ jobs:
     name: WPT ${{ matrix.platform }} shard ${{ matrix.shard }}
     needs: resolve
     if: needs.resolve.outputs.wpt == 'true'
-    runs-on: ${{ matrix.platform == 'macos-arm64' && 'macos-15' || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 200
     strategy:
       fail-fast: false
-      # At most 5 macOS jobs run at once for the account; 4 leaves one for build.yml.
-      max-parallel: 4
-      matrix:
-        platform: ${{ fromJSON(needs.resolve.outputs.platforms) }}
-        shard: ${{ fromJSON(needs.resolve.outputs.shards) }}
+      # GitHub runs at most 5 macOS jobs at once for the account (shared with build.yml)
+      # and about 20 Linux jobs; extra jobs wait in the queue.
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -181,6 +196,7 @@ jobs:
           import json, sys
           p = json.load(open(sys.argv[1])); s = p["release_sets"]
           eng = {"macos-arm64": "foafnaut-darwin-arm64", "linux-x86_64": "foafnaut-linux-x86_64"}[sys.argv[2]]
+          print("core_commit=" + p["core_commit"])
           print("engine_tag=" + s[eng]["tag"]); print("web_tag=" + s["foafnaut-web"]["tag"]); print("script_engine=" + p["script_engine"])
           EOF
       - uses: denoland/setup-deno@v2
@@ -191,6 +207,17 @@ jobs:
           python-version: '3.13'
       - name: PyYAML for wptserve's Test262 pages
         run: python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+      - name: Lean's shared runtime (the Linux engine library links it)
+        if: matrix.platform != 'macos-arm64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          T=$(curl -sSfL "https://raw.githubusercontent.com/${{ env.CORE_REPO }}/${{ steps.pins.outputs.core_commit }}/formal/lean4/lean-toolchain" | tr -d ' \n')
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$T"
+          D=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)
+          echo "LD_LIBRARY_PATH=$D" >> "$GITHUB_ENV"
+          echo "Lean $T for libleanshared"
       - name: Run the shard
         shell: bash
         env:
@@ -200,8 +227,8 @@ jobs:
           python3 builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/wpt-inputs" --core core \
             --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
             --engine-tag "${{ steps.pins.outputs.engine_tag }}" --web-tag "${{ steps.pins.outputs.web_tag }}" \
-            --index ${{ matrix.shard }} --shards ${{ needs.resolve.outputs.shard_count }} --platform ${{ matrix.platform }} \
-            --script-engine "${{ steps.pins.outputs.script_engine }}" --jobs 3 --max-minutes 170 --pydeps "$RUNNER_TEMP/pydeps"
+            --index ${{ matrix.shard }} --shards ${{ matrix.shards }} --platform ${{ matrix.platform }} \
+            --script-engine "${{ steps.pins.outputs.script_engine }}" --jobs ${{ matrix.jobs }} --max-minutes 170 --pydeps "$RUNNER_TEMP/pydeps"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

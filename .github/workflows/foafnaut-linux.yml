@@ -1,0 +1,218 @@
+name: Foafnaut Linux engine
+
+# Builds the native Foafnaut engine library for Linux (libweb-render.so) from one
+# factoidal-core commit on main and publishes it as release
+# build-<12 hex>-foafnaut-linux-<arch> (arch x86_64 on ubuntu-latest, arm64 on
+# ubuntu-24.04-arm), with <set>.tar.gz and build-info.json in the format of build.yml's
+# releases (sha256 of the tarball and of every file).
+#
+# Why a workflow of its own: build.yml holds one pending run in its concurrency group,
+# and a change to it (or to scripts/) starts a run that cancels another session's
+# pending build. This workflow runs after build.yml instead, for the commit whose
+# foafnaut releases that run published, and on request.
+#
+# The build is core's labs/demos/foafnaut/build-web-render.sh --native (Lean modules
+# from source with the pinned toolchain; no Emscripten). On Linux the library links
+# Lean's shared runtime (libleanshared*.so; libleanrt.a can not go into a shared
+# library, see that script), so a user needs the same Lean toolchain:
+# `elan toolchain install $(cat foafnaut/lean-toolchain)` and
+# LD_LIBRARY_PATH=~/.elan/toolchains/<toolchain>/lib/lean. The release says so in
+# foafnaut/README-linux.txt. Gate: one WPT page through core's runner with this library
+# (start check), and core's native_html_test.ts when present. This is a CPU engine
+# library for the WPT runner and the desktop; no GPU, no window.
+#
+# Cost: Linux minutes only, about 25-35 min a build for each arch.
+
+on:
+  workflow_run:
+    workflows: ['Build Factoidal from factoidal-core']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: '40-hex factoidal-core commit on main (empty: the commit of the newest foafnaut-darwin-arm64 release)'
+        required: false
+        default: ''
+      force:
+        description: 'Rebuild when the release exists'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foafnaut-linux
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    outputs:
+      sha: ${{ steps.r.outputs.sha }}
+      short: ${{ steps.r.outputs.short }}
+      arches: ${{ steps.r.outputs.arches }}
+    steps:
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IN_REF: ${{ inputs.core_ref }}
+          FORCE: ${{ inputs.force }}
+          BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${IN_REF:-}" ]; then
+            SHA=$(gh api "repos/$CORE_REPO/commits/$IN_REF" --jq .sha)
+          else
+            # The newest foafnaut-darwin-arm64 release (on a workflow_run: the one that run published).
+            SHA=$(gh api "repos/$REPO/releases?per_page=100" | python3 -c '
+          import json, os, re, sys
+          run = os.environ.get("BUILD_RUN_ID") or ""
+          rs = [r for r in json.load(sys.stdin) if re.fullmatch(r"build-[0-9a-f]{12}-foafnaut-darwin-arm64", r["tag_name"])
+                and (not run or f"/actions/runs/{run}" in (r.get("body") or ""))]
+          rs.sort(key=lambda r: r.get("published_at") or "")
+          m = re.search(r"/commit/([0-9a-f]{40})", rs[-1].get("body") or "") if rs else None
+          print(m[1] if m else "")')
+          fi
+          if [ -z "$SHA" ]; then echo "No new foafnaut release: nothing to build"; echo 'arches=[]' >> "$GITHUB_OUTPUT"; exit 0; fi
+          STATUS=$(gh api "repos/$CORE_REPO/compare/main...$SHA" --jq .status)
+          case "$STATUS" in behind|identical) ;; *) echo "::error::$SHA is not on core main ($STATUS)"; exit 1;; esac
+          SHORT=${SHA:0:12}
+          ARCHES=()
+          for A in x86_64 arm64; do
+            if [ "${FORCE:-false}" != true ] && gh release view "build-$SHORT-foafnaut-linux-$A" -R "$REPO" > /dev/null 2>&1; then
+              echo "build-$SHORT-foafnaut-linux-$A exists"; continue
+            fi
+            ARCHES+=("\"$A\"")
+          done
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"; echo "short=$SHORT" >> "$GITHUB_OUTPUT"
+          echo "arches=[$(IFS=,; echo "${ARCHES[*]:-}")]" >> "$GITHUB_OUTPUT"
+          echo "core $SHA; arches [${ARCHES[*]:-}]" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: libweb-render.so ${{ matrix.arch }}
+    needs: resolve
+    if: needs.resolve.outputs.arches != '[]' && needs.resolve.outputs.arches != ''
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ${{ fromJSON(needs.resolve.outputs.arches) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - name: Install elan and the pinned Lean
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.elan/bin:$PATH"
+          T=$(tr -d ' \n' < core/formal/lean4/lean-toolchain)
+          elan toolchain install "$T"
+          sudo apt-get update -q && sudo apt-get install -y -q libuv1-dev
+      - name: Pins
+        id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Build libweb-render.so
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd core/formal/lean4
+          bash ../../labs/demos/foafnaut/build-web-render.sh --native 2>&1 | tail -40
+          ls -la ../../labs/demos/foafnaut/.build/web-render/engines/
+      - name: Package
+        id: pkg
+        shell: bash
+        env:
+          ARCH: ${{ matrix.arch }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          SET=foafnaut-linux-$ARCH
+          OUT=$RUNNER_TEMP/pkg; STAGE=$OUT/stage; mkdir -p "$STAGE/foafnaut"
+          ENG=core/labs/demos/foafnaut/.build/web-render
+          cp "$ENG/engines/libweb-render.so" "$STAGE/foafnaut/"
+          [ -f "$ENG/engine-build.txt" ] && cp "$ENG/engine-build.txt" "$STAGE/foafnaut/"
+          T=$(tr -d ' \n' < core/formal/lean4/lean-toolchain)
+          echo "$T" > "$STAGE/foafnaut/lean-toolchain"
+          ldd "$STAGE/foafnaut/libweb-render.so" > "$STAGE/foafnaut/ldd.txt" || true
+          cat > "$STAGE/foafnaut/README-linux.txt" <<EOF
+          libweb-render.so: the Foafnaut engine (BubblePopKit) for Linux $ARCH, factoidal-core $SHA.
+          It links Lean's shared runtime. Install the same toolchain and point the loader at it:
+            elan toolchain install $T
+            export LD_LIBRARY_PATH=\$HOME/.elan/toolchains/$(echo "$T" | sed 's|/|--|g; s|:|---|g')/lib/lean
+          Use it with factoidal-core's tests/browser-wpt/testharness-run.ts --native-engine libweb-render.so
+          (the Wasm module of the same commit's foafnaut-web release goes in labs/demos/foafnaut/.build/native-html/runtime).
+          EOF
+          ( cd "$STAGE" && find . -type f | sort | tar --owner=0 --group=0 --numeric-owner --mtime='1970-01-01' -czf "$OUT/$SET.tar.gz" -T - )
+          python3 - "$STAGE" "$OUT/$SET.tar.gz" "$SET" "$SHA" "$RUN_URL" "$T" > "$OUT/build-info.json" <<'EOF'
+          import hashlib, json, os, platform, subprocess, sys, datetime
+          stage, tarball, set_, sha, run_url, tc = sys.argv[1:]
+          h = lambda p: hashlib.sha256(open(p, 'rb').read()).hexdigest()
+          files = {}
+          for dp, _, fs in os.walk(stage):
+              for f in fs:
+                  p = os.path.join(dp, f); files[os.path.relpath(p, stage)] = {"sha256": h(p), "size": os.path.getsize(p)}
+          deno = subprocess.run(["deno", "--version"], capture_output=True, text=True).stdout.splitlines()[0]
+          print(json.dumps({"built_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "run_url": run_url,
+                            "set": set_, "source_commit": sha, "source_ref": "main", "source_repo": "danbri/factoidal-core",
+                            "toolchains": {"lean": tc, "deno": deno, "platform": f"linux-{platform.machine()}",
+                                           "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"},
+                            "artifacts": {os.path.basename(tarball): {"sha256": h(tarball), "size": os.path.getsize(tarball), "files": files}}}, indent=1))
+          EOF
+          echo "set=$SET" >> "$GITHUB_OUTPUT"
+      - name: 'Gate, one WPT page through the runner with this library'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+        run: |
+          set -euo pipefail
+          T=$(tr -d ' \n' < core/formal/lean4/lean-toolchain)
+          export LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)
+          gh release download "build-$SHORT-foafnaut-web" -R "${{ github.repository }}" -p foafnaut-web.tar.gz -D "$RUNNER_TEMP/web"
+          mkdir -p "$RUNNER_TEMP/web/x" && tar -xzf "$RUNNER_TEMP/web/foafnaut-web.tar.gz" -C "$RUNNER_TEMP/web/x"
+          RT=core/labs/demos/foafnaut/.build/native-html/runtime; mkdir -p "$RT"
+          cp "$RUNNER_TEMP/web/x/docs/web/hub/html-webgpu/runtime/web-render."{mjs,wasm} "$RT/"
+          python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+          echo /dom/nodes/Node-textContent.html > "$RUNNER_TEMP/one.list"
+          python3 core/tests/browser-wpt/wpt-score.py tree --wpt-root "$RUNNER_TEMP/wpt" --list "$RUNNER_TEMP/one.list" > /dev/null
+          PYTHONPATH="$RUNNER_TEMP/pydeps" timeout 600 python3 core/tests/browser-wpt/wpt-score.py run --list "$RUNNER_TEMP/one.list" \
+            --dir "$RUNNER_TEMP/gate" --wpt-root "$RUNNER_TEMP/wpt" --native-engine "$RUNNER_TEMP/pkg/stage/foafnaut/libweb-render.so" \
+            --jobs 1 --max-hours 0.1 -- --script-engine bubblepop
+          cat "$RUNNER_TEMP"/gate/part0.jsonl | head -c 600; echo
+          python3 -c 'import json,glob,sys; r=[json.loads(l) for f in glob.glob(sys.argv[1]+"/part*.jsonl") for l in open(f) if l.strip()]; assert r and r[0]["harness"]=="OK" and any(s["status"]=="PASS" for s in r[0]["subtests"]), r' "$RUNNER_TEMP/gate"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          SET: ${{ steps.pkg.outputs.set }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TAG="build-$SHORT-$SET"
+          gh release delete "$TAG" -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" -R "${{ github.repository }}" --latest=false --title "$TAG" \
+            --notes "Built from https://github.com/$CORE_REPO/commit/$SHA (main) by $RUN_URL. Linux native Foafnaut engine library (libweb-render.so) for the WPT runner; needs the Lean toolchain named in foafnaut/lean-toolchain at run time (foafnaut/README-linux.txt)." \
+            "$RUNNER_TEMP/pkg/$SET.tar.gz" "$RUNNER_TEMP/pkg/build-info.json"
