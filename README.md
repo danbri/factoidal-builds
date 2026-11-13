@@ -27,7 +27,7 @@ on `main`). Every file here can be fetched without credentials:
      the retry is the same as the rerun of the 2026-11-13 local run;
   3. the engine commit, the release tag and the WPT commit are known;
   4. every shard gave results;
-  5. in every shard the WPT server answered for the whole run (a probe every 30 s, no 2
+  5. in every shard the WPT server answered for the whole run (a probe every 10 s, no 3
      failed probes in a row, no "wptserve exited"), and no shard stopped at its time limit;
   6. the release that a shard ran is of the same core commit as the runner code;
   7. Chrome's summary gave a denominator.
@@ -92,7 +92,10 @@ snapshot branch, release tags with publish times, the time the candidate was cho
 why, WPT commit), `inputs` (Chrome run, list and summary sha256), `validity` (verdict,
 reasons, rules), `totals`, `shards` (per shard: runner OS and image, CPU count, memory,
 Python/Deno/git versions, release build-info.json contents, engine sha256, tool commit and
-sha256, tree and run seconds, outcomes, server failures, WPT server probes) and
+sha256, tree and run seconds, outcomes, server failures, WPT server probes, the retry pass,
+and `memory`: the least free memory seen and each test process killed by the memory
+guard; on Linux a runner that runs out of memory stops with no result, so below 1.2 GB
+free the largest test process is killed and core's tool records its test as CRASH) and
 `directories` (per top-level WPT directory: names, run, Chrome subtests, passed,
 reported, share, outcomes). Other suites: `status` (exit, seconds), `totals`, `command`,
 `parser`.
