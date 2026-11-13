@@ -96,6 +96,30 @@ Older cores without PolicyBridge keep the existing smoke path. Details:
 on missing gates/API errors, main-only publication and archive provenance
 with fake GitHub/git commands. `check-scripts.yml` runs those controls on PRs.
 
+## Release tests (full WPT and conformance suites)
+
+`.github/workflows/release-tests.yml` (code: `release-tests/release-tests.py`) runs the
+full Web Platform Tests (every name Chrome runs at the WPT commit, no sampling) and the
+other conformance suites against released binaries; it builds nothing.
+
+- After each `build.yml` run that publishes releases: macOS WPT (4 shards) and the
+  suites. After each `foafnaut-linux.yml` run: Linux WPT (16 shards).
+- Four times a day (01:41, 07:41, 13:41, 19:41 UTC): the newest complete release, also
+  when nothing changed (`repeat_of`); 13:41 adds the macOS cross-check. A new aligned WPT
+  commit on wpt.fyi makes the trigger `browser-release` and records the other browsers.
+- Manual: `gh workflow run release-tests.yml -f release=build-<sha12> -f wpt_commit=<40 hex>`.
+
+Results are on the branch `wpt-scores`: `runs.csv` (one row per run and suite; only
+`valid=true`, `kind=full` rows are scores), `rivals.csv`, `differential.csv` (QuickJS,
+never a score), `runs/<run_id>/meta.json`; full WPT results are assets of the release
+`test-results` (do not delete it). Columns and validity rules: `README.md` on that
+branch. `wpt-score.yml` (sampled) is retired: manual smoke check only, nothing recorded.
+
+`.github/workflows/foafnaut-linux.yml` builds the Linux engine library
+(`libweb-render.so`, x86_64 and arm64) after each `build.yml` run and publishes
+`build-<sha12>-foafnaut-linux-<arch>`; it needs the pinned Lean toolchain at run time
+(`foafnaut/README-linux.txt` in the archive).
+
 ## Single-file executables (`exe` set)
 
 `.github/workflows/exe.yml` builds the `factoidal` CLI as one executable file
