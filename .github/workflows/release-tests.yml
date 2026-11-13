@@ -236,7 +236,8 @@ jobs:
             # sudo resets PATH and drops LD_LIBRARY_PATH (Lean's shared runtime): pass them on.
             WRAP=(sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}" "HOME=$HOME" systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 --uid="$(id -u)" --gid="$(id -g)" --)
           fi
-          "${WRAP[@]}" "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/wpt-inputs" --core core \
+          # ${WRAP[@]+...}: macOS has bash 3.2, where an empty array is unbound under set -u.
+          ${WRAP[@]+"${WRAP[@]}"} "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/wpt-inputs" --core core \
             --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
             --engine-tag "${{ steps.pins.outputs.engine_tag }}" --web-tag "${{ steps.pins.outputs.web_tag }}" \
             --index ${{ matrix.shard }} --shards ${{ matrix.shards }} --platform ${{ matrix.platform }} \
