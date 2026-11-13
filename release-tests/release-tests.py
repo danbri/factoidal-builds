@@ -40,7 +40,7 @@ WPT_PORTS = (8000, 8001, 8002, 8003, 8443, 8444, 8445, 8446, 8888, 8889, 9000)
 # A test-server failure: the page or a subtest could not reach WPT's server.
 SERVER_FAILURE = re.compile(r"fetch failed|Connection refused|ECONNREFUSED")
 SERVER_FAILURE_MAX = 0.005           # share of names; at or above it the run is invalid
-PROBE_FAILURES_MAX = 2               # consecutive failed probes of the WPT server
+PROBE_FAILURES_MAX = 3               # consecutive failed probes of the WPT server (one every 10 s)
 
 # The macOS engine set and the Linux one (the Linux set is published once build.yml
 # makes it; until then a Linux WPT run has no engine and resolve does not plan one).
@@ -501,12 +501,12 @@ def run_logged(cmd, logfile, timeout, env=None, cwd=None, monitor=None):
     log("$ " + " ".join(cmd))
     with open(logfile, "ab") as out:
         p = subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT, env=env, cwd=cwd, start_new_session=True)
-        deadline, next_probe = time.time() + timeout, time.time() + 30
+        deadline, next_probe = time.time() + timeout, time.time() + 10
         while p.poll() is None:
             time.sleep(2)
             if monitor and time.time() >= next_probe:
                 monitor()
-                next_probe = time.time() + 30
+                next_probe = time.time() + 10
             if time.time() > deadline:
                 os.killpg(p.pid, signal.SIGKILL)
                 p.wait()
@@ -592,7 +592,43 @@ def cmd_wpt_shard(a):
     # every later test "fetch failed", which a score must not count.
     probes = {"ok": 0, "failed": 0, "streak_max": 0, "streak": 0, "up_seen": False}
 
+    memory = {"min_available_mb": None, "kills": [], "last_log": 0}
+
+    def mem_available_mb():
+        try:
+            for l in open("/proc/meminfo"):
+                if l.startswith("MemAvailable:"):
+                    return int(l.split()[1]) // 1024
+        except OSError:
+            return None
+
+    def memory_guard():
+        # Linux runners stop without a word when memory runs out (2026-11-13: 6 of 16
+        # shards). Kill the largest test process first: core's tool records the test it
+        # was on as CRASH and starts the process again past it.
+        avail = mem_available_mb()
+        if avail is None:
+            return
+        if memory["min_available_mb"] is None or avail < memory["min_available_mb"]:
+            memory["min_available_mb"] = avail
+        if time.time() - memory["last_log"] > 300:
+            memory["last_log"] = time.time()
+            log(f"memory available {avail} MB")
+        if avail < a.min_free_mb:
+            ps = subprocess.run(["ps", "-eo", "pid=,rss=,args="], capture_output=True, text=True).stdout.splitlines()
+            procs = [(int(l.split(None, 2)[1]), int(l.split(None, 2)[0]), l.split(None, 2)[2]) for l in ps
+                     if "testharness-run.ts" in l and work in l]
+            if procs:
+                rss, pid, args = max(procs)
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    return
+                memory["kills"].append({"utc": now_utc(), "pid": pid, "rss_mb": rss // 1024, "available_mb": avail})
+                log(f"memory guard: {avail} MB available; killed test process {pid} ({rss // 1024} MB)")
+
     def monitor():
+        memory_guard()
         if port_open(8000) and port_open(8443):
             probes["ok"] += 1
             probes["up_seen"] = True
@@ -680,7 +716,7 @@ def cmd_wpt_shard(a):
         elif fn.endswith(".log"):
             with open(src, "rb") as fi, gzip.open(os.path.join(out, fn + ".gz"), "wb") as fo:
                 shutil.copyfileobj(fi, fo)
-    finish(tool_exit=rc, run_seconds=run_seconds, retry=retry, names_run=ran, outcomes=outcomes, server_failures=server_failures,
+    finish(tool_exit=rc, run_seconds=run_seconds, retry=retry, memory=memory, names_run=ran, outcomes=outcomes, server_failures=server_failures,
            wptserve={"probes_ok": probes["ok"], "probes_failed": probes["failed"], "failed_streak_max": probes["streak_max"],
                      "exited_during_run": "wptserve exited" in text, "stopped_at_limit": "stopped at --max-hours" in text},
            jobs=a.jobs, max_minutes=a.max_minutes)
@@ -1197,6 +1233,7 @@ def main():
     s.add_argument("--pydeps", help="directory with PyYAML for wptserve's Test262 pages")
     s.add_argument("--retry-max", type=int, default=15000, help="retry the server-failure names once when at most this many")
     s.add_argument("--retry-minutes", type=int, default=40)
+    s.add_argument("--min-free-mb", type=int, default=1200, help="Linux: below this, kill the largest test process")
     m = sub.add_parser("wpt-merge")
     for k in ("--plan", "--inputs", "--shards-dir", "--core", "--out"):
         m.add_argument(k, required=True)
