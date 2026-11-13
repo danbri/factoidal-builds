@@ -1,0 +1,396 @@
+name: Release tests
+
+# Full test runs of Factoidal releases, recorded on the branch `wpt-scores`
+# (runs.csv, rivals.csv, differential.csv, runs/<run_id>/meta.json; columns in
+# release-tests/README-results.md). The full WPT result of each run is the asset
+# <run_id>.wpt-full.json.gz of the release `test-results`.
+#
+# What starts a run:
+#   factoidal-release  each finished run of build.yml that published releases: the
+#                      full WPT run (unless that commit already has a valid one at the
+#                      same WPT commit) and the other conformance suites
+#   schedule           four times a day (01:41, 07:41, 13:41, 19:41 UTC, away from
+#                      build.yml's poll at :23): the full WPT run of the newest complete
+#                      release, run also when nothing changed (repeat_of names the last
+#                      valid run of that commit: the repeat shows flakiness). It may wait
+#                      up to 60 min for a build that is about to end. It never builds.
+#   browser-release    a scheduled run whose WPT commit is new on wpt.fyi (new aligned
+#                      runs of Chrome, Firefox, Safari and Edge): the same run, and the
+#                      other browsers' results at that commit go to rivals.csv
+#   manual             workflow_dispatch: a release tag or core commit, a WPT commit,
+#                      suites, platforms, shards. Branch builds publish no release, so
+#                      only commits on core main can be tested.
+#
+# The WPT run: every name that Chrome runs at the WPT commit (94,406 names at
+# fea36e49dd), split over `shards` macOS arm64 runners (names[k::shards]), each with
+# its own WPT server, 3 test processes, and the release's libweb-render.dylib (no
+# build). Then core's wpt-full.py scores the joined shards. Validity rules: wpt_validity
+# in release-tests/release-tests.py. QuickJS runs (script_engine quickjs) are a
+# differential check only: they go to differential.csv, never to runs.csv.
+#
+# Cost (GitHub-hosted macOS minutes; free for this public repository, but at most 5
+# macOS jobs run at a time for the account, shared with build.yml):
+#   one WPT run = 4 shards x about 75-100 min (measured: see the run records) = about
+#   300-400 macOS minutes, about 1.5-2 h of wall time with max-parallel 4.
+#   4 scheduled runs a day = 1,200-1,600 macOS minutes a day, plus one run for each new
+#   main release (most are skipped when a scheduled run already measured that commit
+#   at that WPT commit, or the reverse: a release run is not repeated by the schedule
+#   only in so far as the schedule always runs).
+#   The other suites: 7 Linux jobs of 5-30 min each.
+
+on:
+  workflow_run:
+    workflows: ['Build Factoidal from factoidal-core']
+    types: [completed]
+  schedule:
+    - cron: '41 1,7,13,19 * * *'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release tag (build-<12 hex>-<set>) or core commit; empty: the newest complete release'
+        required: false
+        default: ''
+      wpt_commit:
+        description: '40-hex WPT commit; empty: the newest with aligned stable runs on wpt.fyi'
+        required: false
+        default: ''
+      suites:
+        description: 'wpt, w3c (the other conformance suites), or both'
+        required: false
+        default: 'wpt,w3c'
+      platforms:
+        description: 'WPT platforms, comma list: macos-arm64 (released dylib), linux-x86_64 (when released)'
+        required: false
+        default: 'macos-arm64'
+      script_engine:
+        description: 'bubblepop (the score) or quickjs (differential check only, never a score)'
+        type: choice
+        options: [bubblepop, quickjs]
+        default: bubblepop
+      shards:
+        description: 'WPT shards (one runner each)'
+        required: false
+        default: '4'
+      force:
+        description: 'Run also when a valid run of this commit exists'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    outputs:
+      wpt: ${{ steps.r.outputs.wpt }}
+      suites: ${{ steps.r.outputs.suites }}
+      rivals: ${{ steps.r.outputs.rivals }}
+      shards: ${{ steps.r.outputs.shards }}
+      shard_count: ${{ steps.r.outputs.shard_count }}
+      platforms: ${{ steps.r.outputs.platforms }}
+      core_commit: ${{ steps.r.outputs.core_commit }}
+      wpt_commit: ${{ steps.r.outputs.wpt_commit }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CORE_SNAPSHOT_TOKEN: ${{ secrets.CORE_SNAPSHOT_TOKEN }}
+          EVENT: ${{ github.event_name }}
+          BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          IN_RELEASE: ${{ inputs.release }}
+          IN_WPT: ${{ inputs.wpt_commit }}
+          IN_SUITES: ${{ inputs.suites }}
+          IN_PLATFORMS: ${{ inputs.platforms }}
+          IN_ENGINE: ${{ inputs.script_engine }}
+          IN_SHARDS: ${{ inputs.shards }}
+          IN_FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          SHARDS=${IN_SHARDS:-4}
+          [[ "$SHARDS" =~ ^[0-9]+$ ]] && [ "$SHARDS" -ge 1 ] && [ "$SHARDS" -le 32 ] || { echo "::error::shards is 1 to 32"; exit 2; }
+          ARGS=(--event "$EVENT" --build-run-id "${BUILD_RUN_ID:-}" --run-url "$RUN_URL" --release "${IN_RELEASE:-}"
+                --wpt-commit "${IN_WPT:-}" --suites "${IN_SUITES:-wpt,w3c}" --platforms "${IN_PLATFORMS:-macos-arm64}"
+                --script-engine "${IN_ENGINE:-bubblepop}" --shards "$SHARDS" --out "$RUNNER_TEMP/plan.json")
+          if [ "${IN_FORCE:-false}" = true ]; then ARGS+=(--force); fi
+          if [ "$EVENT" = schedule ]; then ARGS+=(--wait-minutes 60); fi
+          python3 release-tests/release-tests.py resolve "${ARGS[@]}"
+      - name: WPT inputs (Chrome's summary and the full list)
+        if: steps.r.outputs.wpt == 'true'
+        run: python3 release-tests/release-tests.py wpt-inputs --wpt-commit "${{ steps.r.outputs.wpt_commit }}" --out "$RUNNER_TEMP/wpt-inputs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plan
+          path: ${{ runner.temp }}/plan.json
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: steps.r.outputs.wpt == 'true'
+        with:
+          name: wpt-inputs
+          path: ${{ runner.temp }}/wpt-inputs/
+
+  wpt-shard:
+    name: WPT ${{ matrix.platform }} shard ${{ matrix.shard }}
+    needs: resolve
+    if: needs.resolve.outputs.wpt == 'true'
+    runs-on: ${{ matrix.platform == 'macos-arm64' && 'macos-15' || 'ubuntu-latest' }}
+    timeout-minutes: 200
+    strategy:
+      fail-fast: false
+      # At most 5 macOS jobs run at once for the account; 4 leaves one for build.yml.
+      max-parallel: 4
+      matrix:
+        platform: ${{ fromJSON(needs.resolve.outputs.platforms) }}
+        shard: ${{ fromJSON(needs.resolve.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.core_commit }}
+          path: core
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: ${{ runner.temp }}/plan
+      - uses: actions/download-artifact@v4
+        with:
+          name: wpt-inputs
+          path: ${{ runner.temp }}/wpt-inputs
+      - name: Pins
+        id: pins
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          DENO=$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)
+          echo "deno=v$DENO" >> "$GITHUB_OUTPUT"
+          python3 - "$RUNNER_TEMP/plan/plan.json" "$PLATFORM" >> "$GITHUB_OUTPUT" <<'EOF'
+          import json, sys
+          p = json.load(open(sys.argv[1])); s = p["release_sets"]
+          eng = {"macos-arm64": "foafnaut-darwin-arm64", "linux-x86_64": "foafnaut-linux-x86_64"}[sys.argv[2]]
+          print("engine_tag=" + s[eng]["tag"]); print("web_tag=" + s["foafnaut-web"]["tag"]); print("script_engine=" + p["script_engine"])
+          EOF
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: PyYAML for wptserve's Test262 pages
+        run: python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+      - name: Run the shard
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/wpt-inputs" --core core \
+            --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
+            --engine-tag "${{ steps.pins.outputs.engine_tag }}" --web-tag "${{ steps.pins.outputs.web_tag }}" \
+            --index ${{ matrix.shard }} --shards ${{ needs.resolve.outputs.shard_count }} --platform ${{ matrix.platform }} \
+            --script-engine "${{ steps.pins.outputs.script_engine }}" --jobs 3 --max-minutes 170 --pydeps "$RUNNER_TEMP/pydeps"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wpt-shard-${{ matrix.platform }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 30
+
+  wpt-merge:
+    name: WPT score and validity
+    needs: [resolve, wpt-shard]
+    if: always() && needs.resolve.outputs.wpt == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: main
+          path: core
+          sparse-checkout: tests/browser-wpt
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: ${{ runner.temp }}/plan
+      - uses: actions/download-artifact@v4
+        with:
+          name: wpt-inputs
+          path: ${{ runner.temp }}/wpt-inputs
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wpt-shard-*
+          path: ${{ runner.temp }}/shards
+      - name: Merge, score, validity
+        env:
+          PLATFORMS: ${{ needs.resolve.outputs.platforms }}
+        run: |
+          set -euo pipefail
+          for P in $(python3 -c 'import json,os; print(" ".join(json.loads(os.environ["PLATFORMS"])))'); do
+            python3 builds/release-tests/release-tests.py wpt-merge --plan "$RUNNER_TEMP/plan/plan.json" \
+              --inputs "$RUNNER_TEMP/wpt-inputs" --shards-dir "$RUNNER_TEMP/shards" --core core \
+              --platform "$P" --out "$RUNNER_TEMP/result/$P"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wpt-result
+          path: ${{ runner.temp }}/result/
+          retention-days: 90
+
+  rivals:
+    name: Other browsers at the WPT commit
+    needs: resolve
+    if: needs.resolve.outputs.rivals == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: wpt-inputs
+          path: ${{ runner.temp }}/wpt-inputs
+      - run: |
+          python3 release-tests/release-tests.py rivals --wpt-commit "${{ needs.resolve.outputs.wpt_commit }}" \
+            --inputs "$RUNNER_TEMP/wpt-inputs" --work "$RUNNER_TEMP/rivals-work" --out "$RUNNER_TEMP/rivals"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rivals
+          path: ${{ runner.temp }}/rivals/
+
+  suites:
+    name: Suites ${{ matrix.group }}
+    needs: resolve
+    if: needs.resolve.outputs.suites == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [jsonld, lean-w3c, misc, owl, shapes, w3c]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.core_commit }}
+          path: core
+      - name: Test data submodules
+        run: |
+          set -euo pipefail
+          SUBS=$(python3 builds/release-tests/release-tests.py suite-groups --json | python3 -c 'import json,sys; print(" ".join("third_party/testing/"+s for s in json.load(sys.stdin)[sys.argv[1]]))' "${{ matrix.group }}")
+          if [ -n "$SUBS" ]; then git -C core submodule update --init --depth 1 $SUBS; fi
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: ${{ runner.temp }}/plan
+      - name: Release binaries (linux-x86_64)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["release_sets"]["linux-x86_64"]["tag"])' "$RUNNER_TEMP/plan/plan.json")
+          python3 -c 'import importlib.util,sys; s=importlib.util.spec_from_file_location("rt","builds/release-tests/release-tests.py"); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); import json; print(json.dumps(m.fetch_set(sys.argv[1],"linux-x86_64",sys.argv[2])["build_info"]))' "$TAG" "$RUNNER_TEMP/rel"
+      - name: Run the group
+        run: |
+          python3 builds/release-tests/release-tests.py suite-run --group "${{ matrix.group }}" --core core \
+            --bin "$RUNNER_TEMP/rel/linux-x86_64" --out "$RUNNER_TEMP/suite-out"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: suite-${{ matrix.group }}
+          path: ${{ runner.temp }}/suite-out/
+
+  suites-score:
+    name: Suites score and validity
+    needs: [resolve, suites]
+    if: always() && needs.resolve.outputs.suites == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.core_commit }}
+          path: core
+          sparse-checkout: |
+            formal/fstar
+            docs/test-results
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: ${{ runner.temp }}/plan
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: suite-*
+          path: ${{ runner.temp }}/suite-in
+          merge-multiple: true
+      - run: |
+          python3 builds/release-tests/release-tests.py suite-score --plan "$RUNNER_TEMP/plan/plan.json" --core core \
+            --logs "$RUNNER_TEMP/suite-in" --out "$RUNNER_TEMP/suite-result"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: suite-result
+          path: ${{ runner.temp }}/suite-result/
+
+  record:
+    name: Record on wpt-scores
+    needs: [resolve, wpt-merge, rivals, suites-score]
+    if: always() && (needs.resolve.outputs.wpt == 'true' || needs.resolve.outputs.suites == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    # No concurrency group: a pending job in a group is cancelled by the next one, and a
+    # record must not be lost. record retries its push on top of the current branch.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        if: needs.wpt-merge.result == 'success'
+        with:
+          name: wpt-result
+          path: ${{ runner.temp }}/rec/wpt
+      - uses: actions/download-artifact@v4
+        if: needs.rivals.result == 'success'
+        with:
+          name: rivals
+          path: ${{ runner.temp }}/rec/rivals
+      - uses: actions/download-artifact@v4
+        if: needs.suites-score.result == 'success'
+        with:
+          name: suite-result
+          path: ${{ runner.temp }}/rec/suites
+      - name: Full WPT results to the release test-results
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+          FILES=("$RUNNER_TEMP"/rec/**/*.wpt-full.json.gz)
+          [ ${#FILES[@]} -gt 0 ] || exit 0
+          gh release view test-results > /dev/null 2>&1 || gh release create test-results --target main --latest=false \
+            --title 'Test results: full result files' \
+            --notes 'Full WPT result files (factoidal-wpt-full-v1, gzip) of the runs recorded on the branch wpt-scores (runs.csv, runs/<run_id>/meta.json). Keep this release: meta.json links here.'
+          gh release upload test-results "${FILES[@]}" --clobber
+      - name: Append to runs.csv and write meta.json
+        run: python3 release-tests/release-tests.py record --from "$RUNNER_TEMP/rec"

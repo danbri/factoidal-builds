@@ -1,5 +1,11 @@
-name: Foafnaut WPT score
+name: Foafnaut WPT sample (smoke check)
 
+# RETIRED as a score (2026-11-13): sampled, extrapolated results are not scores. The
+# score is the full measured run of release-tests.yml, recorded in runs.csv on the
+# branch wpt-scores. This workflow now runs only on request, as a smoke check of the
+# tool and an engine; it records nothing. Its old history is
+# retired/sample-history.jsonl on wpt-scores.
+#
 # The Web Platform Tests score of the Foafnaut engine, each day, with no person.
 #
 # For each page script engine (BubblePopJS, QuickJS-NG in WasmVM) it runs
@@ -27,10 +33,6 @@ name: Foafnaut WPT score
 # The same steps run on any machine: scripts/wpt-score-job.py --help.
 
 on:
-  schedule:
-    # Each day at 02:47 UTC. GitHub starts scheduled runs late or not at all
-    # when it is busy; a missed day is seen in history.jsonl.
-    - cron: '47 2 * * *'
   workflow_dispatch:
     inputs:
       core_ref:
@@ -43,9 +45,13 @@ on:
         options: [native, wasm]
         default: native
       smoke:
-        description: 'Small subset run (4 directories, about 5 minutes a job); not recorded in history'
+        description: 'Small subset run (4 directories, about 5 minutes a job)'
         type: boolean
-        default: false
+        default: true
+      script_engines:
+        description: 'JSON list: ["bubblepop"], or ["bubblepop","quickjs"] for the differential check'
+        required: false
+        default: '["bubblepop"]'
       n:
         description: 'Names drawn a stratum (the 2026-11-09 record used 25)'
         required: false
@@ -80,7 +86,7 @@ jobs:
       fail-fast: false
       matrix:
         wpt: [pinned, latest]
-        script_engine: [bubblepop, quickjs]
+        script_engine: ${{ fromJSON(inputs.script_engines || '["bubblepop"]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -176,8 +182,6 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -198,13 +202,4 @@ jobs:
           mkdir -p "$RUNNER_TEMP/flat"
           find "$RUNNER_TEMP/records" -name 'record-*.json' -exec cp {} "$RUNNER_TEMP/flat/" \;
           python3 scripts/wpt-score-job.py summarize --records "$RUNNER_TEMP/flat" --markdown "$GITHUB_STEP_SUMMARY"
-          if [ "$COUNT" -ne 4 ]; then
-            echo "::warning::$COUNT of 4 scores were recorded"
-            echo "$COUNT of 4 scores were recorded; see the failed jobs." >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - name: Append to history.jsonl on the branch wpt-scores
-        if: steps.all.outputs.count != '0' && inputs.smoke != true
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash scripts/wpt-score-history.sh "$RUNNER_TEMP/flat"
+          echo "Sample runs are smoke checks, not scores; nothing is recorded." >> "$GITHUB_STEP_SUMMARY"
