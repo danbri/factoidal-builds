@@ -1,0 +1,6914 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261114T1500Z-wpt-linux-x86_64-gh43606148152a1",
+  "started_utc": "2026-11-14T15:01:13Z",
+  "finished_utc": "2026-11-14T15:49:15Z",
+  "trigger": "factoidal-release",
+  "suite": "wpt",
+  "platform": "linux-x86_64",
+  "engine": "bubblepopkit-native",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+  "commit_utc": "2026-11-14T14:10:35Z",
+  "snapshot_branch": "",
+  "release_tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+  "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+  "names_total": 94662,
+  "names_run": 94662,
+  "passed": 2077426,
+  "denominator": 2270129,
+  "share_pct": "91.5114",
+  "share_ex_encoding_pct": "82.7946",
+  "ok": 85553,
+  "error": 1813,
+  "timeout": 5043,
+  "skip": 1791,
+  "crash": 66,
+  "stall": 19,
+  "no_result": 375,
+  "other": 2,
+  "failed": "",
+  "server_failures": 1,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 12,
+  "wall_minutes": 48.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x12",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43606148152",
+  "result_url": "https://github.com/danbri/factoidal-builds/releases/download/test-results/20261114T1500Z-wpt-linux-x86_64-gh43606148152a1.wpt-full.json.gz",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261114T1500Z-wpt-linux-x86_64-gh43606148152a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-14T15:00:39Z",
+  "event": "workflow_dispatch",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43606148152",
+  "trigger": "factoidal-release",
+  "core_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+  "core_short": "64af7ef92b5f",
+  "on_main": true,
+  "commit_author_utc": "2026-11-14T14:08:03Z",
+  "commit_committer_utc": "2026-11-14T14:10:35Z",
+  "commit_subject": "docs: layout record, margins through an empty block",
+  "release_sets": {
+   "foafnaut-linux-x86_64": {
+    "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+    "published_at": "2026-11-14T14:41:09Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-64af7ef92b5f-foafnaut-linux-x86_64"
+   },
+   "foafnaut-web": {
+    "tag": "build-6f8437b19167-foafnaut-web",
+    "published_at": "2026-11-14T03:07:37Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-6f8437b19167-foafnaut-web",
+    "note": "of core 6f8437b19167, not of this commit: the Wasm module is loaded, not used, by a native run"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-14T15:00:43Z",
+  "candidate_why": "named by the dispatch (build-64af7ef92b5f)",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": true,
+  "suites": false,
+  "platforms": [
+   "linux-x86_64"
+  ],
+  "shards_by_platform": {
+   "linux-x86_64": 12
+  },
+  "shards": 12
+ },
+ "inputs": {
+  "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+  "chrome_run": {
+   "id": 5201771560173568,
+   "browser_version": "157.0.8103.78",
+   "os_name": "linux",
+   "os_version": "22.04",
+   "time_start": "2026-11-14T06:20:40.496Z",
+   "results_url": "https://storage.googleapis.com/wptd/76f3efc65c27333e528675406167145735718fab/chrome-157.0.8103.78-linux-22.04-42dae74c38-summary_v2.json.gz"
+  },
+  "names": 94662,
+  "denominator": 2270129,
+  "denominator_encoding": 1152398,
+  "full_list_sha256": "56b4460cbecb879ac0547e5d22327a2c3d1f2948f78a345da4c58f7e7f349b86",
+  "chrome_json_sha256": "f9c9c2b29fcf9f4edb9932ff1d5b9a30066c80c78e4cfa7ea34f324ef068a508"
+ },
+ "validity": {
+  "valid": true,
+  "reasons": [],
+  "rules": "The rules for a full WPT run to count as a score. Returns the reasons it does not.",
+  "server_failure_limit": 0.005,
+  "probe_failure_limit": 3
+ },
+ "server_failures_first_pass": 1,
+ "totals": {
+  "namesInChrome": 94662,
+  "namesRun": 94662,
+  "namesMissing": 0,
+  "passed": 2077426,
+  "passedUncapped": 2078217,
+  "reported": 2222450,
+  "share": 0.915113634511519,
+  "outcomes": {
+   "CRASH": 66,
+   "ERROR": 1813,
+   "NO_RESULT": 375,
+   "OK": 85553,
+   "PRECONDITION_FAILED": 1,
+   "SKIP engine": 6,
+   "SKIP other": 1785,
+   "STALL": 19,
+   "TIMEOUT": 5043,
+   "undefined": 1
+  }
+ },
+ "shards": [
+  {
+   "index": 0,
+   "shards": 12,
+   "names": 7889,
+   "started_utc": "2026-11-14T15:01:14Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 46,
+   "tool_exit": 0,
+   "run_seconds": 1983,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 7459,
+    "kills": [],
+    "last_log": 1794670477.7753673,
+    "min_disk_free_mb": 85436
+   },
+   "names_run": 7889,
+   "outcomes": {
+    "OK": 7132,
+    "TIMEOUT": 401,
+    "ERROR": 166,
+    "SKIP": 153,
+    "NO_RESULT": 31,
+    "CRASH": 5,
+    "STALL": 1
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 198,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:35:30Z",
+   "wall_seconds": 2056
+  },
+  {
+   "index": 1,
+   "shards": 12,
+   "names": 7889,
+   "started_utc": "2026-11-14T15:01:20Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 34,
+   "tool_exit": 0,
+   "run_seconds": 1577,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 10182,
+    "kills": [],
+    "last_log": 1794670150.3450663,
+    "min_disk_free_mb": 85436
+   },
+   "names_run": 7889,
+   "outcomes": {
+    "TIMEOUT": 401,
+    "OK": 7147,
+    "NO_RESULT": 39,
+    "ERROR": 145,
+    "SKIP": 152,
+    "CRASH": 5
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 157,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:29:16Z",
+   "wall_seconds": 1677
+  },
+  {
+   "index": 2,
+   "shards": 12,
+   "names": 7889,
+   "started_utc": "2026-11-14T15:01:19Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16758403072,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 38,
+   "tool_exit": 0,
+   "run_seconds": 2083,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 11005,
+    "kills": [],
+    "last_log": 1794670635.2517066,
+    "min_disk_free_mb": 85435
+   },
+   "names_run": 7889,
+   "outcomes": {
+    "TIMEOUT": 483,
+    "OK": 7087,
+    "CRASH": 4,
+    "ERROR": 145,
+    "SKIP": 152,
+    "NO_RESULT": 17,
+    "STALL": 1
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 208,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:37:47Z",
+   "wall_seconds": 2189
+  },
+  {
+   "index": 3,
+   "shards": 12,
+   "names": 7889,
+   "started_utc": "2026-11-14T15:01:17Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 48,
+   "tool_exit": 0,
+   "run_seconds": 1985,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 10598,
+    "kills": [],
+    "last_log": 1794670522.907739,
+    "min_disk_free_mb": 85419
+   },
+   "names_run": 7889,
+   "outcomes": {
+    "TIMEOUT": 401,
+    "OK": 7167,
+    "ERROR": 155,
+    "SKIP": 146,
+    "STALL": 1,
+    "NO_RESULT": 11,
+    "CRASH": 8
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 198,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:36:17Z",
+   "wall_seconds": 2100
+  },
+  {
+   "index": 4,
+   "shards": 12,
+   "names": 7889,
+   "started_utc": "2026-11-14T15:01:18Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759435264,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 46,
+   "tool_exit": 0,
+   "run_seconds": 2389,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 7395,
+    "kills": [],
+    "last_log": 1794670942.280508,
+    "min_disk_free_mb": 85416
+   },
+   "names_run": 7889,
+   "outcomes": {
+    "TIMEOUT": 462,
+    "OK": 7109,
+    "NO_RESULT": 15,
+    "ERROR": 147,
+    "SKIP": 150,
+    "STALL": 3,
+    "CRASH": 3
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 238,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:43:01Z",
+   "wall_seconds": 2503
+  },
+  {
+   "index": 5,
+   "shards": 12,
+   "names": 7889,
+   "started_utc": "2026-11-14T15:01:20Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 36,
+   "tool_exit": 0,
+   "run_seconds": 2181,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 9226,
+    "kills": [],
+    "last_log": 1794670712.8284109,
+    "min_disk_free_mb": 85422
+   },
+   "names_run": 7889,
+   "outcomes": {
+    "TIMEOUT": 440,
+    "OK": 7140,
+    "ERROR": 137,
+    "NO_RESULT": 14,
+    "SKIP": 149,
+    "CRASH": 9
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 217,
+    "probes_failed": 1,
+    "failed_streak_max": 1,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:38:43Z",
+   "wall_seconds": 2243
+  },
+  {
+   "index": 6,
+   "shards": 12,
+   "names": 7888,
+   "started_utc": "2026-11-14T15:01:17Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 36,
+   "tool_exit": 0,
+   "run_seconds": 2816,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 8640,
+    "kills": [],
+    "last_log": 1794671330.8304715,
+    "min_disk_free_mb": 85431
+   },
+   "names_run": 7888,
+   "outcomes": {
+    "OK": 7115,
+    "ERROR": 141,
+    "TIMEOUT": 437,
+    "STALL": 4,
+    "NO_RESULT": 37,
+    "SKIP": 146,
+    "CRASH": 7,
+    "undefined": 1
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 279,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:49:15Z",
+   "wall_seconds": 2878
+  },
+  {
+   "index": 7,
+   "shards": 12,
+   "names": 7888,
+   "started_utc": "2026-11-14T15:01:16Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759435264,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 48,
+   "tool_exit": 0,
+   "run_seconds": 2371,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 8415,
+    "kills": [],
+    "last_log": 1794670902.7011776,
+    "min_disk_free_mb": 85432
+   },
+   "names_run": 7888,
+   "outcomes": {
+    "TIMEOUT": 427,
+    "OK": 7122,
+    "ERROR": 146,
+    "STALL": 2,
+    "NO_RESULT": 40,
+    "SKIP": 146,
+    "CRASH": 5
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 236,
+    "probes_failed": 1,
+    "failed_streak_max": 1,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:42:03Z",
+   "wall_seconds": 2447
+  },
+  {
+   "index": 8,
+   "shards": 12,
+   "names": 7888,
+   "started_utc": "2026-11-14T15:01:17Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 46,
+   "tool_exit": 0,
+   "run_seconds": 2705,
+   "retry": {
+    "names": 1,
+    "seconds": 24,
+    "tool_exit": 0,
+    "results": 1,
+    "still_failing": 1
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 8679,
+    "kills": [],
+    "last_log": 1794671266.8547072,
+    "min_disk_free_mb": 85411
+   },
+   "names_run": 7888,
+   "outcomes": {
+    "ERROR": 166,
+    "OK": 7130,
+    "TIMEOUT": 417,
+    "STALL": 2,
+    "NO_RESULT": 17,
+    "SKIP": 151,
+    "CRASH": 5
+   },
+   "server_failures": 1,
+   "wptserve": {
+    "probes_ok": 271,
+    "probes_failed": 1,
+    "failed_streak_max": 1,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:48:01Z",
+   "wall_seconds": 2804
+  },
+  {
+   "index": 9,
+   "shards": 12,
+   "names": 7888,
+   "started_utc": "2026-11-14T15:01:20Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 28,
+   "tool_exit": 0,
+   "run_seconds": 2237,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 6320,
+    "kills": [],
+    "last_log": 1794670764.4404588,
+    "min_disk_free_mb": 85433
+   },
+   "names_run": 7888,
+   "outcomes": {
+    "OK": 7107,
+    "TIMEOUT": 384,
+    "STALL": 2,
+    "ERROR": 168,
+    "NO_RESULT": 73,
+    "SKIP": 147,
+    "CRASH": 7
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 223,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:39:30Z",
+   "wall_seconds": 2291
+  },
+  {
+   "index": 10,
+   "shards": 12,
+   "names": 7888,
+   "started_utc": "2026-11-14T15:01:15Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759435264,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 46,
+   "tool_exit": 0,
+   "run_seconds": 2125,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 7762,
+    "kills": [],
+    "last_log": 1794670658.6415844,
+    "min_disk_free_mb": 85434
+   },
+   "names_run": 7888,
+   "outcomes": {
+    "OK": 7143,
+    "TIMEOUT": 370,
+    "ERROR": 151,
+    "NO_RESULT": 69,
+    "SKIP": 147,
+    "CRASH": 5,
+    "STALL": 3
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 212,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:37:53Z",
+   "wall_seconds": 2198
+  },
+  {
+   "index": 11,
+   "shards": 12,
+   "names": 7888,
+   "started_utc": "2026-11-14T15:01:13Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+   "tool_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-64af7ef92b5f-foafnaut-linux-x86_64",
+     "tarball_sha256": "47861e0442355d9834d78bed8cf1b8fe17209064c159edf111ccd97c91cdfc6e",
+     "files": 5,
+     "build_info": {
+      "built_at": "2026-11-14T14:40:17Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43603187223",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-6f8437b19167-foafnaut-web",
+     "tarball_sha256": "ee109eee0b6e0eac8440031c1582beda81ce841ee97e33e532ea7bee3f410aa1",
+     "files": 19,
+     "build_info": {
+      "built_at": "2026-11-14T03:07:35Z",
+      "hygiene": {
+       "commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+       "counts": {
+        "formal": {
+         "extern": 22,
+         "implemented_by": 0,
+         "modules": 385,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 52,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43542438748",
+      "set": "foafnaut-web",
+      "source_commit": "6f8437b19167319c0aca95c90fb1e20537739cb3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "65c087bb6c0ff3f1f247b9df5eb84afeb9aebb215e5008cb9fb12c96aa593541",
+   "tree_seconds": 52,
+   "tool_exit": 0,
+   "run_seconds": 2207,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 9736,
+    "kills": [],
+    "last_log": 1794670722.4571276,
+    "min_disk_free_mb": 85434
+   },
+   "names_run": 7888,
+   "outcomes": {
+    "OK": 7154,
+    "ERROR": 146,
+    "TIMEOUT": 420,
+    "NO_RESULT": 12,
+    "SKIP": 152,
+    "CRASH": 3,
+    "PRECONDITION_FAILED": 1
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 220,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "finished_utc": "2026-11-14T15:39:19Z",
+   "wall_seconds": 2286
+  }
+ ],
+ "directories": {
+  "FileAPI": {
+   "names": 113,
+   "run": 113,
+   "chrome": 1645,
+   "passed": 1203,
+   "reported": 1568,
+   "share": 0.731307,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 99,
+    "TIMEOUT": 11
+   }
+  },
+  "IndexedDB": {
+   "names": 820,
+   "run": 820,
+   "chrome": 5853,
+   "passed": 5397,
+   "reported": 5704,
+   "share": 0.922091,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 21,
+    "OK": 755,
+    "STALL": 3,
+    "TIMEOUT": 40
+   }
+  },
+  "WebCryptoAPI": {
+   "names": 336,
+   "run": 336,
+   "chrome": 70798,
+   "passed": 51874,
+   "reported": 69472,
+   "share": 0.732704,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 328,
+    "TIMEOUT": 6
+   }
+  },
+  "accelerometer": {
+   "names": 12,
+   "run": 12,
+   "chrome": 153,
+   "passed": 8,
+   "reported": 153,
+   "share": 0.052288,
+   "outcomes": {
+    "OK": 12
+   }
+  },
+  "accessibility": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 1,
+   "reported": 1,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "accname": {
+   "names": 21,
+   "run": 21,
+   "chrome": 509,
+   "passed": 423,
+   "reported": 509,
+   "share": 0.831041,
+   "outcomes": {
+    "OK": 21
+   }
+  },
+  "acid": {
+   "names": 1,
+   "run": 1,
+   "chrome": 100,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "TIMEOUT": 1
+   }
+  },
+  "ai": {
+   "names": 194,
+   "run": 194,
+   "chrome": 541,
+   "passed": 1,
+   "reported": 385,
+   "share": 0.001848,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 160,
+    "TIMEOUT": 32
+   }
+  },
+  "ambient-light": {
+   "names": 10,
+   "run": 10,
+   "chrome": 50,
+   "passed": 4,
+   "reported": 50,
+   "share": 0.08,
+   "outcomes": {
+    "OK": 10
+   }
+  },
+  "animation-worklet": {
+   "names": 17,
+   "run": 17,
+   "chrome": 64,
+   "passed": 18,
+   "reported": 63,
+   "share": 0.28125,
+   "outcomes": {
+    "OK": 16,
+    "TIMEOUT": 1
+   }
+  },
+  "apng": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "aria": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "SKIP other": 2
+   }
+  },
+  "audio-output": {
+   "names": 10,
+   "run": 10,
+   "chrome": 45,
+   "passed": 17,
+   "reported": 37,
+   "share": 0.377778,
+   "outcomes": {
+    "OK": 8,
+    "TIMEOUT": 2
+   }
+  },
+  "audio-session": {
+   "names": 3,
+   "run": 3,
+   "chrome": 40,
+   "passed": 14,
+   "reported": 40,
+   "share": 0.35,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "autoplay-policy-detection": {
+   "names": 3,
+   "run": 3,
+   "chrome": 22,
+   "passed": 14,
+   "reported": 20,
+   "share": 0.636364,
+   "outcomes": {
+    "OK": 2,
+    "TIMEOUT": 1
+   }
+  },
+  "background-fetch": {
+   "names": 16,
+   "run": 16,
+   "chrome": 257,
+   "passed": 34,
+   "reported": 257,
+   "share": 0.132296,
+   "outcomes": {
+    "OK": 16
+   }
+  },
+  "background-sync": {
+   "names": 2,
+   "run": 2,
+   "chrome": 34,
+   "passed": 16,
+   "reported": 34,
+   "share": 0.470588,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "badging": {
+   "names": 8,
+   "run": 8,
+   "chrome": 67,
+   "passed": 34,
+   "reported": 63,
+   "share": 0.507463,
+   "outcomes": {
+    "OK": 7,
+    "TIMEOUT": 1
+   }
+  },
+  "battery-status": {
+   "names": 17,
+   "run": 17,
+   "chrome": 65,
+   "passed": 12,
+   "reported": 58,
+   "share": 0.184615,
+   "outcomes": {
+    "OK": 11,
+    "TIMEOUT": 6
+   }
+  },
+  "beacon": {
+   "names": 17,
+   "run": 17,
+   "chrome": 102,
+   "passed": 87,
+   "reported": 92,
+   "share": 0.852941,
+   "outcomes": {
+    "OK": 12,
+    "TIMEOUT": 5
+   }
+  },
+  "bluetooth": {
+   "names": 7,
+   "run": 7,
+   "chrome": 229,
+   "passed": 24,
+   "reported": 229,
+   "share": 0.104803,
+   "outcomes": {
+    "OK": 7
+   }
+  },
+  "captured-mouse-events": {
+   "names": 4,
+   "run": 4,
+   "chrome": 26,
+   "passed": 2,
+   "reported": 26,
+   "share": 0.076923,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "clear-site-data": {
+   "names": 15,
+   "run": 15,
+   "chrome": 59,
+   "passed": 2,
+   "reported": 10,
+   "share": 0.033898,
+   "outcomes": {
+    "OK": 6,
+    "TIMEOUT": 9
+   }
+  },
+  "client-hints": {
+   "names": 128,
+   "run": 128,
+   "chrome": 205,
+   "passed": 58,
+   "reported": 168,
+   "share": 0.282927,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 101,
+    "TIMEOUT": 25
+   }
+  },
+  "clipboard-apis": {
+   "names": 62,
+   "run": 62,
+   "chrome": 253,
+   "passed": 28,
+   "reported": 211,
+   "share": 0.110672,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 50,
+    "TIMEOUT": 11
+   }
+  },
+  "close-watcher": {
+   "names": 68,
+   "run": 68,
+   "chrome": 98,
+   "passed": 0,
+   "reported": 95,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 65,
+    "TIMEOUT": 3
+   }
+  },
+  "compat": {
+   "names": 14,
+   "run": 14,
+   "chrome": 143,
+   "passed": 101,
+   "reported": 143,
+   "share": 0.706294,
+   "outcomes": {
+    "OK": 14
+   }
+  },
+  "compression": {
+   "names": 78,
+   "run": 78,
+   "chrome": 1316,
+   "passed": 944,
+   "reported": 1300,
+   "share": 0.717325,
+   "outcomes": {
+    "OK": 74,
+    "STALL": 4
+   }
+  },
+  "compute-pressure": {
+   "names": 45,
+   "run": 45,
+   "chrome": 187,
+   "passed": 9,
+   "reported": 179,
+   "share": 0.048128,
+   "outcomes": {
+    "OK": 26,
+    "TIMEOUT": 19
+   }
+  },
+  "connection-allowlist": {
+   "names": 90,
+   "run": 90,
+   "chrome": 365,
+   "passed": 83,
+   "reported": 231,
+   "share": 0.227397,
+   "outcomes": {
+    "CRASH": 2,
+    "ERROR": 2,
+    "NO_RESULT": 2,
+    "OK": 64,
+    "TIMEOUT": 20
+   }
+  },
+  "console": {
+   "names": 19,
+   "run": 19,
+   "chrome": 107,
+   "passed": 30,
+   "reported": 107,
+   "share": 0.280374,
+   "outcomes": {
+    "OK": 19
+   }
+  },
+  "contacts": {
+   "names": 1,
+   "run": 1,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "container-timing": {
+   "names": 49,
+   "run": 49,
+   "chrome": 52,
+   "passed": 0,
+   "reported": 52,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 49
+   }
+  },
+  "content-dpr": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "content-index": {
+   "names": 5,
+   "run": 5,
+   "chrome": 105,
+   "passed": 31,
+   "reported": 105,
+   "share": 0.295238,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "content-security-policy": {
+   "names": 948,
+   "run": 948,
+   "chrome": 4544,
+   "passed": 2501,
+   "reported": 3742,
+   "share": 0.550396,
+   "outcomes": {
+    "CRASH": 2,
+    "ERROR": 102,
+    "NO_RESULT": 15,
+    "OK": 635,
+    "STALL": 1,
+    "TIMEOUT": 193
+   }
+  },
+  "contenteditable": {
+   "names": 2,
+   "run": 2,
+   "chrome": 6,
+   "passed": 6,
+   "reported": 6,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "cookies": {
+   "names": 88,
+   "run": 88,
+   "chrome": 1293,
+   "passed": 662,
+   "reported": 702,
+   "share": 0.511988,
+   "outcomes": {
+    "ERROR": 7,
+    "OK": 40,
+    "TIMEOUT": 41
+   }
+  },
+  "cookiestore": {
+   "names": 76,
+   "run": 76,
+   "chrome": 636,
+   "passed": 503,
+   "reported": 621,
+   "share": 0.790881,
+   "outcomes": {
+    "OK": 71,
+    "TIMEOUT": 5
+   }
+  },
+  "core-aam": {
+   "names": 183,
+   "run": 183,
+   "chrome": 205,
+   "passed": 7,
+   "reported": 8,
+   "share": 0.034146,
+   "outcomes": {
+    "OK": 1,
+    "SKIP other": 182
+   }
+  },
+  "cors": {
+   "names": 27,
+   "run": 27,
+   "chrome": 463,
+   "passed": 352,
+   "reported": 416,
+   "share": 0.760259,
+   "outcomes": {
+    "OK": 24,
+    "TIMEOUT": 3
+   }
+  },
+  "cpu-performance": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "credential-management": {
+   "names": 16,
+   "run": 16,
+   "chrome": 161,
+   "passed": 32,
+   "reported": 139,
+   "share": 0.198758,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 11,
+    "TIMEOUT": 3
+   }
+  },
+  "css": {
+   "names": 8219,
+   "run": 8219,
+   "chrome": 196898,
+   "passed": 153085,
+   "reported": 193701,
+   "share": 0.777484,
+   "outcomes": {
+    "ERROR": 75,
+    "NO_RESULT": 2,
+    "OK": 7798,
+    "SKIP other": 2,
+    "STALL": 1,
+    "TIMEOUT": 341
+   }
+  },
+  "custom-elements": {
+   "names": 204,
+   "run": 204,
+   "chrome": 4410,
+   "passed": 3439,
+   "reported": 4216,
+   "share": 0.779819,
+   "outcomes": {
+    "ERROR": 14,
+    "OK": 187,
+    "TIMEOUT": 3
+   }
+  },
+  "delegated-ink": {
+   "names": 5,
+   "run": 5,
+   "chrome": 14,
+   "passed": 0,
+   "reported": 13,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 4
+   }
+  },
+  "density-size-correction": {
+   "names": 2,
+   "run": 2,
+   "chrome": 6,
+   "passed": 5,
+   "reported": 6,
+   "share": 0.833333,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "deprecation-reporting": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 4,
+   "reported": 4,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "device-bound-session-credentials": {
+   "names": 32,
+   "run": 32,
+   "chrome": 70,
+   "passed": 1,
+   "reported": 15,
+   "share": 0.014286,
+   "outcomes": {
+    "OK": 6,
+    "TIMEOUT": 26
+   }
+  },
+  "device-memory": {
+   "names": 4,
+   "run": 4,
+   "chrome": 40,
+   "passed": 34,
+   "reported": 40,
+   "share": 0.85,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "device-posture": {
+   "names": 5,
+   "run": 5,
+   "chrome": 31,
+   "passed": 14,
+   "reported": 31,
+   "share": 0.451613,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 1
+   }
+  },
+  "digital-credentials": {
+   "names": 28,
+   "run": 28,
+   "chrome": 152,
+   "passed": 3,
+   "reported": 76,
+   "share": 0.019737,
+   "outcomes": {
+    "OK": 19,
+    "TIMEOUT": 9
+   }
+  },
+  "direct-sockets": {
+   "names": 4,
+   "run": 4,
+   "chrome": 6,
+   "passed": 0,
+   "reported": 6,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "document-picture-in-picture": {
+   "names": 22,
+   "run": 22,
+   "chrome": 40,
+   "passed": 1,
+   "reported": 40,
+   "share": 0.025,
+   "outcomes": {
+    "OK": 22
+   }
+  },
+  "document-policy": {
+   "names": 10,
+   "run": 10,
+   "chrome": 19,
+   "passed": 0,
+   "reported": 5,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 4,
+    "TIMEOUT": 5
+   }
+  },
+  "dom": {
+   "names": 808,
+   "run": 808,
+   "chrome": 66464,
+   "passed": 63875,
+   "reported": 66308,
+   "share": 0.961047,
+   "outcomes": {
+    "CRASH": 2,
+    "ERROR": 12,
+    "NO_RESULT": 1,
+    "OK": 740,
+    "TIMEOUT": 53
+   }
+  },
+  "domparsing": {
+   "names": 96,
+   "run": 96,
+   "chrome": 3731,
+   "passed": 2435,
+   "reported": 3546,
+   "share": 0.65264,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 86,
+    "TIMEOUT": 4
+   }
+  },
+  "domxpath": {
+   "names": 35,
+   "run": 35,
+   "chrome": 1171,
+   "passed": 1164,
+   "reported": 1171,
+   "share": 0.994022,
+   "outcomes": {
+    "OK": 35
+   }
+  },
+  "dpub-aam": {
+   "names": 1,
+   "run": 1,
+   "chrome": 39,
+   "passed": 0,
+   "reported": 39,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "ecmascript": {
+   "names": 2,
+   "run": 2,
+   "chrome": 21,
+   "passed": 13,
+   "reported": 21,
+   "share": 0.619048,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "editing": {
+   "names": 733,
+   "run": 733,
+   "chrome": 117163,
+   "passed": 112354,
+   "reported": 116074,
+   "share": 0.958955,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 701,
+    "TIMEOUT": 27
+   }
+  },
+  "element-timing": {
+   "names": 53,
+   "run": 53,
+   "chrome": 56,
+   "passed": 3,
+   "reported": 56,
+   "share": 0.053571,
+   "outcomes": {
+    "OK": 53
+   }
+  },
+  "encoding": {
+   "names": 1343,
+   "run": 1343,
+   "chrome": 1152398,
+   "passed": 1152005,
+   "reported": 1152344,
+   "share": 0.999659,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 1332,
+    "TIMEOUT": 6
+   }
+  },
+  "encoding-detection": {
+   "names": 75,
+   "run": 75,
+   "chrome": 75,
+   "passed": 17,
+   "reported": 44,
+   "share": 0.226667,
+   "outcomes": {
+    "OK": 44,
+    "TIMEOUT": 31
+   }
+  },
+  "encrypted-media": {
+   "names": 100,
+   "run": 100,
+   "chrome": 359,
+   "passed": 25,
+   "reported": 203,
+   "share": 0.069638,
+   "outcomes": {
+    "ERROR": 61,
+    "OK": 36,
+    "TIMEOUT": 3
+   }
+  },
+  "entries-api": {
+   "names": 6,
+   "run": 6,
+   "chrome": 100,
+   "passed": 18,
+   "reported": 100,
+   "share": 0.18,
+   "outcomes": {
+    "OK": 6
+   }
+  },
+  "event-timing": {
+   "names": 76,
+   "run": 76,
+   "chrome": 183,
+   "passed": 52,
+   "reported": 183,
+   "share": 0.284153,
+   "outcomes": {
+    "OK": 76
+   }
+  },
+  "eventsource": {
+   "names": 109,
+   "run": 109,
+   "chrome": 157,
+   "passed": 132,
+   "reported": 137,
+   "share": 0.840764,
+   "outcomes": {
+    "OK": 97,
+    "TIMEOUT": 12
+   }
+  },
+  "eyedropper": {
+   "names": 2,
+   "run": 2,
+   "chrome": 11,
+   "passed": 4,
+   "reported": 11,
+   "share": 0.363636,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 1
+   }
+  },
+  "fedcm": {
+   "names": 81,
+   "run": 81,
+   "chrome": 179,
+   "passed": 1,
+   "reported": 169,
+   "share": 0.005587,
+   "outcomes": {
+    "OK": 79,
+    "TIMEOUT": 2
+   }
+  },
+  "fenced-frame": {
+   "names": 9,
+   "run": 9,
+   "chrome": 19,
+   "passed": 5,
+   "reported": 18,
+   "share": 0.263158,
+   "outcomes": {
+    "OK": 8,
+    "TIMEOUT": 1
+   }
+  },
+  "fetch": {
+   "names": 947,
+   "run": 947,
+   "chrome": 13288,
+   "passed": 8758,
+   "reported": 11540,
+   "share": 0.659091,
+   "outcomes": {
+    "CRASH": 2,
+    "ERROR": 32,
+    "NO_RESULT": 2,
+    "OK": 780,
+    "PRECONDITION_FAILED": 1,
+    "SKIP other": 12,
+    "STALL": 1,
+    "TIMEOUT": 117
+   }
+  },
+  "file-system-access": {
+   "names": 10,
+   "run": 10,
+   "chrome": 163,
+   "passed": 129,
+   "reported": 159,
+   "share": 0.791411,
+   "outcomes": {
+    "OK": 9,
+    "TIMEOUT": 1
+   }
+  },
+  "focus": {
+   "names": 39,
+   "run": 39,
+   "chrome": 55,
+   "passed": 5,
+   "reported": 9,
+   "share": 0.090909,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 7,
+    "TIMEOUT": 31
+   }
+  },
+  "font-access": {
+   "names": 12,
+   "run": 12,
+   "chrome": 38,
+   "passed": 3,
+   "reported": 32,
+   "share": 0.078947,
+   "outcomes": {
+    "OK": 7,
+    "TIMEOUT": 5
+   }
+  },
+  "forced-colors-mode": {
+   "names": 15,
+   "run": 15,
+   "chrome": 41,
+   "passed": 20,
+   "reported": 41,
+   "share": 0.487805,
+   "outcomes": {
+    "OK": 15
+   }
+  },
+  "fs": {
+   "names": 102,
+   "run": 102,
+   "chrome": 1121,
+   "passed": 994,
+   "reported": 1090,
+   "share": 0.886708,
+   "outcomes": {
+    "OK": 92,
+    "TIMEOUT": 10
+   }
+  },
+  "fullscreen": {
+   "names": 90,
+   "run": 90,
+   "chrome": 248,
+   "passed": 114,
+   "reported": 225,
+   "share": 0.459677,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 73,
+    "TIMEOUT": 11
+   }
+  },
+  "gamepad": {
+   "names": 6,
+   "run": 6,
+   "chrome": 92,
+   "passed": 34,
+   "reported": 88,
+   "share": 0.369565,
+   "outcomes": {
+    "OK": 4,
+    "TIMEOUT": 2
+   }
+  },
+  "generic-sensor": {
+   "names": 3,
+   "run": 3,
+   "chrome": 46,
+   "passed": 2,
+   "reported": 46,
+   "share": 0.043478,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "geolocation": {
+   "names": 24,
+   "run": 24,
+   "chrome": 134,
+   "passed": 27,
+   "reported": 132,
+   "share": 0.201493,
+   "outcomes": {
+    "ERROR": 17,
+    "OK": 6,
+    "TIMEOUT": 1
+   }
+  },
+  "geolocation-sensor": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 1,
+   "reported": 1,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "gpc": {
+   "names": 5,
+   "run": 5,
+   "chrome": 77,
+   "passed": 68,
+   "reported": 77,
+   "share": 0.883117,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "graphics-aria": {
+   "names": 1,
+   "run": 1,
+   "chrome": 3,
+   "passed": 0,
+   "reported": 3,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "gyroscope": {
+   "names": 10,
+   "run": 10,
+   "chrome": 55,
+   "passed": 4,
+   "reported": 55,
+   "share": 0.072727,
+   "outcomes": {
+    "OK": 10
+   }
+  },
+  "hr-time": {
+   "names": 19,
+   "run": 19,
+   "chrome": 160,
+   "passed": 66,
+   "reported": 156,
+   "share": 0.4125,
+   "outcomes": {
+    "OK": 16,
+    "TIMEOUT": 3
+   }
+  },
+  "hsts": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 1,
+   "reported": 1,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "html": {
+   "names": 9119,
+   "run": 9119,
+   "chrome": 159460,
+   "passed": 136361,
+   "reported": 152610,
+   "share": 0.855142,
+   "outcomes": {
+    "CRASH": 8,
+    "ERROR": 277,
+    "NO_RESULT": 18,
+    "OK": 7556,
+    "STALL": 4,
+    "TIMEOUT": 1256
+   }
+  },
+  "html-aam": {
+   "names": 38,
+   "run": 38,
+   "chrome": 891,
+   "passed": 810,
+   "reported": 889,
+   "share": 0.909091,
+   "outcomes": {
+    "OK": 36,
+    "SKIP other": 2
+   }
+  },
+  "html-media-capture": {
+   "names": 2,
+   "run": 2,
+   "chrome": 22,
+   "passed": 14,
+   "reported": 22,
+   "share": 0.636364,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "https-upgrades": {
+   "names": 6,
+   "run": 6,
+   "chrome": 6,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "TIMEOUT": 6
+   }
+  },
+  "idle-detection": {
+   "names": 12,
+   "run": 12,
+   "chrome": 93,
+   "passed": 1,
+   "reported": 59,
+   "share": 0.010753,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 7,
+    "OK": 4
+   }
+  },
+  "imagebitmap-renderingcontext": {
+   "names": 14,
+   "run": 14,
+   "chrome": 20,
+   "passed": 1,
+   "reported": 19,
+   "share": 0.05,
+   "outcomes": {
+    "OK": 13,
+    "TIMEOUT": 1
+   }
+  },
+  "import-maps": {
+   "names": 59,
+   "run": 59,
+   "chrome": 396,
+   "passed": 17,
+   "reported": 75,
+   "share": 0.042929,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 40,
+    "TIMEOUT": 15
+   }
+  },
+  "inert": {
+   "names": 29,
+   "run": 29,
+   "chrome": 113,
+   "passed": 29,
+   "reported": 103,
+   "share": 0.256637,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 25,
+    "TIMEOUT": 3
+   }
+  },
+  "infrastructure": {
+   "names": 144,
+   "run": 144,
+   "chrome": 286,
+   "passed": 109,
+   "reported": 212,
+   "share": 0.381119,
+   "outcomes": {
+    "ERROR": 16,
+    "OK": 101,
+    "SKIP other": 7,
+    "TIMEOUT": 20
+   }
+  },
+  "input-device-capabilities": {
+   "names": 1,
+   "run": 1,
+   "chrome": 22,
+   "passed": 9,
+   "reported": 22,
+   "share": 0.409091,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "input-events": {
+   "names": 34,
+   "run": 34,
+   "chrome": 3366,
+   "passed": 2548,
+   "reported": 3355,
+   "share": 0.756982,
+   "outcomes": {
+    "OK": 29,
+    "TIMEOUT": 5
+   }
+  },
+  "installedapp": {
+   "names": 2,
+   "run": 2,
+   "chrome": 18,
+   "passed": 14,
+   "reported": 18,
+   "share": 0.777778,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "intersection-observer": {
+   "names": 154,
+   "run": 154,
+   "chrome": 440,
+   "passed": 208,
+   "reported": 346,
+   "share": 0.472727,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 134,
+    "TIMEOUT": 15
+   }
+  },
+  "intervention-reporting": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 4,
+   "reported": 4,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "is-input-pending": {
+   "names": 12,
+   "run": 12,
+   "chrome": 41,
+   "passed": 13,
+   "reported": 41,
+   "share": 0.317073,
+   "outcomes": {
+    "OK": 12
+   }
+  },
+  "jpegxl": {
+   "names": 12,
+   "run": 12,
+   "chrome": 17,
+   "passed": 1,
+   "reported": 14,
+   "share": 0.058824,
+   "outcomes": {
+    "OK": 9,
+    "TIMEOUT": 3
+   }
+  },
+  "js": {
+   "names": 35,
+   "run": 35,
+   "chrome": 160,
+   "passed": 64,
+   "reported": 160,
+   "share": 0.4,
+   "outcomes": {
+    "OK": 35
+   }
+  },
+  "js-self-profiling": {
+   "names": 26,
+   "run": 26,
+   "chrome": 46,
+   "passed": 2,
+   "reported": 43,
+   "share": 0.043478,
+   "outcomes": {
+    "OK": 23,
+    "TIMEOUT": 3
+   }
+  },
+  "keyboard-lock": {
+   "names": 7,
+   "run": 7,
+   "chrome": 38,
+   "passed": 14,
+   "reported": 36,
+   "share": 0.368421,
+   "outcomes": {
+    "OK": 5,
+    "TIMEOUT": 2
+   }
+  },
+  "keyboard-map": {
+   "names": 8,
+   "run": 8,
+   "chrome": 27,
+   "passed": 4,
+   "reported": 23,
+   "share": 0.148148,
+   "outcomes": {
+    "OK": 4,
+    "TIMEOUT": 4
+   }
+  },
+  "largest-contentful-paint": {
+   "names": 75,
+   "run": 75,
+   "chrome": 124,
+   "passed": 6,
+   "reported": 100,
+   "share": 0.048387,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 69,
+    "TIMEOUT": 2
+   }
+  },
+  "layout-instability": {
+   "names": 83,
+   "run": 83,
+   "chrome": 118,
+   "passed": 1,
+   "reported": 117,
+   "share": 0.008475,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 81,
+    "TIMEOUT": 1
+   }
+  },
+  "loading": {
+   "names": 53,
+   "run": 53,
+   "chrome": 57,
+   "passed": 0,
+   "reported": 7,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 7,
+    "SKIP other": 46
+   }
+  },
+  "long-animation-frame": {
+   "names": 45,
+   "run": 45,
+   "chrome": 158,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 42,
+    "OK": 1,
+    "TIMEOUT": 2
+   }
+  },
+  "longtask-timing": {
+   "names": 21,
+   "run": 21,
+   "chrome": 77,
+   "passed": 1,
+   "reported": 54,
+   "share": 0.012987,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 19
+   }
+  },
+  "magnetometer": {
+   "names": 10,
+   "run": 10,
+   "chrome": 113,
+   "passed": 6,
+   "reported": 113,
+   "share": 0.053097,
+   "outcomes": {
+    "OK": 10
+   }
+  },
+  "managed": {
+   "names": 2,
+   "run": 2,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "mathml": {
+   "names": 218,
+   "run": 218,
+   "chrome": 4321,
+   "passed": 1088,
+   "reported": 4170,
+   "share": 0.251794,
+   "outcomes": {
+    "ERROR": 14,
+    "OK": 182,
+    "TIMEOUT": 22
+   }
+  },
+  "mathml-aam": {
+   "names": 2,
+   "run": 2,
+   "chrome": 64,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "SKIP other": 2
+   }
+  },
+  "measure-memory": {
+   "names": 16,
+   "run": 16,
+   "chrome": 20,
+   "passed": 4,
+   "reported": 20,
+   "share": 0.2,
+   "outcomes": {
+    "OK": 16
+   }
+  },
+  "media-capabilities": {
+   "names": 12,
+   "run": 12,
+   "chrome": 351,
+   "passed": 44,
+   "reported": 308,
+   "share": 0.125356,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 10
+   }
+  },
+  "media-playback-quality": {
+   "names": 1,
+   "run": 1,
+   "chrome": 30,
+   "passed": 11,
+   "reported": 30,
+   "share": 0.366667,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "media-source": {
+   "names": 94,
+   "run": 94,
+   "chrome": 764,
+   "passed": 24,
+   "reported": 627,
+   "share": 0.031414,
+   "outcomes": {
+    "ERROR": 7,
+    "OK": 87
+   }
+  },
+  "mediacapture-extensions": {
+   "names": 13,
+   "run": 13,
+   "chrome": 118,
+   "passed": 0,
+   "reported": 118,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 7,
+    "OK": 6
+   }
+  },
+  "mediacapture-fromelement": {
+   "names": 12,
+   "run": 12,
+   "chrome": 69,
+   "passed": 23,
+   "reported": 62,
+   "share": 0.333333,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 11
+   }
+  },
+  "mediacapture-handle": {
+   "names": 1,
+   "run": 1,
+   "chrome": 5,
+   "passed": 0,
+   "reported": 5,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "mediacapture-image": {
+   "names": 23,
+   "run": 23,
+   "chrome": 164,
+   "passed": 53,
+   "reported": 164,
+   "share": 0.323171,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 15
+   }
+  },
+  "mediacapture-insertable-streams": {
+   "names": 20,
+   "run": 20,
+   "chrome": 94,
+   "passed": 5,
+   "reported": 94,
+   "share": 0.053191,
+   "outcomes": {
+    "OK": 20
+   }
+  },
+  "mediacapture-record": {
+   "names": 120,
+   "run": 120,
+   "chrome": 732,
+   "passed": 2,
+   "reported": 428,
+   "share": 0.002732,
+   "outcomes": {
+    "ERROR": 26,
+    "OK": 94
+   }
+  },
+  "mediacapture-region": {
+   "names": 1,
+   "run": 1,
+   "chrome": 6,
+   "passed": 0,
+   "reported": 6,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "mediacapture-streams": {
+   "names": 59,
+   "run": 59,
+   "chrome": 497,
+   "passed": 25,
+   "reported": 381,
+   "share": 0.050302,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 57,
+    "TIMEOUT": 1
+   }
+  },
+  "mediasession": {
+   "names": 9,
+   "run": 9,
+   "chrome": 130,
+   "passed": 20,
+   "reported": 130,
+   "share": 0.153846,
+   "outcomes": {
+    "OK": 9
+   }
+  },
+  "merchant-validation": {
+   "names": 4,
+   "run": 4,
+   "chrome": 17,
+   "passed": 1,
+   "reported": 17,
+   "share": 0.058824,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "mimesniff": {
+   "names": 7,
+   "run": 7,
+   "chrome": 3886,
+   "passed": 2623,
+   "reported": 3885,
+   "share": 0.674987,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 5
+   }
+  },
+  "mixed-content": {
+   "names": 388,
+   "run": 388,
+   "chrome": 2281,
+   "passed": 1087,
+   "reported": 1362,
+   "share": 0.476545,
+   "outcomes": {
+    "NO_RESULT": 48,
+    "OK": 162,
+    "TIMEOUT": 178
+   }
+  },
+  "mst-content-hint": {
+   "names": 4,
+   "run": 4,
+   "chrome": 23,
+   "passed": 5,
+   "reported": 23,
+   "share": 0.217391,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "nav-tracking-mitigations": {
+   "names": 2,
+   "run": 2,
+   "chrome": 2,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "TIMEOUT": 2
+   }
+  },
+  "navigation-api": {
+   "names": 519,
+   "run": 519,
+   "chrome": 609,
+   "passed": 1,
+   "reported": 550,
+   "share": 0.001642,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 464,
+    "TIMEOUT": 50
+   }
+  },
+  "navigation-timing": {
+   "names": 60,
+   "run": 60,
+   "chrome": 465,
+   "passed": 36,
+   "reported": 266,
+   "share": 0.077419,
+   "outcomes": {
+    "ERROR": 11,
+    "NO_RESULT": 1,
+    "OK": 32,
+    "TIMEOUT": 16
+   }
+  },
+  "netinfo": {
+   "names": 3,
+   "run": 3,
+   "chrome": 84,
+   "passed": 34,
+   "reported": 84,
+   "share": 0.404762,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "network-error-logging": {
+   "names": 12,
+   "run": 12,
+   "chrome": 12,
+   "passed": 0,
+   "reported": 12,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 12
+   }
+  },
+  "notifications": {
+   "names": 29,
+   "run": 29,
+   "chrome": 370,
+   "passed": 28,
+   "reported": 346,
+   "share": 0.075676,
+   "outcomes": {
+    "ERROR": 18,
+    "OK": 11
+   }
+  },
+  "old-tests": {
+   "names": 15,
+   "run": 15,
+   "chrome": 39,
+   "passed": 9,
+   "reported": 14,
+   "share": 0.230769,
+   "outcomes": {
+    "OK": 14,
+    "TIMEOUT": 1
+   }
+  },
+  "orientation-event": {
+   "names": 27,
+   "run": 27,
+   "chrome": 139,
+   "passed": 64,
+   "reported": 132,
+   "share": 0.460432,
+   "outcomes": {
+    "ERROR": 19,
+    "OK": 8
+   }
+  },
+  "orientation-sensor": {
+   "names": 16,
+   "run": 16,
+   "chrome": 109,
+   "passed": 6,
+   "reported": 109,
+   "share": 0.055046,
+   "outcomes": {
+    "OK": 16
+   }
+  },
+  "page-lifecycle": {
+   "names": 5,
+   "run": 5,
+   "chrome": 23,
+   "passed": 13,
+   "reported": 20,
+   "share": 0.565217,
+   "outcomes": {
+    "OK": 2,
+    "TIMEOUT": 3
+   }
+  },
+  "page-visibility": {
+   "names": 11,
+   "run": 11,
+   "chrome": 41,
+   "passed": 27,
+   "reported": 31,
+   "share": 0.658537,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 5,
+    "TIMEOUT": 4
+   }
+  },
+  "paint-timing": {
+   "names": 59,
+   "run": 59,
+   "chrome": 77,
+   "passed": 4,
+   "reported": 71,
+   "share": 0.051948,
+   "outcomes": {
+    "OK": 53,
+    "TIMEOUT": 6
+   }
+  },
+  "payment-method-basic-card": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 0,
+   "reported": 4,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "payment-method-manifest": {
+   "names": 11,
+   "run": 11,
+   "chrome": 50,
+   "passed": 0,
+   "reported": 50,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 11
+   }
+  },
+  "payment-request": {
+   "names": 32,
+   "run": 32,
+   "chrome": 217,
+   "passed": 6,
+   "reported": 213,
+   "share": 0.02765,
+   "outcomes": {
+    "OK": 31,
+    "TIMEOUT": 1
+   }
+  },
+  "performance-timeline": {
+   "names": 76,
+   "run": 76,
+   "chrome": 352,
+   "passed": 40,
+   "reported": 328,
+   "share": 0.113636,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 53,
+    "TIMEOUT": 22
+   }
+  },
+  "periodic-background-sync": {
+   "names": 3,
+   "run": 3,
+   "chrome": 68,
+   "passed": 20,
+   "reported": 68,
+   "share": 0.294118,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "permissions": {
+   "names": 19,
+   "run": 19,
+   "chrome": 212,
+   "passed": 114,
+   "reported": 203,
+   "share": 0.537736,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 15,
+    "TIMEOUT": 3
+   }
+  },
+  "permissions-policy": {
+   "names": 123,
+   "run": 123,
+   "chrome": 638,
+   "passed": 40,
+   "reported": 555,
+   "share": 0.062696,
+   "outcomes": {
+    "ERROR": 29,
+    "OK": 55,
+    "TIMEOUT": 39
+   }
+  },
+  "permissions-request": {
+   "names": 2,
+   "run": 2,
+   "chrome": 14,
+   "passed": 8,
+   "reported": 14,
+   "share": 0.571429,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "permissions-revoke": {
+   "names": 2,
+   "run": 2,
+   "chrome": 14,
+   "passed": 8,
+   "reported": 14,
+   "share": 0.571429,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "picture-in-picture": {
+   "names": 18,
+   "run": 18,
+   "chrome": 109,
+   "passed": 26,
+   "reported": 102,
+   "share": 0.238532,
+   "outcomes": {
+    "OK": 16,
+    "TIMEOUT": 2
+   }
+  },
+  "png": {
+   "names": 4,
+   "run": 4,
+   "chrome": 4,
+   "passed": 1,
+   "reported": 1,
+   "share": 0.25,
+   "outcomes": {
+    "OK": 1,
+    "TIMEOUT": 3
+   }
+  },
+  "pointerevents": {
+   "names": 262,
+   "run": 262,
+   "chrome": 2749,
+   "passed": 1584,
+   "reported": 1909,
+   "share": 0.57621,
+   "outcomes": {
+    "ERROR": 13,
+    "OK": 171,
+    "STALL": 3,
+    "TIMEOUT": 75
+   }
+  },
+  "pointerlock": {
+   "names": 20,
+   "run": 20,
+   "chrome": 72,
+   "passed": 37,
+   "reported": 68,
+   "share": 0.513889,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 13,
+    "TIMEOUT": 2
+   }
+  },
+  "preload": {
+   "names": 88,
+   "run": 88,
+   "chrome": 956,
+   "passed": 46,
+   "reported": 402,
+   "share": 0.048117,
+   "outcomes": {
+    "ERROR": 8,
+    "NO_RESULT": 1,
+    "OK": 47,
+    "TIMEOUT": 32
+   }
+  },
+  "presentation-api": {
+   "names": 13,
+   "run": 13,
+   "chrome": 115,
+   "passed": 16,
+   "reported": 115,
+   "share": 0.13913,
+   "outcomes": {
+    "OK": 13
+   }
+  },
+  "private-click-measurement": {
+   "names": 1,
+   "run": 1,
+   "chrome": 17,
+   "passed": 15,
+   "reported": 17,
+   "share": 0.882353,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "proximity": {
+   "names": 2,
+   "run": 2,
+   "chrome": 17,
+   "passed": 3,
+   "reported": 17,
+   "share": 0.176471,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "push-api": {
+   "names": 18,
+   "run": 18,
+   "chrome": 290,
+   "passed": 71,
+   "reported": 290,
+   "share": 0.244828,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 10
+   }
+  },
+  "quirks": {
+   "names": 18,
+   "run": 18,
+   "chrome": 6984,
+   "passed": 6623,
+   "reported": 6936,
+   "share": 0.94831,
+   "outcomes": {
+    "OK": 17,
+    "TIMEOUT": 1
+   }
+  },
+  "referrer-policy": {
+   "names": 1482,
+   "run": 1482,
+   "chrome": 8815,
+   "passed": 4581,
+   "reported": 6304,
+   "share": 0.519682,
+   "outcomes": {
+    "ERROR": 1,
+    "NO_RESULT": 227,
+    "OK": 698,
+    "TIMEOUT": 556
+   }
+  },
+  "remote-playback": {
+   "names": 9,
+   "run": 9,
+   "chrome": 47,
+   "passed": 12,
+   "reported": 47,
+   "share": 0.255319,
+   "outcomes": {
+    "OK": 9
+   }
+  },
+  "reporting": {
+   "names": 34,
+   "run": 34,
+   "chrome": 112,
+   "passed": 44,
+   "reported": 98,
+   "share": 0.392857,
+   "outcomes": {
+    "ERROR": 1,
+    "NO_RESULT": 2,
+    "OK": 27,
+    "TIMEOUT": 4
+   }
+  },
+  "requestidlecallback": {
+   "names": 21,
+   "run": 21,
+   "chrome": 59,
+   "passed": 10,
+   "reported": 57,
+   "share": 0.169492,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 16,
+    "TIMEOUT": 2
+   }
+  },
+  "resize-observer": {
+   "names": 35,
+   "run": 35,
+   "chrome": 131,
+   "passed": 73,
+   "reported": 108,
+   "share": 0.557252,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 29,
+    "TIMEOUT": 4
+   }
+  },
+  "resource-timing": {
+   "names": 171,
+   "run": 171,
+   "chrome": 1207,
+   "passed": 19,
+   "reported": 697,
+   "share": 0.015742,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 17,
+    "OK": 122,
+    "SKIP other": 1,
+    "STALL": 2,
+    "TIMEOUT": 28
+   }
+  },
+  "sanitizer-api": {
+   "names": 50,
+   "run": 50,
+   "chrome": 3816,
+   "passed": 2625,
+   "reported": 3242,
+   "share": 0.687893,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 40,
+    "TIMEOUT": 8
+   }
+  },
+  "savedata": {
+   "names": 2,
+   "run": 2,
+   "chrome": 10,
+   "passed": 6,
+   "reported": 10,
+   "share": 0.6,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "scheduler": {
+   "names": 118,
+   "run": 118,
+   "chrome": 343,
+   "passed": 2,
+   "reported": 227,
+   "share": 0.005831,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 109,
+    "TIMEOUT": 3
+   }
+  },
+  "screen-capture": {
+   "names": 15,
+   "run": 15,
+   "chrome": 189,
+   "passed": 14,
+   "reported": 170,
+   "share": 0.074074,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 9,
+    "TIMEOUT": 5
+   }
+  },
+  "screen-details": {
+   "names": 3,
+   "run": 3,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "screen-orientation": {
+   "names": 15,
+   "run": 15,
+   "chrome": 64,
+   "passed": 5,
+   "reported": 46,
+   "share": 0.078125,
+   "outcomes": {
+    "ERROR": 11,
+    "OK": 3,
+    "TIMEOUT": 1
+   }
+  },
+  "screen-wake-lock": {
+   "names": 18,
+   "run": 18,
+   "chrome": 73,
+   "passed": 14,
+   "reported": 63,
+   "share": 0.191781,
+   "outcomes": {
+    "OK": 13,
+    "TIMEOUT": 5
+   }
+  },
+  "scroll-animations": {
+   "names": 231,
+   "run": 231,
+   "chrome": 2167,
+   "passed": 921,
+   "reported": 2109,
+   "share": 0.425012,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 212,
+    "TIMEOUT": 14
+   }
+  },
+  "scroll-performance-timing": {
+   "names": 1,
+   "run": 1,
+   "chrome": 2,
+   "passed": 0,
+   "reported": 2,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "scroll-to-text-fragment": {
+   "names": 38,
+   "run": 38,
+   "chrome": 206,
+   "passed": 12,
+   "reported": 50,
+   "share": 0.058252,
+   "outcomes": {
+    "OK": 11,
+    "TIMEOUT": 27
+   }
+  },
+  "secure-contexts": {
+   "names": 12,
+   "run": 12,
+   "chrome": 84,
+   "passed": 14,
+   "reported": 20,
+   "share": 0.166667,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 1,
+    "TIMEOUT": 10
+   }
+  },
+  "secure-payment-confirmation": {
+   "names": 20,
+   "run": 20,
+   "chrome": 71,
+   "passed": 3,
+   "reported": 62,
+   "share": 0.042254,
+   "outcomes": {
+    "OK": 19,
+    "TIMEOUT": 1
+   }
+  },
+  "selection": {
+   "names": 171,
+   "run": 171,
+   "chrome": 34495,
+   "passed": 33983,
+   "reported": 34487,
+   "share": 0.985157,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 166,
+    "TIMEOUT": 2
+   }
+  },
+  "serial": {
+   "names": 9,
+   "run": 9,
+   "chrome": 139,
+   "passed": 42,
+   "reported": 120,
+   "share": 0.302158,
+   "outcomes": {
+    "CRASH": 3,
+    "OK": 3,
+    "TIMEOUT": 3
+   }
+  },
+  "server-timing": {
+   "names": 10,
+   "run": 10,
+   "chrome": 540,
+   "passed": 15,
+   "reported": 118,
+   "share": 0.027778,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 5,
+    "TIMEOUT": 1
+   }
+  },
+  "service-workers": {
+   "names": 331,
+   "run": 331,
+   "chrome": 3262,
+   "passed": 1361,
+   "reported": 2140,
+   "share": 0.417229,
+   "outcomes": {
+    "CRASH": 19,
+    "ERROR": 5,
+    "NO_RESULT": 19,
+    "OK": 207,
+    "SKIP other": 1,
+    "TIMEOUT": 80
+   }
+  },
+  "shadow-dom": {
+   "names": 316,
+   "run": 316,
+   "chrome": 14712,
+   "passed": 14127,
+   "reported": 15244,
+   "share": 0.960237,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 4,
+    "OK": 296,
+    "TIMEOUT": 15
+   }
+  },
+  "shape-detection": {
+   "names": 25,
+   "run": 25,
+   "chrome": 247,
+   "passed": 8,
+   "reported": 241,
+   "share": 0.032389,
+   "outcomes": {
+    "ERROR": 11,
+    "OK": 13,
+    "TIMEOUT": 1
+   }
+  },
+  "signed-exchange": {
+   "names": 60,
+   "run": 60,
+   "chrome": 94,
+   "passed": 3,
+   "reported": 39,
+   "share": 0.031915,
+   "outcomes": {
+    "OK": 33,
+    "TIMEOUT": 27
+   }
+  },
+  "soft-navigation-heuristics": {
+   "names": 95,
+   "run": 95,
+   "chrome": 126,
+   "passed": 0,
+   "reported": 114,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 9,
+    "OK": 82,
+    "TIMEOUT": 4
+   }
+  },
+  "speculation-rules": {
+   "names": 477,
+   "run": 477,
+   "chrome": 645,
+   "passed": 0,
+   "reported": 23,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 465,
+    "OK": 5,
+    "SKIP other": 3,
+    "TIMEOUT": 4
+   }
+  },
+  "speech-api": {
+   "names": 18,
+   "run": 18,
+   "chrome": 319,
+   "passed": 26,
+   "reported": 317,
+   "share": 0.081505,
+   "outcomes": {
+    "OK": 17,
+    "TIMEOUT": 1
+   }
+  },
+  "storage": {
+   "names": 56,
+   "run": 56,
+   "chrome": 482,
+   "passed": 449,
+   "reported": 473,
+   "share": 0.931535,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 51,
+    "TIMEOUT": 4
+   }
+  },
+  "storage-access-api": {
+   "names": 42,
+   "run": 42,
+   "chrome": 140,
+   "passed": 8,
+   "reported": 42,
+   "share": 0.057143,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 5,
+    "TIMEOUT": 36
+   }
+  },
+  "streams": {
+   "names": 307,
+   "run": 307,
+   "chrome": 5796,
+   "passed": 5580,
+   "reported": 5762,
+   "share": 0.962733,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 303,
+    "TIMEOUT": 3
+   }
+  },
+  "subapps": {
+   "names": 8,
+   "run": 8,
+   "chrome": 51,
+   "passed": 11,
+   "reported": 43,
+   "share": 0.215686,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 3
+   }
+  },
+  "subresource-integrity": {
+   "names": 38,
+   "run": 38,
+   "chrome": 491,
+   "passed": 184,
+   "reported": 392,
+   "share": 0.374745,
+   "outcomes": {
+    "OK": 30,
+    "TIMEOUT": 8
+   }
+  },
+  "svg": {
+   "names": 795,
+   "run": 795,
+   "chrome": 15390,
+   "passed": 12315,
+   "reported": 15262,
+   "share": 0.800195,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 21,
+    "NO_RESULT": 1,
+    "OK": 732,
+    "TIMEOUT": 40
+   }
+  },
+  "svg-aam": {
+   "names": 7,
+   "run": 7,
+   "chrome": 54,
+   "passed": 31,
+   "reported": 54,
+   "share": 0.574074,
+   "outcomes": {
+    "OK": 7
+   }
+  },
+  "third_party": {
+   "names": 53833,
+   "run": 53833,
+   "chrome": 53833,
+   "passed": 42515,
+   "reported": 52871,
+   "share": 0.789757,
+   "outcomes": {
+    "ERROR": 14,
+    "NO_RESULT": 16,
+    "OK": 52846,
+    "SKIP other": 843,
+    "TIMEOUT": 113,
+    "undefined": 1
+   }
+  },
+  "timing-entrytypes-registry": {
+   "names": 3,
+   "run": 3,
+   "chrome": 12,
+   "passed": 0,
+   "reported": 3,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "touch-events": {
+   "names": 14,
+   "run": 14,
+   "chrome": 987,
+   "passed": 723,
+   "reported": 760,
+   "share": 0.732523,
+   "outcomes": {
+    "OK": 12,
+    "TIMEOUT": 2
+   }
+  },
+  "trust-tokens": {
+   "names": 3,
+   "run": 3,
+   "chrome": 15,
+   "passed": 6,
+   "reported": 14,
+   "share": 0.4,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 2
+   }
+  },
+  "trusted-types": {
+   "names": 247,
+   "run": 247,
+   "chrome": 3754,
+   "passed": 2712,
+   "reported": 3310,
+   "share": 0.722429,
+   "outcomes": {
+    "ERROR": 57,
+    "OK": 97,
+    "TIMEOUT": 93
+   }
+  },
+  "ua-client-hints": {
+   "names": 4,
+   "run": 4,
+   "chrome": 94,
+   "passed": 34,
+   "reported": 94,
+   "share": 0.361702,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "uievents": {
+   "names": 74,
+   "run": 74,
+   "chrome": 491,
+   "passed": 401,
+   "reported": 465,
+   "share": 0.816701,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 61,
+    "TIMEOUT": 5
+   }
+  },
+  "upgrade-insecure-requests": {
+   "names": 194,
+   "run": 194,
+   "chrome": 982,
+   "passed": 196,
+   "reported": 591,
+   "share": 0.199593,
+   "outcomes": {
+    "CRASH": 8,
+    "ERROR": 1,
+    "NO_RESULT": 8,
+    "OK": 110,
+    "TIMEOUT": 67
+   }
+  },
+  "url": {
+   "names": 79,
+   "run": 79,
+   "chrome": 12437,
+   "passed": 11768,
+   "reported": 12430,
+   "share": 0.946209,
+   "outcomes": {
+    "OK": 77,
+    "TIMEOUT": 2
+   }
+  },
+  "urlpattern": {
+   "names": 30,
+   "run": 30,
+   "chrome": 3266,
+   "passed": 3014,
+   "reported": 3266,
+   "share": 0.922841,
+   "outcomes": {
+    "OK": 30
+   }
+  },
+  "user-timing": {
+   "names": 61,
+   "run": 61,
+   "chrome": 862,
+   "passed": 446,
+   "reported": 618,
+   "share": 0.517401,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 53
+   }
+  },
+  "vibration": {
+   "names": 4,
+   "run": 4,
+   "chrome": 26,
+   "passed": 13,
+   "reported": 25,
+   "share": 0.5,
+   "outcomes": {
+    "OK": 3,
+    "TIMEOUT": 1
+   }
+  },
+  "video-rvfc": {
+   "names": 8,
+   "run": 8,
+   "chrome": 37,
+   "passed": 12,
+   "reported": 33,
+   "share": 0.324324,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 7
+   }
+  },
+  "viewport": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "viewport-segments": {
+   "names": 3,
+   "run": 3,
+   "chrome": 3,
+   "passed": 0,
+   "reported": 3,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 3
+   }
+  },
+  "virtual-keyboard": {
+   "names": 3,
+   "run": 3,
+   "chrome": 43,
+   "passed": 15,
+   "reported": 43,
+   "share": 0.348837,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "visual-viewport": {
+   "names": 21,
+   "run": 21,
+   "chrome": 37,
+   "passed": 0,
+   "reported": 24,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 12,
+    "OK": 8,
+    "TIMEOUT": 1
+   }
+  },
+  "wai-aria": {
+   "names": 35,
+   "run": 35,
+   "chrome": 588,
+   "passed": 544,
+   "reported": 588,
+   "share": 0.92517,
+   "outcomes": {
+    "OK": 35
+   }
+  },
+  "wasm": {
+   "names": 524,
+   "run": 524,
+   "chrome": 192191,
+   "passed": 188674,
+   "reported": 191989,
+   "share": 0.9817,
+   "outcomes": {
+    "CRASH": 10,
+    "ERROR": 7,
+    "OK": 495,
+    "TIMEOUT": 12
+   }
+  },
+  "web-animations": {
+   "names": 144,
+   "run": 144,
+   "chrome": 4256,
+   "passed": 3704,
+   "reported": 4129,
+   "share": 0.870301,
+   "outcomes": {
+    "OK": 108,
+    "TIMEOUT": 36
+   }
+  },
+  "web-based-payment-handler": {
+   "names": 13,
+   "run": 13,
+   "chrome": 145,
+   "passed": 50,
+   "reported": 135,
+   "share": 0.344828,
+   "outcomes": {
+    "OK": 11,
+    "TIMEOUT": 2
+   }
+  },
+  "web-bundle": {
+   "names": 26,
+   "run": 26,
+   "chrome": 83,
+   "passed": 0,
+   "reported": 2,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 25,
+    "OK": 1
+   }
+  },
+  "web-extensions": {
+   "names": 6,
+   "run": 6,
+   "chrome": 44,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "SKIP engine": 6
+   }
+  },
+  "web-install": {
+   "names": 5,
+   "run": 5,
+   "chrome": 19,
+   "passed": 1,
+   "reported": 17,
+   "share": 0.052632,
+   "outcomes": {
+    "OK": 4,
+    "TIMEOUT": 1
+   }
+  },
+  "web-locks": {
+   "names": 86,
+   "run": 86,
+   "chrome": 517,
+   "passed": 449,
+   "reported": 473,
+   "share": 0.868472,
+   "outcomes": {
+    "OK": 65,
+    "TIMEOUT": 21
+   }
+  },
+  "web-monetization": {
+   "names": 1,
+   "run": 1,
+   "chrome": 5,
+   "passed": 0,
+   "reported": 5,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "web-nfc": {
+   "names": 11,
+   "run": 11,
+   "chrome": 173,
+   "passed": 3,
+   "reported": 173,
+   "share": 0.017341,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 8
+   }
+  },
+  "web-otp": {
+   "names": 1,
+   "run": 1,
+   "chrome": 13,
+   "passed": 6,
+   "reported": 13,
+   "share": 0.461538,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "web-share": {
+   "names": 15,
+   "run": 15,
+   "chrome": 68,
+   "passed": 16,
+   "reported": 67,
+   "share": 0.235294,
+   "outcomes": {
+    "OK": 14,
+    "TIMEOUT": 1
+   }
+  },
+  "webaudio": {
+   "names": 349,
+   "run": 349,
+   "chrome": 5879,
+   "passed": 714,
+   "reported": 2909,
+   "share": 0.121449,
+   "outcomes": {
+    "ERROR": 36,
+    "OK": 298,
+    "TIMEOUT": 15
+   }
+  },
+  "webauthn": {
+   "names": 55,
+   "run": 55,
+   "chrome": 437,
+   "passed": 69,
+   "reported": 199,
+   "share": 0.157895,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 25,
+    "TIMEOUT": 28
+   }
+  },
+  "webcodecs": {
+   "names": 314,
+   "run": 314,
+   "chrome": 3922,
+   "passed": 2584,
+   "reported": 3869,
+   "share": 0.658848,
+   "outcomes": {
+    "ERROR": 14,
+    "OK": 286,
+    "TIMEOUT": 14
+   }
+  },
+  "webdriver": {
+   "names": 682,
+   "run": 682,
+   "chrome": 10419,
+   "passed": 12,
+   "reported": 14,
+   "share": 0.001152,
+   "outcomes": {
+    "OK": 1,
+    "SKIP other": 681
+   }
+  },
+  "webgl": {
+   "names": 23,
+   "run": 23,
+   "chrome": 4279,
+   "passed": 4258,
+   "reported": 4279,
+   "share": 0.995092,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 21
+   }
+  },
+  "webhid": {
+   "names": 6,
+   "run": 6,
+   "chrome": 162,
+   "passed": 42,
+   "reported": 152,
+   "share": 0.259259,
+   "outcomes": {
+    "CRASH": 2,
+    "OK": 3,
+    "TIMEOUT": 1
+   }
+  },
+  "webidl": {
+   "names": 63,
+   "run": 63,
+   "chrome": 838,
+   "passed": 646,
+   "reported": 836,
+   "share": 0.770883,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 61
+   }
+  },
+  "webmcp": {
+   "names": 80,
+   "run": 80,
+   "chrome": 243,
+   "passed": 14,
+   "reported": 230,
+   "share": 0.057613,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 74,
+    "TIMEOUT": 3
+   }
+  },
+  "webmessaging": {
+   "names": 163,
+   "run": 163,
+   "chrome": 304,
+   "passed": 153,
+   "reported": 272,
+   "share": 0.503289,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 139,
+    "TIMEOUT": 16
+   }
+  },
+  "webmidi": {
+   "names": 1,
+   "run": 1,
+   "chrome": 89,
+   "passed": 12,
+   "reported": 89,
+   "share": 0.134831,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "webnn": {
+   "names": 610,
+   "run": 610,
+   "chrome": 13986,
+   "passed": 13935,
+   "reported": 14104,
+   "share": 0.996353,
+   "outcomes": {
+    "OK": 604,
+    "TIMEOUT": 6
+   }
+  },
+  "webrtc": {
+   "names": 264,
+   "run": 264,
+   "chrome": 2414,
+   "passed": 27,
+   "reported": 2296,
+   "share": 0.011185,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 256,
+    "TIMEOUT": 7
+   }
+  },
+  "webrtc-encoded-transform": {
+   "names": 42,
+   "run": 42,
+   "chrome": 296,
+   "passed": 23,
+   "reported": 287,
+   "share": 0.077703,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 40,
+    "TIMEOUT": 1
+   }
+  },
+  "webrtc-extensions": {
+   "names": 12,
+   "run": 12,
+   "chrome": 101,
+   "passed": 0,
+   "reported": 100,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 11,
+    "TIMEOUT": 1
+   }
+  },
+  "webrtc-ice": {
+   "names": 1,
+   "run": 1,
+   "chrome": 31,
+   "passed": 0,
+   "reported": 20,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 1
+   }
+  },
+  "webrtc-identity": {
+   "names": 4,
+   "run": 4,
+   "chrome": 68,
+   "passed": 21,
+   "reported": 68,
+   "share": 0.308824,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "webrtc-priority": {
+   "names": 2,
+   "run": 2,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "webrtc-stats": {
+   "names": 11,
+   "run": 11,
+   "chrome": 338,
+   "passed": 2,
+   "reported": 56,
+   "share": 0.005917,
+   "outcomes": {
+    "OK": 11
+   }
+  },
+  "webrtc-svc": {
+   "names": 5,
+   "run": 5,
+   "chrome": 67,
+   "passed": 0,
+   "reported": 67,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "websockets": {
+   "names": 799,
+   "run": 799,
+   "chrome": 2389,
+   "passed": 1229,
+   "reported": 1853,
+   "share": 0.514441,
+   "outcomes": {
+    "OK": 225,
+    "TIMEOUT": 574
+   }
+  },
+  "webstorage": {
+   "names": 54,
+   "run": 54,
+   "chrome": 1291,
+   "passed": 1250,
+   "reported": 1270,
+   "share": 0.968242,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 32,
+    "TIMEOUT": 21
+   }
+  },
+  "webtransport": {
+   "names": 142,
+   "run": 142,
+   "chrome": 1418,
+   "passed": 12,
+   "reported": 739,
+   "share": 0.008463,
+   "outcomes": {
+    "ERROR": 61,
+    "OK": 49,
+    "TIMEOUT": 32
+   }
+  },
+  "webusb": {
+   "names": 49,
+   "run": 49,
+   "chrome": 845,
+   "passed": 76,
+   "reported": 828,
+   "share": 0.089941,
+   "outcomes": {
+    "CRASH": 3,
+    "OK": 42,
+    "TIMEOUT": 4
+   }
+  },
+  "webvtt": {
+   "names": 75,
+   "run": 75,
+   "chrome": 251,
+   "passed": 8,
+   "reported": 113,
+   "share": 0.031873,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 23,
+    "TIMEOUT": 49
+   }
+  },
+  "webxr": {
+   "names": 181,
+   "run": 181,
+   "chrome": 1344,
+   "passed": 141,
+   "reported": 1308,
+   "share": 0.104911,
+   "outcomes": {
+    "ERROR": 9,
+    "OK": 172
+   }
+  },
+  "window-management": {
+   "names": 5,
+   "run": 5,
+   "chrome": 12,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "workers": {
+   "names": 337,
+   "run": 337,
+   "chrome": 1598,
+   "passed": 697,
+   "reported": 1011,
+   "share": 0.43617,
+   "outcomes": {
+    "ERROR": 8,
+    "NO_RESULT": 12,
+    "OK": 277,
+    "TIMEOUT": 40
+   }
+  },
+  "worklets": {
+   "names": 22,
+   "run": 22,
+   "chrome": 286,
+   "passed": 0,
+   "reported": 88,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 9,
+    "TIMEOUT": 10
+   }
+  },
+  "x-frame-options": {
+   "names": 6,
+   "run": 6,
+   "chrome": 157,
+   "passed": 69,
+   "reported": 120,
+   "share": 0.43949,
+   "outcomes": {
+    "TIMEOUT": 6
+   }
+  },
+  "xhr": {
+   "names": 442,
+   "run": 442,
+   "chrome": 2344,
+   "passed": 1816,
+   "reported": 2217,
+   "share": 0.774744,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 418,
+    "SKIP other": 1,
+    "TIMEOUT": 17
+   }
+  },
+  "xml": {
+   "names": 11,
+   "run": 11,
+   "chrome": 242,
+   "passed": 237,
+   "reported": 241,
+   "share": 0.979339,
+   "outcomes": {
+    "OK": 10,
+    "TIMEOUT": 1
+   }
+  }
+ },
+ "changes_url": "https://github.com/danbri/factoidal-builds/releases/download/test-results/20261114T1500Z-wpt-linux-x86_64-gh43606148152a1.wpt-changes.json.gz",
+ "since_previous": {
+  "format": "factoidal-wpt-changes-v1",
+  "run_id": "20261114T1500Z-wpt-linux-x86_64-gh43606148152a1",
+  "commit": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+  "share_pct": "91.5114",
+  "previous": {
+   "run_id": "20261114T1415Z-wpt-linux-x86_64-gh43602343945a1",
+   "commit": "b323da1b007697af0ebf2fada3a4ef57e5b22d86",
+   "share_pct": "91.0088",
+   "share_ex_encoding_pct": "81.7782",
+   "result_url": "https://github.com/danbri/factoidal-builds/releases/download/test-results/20261114T1415Z-wpt-linux-x86_64-gh43602343945a1.wpt-full.json.gz"
+  },
+  "drop_alert": false,
+  "commits_between": [
+   {
+    "sha": "176db71d2783e5c9c573eb74e93a5859a0e39d80",
+    "subject": "demo pages: webgpu-force-graph.html in the manifest and in the index's script group (the index is generated; build-demo-pages.py --check fai",
+    "committed_utc": "2026-11-14T13:46:20Z"
+   },
+   {
+    "sha": "37ca051f61d6fa27b021af4653b78d97a9c1ce07",
+    "subject": "WPT runner: answer the script fetches a page asks for after a page request was answered",
+    "committed_utc": "2026-11-14T13:47:47Z"
+   },
+   {
+    "sha": "e7b33a69aea7caab019b9afd2a274a58cfe778c4",
+    "subject": "Referrer source: the page document's current URL (as its history has it) names the referrer",
+    "committed_utc": "2026-11-14T13:47:47Z"
+   },
+   {
+    "sha": "733b891bd89fd1543a677a3e9f76255551ba9f73",
+    "subject": "prelude: a service worker's fetch keeps the XMLHttpRequest class its scope hides",
+    "committed_utc": "2026-11-14T13:47:57Z"
+   },
+   {
+    "sha": "4549afb6b05ed36517c6f98e74b169561f4a3c50",
+    "subject": "WebSocketStream and WebSocketError over the same connections; close() with a reason and no code sends 1000",
+    "committed_utc": "2026-11-14T13:48:06Z"
+   },
+   {
+    "sha": "97fd4e24ebe3e59c50f6965813033a87a92b3eb8",
+    "subject": "fetch: ReadableStream bodies for Response and Request (duplex half)",
+    "committed_utc": "2026-11-14T13:48:06Z"
+   },
+   {
+    "sha": "dbd25330ffa055d28a8e3bccde44d4e98d54453d",
+    "subject": "prelude: Location's href setter and window.open throw SyntaxError for a URL that does not parse",
+    "committed_utc": "2026-11-14T13:48:07Z"
+   },
+   {
+    "sha": "99f45cbdd399c6bb1926848d102fef6a291e7094",
+    "subject": "Time goes on while a worker holds an open WebSocket; the runner's test-driver slices stop when the page waits for the network",
+    "committed_utc": "2026-11-14T13:48:07Z"
+   },
+   {
+    "sha": "0230f2a540f3f51bd2b991deea4b5ec377d1af8c",
+    "subject": "formData(): multipart/form-data bodies read in Lean (Net.Multipart, web_api 164)",
+    "committed_utc": "2026-11-14T13:48:07Z"
+   },
+   {
+    "sha": "9256a39b5ccbb0b9224deb61384fec3377261f5c",
+    "subject": "SVG DOM: attribute getters are named 'get <attribute>' (WebIDL 3.7.6)",
+    "committed_utc": "2026-11-14T13:48:08Z"
+   },
+   {
+    "sha": "1dd9df06f227bf1c766511833a42fd673100e782",
+    "subject": "docs: net third-phase record: WebSocketStream, multipart formData, stream bodies, runner fixes",
+    "committed_utc": "2026-11-14T13:48:08Z"
+   },
+   {
+    "sha": "1c0fada29100583de2c3e64d697f525f2419285b",
+    "subject": "navigator.sendBeacon: a POST with credentials through the page's fetch (no-cors for a CORS-safelisted body type, else cors); TypeError for a",
+    "committed_utc": "2026-11-14T13:48:09Z"
+   },
+   {
+    "sha": "668229036c19ca0c6136d2ca21bb1a7679a5f8dc",
+    "subject": "Net.PageFetch: a redirect to a URL with credentials is refused once a cors request has left the page's origin (Fetch 4.4 step 7)",
+    "committed_utc": "2026-11-14T13:48:09Z"
+   },
+   {
+    "sha": "3613532947cc794be9e96aa4cd0042e9512db918",
+    "subject": "Net.Xhr: a session keeps the address it chose for each name; a later request to that name starts pinned (one resolve per name, not per reque",
+    "committed_utc": "2026-11-14T13:48:09Z"
+   },
+   {
+    "sha": "c5df0d6023e63c47356a0f46fdb39705eefe4e4d",
+    "subject": "Module workers: new Worker(url, {type: 'module'}) and module SharedWorkers run their module graph",
+    "committed_utc": "2026-11-14T13:48:10Z"
+   },
+   {
+    "sha": "821b76209beced74d610232072e3856c80ae32e0",
+    "subject": "Workers: a worker's own script that a redirect took to another origin is a network error; fetch: null body for null body statuses and HEAD",
+    "committed_utc": "2026-11-14T13:48:10Z"
+   },
+   {
+    "sha": "4f1e45fcfea1312f2dd50c93a42380fdbb66759c",
+    "subject": "Images and inserted scripts make element requests: destination, CORS settings, raw answers; img load/error, naturalWidth/Height, complete, d",
+    "committed_utc": "2026-11-14T13:48:11Z"
+   },
+   {
+    "sha": "4773dadcf4fc4bd34fe998dcbe8c1bfaabe5e543",
+    "subject": "docs: net third-phase record: element requests, module workers, DNS pins, open items",
+    "committed_utc": "2026-11-14T13:48:11Z"
+   },
+   {
+    "sha": "3ba90ac5a7185533145ef295b2c3f6f63e56ce57",
+    "subject": "Images: the window's load event waits for the images of the page's start (HTML 4.8.4.3, the load event delayed until each has its load or er",
+    "committed_utc": "2026-11-14T13:48:12Z"
+   },
+   {
+    "sha": "335dd56c6fcca47cb49d588b49406badb53dacef",
+    "subject": "Images: a page's own images beyond the first 16 are requested when a script reads their state, not up front (a host that draws the page fetc",
+    "committed_utc": "2026-11-14T13:48:12Z"
+   },
+   {
+    "sha": "f365c76fe8ae8fb205cd9a4377ae566fc06fc219",
+    "subject": "Cache.put leaves the response's body stream locked, as reading it through a reader does",
+    "committed_utc": "2026-11-14T13:59:23Z"
+   },
+   {
+    "sha": "e2625154cd49ec69f277ac08c7bcac137ac103dd",
+    "subject": "Cookie Store: the maxAge option (with expires as well: TypeError); a change of a cookie's attributes alone is a change event",
+    "committed_utc": "2026-11-14T13:59:23Z"
+   },
+   {
+    "sha": "2f46f19a0da95df32b39ace15b5f03a37972843e",
+    "subject": "Cookie Store: the document's creation URL, not its current URL after history.pushState",
+    "committed_utc": "2026-11-14T13:59:24Z"
+   },
+   {
+    "sha": "b367e05cd0b472e9045748e70341cbe9eef221fa",
+    "subject": "docs: client storage record: measured after the 873955244 merge, and what is open",
+    "committed_utc": "2026-11-14T13:59:24Z"
+   },
+   {
+    "sha": "83c04db95830c863ca966669d6c457bb6b177fef",
+    "subject": "Storage Buckets: a bucket's caches and locks are its own (storage key gains the bucket; Lean Buckets.route, theorem route_origin; web_api 20",
+    "committed_utc": "2026-11-14T13:59:25Z"
+   },
+   {
+    "sha": "4549431ba5164c14adebf01c54bcdbe4555fdc97",
+    "subject": "Grid: self-start and self-end follow the item's own writing mode and direction (CSS Box Alignment 3 \u00a74.1), read from its LogicalAxes frame",
+    "committed_utc": "2026-11-14T14:00:18Z"
+   },
+   {
+    "sha": "a677fb995c789d3738716db5f74d640bbbbcb52d",
+    "subject": "Grid track sizing: shared-out space never exceeds the space (distribute_sum_le), and with no growth limits it is all handed out (distribute_",
+    "committed_utc": "2026-11-14T14:00:18Z"
+   },
+   {
+    "sha": "a83556fa712d116bdf89d66e4545fa68be96dbcd",
+    "subject": "Design record: grid's writing modes, overflow alignment, resource bounds and the new sizing theorems",
+    "committed_utc": "2026-11-14T14:00:19Z"
+   },
+   {
+    "sha": "31ad9e14985f6bbafbd0c0a150c1b86419b5b4f7",
+    "subject": "measure op 17 of a node with no box answers zeros again (WebDriver's in-view centre reads them) with a twelfth number -1 that tells getClien",
+    "committed_utc": "2026-11-14T14:01:54Z"
+   },
+   {
+    "sha": "00f67b9d2d9a52222e952ce32ee49d4ddc118f5c",
+    "subject": "Interface objects made on first use (the canvas 2D interfaces) get the Web IDL shape when first read; HTMLInputElement width and height refl",
+    "committed_utc": "2026-11-14T14:01:55Z"
+   },
+   {
+    "sha": "3320e1717f06a09e19de38a3c8657f66d2cda1a1",
+    "subject": "Script elements: a parser-inserted script with no src and no child text runs when text is added later (prepare bails before already-started)",
+    "committed_utc": "2026-11-14T14:02:05Z"
+   },
+   {
+    "sha": "c373e1ace36c200530e03431731103a8659a937a",
+    "subject": "Presentational hints: percentage heights from attributes too (the layout now resolves a percentage height against a definite containing heig",
+    "committed_utc": "2026-11-14T14:02:05Z"
+   },
+   {
+    "sha": "31b15acd0b92a05469ac9b7685517723d5360ea2",
+    "subject": "getComputedStyle of an element in a frame's document: a cascade of that document from its root (UA sheet and its own style elements); its bo",
+    "committed_utc": "2026-11-14T14:02:29Z"
+   },
+   {
+    "sha": "a531477d4b9935f765354cd068f981d1c6074db4",
+    "subject": "Presentational hints above the UA sheet: a property a hint sets (width, height, margins) takes no value from a UA rule (CSS.hintedProperties",
+    "committed_utc": "2026-11-14T14:02:29Z"
+   },
+   {
+    "sha": "a7cc7964fefe3e5f3f15134863276a1235a1ad76",
+    "subject": "Popovers: the popover attribute change steps (a showing popover whose state changes or whose attribute goes hides with events, once: a hide ",
+    "committed_utc": "2026-11-14T14:02:30Z"
+   },
+   {
+    "sha": "d8b0a53e7392393848bc88a327e77e7c356e3f9c",
+    "subject": "A frame that a script inserts with no URL to load runs its iframe load event steps at once (HTML 4.8.5 process the iframe attributes, initia",
+    "committed_utc": "2026-11-14T14:02:38Z"
+   },
+   {
+    "sha": "34c35514a5935dfeb369fa9edd6d1e46722a714c",
+    "subject": "Document: hidden, visibilityState, referrer, lastModified, domain (setting another domain is refused), onreadystatechange and onvisibilitych",
+    "committed_utc": "2026-11-14T14:02:47Z"
+   },
+   {
+    "sha": "b78efb0c35627a2bbe3a615975e8ff527968d0fb",
+    "subject": "autocomplete of input, select and textarea: the IDL-exposed autofill value (HTML.Autofill: the autofill processing model's field table, cate",
+    "committed_utc": "2026-11-14T14:02:47Z"
+   },
+   {
+    "sha": "55996332ff5fd5ff9800d35d873d731668786c05",
+    "subject": "A body or frameset in a document with no browsing context has no window: its window-reflecting event handlers are null and setting them does",
+    "committed_utc": "2026-11-14T14:02:48Z"
+   },
+   {
+    "sha": "98a49318db1e69fa81ad088a84b7c58aa09e977a",
+    "subject": "Window: its operations are enumerable own properties; print(); the BarProp bars, status, closed, length (child frames), originAgentCluster a",
+    "committed_utc": "2026-11-14T14:02:57Z"
+   },
+   {
+    "sha": "93de0569a77a4fe997d33e98956b9757c419ca7a",
+    "subject": "Document operations and the dir and designMode accessors throw TypeError on an object that is not a Document; getElementsByName needs its ar",
+    "committed_utc": "2026-11-14T14:02:57Z"
+   },
+   {
+    "sha": "9837057423299fe5fe869a4dc9ef5dc9c93312b4",
+    "subject": "docs: dom-html design record, step 14",
+    "committed_utc": "2026-11-14T14:02:58Z"
+   },
+   {
+    "sha": "e24beaf4a400cf7199a39833f78082a4f977a9ba",
+    "subject": "Style: one hintedProperties after the rebase over main's copy",
+    "committed_utc": "2026-11-14T14:02:59Z"
+   },
+   {
+    "sha": "37ac40c4cd379f68bc75c6d03caf97d6faed679d",
+    "subject": "Trusted mousedown, mouseup and click stop below a disabled form control in the event path (the listeners of the control and above it do not ",
+    "committed_utc": "2026-11-14T14:03:00Z"
+   },
+   {
+    "sha": "a6d4e0ef1d2829fef56018eb21a6b09fec1d87a9",
+    "subject": "getComputedStyle of a margin, padding or size: a normal UA declaration is left to the layout profile, which has it below the presentational ",
+    "committed_utc": "2026-11-14T14:03:01Z"
+   },
+   {
+    "sha": "9d9c4b3a1e01bf190b8d11d3669662886d25d4b4",
+    "subject": "Margins collapse through an empty block (CSS 2.1 \u00a78.3.1)",
+    "committed_utc": "2026-11-14T14:10:34Z"
+   },
+   {
+    "sha": "64af7ef92b5f00ea1695882a857eb206ef6a0c1d",
+    "subject": "docs: layout record, margins through an empty block",
+    "committed_utc": "2026-11-14T14:10:35Z"
+   }
+  ],
+  "changes": {
+   "passed_before": 2066018,
+   "passed_after": 2077426,
+   "passed_delta": 11408,
+   "points": 0.5025,
+   "outcomes_delta": {
+    "CRASH": -24,
+    "ERROR": -45,
+    "NO_RESULT": 79,
+    "OK": -18,
+    "STALL": 1,
+    "TIMEOUT": 7
+   },
+   "directories": [
+    {
+     "dir": "quirks",
+     "chrome": 6984,
+     "before": 6884,
+     "after": 6623,
+     "delta": -261
+    },
+    {
+     "dir": "upgrade-insecure-requests",
+     "chrome": 982,
+     "before": 220,
+     "after": 196,
+     "delta": -24
+    },
+    {
+     "dir": "connection-allowlist",
+     "chrome": 365,
+     "before": 89,
+     "after": 83,
+     "delta": -6
+    },
+    {
+     "dir": "resource-timing",
+     "chrome": 1207,
+     "before": 24,
+     "after": 19,
+     "delta": -5
+    },
+    {
+     "dir": "trusted-types",
+     "chrome": 3754,
+     "before": 2715,
+     "after": 2712,
+     "delta": -3
+    },
+    {
+     "dir": "mimesniff",
+     "chrome": 3886,
+     "before": 2624,
+     "after": 2623,
+     "delta": -1
+    },
+    {
+     "dir": "web-animations",
+     "chrome": 4256,
+     "before": 3705,
+     "after": 3704,
+     "delta": -1
+    },
+    {
+     "dir": "import-maps",
+     "chrome": 396,
+     "before": 16,
+     "after": 17,
+     "delta": 1
+    },
+    {
+     "dir": "intersection-observer",
+     "chrome": 440,
+     "before": 207,
+     "after": 208,
+     "delta": 1
+    },
+    {
+     "dir": "png",
+     "chrome": 4,
+     "before": 0,
+     "after": 1,
+     "delta": 1
+    },
+    {
+     "dir": "webcodecs",
+     "chrome": 3922,
+     "before": 2583,
+     "after": 2584,
+     "delta": 1
+    },
+    {
+     "dir": "webgl",
+     "chrome": 4279,
+     "before": 4257,
+     "after": 4258,
+     "delta": 1
+    },
+    {
+     "dir": "webidl",
+     "chrome": 838,
+     "before": 645,
+     "after": 646,
+     "delta": 1
+    },
+    {
+     "dir": "xhr",
+     "chrome": 2344,
+     "before": 1815,
+     "after": 1816,
+     "delta": 1
+    },
+    {
+     "dir": "xml",
+     "chrome": 242,
+     "before": 236,
+     "after": 237,
+     "delta": 1
+    },
+    {
+     "dir": "navigation-timing",
+     "chrome": 465,
+     "before": 34,
+     "after": 36,
+     "delta": 2
+    },
+    {
+     "dir": "pointerevents",
+     "chrome": 2749,
+     "before": 1582,
+     "after": 1584,
+     "delta": 2
+    },
+    {
+     "dir": "shape-detection",
+     "chrome": 247,
+     "before": 6,
+     "after": 8,
+     "delta": 2
+    },
+    {
+     "dir": "webtransport",
+     "chrome": 1418,
+     "before": 9,
+     "after": 12,
+     "delta": 3
+    },
+    {
+     "dir": "density-size-correction",
+     "chrome": 6,
+     "before": 0,
+     "after": 5,
+     "delta": 5
+    },
+    {
+     "dir": "compression",
+     "chrome": 1316,
+     "before": 938,
+     "after": 944,
+     "delta": 6
+    },
+    {
+     "dir": "background-fetch",
+     "chrome": 257,
+     "before": 27,
+     "after": 34,
+     "delta": 7
+    },
+    {
+     "dir": "notifications",
+     "chrome": 370,
+     "before": 21,
+     "after": 28,
+     "delta": 7
+    },
+    {
+     "dir": "cookies",
+     "chrome": 1293,
+     "before": 654,
+     "after": 662,
+     "delta": 8
+    },
+    {
+     "dir": "performance-timeline",
+     "chrome": 352,
+     "before": 32,
+     "after": 40,
+     "delta": 8
+    },
+    {
+     "dir": "wasm",
+     "chrome": 192191,
+     "before": 188665,
+     "after": 188674,
+     "delta": 9
+    },
+    {
+     "dir": "event-timing",
+     "chrome": 183,
+     "before": 40,
+     "after": 52,
+     "delta": 12
+    },
+    {
+     "dir": "hr-time",
+     "chrome": 160,
+     "before": 53,
+     "after": 66,
+     "delta": 13
+    },
+    {
+     "dir": "content-index",
+     "chrome": 105,
+     "before": 17,
+     "after": 31,
+     "delta": 14
+    },
+    {
+     "dir": "gpc",
+     "chrome": 77,
+     "before": 51,
+     "after": 68,
+     "delta": 17
+    },
+    {
+     "dir": "user-timing",
+     "chrome": 862,
+     "before": 426,
+     "after": 446,
+     "delta": 20
+    },
+    {
+     "dir": "web-based-payment-handler",
+     "chrome": 145,
+     "before": 30,
+     "after": 50,
+     "delta": 20
+    },
+    {
+     "dir": "page-visibility",
+     "chrome": 41,
+     "before": 4,
+     "after": 27,
+     "delta": 23
+    },
+    {
+     "dir": "infrastructure",
+     "chrome": 286,
+     "before": 82,
+     "after": 109,
+     "delta": 27
+    },
+    {
+     "dir": "push-api",
+     "chrome": 290,
+     "before": 39,
+     "after": 71,
+     "delta": 32
+    },
+    {
+     "dir": "fs",
+     "chrome": 1121,
+     "before": 955,
+     "after": 994,
+     "delta": 39
+    },
+    {
+     "dir": "encoding",
+     "chrome": 1152398,
+     "before": 1151958,
+     "after": 1152005,
+     "delta": 47
+    },
+    {
+     "dir": "storage",
+     "chrome": 482,
+     "before": 401,
+     "after": 449,
+     "delta": 48
+    },
+    {
+     "dir": "web-locks",
+     "chrome": 517,
+     "before": 400,
+     "after": 449,
+     "delta": 49
+    },
+    {
+     "dir": "mixed-content",
+     "chrome": 2281,
+     "before": 1034,
+     "after": 1087,
+     "delta": 53
+    },
+    {
+     "dir": "beacon",
+     "chrome": 102,
+     "before": 29,
+     "after": 87,
+     "delta": 58
+    },
+    {
+     "dir": "mathml",
+     "chrome": 4321,
+     "before": 1024,
+     "after": 1088,
+     "delta": 64
+    },
+    {
+     "dir": "workers",
+     "chrome": 1598,
+     "before": 632,
+     "after": 697,
+     "delta": 65
+    },
+    {
+     "dir": "domparsing",
+     "chrome": 3731,
+     "before": 2369,
+     "after": 2435,
+     "delta": 66
+    },
+    {
+     "dir": "svg",
+     "chrome": 15390,
+     "before": 12226,
+     "after": 12315,
+     "delta": 89
+    },
+    {
+     "dir": "websockets",
+     "chrome": 2389,
+     "before": 1110,
+     "after": 1229,
+     "delta": 119
+    },
+    {
+     "dir": "IndexedDB",
+     "chrome": 5853,
+     "before": 5202,
+     "after": 5397,
+     "delta": 195
+    },
+    {
+     "dir": "cookiestore",
+     "chrome": 636,
+     "before": 303,
+     "after": 503,
+     "delta": 200
+    },
+    {
+     "dir": "streams",
+     "chrome": 5796,
+     "before": 5362,
+     "after": 5580,
+     "delta": 218
+    },
+    {
+     "dir": "url",
+     "chrome": 12437,
+     "before": 11380,
+     "after": 11768,
+     "delta": 388
+    },
+    {
+     "dir": "service-workers",
+     "chrome": 3262,
+     "before": 957,
+     "after": 1361,
+     "delta": 404
+    },
+    {
+     "dir": "content-security-policy",
+     "chrome": 4544,
+     "before": 1905,
+     "after": 2501,
+     "delta": 596
+    },
+    {
+     "dir": "css",
+     "chrome": 196898,
+     "before": 152405,
+     "after": 153085,
+     "delta": 680
+    },
+    {
+     "dir": "urlpattern",
+     "chrome": 3266,
+     "before": 2265,
+     "after": 3014,
+     "delta": 749
+    },
+    {
+     "dir": "referrer-policy",
+     "chrome": 8815,
+     "before": 3583,
+     "after": 4581,
+     "delta": 998
+    },
+    {
+     "dir": "html",
+     "chrome": 159460,
+     "before": 135247,
+     "after": 136361,
+     "delta": 1114
+    },
+    {
+     "dir": "fetch",
+     "chrome": 13288,
+     "before": 7443,
+     "after": 8758,
+     "delta": 1315
+    },
+    {
+     "dir": "dom",
+     "chrome": 66464,
+     "before": 59965,
+     "after": 63875,
+     "delta": 3910
+    }
+   ],
+   "strata": [
+    {
+     "dir": "quirks",
+     "chrome": 6984,
+     "before": 6884,
+     "after": 6623,
+     "delta": -261
+    },
+    {
+     "dir": "upgrade-insecure-requests",
+     "chrome": 982,
+     "before": 220,
+     "after": 196,
+     "delta": -24
+    },
+    {
+     "dir": "html/infrastructure",
+     "chrome": 1664,
+     "before": 789,
+     "after": 775,
+     "delta": -14
+    },
+    {
+     "dir": "svg/geometry",
+     "chrome": 609,
+     "before": 407,
+     "after": 397,
+     "delta": -10
+    },
+    {
+     "dir": "connection-allowlist",
+     "chrome": 365,
+     "before": 89,
+     "after": 83,
+     "delta": -6
+    },
+    {
+     "dir": "resource-timing",
+     "chrome": 1207,
+     "before": 24,
+     "after": 19,
+     "delta": -5
+    },
+    {
+     "dir": "html/editing",
+     "chrome": 868,
+     "before": 514,
+     "after": 510,
+     "delta": -4
+    },
+    {
+     "dir": "trusted-types",
+     "chrome": 3754,
+     "before": 2715,
+     "after": 2712,
+     "delta": -3
+    },
+    {
+     "dir": "mimesniff",
+     "chrome": 3886,
+     "before": 2624,
+     "after": 2623,
+     "delta": -1
+    },
+    {
+     "dir": "web-animations",
+     "chrome": 4256,
+     "before": 3705,
+     "after": 3704,
+     "delta": -1
+    },
+    {
+     "dir": "css/css-break",
+     "chrome": 787,
+     "before": 584,
+     "after": 585,
+     "delta": 1
+    },
+    {
+     "dir": "css/css-cascade",
+     "chrome": 1759,
+     "before": 1317,
+     "after": 1318,
+     "delta": 1
+    },
+    {
+     "dir": "css/css-contain",
+     "chrome": 499,
+     "before": 301,
+     "after": 302,
+     "delta": 1
+    },
+    {
+     "dir": "css/css-lists",
+     "chrome": 974,
+     "before": 885,
+     "after": 886,
+     "delta": 1
+    },
+    {
+     "dir": "import-maps",
+     "chrome": 396,
+     "before": 16,
+     "after": 17,
+     "delta": 1
+    },
+    {
+     "dir": "intersection-observer",
+     "chrome": 440,
+     "before": 207,
+     "after": 208,
+     "delta": 1
+    },
+    {
+     "dir": "png",
+     "chrome": 4,
+     "before": 0,
+     "after": 1,
+     "delta": 1
+    },
+    {
+     "dir": "wasm/serialization",
+     "chrome": 76,
+     "before": 7,
+     "after": 8,
+     "delta": 1
+    },
+    {
+     "dir": "webcodecs",
+     "chrome": 3922,
+     "before": 2583,
+     "after": 2584,
+     "delta": 1
+    },
+    {
+     "dir": "webgl",
+     "chrome": 4279,
+     "before": 4257,
+     "after": 4258,
+     "delta": 1
+    },
+    {
+     "dir": "webidl",
+     "chrome": 838,
+     "before": 645,
+     "after": 646,
+     "delta": 1
+    },
+    {
+     "dir": "xhr",
+     "chrome": 2344,
+     "before": 1815,
+     "after": 1816,
+     "delta": 1
+    },
+    {
+     "dir": "xml",
+     "chrome": 242,
+     "before": 236,
+     "after": 237,
+     "delta": 1
+    },
+    {
+     "dir": "css/css-conditional",
+     "chrome": 3298,
+     "before": 2241,
+     "after": 2243,
+     "delta": 2
+    },
+    {
+     "dir": "css/css-fonts",
+     "chrome": 8683,
+     "before": 7404,
+     "after": 7406,
+     "delta": 2
+    },
+    {
+     "dir": "css/css-values",
+     "chrome": 10428,
+     "before": 4751,
+     "after": 4753,
+     "delta": 2
+    },
+    {
+     "dir": "dom/collections",
+     "chrome": 60,
+     "before": 29,
+     "after": 31,
+     "delta": 2
+    },
+    {
+     "dir": "html/obsolete",
+     "chrome": 55,
+     "before": 39,
+     "after": 41,
+     "delta": 2
+    },
+    {
+     "dir": "navigation-timing",
+     "chrome": 465,
+     "before": 34,
+     "after": 36,
+     "delta": 2
+    },
+    {
+     "dir": "pointerevents",
+     "chrome": 2749,
+     "before": 1582,
+     "after": 1584,
+     "delta": 2
+    },
+    {
+     "dir": "shape-detection",
+     "chrome": 247,
+     "before": 6,
+     "after": 8,
+     "delta": 2
+    },
+    {
+     "dir": "css/CSS2",
+     "chrome": 2566,
+     "before": 2330,
+     "after": 2333,
+     "delta": 3
+    },
+    {
+     "dir": "dom/nodes",
+     "chrome": 15595,
+     "before": 14835,
+     "after": 14838,
+     "delta": 3
+    },
+    {
+     "dir": "html/cross-origin-embedder-policy",
+     "chrome": 596,
+     "before": 110,
+     "after": 113,
+     "delta": 3
+    },
+    {
+     "dir": "webtransport",
+     "chrome": 1418,
+     "before": 9,
+     "after": 12,
+     "delta": 3
+    },
+    {
+     "dir": "density-size-correction",
+     "chrome": 6,
+     "before": 0,
+     "after": 5,
+     "delta": 5
+    },
+    {
+     "dir": "compression",
+     "chrome": 1316,
+     "before": 938,
+     "after": 944,
+     "delta": 6
+    },
+    {
+     "dir": "background-fetch",
+     "chrome": 257,
+     "before": 27,
+     "after": 34,
+     "delta": 7
+    },
+    {
+     "dir": "css/css-masking",
+     "chrome": 6398,
+     "before": 5964,
+     "after": 5971,
+     "delta": 7
+    },
+    {
+     "dir": "notifications",
+     "chrome": 370,
+     "before": 21,
+     "after": 28,
+     "delta": 7
+    },
+    {
+     "dir": "cookies",
+     "chrome": 1293,
+     "before": 654,
+     "after": 662,
+     "delta": 8
+    },
+    {
+     "dir": "performance-timeline",
+     "chrome": 352,
+     "before": 32,
+     "after": 40,
+     "delta": 8
+    },
+    {
+     "dir": "wasm/webapi",
+     "chrome": 1066,
+     "before": 1008,
+     "after": 1016,
+     "delta": 8
+    },
+    {
+     "dir": "css/css-position",
+     "chrome": 1553,
+     "before": 1147,
+     "after": 1158,
+     "delta": 11
+    },
+    {
+     "dir": "event-timing",
+     "chrome": 183,
+     "before": 40,
+     "after": 52,
+     "delta": 12
+    },
+    {
+     "dir": "hr-time",
+     "chrome": 160,
+     "before": 53,
+     "after": 66,
+     "delta": 13
+    },
+    {
+     "dir": "content-index",
+     "chrome": 105,
+     "before": 17,
+     "after": 31,
+     "delta": 14
+    },
+    {
+     "dir": "gpc",
+     "chrome": 77,
+     "before": 51,
+     "after": 68,
+     "delta": 17
+    },
+    {
+     "dir": "user-timing",
+     "chrome": 862,
+     "before": 426,
+     "after": 446,
+     "delta": 20
+    },
+    {
+     "dir": "web-based-payment-handler",
+     "chrome": 145,
+     "before": 30,
+     "after": 50,
+     "delta": 20
+    },
+    {
+     "dir": "page-visibility",
+     "chrome": 41,
+     "before": 4,
+     "after": 27,
+     "delta": 23
+    },
+    {
+     "dir": "infrastructure",
+     "chrome": 286,
+     "before": 82,
+     "after": 109,
+     "delta": 27
+    },
+    {
+     "dir": "css/css-grid",
+     "chrome": 16015,
+     "before": 9084,
+     "after": 9115,
+     "delta": 31
+    },
+    {
+     "dir": "push-api",
+     "chrome": 290,
+     "before": 39,
+     "after": 71,
+     "delta": 32
+    },
+    {
+     "dir": "fs",
+     "chrome": 1121,
+     "before": 955,
+     "after": 994,
+     "delta": 39
+    },
+    {
+     "dir": "html/browsers",
+     "chrome": 3309,
+     "before": 723,
+     "after": 766,
+     "delta": 43
+    },
+    {
+     "dir": "css/geometry",
+     "chrome": 1575,
+     "before": 517,
+     "after": 561,
+     "delta": 44
+    },
+    {
+     "dir": "encoding/(root)",
+     "chrome": 23822,
+     "before": 23420,
+     "after": 23467,
+     "delta": 47
+    },
+    {
+     "dir": "storage",
+     "chrome": 482,
+     "before": 401,
+     "after": 449,
+     "delta": 48
+    },
+    {
+     "dir": "web-locks",
+     "chrome": 517,
+     "before": 400,
+     "after": 449,
+     "delta": 49
+    },
+    {
+     "dir": "mixed-content",
+     "chrome": 2281,
+     "before": 1034,
+     "after": 1087,
+     "delta": 53
+    },
+    {
+     "dir": "html/webappapis",
+     "chrome": 3665,
+     "before": 2914,
+     "after": 2969,
+     "delta": 55
+    },
+    {
+     "dir": "beacon",
+     "chrome": 102,
+     "before": 29,
+     "after": 87,
+     "delta": 58
+    },
+    {
+     "dir": "mathml",
+     "chrome": 4321,
+     "before": 1024,
+     "after": 1088,
+     "delta": 64
+    },
+    {
+     "dir": "workers",
+     "chrome": 1598,
+     "before": 632,
+     "after": 697,
+     "delta": 65
+    },
+    {
+     "dir": "domparsing",
+     "chrome": 3731,
+     "before": 2369,
+     "after": 2435,
+     "delta": 66
+    },
+    {
+     "dir": "svg/(root)",
+     "chrome": 1754,
+     "before": 1212,
+     "after": 1311,
+     "delta": 99
+    },
+    {
+     "dir": "websockets",
+     "chrome": 2389,
+     "before": 1110,
+     "after": 1229,
+     "delta": 119
+    },
+    {
+     "dir": "css/filter-effects",
+     "chrome": 3007,
+     "before": 2660,
+     "after": 2838,
+     "delta": 178
+    },
+    {
+     "dir": "html/rendering",
+     "chrome": 11705,
+     "before": 8123,
+     "after": 8306,
+     "delta": 183
+    },
+    {
+     "dir": "css/selectors",
+     "chrome": 6266,
+     "before": 5521,
+     "after": 5707,
+     "delta": 186
+    },
+    {
+     "dir": "IndexedDB",
+     "chrome": 5853,
+     "before": 5202,
+     "after": 5397,
+     "delta": 195
+    },
+    {
+     "dir": "cookiestore",
+     "chrome": 636,
+     "before": 303,
+     "after": 503,
+     "delta": 200
+    },
+    {
+     "dir": "css/mediaqueries",
+     "chrome": 1786,
+     "before": 985,
+     "after": 1195,
+     "delta": 210
+    },
+    {
+     "dir": "dom/(root)",
+     "chrome": 2768,
+     "before": 2230,
+     "after": 2440,
+     "delta": 210
+    },
+    {
+     "dir": "streams",
+     "chrome": 5796,
+     "before": 5362,
+     "after": 5580,
+     "delta": 218
+    },
+    {
+     "dir": "html/canvas",
+     "chrome": 6251,
+     "before": 3443,
+     "after": 3675,
+     "delta": 232
+    },
+    {
+     "dir": "html/dom",
+     "chrome": 72399,
+     "before": 69270,
+     "after": 69540,
+     "delta": 270
+    },
+    {
+     "dir": "html/semantics",
+     "chrome": 22381,
+     "before": 14687,
+     "after": 15031,
+     "delta": 344
+    },
+    {
+     "dir": "url",
+     "chrome": 12437,
+     "before": 11380,
+     "after": 11768,
+     "delta": 388
+    },
+    {
+     "dir": "service-workers",
+     "chrome": 3262,
+     "before": 957,
+     "after": 1361,
+     "delta": 404
+    },
+    {
+     "dir": "content-security-policy",
+     "chrome": 4544,
+     "before": 1905,
+     "after": 2501,
+     "delta": 596
+    },
+    {
+     "dir": "urlpattern",
+     "chrome": 3266,
+     "before": 2265,
+     "after": 3014,
+     "delta": 749
+    },
+    {
+     "dir": "referrer-policy",
+     "chrome": 8815,
+     "before": 3583,
+     "after": 4581,
+     "delta": 998
+    },
+    {
+     "dir": "fetch",
+     "chrome": 13288,
+     "before": 7443,
+     "after": 8758,
+     "delta": 1315
+    },
+    {
+     "dir": "dom/ranges",
+     "chrome": 44720,
+     "before": 40356,
+     "after": 44051,
+     "delta": 3695
+    }
+   ],
+   "lost_by_directory": [
+    {
+     "dir": "quirks/unitless-length",
+     "lost": 205,
+     "tests": 3
+    },
+    {
+     "dir": "mixed-content/gen",
+     "lost": 196,
+     "tests": 51
+    },
+    {
+     "dir": "quirks/hashless-hex-color",
+     "lost": 56,
+     "tests": 1
+    },
+    {
+     "dir": "upgrade-insecure-requests/gen",
+     "lost": 43,
+     "tests": 10
+    },
+    {
+     "dir": "content-security-policy/gen",
+     "lost": 32,
+     "tests": 16
+    },
+    {
+     "dir": "fetch/corb",
+     "lost": 29,
+     "tests": 3
+    },
+    {
+     "dir": "html/infrastructure",
+     "lost": 15,
+     "tests": 5
+    },
+    {
+     "dir": "svg/geometry",
+     "lost": 10,
+     "tests": 1
+    },
+    {
+     "dir": "html/semantics",
+     "lost": 7,
+     "tests": 4
+    },
+    {
+     "dir": "service-workers/service-worker",
+     "lost": 7,
+     "tests": 1
+    },
+    {
+     "dir": "connection-allowlist/tentative",
+     "lost": 6,
+     "tests": 3
+    },
+    {
+     "dir": "domparsing",
+     "lost": 6,
+     "tests": 1
+    },
+    {
+     "dir": "html/webappapis",
+     "lost": 6,
+     "tests": 3
+    },
+    {
+     "dir": "resource-timing",
+     "lost": 5,
+     "tests": 1
+    },
+    {
+     "dir": "fetch/api",
+     "lost": 4,
+     "tests": 4
+    },
+    {
+     "dir": "html/editing",
+     "lost": 4,
+     "tests": 2
+    },
+    {
+     "dir": "html/browsers",
+     "lost": 3,
+     "tests": 2
+    },
+    {
+     "dir": "trusted-types",
+     "lost": 3,
+     "tests": 3
+    },
+    {
+     "dir": "content-security-policy/parsing",
+     "lost": 1,
+     "tests": 1
+    },
+    {
+     "dir": "fetch/range",
+     "lost": 1,
+     "tests": 1
+    },
+    {
+     "dir": "html/dom",
+     "lost": 1,
+     "tests": 1
+    },
+    {
+     "dir": "mimesniff/sniffing",
+     "lost": 1,
+     "tests": 1
+    },
+    {
+     "dir": "performance-timeline",
+     "lost": 1,
+     "tests": 1
+    },
+    {
+     "dir": "web-animations/timing-model",
+     "lost": 1,
+     "tests": 1
+    }
+   ],
+   "tests_worse": 120,
+   "tests_better": 1060,
+   "subtests_lost": 643,
+   "subtests_gained": 12051,
+   "worse": [
+    {
+     "test": "/quirks/unitless-length/quirks.html",
+     "before": 1590,
+     "after": 1407,
+     "chrome": 1590
+    },
+    {
+     "test": "/quirks/hashless-hex-color/quirks.html",
+     "before": 692,
+     "after": 636,
+     "chrome": 692
+    },
+    {
+     "test": "/fetch/corb/script-resource-with-json-parser-breaker.tentative.sub.html",
+     "before": 27,
+     "after": 0,
+     "chrome": 27
+    },
+    {
+     "test": "/quirks/unitless-length/limited-quirks.html",
+     "before": 1581,
+     "after": 1570,
+     "chrome": 1581
+    },
+    {
+     "test": "/quirks/unitless-length/no-quirks.html",
+     "before": 1581,
+     "after": 1570,
+     "chrome": 1581
+    },
+    {
+     "test": "/svg/geometry/svg-geometry-apis-in-non-rendered-elements.html",
+     "before": 27,
+     "after": 17,
+     "chrome": 36
+    },
+    {
+     "test": "/service-workers/service-worker/fetch-event.https.html",
+     "before": 9,
+     "after": 2,
+     "chrome": 43
+    },
+    {
+     "test": "/domparsing/parsed-document-origin.window.html",
+     "before": 7,
+     "after": 1,
+     "chrome": 7
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.http-rp/opt-in/sharedworker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.http-rp/opt-in/sharedworker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.http-rp/opt-in/worker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.http-rp/opt-in/worker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/unset/sharedworker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/unset/sharedworker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/unset/worker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/unset/worker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/sharedworker-module-data.http-rp/opt-in/fetch.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/sharedworker-module-data.http-rp/opt-in/xhr.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/sharedworker-module-data.meta/unset/fetch.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/sharedworker-module-data.meta/unset/xhr.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.http-rp/opt-in/sharedworker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.http-rp/opt-in/sharedworker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.http-rp/opt-in/worker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.http-rp/opt-in/worker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/unset/sharedworker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/unset/sharedworker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/unset/worker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/unset/worker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 8
+    },
+    {
+     "test": "/upgrade-insecure-requests/gen/srcdoc-inherit.meta/unset/sharedworker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 6
+    },
+    {
+     "test": "/upgrade-insecure-requests/gen/srcdoc-inherit.meta/unset/sharedworker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 6
+    },
+    {
+     "test": "/upgrade-insecure-requests/gen/srcdoc-inherit.meta/unset/worker-import-data.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 6
+    },
+    {
+     "test": "/upgrade-insecure-requests/gen/srcdoc-inherit.meta/unset/worker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 6
+    },
+    {
+     "test": "/upgrade-insecure-requests/gen/top.meta/unset/sharedworker-import.https.html",
+     "before": 6,
+     "after": 0,
+     "chrome": 6
+    },
+    {
+     "test": "/resource-timing/idlharness.any.worker.html",
+     "before": 5,
+     "after": 0,
+     "chrome": 79
+    },
+    {
+     "test": "/upgrade-insecure-requests/gen/sharedworker-module-data.meta/unset/fetch.https.html",
+     "before": 6,
+     "after": 1,
+     "chrome": 6
+    },
+    {
+     "test": "/upgrade-insecure-requests/gen/sharedworker-module-data.meta/unset/xhr.https.html",
+     "before": 6,
+     "after": 1,
+     "chrome": 6
+    },
+    {
+     "test": "/connection-allowlist/tentative/websocket-shared-worker.https.sub.window.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/html/semantics/embedded-content/the-img-element/update-the-image-data/src-then-lazy-load.html",
+     "before": 8,
+     "after": 4,
+     "chrome": 8
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/opt-in/sharedworker-import-data.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/opt-in/sharedworker-import.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/opt-in/worker-import-data.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/iframe-inherit.meta/opt-in/worker-import.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/sharedworker-module-data.meta/opt-in/fetch.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/sharedworker-module-data.meta/opt-in/xhr.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/opt-in/sharedworker-import-data.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/opt-in/sharedworker-import.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/opt-in/worker-import-data.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/mixed-content/gen/srcdoc-inherit.meta/opt-in/worker-import.https.html",
+     "before": 4,
+     "after": 0,
+     "chrome": 5
+    },
+    {
+     "test": "/html/infrastructure/urls/resolving-urls/query-encoding/utf-16be.html?include=submit",
+     "before": 3,
+     "after": 0,
+     "chrome": 3
+    },
+    {
+     "test": "/html/infrastructure/urls/resolving-urls/query-encoding/utf-16le.html?include=submit",
+     "before": 3,
+     "after": 0,
+     "chrome": 3
+    },
+    {
+     "test": "/html/infrastructure/urls/resolving-urls/query-encoding/utf-8.html?include=submit",
+     "before": 3,
+     "after": 0,
+     "chrome": 3
+    },
+    {
+     "test": "/html/infrastructure/urls/resolving-urls/query-encoding/windows-1251.html?include=submit",
+     "before": 3,
+     "after": 0,
+     "chrome": 3
+    },
+    {
+     "test": "/html/infrastructure/urls/resolving-urls/query-encoding/windows-1252.html?include=submit",
+     "before": 3,
+     "after": 0,
+     "chrome": 3
+    },
+    {
+     "test": "/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/abort-while-navigating.window.html",
+     "before": 3,
+     "after": 0,
+     "chrome": 9
+    },
+    {
+     "test": "/content-security-policy/gen/top.http-rp/script-src-self/sharedworker-import.http.html",
+     "before": 6,
+     "after": 4,
+     "chrome": 12
+    },
+    {
+     "test": "/content-security-policy/gen/top.http-rp/script-src-self/sharedworker-import.https.html",
+     "before": 6,
+     "after": 4,
+     "chrome": 12
+    },
+    {
+     "test": "/content-security-policy/gen/top.http-rp/script-src-self/worker-import.http.html",
+     "before": 6,
+     "after": 4,
+     "chrome": 12
+    },
+    {
+     "test": "/content-security-policy/gen/top.http-rp/script-src-self/worker-import.https.html",
+     "before": 6,
+     "after": 4,
+     "chrome": 12
+    },
+    {
+     "test": "/content-security-policy/gen/top.http-rp/worker-src-self/sharedworker-import.http.html",
+     "before": 6,
+     "after": 4,
+     "chrome": 12
+    },
+    {
+     "test": "/content-security-policy/gen/top.http-rp/worker-src-self/sharedworker-import.https.html",
+     "before": 6,
+     "after": 4,
+     "chrome": 12
+    }
+   ],
+   "better": [
+    {
+     "test": "/dom/ranges/Range-insertNode.html",
+     "before": 0,
+     "after": 1840,
+     "chrome": 1840
+    },
+    {
+     "test": "/dom/ranges/Range-surroundContents.html",
+     "before": 0,
+     "after": 1840,
+     "chrome": 1840
+    },
+    {
+     "test": "/url/failure.html",
+     "before": 797,
+     "after": 1177,
+     "chrome": 1177
+    },
+    {
+     "test": "/urlpattern/urlpattern.any.serviceworker.html",
+     "before": 0,
+     "after": 368,
+     "chrome": 370
+    },
+    {
+     "test": "/urlpattern/urlpattern.https.any.serviceworker.html",
+     "before": 0,
+     "after": 368,
+     "chrome": 370
+    },
+    {
+     "test": "/streams/idlharness.any.serviceworker.html",
+     "before": 0,
+     "after": 218,
+     "chrome": 228
+    },
+    {
+     "test": "/css/mediaqueries/test_media_queries.html",
+     "before": 709,
+     "after": 919,
+     "chrome": 1349
+    },
+    {
+     "test": "/dom/idlharness.any.serviceworker.html",
+     "before": 0,
+     "after": 210,
+     "chrome": 220
+    },
+    {
+     "test": "/html/canvas/element/manual/wide-gamut-canvas/canvas-display-p3-drawImage-ImageBitmap-ImageBitmap.html",
+     "before": 0,
+     "after": 208,
+     "chrome": 208
+    },
+    {
+     "test": "/service-workers/idlharness.https.any.serviceworker.html",
+     "before": 0,
+     "after": 196,
+     "chrome": 302
+    },
+    {
+     "test": "/IndexedDB/idlharness.any.serviceworker.html",
+     "before": 0,
+     "after": 195,
+     "chrome": 207
+    },
+    {
+     "test": "/css/filter-effects/idlharness.any.html",
+     "before": 276,
+     "after": 454,
+     "chrome": 484
+    },
+    {
+     "test": "/service-workers/idlharness.https.any.html",
+     "before": 1,
+     "after": 154,
+     "chrome": 175
+    },
+    {
+     "test": "/fetch/api/idlharness.https.any.serviceworker.html",
+     "before": 0,
+     "after": 142,
+     "chrome": 156
+    },
+    {
+     "test": "/html/rendering/pixel-length-attributes.html",
+     "before": 198,
+     "after": 322,
+     "chrome": 546
+    },
+    {
+     "test": "/svg/idlharness.window.html",
+     "before": 1145,
+     "after": 1244,
+     "chrome": 1685
+    },
+    {
+     "test": "/css/selectors/attribute-selectors/attribute-case/syntax.html",
+     "before": 423,
+     "after": 519,
+     "chrome": 528
+    },
+    {
+     "test": "/fetch/api/basic/request-forbidden-headers.any.serviceworker.html",
+     "before": 0,
+     "after": 95,
+     "chrome": 96
+    },
+    {
+     "test": "/css/selectors/attribute-selectors/attribute-case/semantics.html",
+     "before": 824,
+     "after": 914,
+     "chrome": 955
+    },
+    {
+     "test": "/html/dom/idlharness.https.html?exclude=(Document|Window|HTML.+)",
+     "before": 1106,
+     "after": 1191,
+     "chrome": 1878
+    },
+    {
+     "test": "/fetch/data-urls/base64.any.serviceworker.html",
+     "before": 0,
+     "after": 81,
+     "chrome": 81
+    },
+    {
+     "test": "/domparsing/stream-sanitizer-img-ctor.html",
+     "before": 0,
+     "after": 72,
+     "chrome": 78
+    },
+    {
+     "test": "/cookiestore/idlharness.https.any.html",
+     "before": 1,
+     "after": 71,
+     "chrome": 84
+    },
+    {
+     "test": "/fetch/data-urls/processing.any.serviceworker.html",
+     "before": 0,
+     "after": 69,
+     "chrome": 73
+    },
+    {
+     "test": "/html/semantics/forms/the-form-element/form-autocomplete.html",
+     "before": 0,
+     "after": 67,
+     "chrome": 67
+    },
+    {
+     "test": "/html/dom/idlharness.https.html?include=HTML.+",
+     "before": 3647,
+     "after": 3706,
+     "chrome": 3955
+    },
+    {
+     "test": "/cookiestore/idlharness.https.any.serviceworker.html",
+     "before": 0,
+     "after": 57,
+     "chrome": 86
+    },
+    {
+     "test": "/html/semantics/popovers/popover-attribute-basic.html",
+     "before": 81,
+     "after": 138,
+     "chrome": 249
+    },
+    {
+     "test": "/html/rendering/dimension-attributes.html",
+     "before": 1566,
+     "after": 1620,
+     "chrome": 1720
+    },
+    {
+     "test": "/html/semantics/disabled-elements/event-propagate-disabled.tentative.html",
+     "before": 198,
+     "after": 252,
+     "chrome": 256
+    },
+    {
+     "test": "/cookiestore/cookieStore_set_arguments.https.any.serviceworker.html",
+     "before": 1,
+     "after": 53,
+     "chrome": 54
+    },
+    {
+     "test": "/html/dom/idlharness.https.html?include=(Document|Window)",
+     "before": 190,
+     "after": 239,
+     "chrome": 298
+    },
+    {
+     "test": "/html/webappapis/scripting/events/event-handler-attributes-windowless-body.html",
+     "before": 188,
+     "after": 236,
+     "chrome": 236
+    },
+    {
+     "test": "/storage/buckets/idlharness-worker.https.any.serviceworker.html",
+     "before": 0,
+     "after": 48,
+     "chrome": 50
+    },
+    {
+     "test": "/encoding/idlharness.any.serviceworker.html",
+     "before": 0,
+     "after": 47,
+     "chrome": 57
+    },
+    {
+     "test": "/fetch/orb/tentative/img-mime-types-coverage.tentative.sub.html",
+     "before": 0,
+     "after": 46,
+     "chrome": 64
+    },
+    {
+     "test": "/web-locks/idlharness.https.any.serviceworker.html",
+     "before": 0,
+     "after": 45,
+     "chrome": 47
+    },
+    {
+     "test": "/fetch/api/request/request-cache-default-conditional.any.serviceworker.html",
+     "before": 0,
+     "after": 40,
+     "chrome": 40
+    },
+    {
+     "test": "/html/dom/idlharness.any.worker.html",
+     "before": 521,
+     "after": 559,
+     "chrome": 808
+    },
+    {
+     "test": "/fs/idlharness.https.any.serviceworker.html",
+     "before": 0,
+     "after": 37,
+     "chrome": 43
+    },
+    {
+     "test": "/fetch/metadata/generated/element-img.sub.html",
+     "before": 0,
+     "after": 36,
+     "chrome": 36
+    },
+    {
+     "test": "/fetch/metadata/generated/fetch-via-serviceworker.https.sub.html",
+     "before": 1,
+     "after": 32,
+     "chrome": 44
+    },
+    {
+     "test": "/fetch/api/headers/header-values-normalize.any.serviceworker.html",
+     "before": 1,
+     "after": 31,
+     "chrome": 31
+    },
+    {
+     "test": "/fetch/metadata/fetch.https.sub.any.serviceworker.html",
+     "before": 0,
+     "after": 29,
+     "chrome": 30
+    },
+    {
+     "test": "/fetch/orb/tentative/known-mime-type.sub.any.html",
+     "before": 0,
+     "after": 29,
+     "chrome": 39
+    },
+    {
+     "test": "/fetch/api/redirect/redirect-location.any.serviceworker.html",
+     "before": 25,
+     "after": 50,
+     "chrome": 55
+    },
+    {
+     "test": "/fetch/api/basic/request-headers.any.serviceworker.html",
+     "before": 0,
+     "after": 23,
+     "chrome": 25
+    },
+    {
+     "test": "/infrastructure/server/wpt-server-http.sub.html",
+     "before": 0,
+     "after": 23,
+     "chrome": 29
+    },
+    {
+     "test": "/css/geometry/idlharness.any.html",
+     "before": 109,
+     "after": 131,
+     "chrome": 372
+    },
+    {
+     "test": "/css/geometry/idlharness.any.worker.html",
+     "before": 115,
+     "after": 137,
+     "chrome": 360
+    },
+    {
+     "test": "/service-workers/service-worker/fetch-request-redirect.https.html",
+     "before": 3,
+     "after": 24,
+     "chrome": 35
+    },
+    {
+     "test": "/beacon/beacon-basic.https.window.html",
+     "before": 1,
+     "after": 21,
+     "chrome": 25
+    },
+    {
+     "test": "/css/css-grid/alignment/grid-self-alignment.html",
+     "before": 28,
+     "after": 48,
+     "chrome": 72
+    },
+    {
+     "test": "/fetch/api/headers/headers-no-cors.any.serviceworker.html",
+     "before": 7,
+     "after": 27,
+     "chrome": 27
+    },
+    {
+     "test": "/user-timing/idlharness.any.serviceworker.html",
+     "before": 0,
+     "after": 20,
+     "chrome": 36
+    },
+    {
+     "test": "/workers/shared-worker-options-mismatch.html",
+     "before": 0,
+     "after": 20,
+     "chrome": 32
+    },
+    {
+     "test": "/html/browsers/the-window-object/window-properties.https.html",
+     "before": 109,
+     "after": 128,
+     "chrome": 181
+    },
+    {
+     "test": "/fetch/metadata/generated/element-img.https.sub.html",
+     "before": 0,
+     "after": 18,
+     "chrome": 45
+    },
+    {
+     "test": "/html/semantics/embedded-content/the-img-element/naturalWidth-naturalHeight-width-height.html",
+     "before": 0,
+     "after": 18,
+     "chrome": 258
+    },
+    {
+     "test": "/html/semantics/embedded-content/the-img-element/srcset/select-an-image-source.html",
+     "before": 13,
+     "after": 31,
+     "chrome": 46
+    }
+   ]
+  }
+ }
+}
