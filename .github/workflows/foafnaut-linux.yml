@@ -24,8 +24,11 @@ name: Foafnaut Linux engine
 # Cost: Linux minutes only, about 25-35 min a build for each arch.
 
 on:
+  # build.yml: the commit that run published. The other two only give a tick for the
+  # same check as the schedule (GitHub starts scheduled runs late or not at all when it
+  # is busy; these workflows end often while people work).
   workflow_run:
-    workflows: ['Build Factoidal from factoidal-core']
+    workflows: ['Build Factoidal from factoidal-core', 'Branch WPT check', 'Release tests']
     types: [completed]
   schedule:
     # Every 20 minutes: the newest main commit, when it has no Linux engine release and
@@ -60,7 +63,7 @@ env:
 jobs:
   resolve:
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.name != 'Build Factoidal from factoidal-core'
     permissions:
       contents: read
       actions: write
@@ -74,6 +77,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
+          FROM: ${{ github.event.workflow_run.name }}
           IN_REF: ${{ inputs.core_ref }}
           FORCE: ${{ inputs.force }}
           BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -81,7 +85,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "$EVENT" = schedule ]; then
+          if [ "$EVENT" = schedule ] || { [ "$EVENT" = workflow_run ] && [ "$FROM" != 'Build Factoidal from factoidal-core' ]; }; then
             python3 release-tests/release-tests.py linux-candidate --dispatch-build
             exit 0
           fi
