@@ -1,0 +1,266 @@
+name: Branch WPT check
+
+# A development check, not a score: builds the Linux engine library from ANY branch or
+# commit of factoidal-core and runs chosen Web Platform Tests with it, against the
+# newest valid full run of main as the baseline. It publishes no release and writes
+# nothing to runs.csv.
+#
+#   gh workflow run branch-wpt.yml --repo danbri/factoidal-builds \
+#     -f core_ref=wip/my-branch -f names=/css/css-color/,/web-animations/
+#   gh run watch --repo danbri/factoidal-builds <run id>      # or: gh run list --workflow branch-wpt.yml
+#   gh run download --repo danbri/factoidal-builds <run id> -n branch-wpt-results -D out/
+#
+# names: comma list of WPT path prefixes (/dom/abort/, /css/css-color/parsing/), and/or
+#   sample:N (every Nth name of the full list, a regression check: sample:20 is about
+#   4,700 names). Both may be combined.
+# Result: the job summary (table per directory: Chrome subtests, passed on this ref,
+#   passed on the baseline, difference; the tests that got worse) and the artifact
+#   branch-wpt-results: report.md, report.json, results.jsonl (one line a test, every
+#   subtest with its status and failure message, as the local runner writes).
+#   The artifact build-log holds the whole build log.
+#
+# Build: core's labs/demos/foafnaut/build-web-render.sh --native on ubuntu-latest, as
+# foafnaut-linux.yml. The Lake build directory comes from build.yml's newest Linux cache
+# (restore only: this workflow saves no cache, the repository is at its cache limit), so
+# unchanged formal/lean4 modules are not compiled again. When the branch does not compile,
+# the first errors are in the job summary.
+# The runner also loads the Wasm module of the newest foafnaut-web release of main (it is
+# loaded, not used, when the engine is the native library).
+#
+# Cost: Linux minutes only. One concurrency group for each core_ref: a newer dispatch of
+# the same ref replaces a waiting one; other refs are not touched.
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core branch, tag or commit (any branch)'
+        required: true
+      names:
+        description: 'WPT path prefixes, comma list (/dom/abort/,/css/css-color/) and/or sample:N'
+        required: true
+        default: 'sample:40'
+      shards:
+        description: 'Runners for the tests (empty: one for each 3,000 names, at most 20)'
+        required: false
+        default: ''
+      wpt_commit:
+        description: '40-hex WPT commit (empty: the one of the newest valid full run)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: branch-wpt-${{ inputs.core_ref }}
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.p.outputs.matrix }}
+      web_tag: ${{ steps.p.outputs.web_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAMES: ${{ inputs.names }}
+          WPT: ${{ inputs.wpt_commit }}
+          SHARDS: ${{ inputs.shards }}
+        run: |
+          set -euo pipefail
+          [[ "${SHARDS:-0}" =~ ^[0-9]*$ ]] || { echo "::error::shards is a number"; exit 2; }
+          python3 release-tests/release-tests.py branch-plan --names "$NAMES" --wpt-commit "${WPT:-}" \
+            --shards "${SHARDS:-0}" --out "$RUNNER_TEMP/inputs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branch-inputs
+          path: ${{ runner.temp }}/inputs/
+          retention-days: 7
+
+  build:
+    name: Build libweb-render.so from ${{ inputs.core_ref }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ inputs.core_ref }}
+          path: core
+      - id: sha
+        env:
+          REF: ${{ inputs.core_ref }}
+        run: |
+          echo "sha=$(git -C core rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "### Build: \`$REF\` = $(git -C core log -1 --format='%H %s' | cut -c1-140)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install elan and the pinned Lean
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+          sudo apt-get update -q > /dev/null && sudo apt-get install -y -q libuv1-dev > /dev/null
+      # build.yml's Lake cache of the newest Linux build (same path, so the same cache
+      # version). Restore only.
+      - name: Restore build.yml's Lake cache
+        id: lake
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Build
+        shell: bash
+        env:
+          CACHE_KEY: ${{ steps.lake.outputs.cache-matched-key }}
+          CACHE_HIT: ${{ steps.lake.outputs.cache-hit }}
+        run: |
+          set -uo pipefail
+          LOG=$RUNNER_TEMP/build.log
+          T0=$(date +%s)
+          bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
+          RC=$?
+          T1=$(date +%s)
+          # Where the time went: the Lake build ends at the first LEAN line, the lab's
+          # Lean modules at the first NATIVE line.
+          stamp() { grep -m1 -E "^$1 " "$LOG" | sed -E 's/^[A-Z]+ [^ ]+ //' | xargs -I{} date -u -d "{}" +%s 2>/dev/null || true; }
+          L=$(stamp LEAN); N=$(stamp NATIVE)
+          {
+            echo "Build exit $RC in $(( (T1 - T0) / 60 )) min $(( (T1 - T0) % 60 )) s. Lake cache: ${CACHE_KEY:-none restored}$([ "$CACHE_HIT" = true ] && echo ' (exact)')."
+            if [ -n "$L" ] && [ -n "$N" ]; then
+              echo "Parts: formal/lean4 (lake build) $(( (L - T0) / 60 )) min, lab Lean modules $(( (N - L) / 60 )) min, C compile and link $(( (T1 - N) / 60 )) min."
+              echo "Lake built $(grep -cE '^(✔|⚠|ℹ) \[[0-9]+/[0-9]+\] Built ' "$LOG" || true) modules here; $(grep -cE 'Replayed ' "$LOG" || true) replayed from the cache."
+            fi
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RC" -ne 0 ] || [ ! -f core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so ]; then
+            {
+              echo "**The branch did not build.** First errors:"
+              echo '```'
+              grep -n -E -A6 '(^|: )error[: ]|^✖|unknown (constant|identifier)|build refused|refused' "$LOG" | head -80 | cut -c1-400
+              echo '```'
+              echo "Last lines:"
+              echo '```'
+              tail -25 "$LOG" | cut -c1-400
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            grep -m5 -E '(^|: )error[: ]' "$LOG" | cut -c1-300 | while IFS= read -r line; do echo "::error::$line"; done
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/engine"
+          cp core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so "$RUNNER_TEMP/engine/"
+          tr -d ' \n' < core/formal/lean4/lean-toolchain > "$RUNNER_TEMP/engine/lean-toolchain"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: ${{ runner.temp }}/build.log
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branch-engine
+          path: ${{ runner.temp }}/engine/
+          retention-days: 3
+
+  shard:
+    name: Tests ${{ matrix.shard }}
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.build.outputs.sha }}
+          path: core
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+      - uses: actions/download-artifact@v4
+        with:
+          name: branch-inputs
+          path: ${{ runner.temp }}/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: branch-engine
+          path: ${{ runner.temp }}/lib
+      - id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: PyYAML and Lean's shared runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat "$RUNNER_TEMP/lib/lean-toolchain")"
+          echo "LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)" >> "$GITHUB_ENV"
+      - name: Run the tests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" "HOME=$HOME" \
+            systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 --uid="$(id -u)" --gid="$(id -g)" -- \
+            "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/inputs" --core core \
+            --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
+            --engine-lib "$RUNNER_TEMP/lib/libweb-render.so" --web-tag "${{ needs.plan.outputs.web_tag }}" \
+            --index ${{ matrix.shard }} --shards ${{ matrix.shards }} --platform linux-x86_64 \
+            --script-engine bubblepop --jobs 3 --max-minutes 45 --retry-minutes 10 --pydeps "$RUNNER_TEMP/pydeps"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: branch-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+
+  report:
+    name: Report
+    needs: [plan, build, shard]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: branch-inputs
+          path: ${{ runner.temp }}/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: branch-shard-*
+          path: ${{ runner.temp }}/shards
+      - env:
+          REF: ${{ inputs.core_ref }}
+        run: |
+          python3 release-tests/release-tests.py branch-report --inputs "$RUNNER_TEMP/inputs" --shards-dir "$RUNNER_TEMP/shards" \
+            --out "$RUNNER_TEMP/report" --core-ref "$REF" --core-commit "${{ needs.build.outputs.sha }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branch-wpt-results
+          path: ${{ runner.temp }}/report/
+          retention-days: 30

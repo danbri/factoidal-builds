@@ -554,10 +554,12 @@ def cmd_wpt_shard(a):
     # The engine: the release's library and the Wasm module that the runner also loads.
     engine_dir = os.path.abspath(a.engine_dir)
     sets = {}
-    sets[ENGINE_SET[a.platform]] = fetch_set(a.engine_tag, ENGINE_SET[a.platform], engine_dir)
+    if not a.engine_lib:
+        sets[ENGINE_SET[a.platform]] = fetch_set(a.engine_tag, ENGINE_SET[a.platform], engine_dir)
     sets["foafnaut-web"] = fetch_set(a.web_tag, "foafnaut-web", engine_dir)
     meta["release_sets"] = sets
-    lib = os.path.join(engine_dir, ENGINE_SET[a.platform], ENGINE_FILE[a.platform])
+    # --engine-lib: a library built from a branch (branch-wpt.yml); no release names it.
+    lib = os.path.abspath(a.engine_lib) if a.engine_lib else os.path.join(engine_dir, ENGINE_SET[a.platform], ENGINE_FILE[a.platform])
     web = os.path.join(engine_dir, "foafnaut-web", "docs/web/hub")
     if not os.path.exists(lib):
         finish(error=f"the release has no {ENGINE_FILE[a.platform]}")
@@ -567,7 +569,7 @@ def cmd_wpt_shard(a):
     os.makedirs(runtime, exist_ok=True)
     for n in ("web-render.mjs", "web-render.wasm"):
         shutil.copyfile(os.path.join(web, "html-webgpu/runtime", n), os.path.join(runtime, n))
-    for c in (sets[ENGINE_SET[a.platform]], sets["foafnaut-web"]):
+    for c in ([] if a.engine_lib else [sets[ENGINE_SET[a.platform]], sets["foafnaut-web"]]):
         if c["build_info"]["source_commit"] != meta["tool_commit"]:
             meta.setdefault("problems", []).append(f"{c['tag']} is of core {c['build_info']['source_commit'][:12]}, the runner of {meta['tool_commit'][:12]}")
     # The WPT tree for this shard's names (core's tool, from GitHub's tarball of the commit).
@@ -1177,6 +1179,136 @@ def cmd_record(a):
     die("could not push to the results branch after 5 attempts")
 
 
+# ---- branch check (branch-wpt.yml): a development check, never a score ---------------------
+
+def group_of(name):
+    parts = name.split("?")[0].strip("/").split("/")
+    return "/".join(parts[:2]) if len(parts) > 2 else parts[0]
+
+
+def cmd_branch_plan(a):
+    """Choose the names (path prefixes and/or sample:N of the full list), the WPT commit and
+    the baseline (the newest valid full run in runs.csv, at that WPT commit when one exists)."""
+    os.makedirs(a.out, exist_ok=True)
+    rows = [r for r in read_csv_url("runs.csv") if r["suite"] == "wpt" and r["valid"] == "true" and r["kind"] == "full"]
+    if not rows:
+        die("runs.csv has no valid full run for a baseline", 2)
+    rows.sort(key=lambda r: r["started_utc"])
+    wpt_commit = a.wpt_commit or rows[-1]["wpt_commit"]
+    same = [r for r in rows if r["wpt_commit"] == wpt_commit]
+    base = (same or rows)[-1]
+    crun = chrome_run(wpt_commit)
+    chrome = load_summary(crun["results_url"], os.path.join(a.out, "chrome.json"))
+    full = sorted(n for n, v in chrome.items() if v["c"][1] > 0)
+    chosen, notes = set(), []
+    for item in [x.strip() for x in (a.names or "").split(",") if x.strip()]:
+        m = re.fullmatch(r"sample:(\d+)", item)
+        if m:
+            got = full[::max(1, int(m[1]))]
+            notes.append(f"`{item}`: {len(got)} names (every {m[1]}th of {len(full)})")
+        else:
+            pre = "/" + item.strip("/")
+            got = [n for n in full if n == pre or n.startswith(pre + "/") or n.startswith(pre + "?") or (item.endswith("/") is False and n.startswith(pre))]
+            notes.append(f"`{item}`: {len(got)} names")
+        chosen.update(got)
+    if not chosen:
+        die(f"no WPT name matches {a.names!r} at {wpt_commit[:10]} (names are path prefixes such as /dom/abort/, or sample:N)", 2)
+    names = sorted(chosen)
+    with open(os.path.join(a.out, "full.list"), "w") as f:
+        f.write("\n".join(names) + "\n")
+    raw = http(base["result_url"], timeout=300)
+    passing = json.loads(gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw)["passing"]
+    baseline = {n: passing[n][0] for n in names if n in passing}
+    json.dump({"run": {k: base[k] for k in ("run_id", "factoidal_commit", "wpt_commit", "platform", "share_pct", "started_utc", "result_url")},
+               "passed": baseline}, open(os.path.join(a.out, "baseline.json"), "w"))
+    shards = a.shards or max(1, min(20, -(-len(names) // 3000)))
+    web = newest_complete(releases_by_commit(list_releases(1)), ["foafnaut-web"])[1]
+    inputs = {"wpt_commit": wpt_commit, "names": len(names), "selection": a.names, "selection_notes": notes, "shards": shards,
+              "denominator": sum(chrome[n]["c"][1] for n in names), "wpt_same_as_baseline": bool(same),
+              "chrome_run": {k: crun.get(k) for k in ("id", "browser_version", "results_url")},
+              "web_tag": web["sets"]["foafnaut-web"]["tag_name"]}
+    json.dump(inputs, open(os.path.join(a.out, "inputs.json"), "w"), indent=1)
+    gh_output(matrix=json.dumps({"include": [{"shard": k, "shards": shards} for k in range(shards)]}),
+              wpt_commit=wpt_commit, web_tag=inputs["web_tag"], names=len(names))
+    summary(f"### Branch WPT check: plan\n\n{len(names)} names in {shards} shards at WPT `{wpt_commit[:10]}`: " + "; ".join(notes) +
+            f". Baseline: `{base['run_id']}` (core `{base['factoidal_commit'][:12]}`, {base['platform']}, {base['share_pct'][:5]}% of all WPT)" +
+            ("" if same else " at ANOTHER WPT commit: differences may be WPT's") + ".")
+
+
+def cmd_branch_report(a):
+    inputs = json.load(open(os.path.join(a.inputs, "inputs.json")))
+    chrome = json.load(open(os.path.join(a.inputs, "chrome.json")))
+    base = json.load(open(os.path.join(a.inputs, "baseline.json")))
+    names = [l.strip() for l in open(os.path.join(a.inputs, "full.list")) if l.strip()]
+    os.makedirs(a.out, exist_ok=True)
+    got, shard_notes = {}, []
+    with open(os.path.join(a.out, "results.jsonl"), "w") as allf:
+        for k in range(inputs["shards"]):
+            d = os.path.join(a.shards_dir, f"branch-shard-{k}")
+            mp = os.path.join(d, "shard-meta.json")
+            if not os.path.exists(mp):
+                shard_notes.append(f"shard {k}: no result (the job failed)")
+                continue
+            m = json.load(open(mp))
+            if m.get("error"):
+                shard_notes.append(f"shard {k}: {m['error']}")
+            if m.get("server_failures"):
+                shard_notes.append(f"shard {k}: {m['server_failures']} names with a test-server failure after the retry")
+            for n, (c, line) in read_results(os.path.join(d, "results")).items():
+                got["/" + n] = c
+                allf.write(line if line.endswith("\n") else line + "\n")
+    groups, worse, better, missing = {}, [], [], []
+    for n in names:
+        ch = chrome[n]["c"][1]
+        g = groups.setdefault(group_of(n), {"names": 0, "run": 0, "chrome": 0, "passed": 0, "baseline": 0, "outcomes": {}})
+        b = min(base["passed"].get(n, 0), ch)
+        g["names"] += 1
+        g["chrome"] += ch
+        g["baseline"] += b
+        c = got.get(n)
+        if c is None:
+            missing.append(n)
+            continue
+        p = min(sum(1 for t in c.get("subtests", []) if t["status"] == "PASS"), ch)
+        g["run"] += 1
+        g["passed"] += p
+        g["outcomes"][c.get("harness", "?")] = g["outcomes"].get(c.get("harness", "?"), 0) + 1
+        if p < b:
+            worse.append({"name": n, "baseline": b, "now": p, "chrome": ch, "harness": c.get("harness"), "message": (c.get("message") or "")[:200]})
+        elif p > b:
+            better.append({"name": n, "baseline": b, "now": p, "chrome": ch})
+    tot = {k: sum(g[k] for g in groups.values()) for k in ("names", "run", "chrome", "passed", "baseline")}
+    report = {"format": "factoidal-branch-wpt-v1", "core_ref": a.core_ref, "core_commit": a.core_commit, "inputs": inputs,
+              "baseline": base["run"], "totals": tot, "groups": dict(sorted(groups.items())), "worse": worse, "better": better,
+              "missing": missing, "shard_notes": shard_notes, "note": "a development check of selected names, not a score"}
+    json.dump(report, open(os.path.join(a.out, "report.json"), "w"), indent=1)
+    d = tot["passed"] - tot["baseline"]
+    md = [f"## Branch WPT check: `{a.core_ref}` ({a.core_commit[:12]})", "",
+          f"**{tot['passed']:,} of {tot['chrome']:,} Chrome subtests passed; baseline {tot['baseline']:,}; difference {d:+,}.** "
+          f"{tot['run']:,} of {tot['names']:,} names run at WPT `{inputs['wpt_commit'][:10]}`. {len(worse)} tests got worse, {len(better)} got better. "
+          f"Baseline: `{base['run']['run_id']}` (core `{base['run']['factoidal_commit'][:12]}`). A development check of the selected names, not a score.", ""]
+    if missing or shard_notes:
+        md += ["**Incomplete:** " + "; ".join(shard_notes + ([f"{len(missing)} names have no result"] if missing else [])), ""]
+    md += ["| Directory | Names | Chrome subtests | Passed | Baseline | Difference | Outcomes |", "| --- | ---: | ---: | ---: | ---: | ---: | --- |"]
+    order = sorted(groups.items(), key=lambda kv: (-abs(kv[1]["passed"] - kv[1]["baseline"]), kv[0]))
+    for k, g in order[:150]:
+        md.append(f"| {k} | {g['run']}/{g['names']} | {g['chrome']:,} | {g['passed']:,} | {g['baseline']:,} | {g['passed'] - g['baseline']:+,} | "
+                  + ", ".join(f"{o} {c}" for o, c in sorted(g["outcomes"].items())) + " |")
+    if len(order) > 150:
+        md.append(f"| ({len(order) - 150} more directories in report.json) | | | | | | |")
+    md += ["", f"### Tests that got worse ({len(worse)})", ""]
+    for w in sorted(worse, key=lambda w: w["now"] - w["baseline"])[:200]:
+        md.append(f"- `{w['name']}`: {w['baseline']} -> {w['now']} of {w['chrome']} ({w['harness']}{': ' + w['message'] if w['message'] else ''})")
+    if len(worse) > 200:
+        md.append(f"- ({len(worse) - 200} more in report.json)")
+    md += ["", f"### Tests that got better ({len(better)}; the largest 40)", ""]
+    for w in sorted(better, key=lambda w: w["baseline"] - w["now"])[:40]:
+        md.append(f"- `{w['name']}`: {w['baseline']} -> {w['now']} of {w['chrome']}")
+    text = "\n".join(md) + "\n"
+    open(os.path.join(a.out, "report.md"), "w").write(text)
+    summary(text[:900000])
+
+
 # ---- seed: a local full run --------------------------------------------------------------------
 
 def cmd_seed_local(a):
@@ -1238,8 +1370,10 @@ def main():
     w.add_argument("--wpt-commit", required=True)
     w.add_argument("--out", required=True)
     s = sub.add_parser("wpt-shard")
-    for k in ("--inputs", "--core", "--engine-dir", "--work", "--out", "--engine-tag", "--web-tag"):
+    for k in ("--inputs", "--core", "--engine-dir", "--work", "--out", "--web-tag"):
         s.add_argument(k, required=True)
+    s.add_argument("--engine-tag", default="")
+    s.add_argument("--engine-lib", default="", help="an engine library file to use in place of a release's")
     s.add_argument("--index", type=int, required=True)
     s.add_argument("--shards", type=int, required=True)
     s.add_argument("--platform", default="macos-arm64", choices=sorted(ENGINE_SET))
@@ -1269,6 +1403,14 @@ def main():
     rc.add_argument("--from", dest="src", required=True)
     rc.add_argument("--repo", default=".")
     rc.add_argument("--no-push", action="store_true")
+    bp = sub.add_parser("branch-plan")
+    bp.add_argument("--names", required=True)
+    bp.add_argument("--wpt-commit", default="")
+    bp.add_argument("--shards", type=int, default=0)
+    bp.add_argument("--out", required=True)
+    br = sub.add_parser("branch-report")
+    for k in ("--inputs", "--shards-dir", "--out", "--core-ref", "--core-commit"):
+        br.add_argument(k, required=True)
     sl = sub.add_parser("seed-local")
     for k in ("--report", "--run-id", "--started", "--finished", "--commit", "--commit-utc", "--release-tag",
               "--server-failures", "--wall-minutes", "--core-commit-of-report", "--note", "--out"):
@@ -1276,7 +1418,7 @@ def main():
     a = ap.parse_args()
     {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
-     "record": cmd_record, "seed-local": cmd_seed_local}[a.cmd](a)
+     "record": cmd_record, "seed-local": cmd_seed_local, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
 
 
 if __name__ == "__main__":
