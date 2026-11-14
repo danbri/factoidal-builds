@@ -26,7 +26,7 @@ const GENERATED_INPUTS=new Map([
  ['formal/lean4/L4Factoidal/WasmVM/Hosts/LeanJSRealmData.lean',
   ['tools/wasmvm/quickjs/prelude.js','formal/lean4/L4Factoidal/WasmVM/Hosts/LeanJSRealmGen.lean','formal/lean4/L4Factoidal/JS/Snapshot.lean']],
 ]);
-function git(core,args){return execFileSync('git',['-C',core,...args],{stdio:['ignore','pipe','pipe']});}
+function git(core,args){return execFileSync('git',['-C',core,...args],{stdio:['ignore','pipe','pipe'],maxBuffer:256*1024*1024});}
 async function committed(core,path,head){
  const data=await bytes(core,path),row=git(core,['ls-tree',head,'--',safe(path)]).toString().trim();
  if(!/^100(?:644|755) blob [0-9a-f]+\t/u.test(row)||!data.equals(git(core,['show',`${head}:${path}`])))throw Error(`Uncommitted source input: ${path}`);
