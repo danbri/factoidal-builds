@@ -1,0 +1,146 @@
+{
+ "format": "factoidal-branch-wpt-v1",
+ "core_ref": "ef8b0d869",
+ "core_commit": "ef8b0d8698f14255e8cf3fcc98a4215ddd3fbeb2",
+ "inputs": {
+  "wpt_commit": "2358bd48357992d5f3f9d6aaa2040aa018aaa093",
+  "names": 20,
+  "selection": "/dom/abort/,/serial/,/wasm/core/f32.wast.js.html",
+  "selection_notes": [
+   "`/dom/abort/`: 10 names",
+   "`/serial/`: 9 names",
+   "`/wasm/core/f32.wast.js.html`: 1 names"
+  ],
+  "shards": 1,
+  "denominator": 10242,
+  "wpt_same_as_baseline": true,
+  "chrome_run": {
+   "id": 4786307730243584,
+   "browser_version": "157.0.8103.78",
+   "results_url": "https://storage.googleapis.com/wptd/2358bd48357992d5f3f9d6aaa2040aa018aaa093/chrome-157.0.8103.78-linux-22.04-643e139d8c-summary_v2.json.gz"
+  },
+  "web_tag": "build-6f8437b19167-foafnaut-web"
+ },
+ "baseline": {
+  "run_id": "20261114T0949Z-wpt-linux-x86_64-gh43581071421a1",
+  "factoidal_commit": "2b464c0a8ade9bbf243e9b61f2aad3039c1a5d75",
+  "wpt_commit": "2358bd48357992d5f3f9d6aaa2040aa018aaa093",
+  "platform": "linux-x86_64",
+  "share_pct": "86.2733",
+  "started_utc": "2026-11-14T09:50:12Z",
+  "result_url": "https://github.com/danbri/factoidal-builds/releases/download/test-results/20261114T0949Z-wpt-linux-x86_64-gh43581071421a1.wpt-full.json.gz"
+ },
+ "totals": {
+  "names": 20,
+  "run": 20,
+  "chrome": 10242,
+  "passed": 10114,
+  "baseline": 10114
+ },
+ "groups": {
+  "dom/abort": {
+   "names": 10,
+   "run": 10,
+   "chrome": 72,
+   "passed": 41,
+   "baseline": 41,
+   "outcomes": {
+    "OK": 10
+   }
+  },
+  "serial": {
+   "names": 7,
+   "run": 7,
+   "chrome": 137,
+   "passed": 42,
+   "baseline": 42,
+   "outcomes": {
+    "OK": 2,
+    "TIMEOUT": 5
+   }
+  },
+  "serial/getPorts": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "baseline": 0,
+   "outcomes": {
+    "TIMEOUT": 1
+   }
+  },
+  "serial/requestPort": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "baseline": 0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "wasm/core": {
+   "names": 1,
+   "run": 1,
+   "chrome": 10031,
+   "passed": 10031,
+   "baseline": 10031,
+   "outcomes": {
+    "CRASH": 1
+   }
+  }
+ },
+ "worse": [],
+ "better": [],
+ "missing": [],
+ "shard_notes": [],
+ "incidents": {
+  "format": "factoidal-wpt-incidents-v1",
+  "crash": [
+   {
+    "test": "/wasm/core/f32.wast.js.html",
+    "reason": "halted: step budget exhausted",
+    "subtests": 10031,
+    "ms": 6507
+   }
+  ],
+  "stall": [],
+  "timeout": [
+   "/serial/getPorts/sandboxed_iframe.https.window.html",
+   "/serial/serial-allowed-by-permissions-policy-attribute-redirect-on-load.https.sub.html",
+   "/serial/serial-allowed-by-permissions-policy-attribute.https.sub.html",
+   "/serial/serial-allowed-by-permissions-policy.https.sub.html",
+   "/serial/serial-default-permissions-policy.https.sub.html",
+   "/serial/serial-disabled-by-permissions-policy.https.sub.html"
+  ]
+ },
+ "incidents_since_baseline": {
+  "crash": {
+   "before": 4,
+   "after": 1,
+   "new": [],
+   "gone": [
+    "/serial/serial-allowed-by-permissions-policy-attribute.https.sub.html",
+    "/serial/serial-allowed-by-permissions-policy.https.sub.html",
+    "/serial/serial-disabled-by-permissions-policy.https.sub.html"
+   ]
+  },
+  "stall": {
+   "before": 0,
+   "after": 0,
+   "new": [],
+   "gone": []
+  },
+  "timeout": {
+   "before": 3,
+   "after": 6,
+   "new": [
+    "/serial/serial-allowed-by-permissions-policy-attribute.https.sub.html",
+    "/serial/serial-allowed-by-permissions-policy.https.sub.html",
+    "/serial/serial-disabled-by-permissions-policy.https.sub.html"
+   ],
+   "gone": []
+  }
+ },
+ "note": "a development check of selected names, not a score"
+}
