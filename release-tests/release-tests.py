@@ -1537,10 +1537,40 @@ def cmd_branch_plan(a):
     rows = [r for r in read_csv_url("runs.csv") if r["suite"] == "wpt" and r["valid"] == "true" and r["kind"] == "full"]
     if not rows:
         die("runs.csv has no valid full run for a baseline", 2)
-    rows.sort(key=lambda r: r["started_utc"])
+    # Newest engine commit last; of one commit the Linux run (the check runs on Linux), then
+    # the later run. (Before 2026-11-14 the order was the start time alone: a macOS run of
+    # an older commit that started later would have become the baseline.)
+    rows.sort(key=lambda r: (r["commit_utc"] or "", r["platform"] == "linux-x86_64", r["started_utc"] or ""))
     wpt_commit = a.wpt_commit or rows[-1]["wpt_commit"]
     same = [r for r in rows if r["wpt_commit"] == wpt_commit]
     base = (same or rows)[-1]
+    # The baseline that tells most about the ref: the newest scored commit that the ref
+    # contains. With the newest run of main as the baseline, a ref made from an older main
+    # shows main's later changes as its own losses.
+    base_note = ""
+    if a.core_ref:
+        try:
+            sha = api(f"repos/{CORE_REPO}/commits/{a.core_ref}")["sha"]
+            seen, tried = set(), 0
+            for r in reversed(same or rows):
+                c = r["factoidal_commit"]
+                if c in seen:
+                    continue
+                seen.add(c)
+                tried += 1
+                if tried > 8:
+                    base_note = " The ref contains none of the 8 newest scored commits of main: part of a difference is main's."
+                    break
+                if c == sha or api(f"repos/{CORE_REPO}/compare/{c}...{sha}").get("status") in ("ahead", "identical"):
+                    if r is not base:
+                        base_note = (f" The ref does not contain main's newest scored commit `{base['factoidal_commit'][:9]}`"
+                                     f" ({base['share_pct'][:5]}%): the baseline is the newest scored commit it contains.")
+                    base = r
+                    break
+            else:
+                base_note = " The ref contains no scored commit of main: part of a difference is main's."
+        except (RuntimeError, KeyError) as e:
+            base_note = f" (The ref's ancestry was not read: {str(e)[:80]}; baseline: the newest run.)"
     crun = chrome_run(wpt_commit)
     chrome = load_summary(crun["results_url"], os.path.join(a.out, "chrome.json"))
     full = sorted(n for n, v in chrome.items() if v["c"][1] > 0)
@@ -1565,8 +1595,8 @@ def cmd_branch_plan(a):
     baseline = {n: passing[n][0] for n in names if n in passing}
     json.dump({"run": {k: base[k] for k in ("run_id", "factoidal_commit", "wpt_commit", "platform", "share_pct", "started_utc", "result_url")},
                "passed": baseline}, open(os.path.join(a.out, "baseline.json"), "w"))
-    # At most 8 runners: the account runs 20 Linux jobs at a time, shared with the full
-    # runs of main and other branch checks.
+    # At most 8 runners: the account runs 40 Linux jobs at a time (39 seen at once on
+    # 2026-11-14), shared with the full runs of main (13 each) and other branch checks.
     shards = min(a.shards, 12) if a.shards else max(1, min(8, -(-len(names) // 3000)))
     web = newest_complete(releases_by_commit(list_releases(1)), ["foafnaut-web"])[1]
     inputs = {"wpt_commit": wpt_commit, "names": len(names), "selection": a.names, "selection_notes": notes, "shards": shards,
@@ -1578,7 +1608,7 @@ def cmd_branch_plan(a):
               wpt_commit=wpt_commit, web_tag=inputs["web_tag"], names=len(names))
     summary(f"### Branch WPT check: plan\n\n{len(names)} names in {shards} shards at WPT `{wpt_commit[:10]}`: " + "; ".join(notes) +
             f". Baseline: `{base['run_id']}` (core `{base['factoidal_commit'][:12]}`, {base['platform']}, {base['share_pct'][:5]}% of all WPT)" +
-            ("" if same else " at ANOTHER WPT commit: differences may be WPT's") + ".")
+            ("" if same else " at ANOTHER WPT commit: differences may be WPT's") + "." + base_note)
 
 
 def cmd_branch_report(a):
@@ -1768,6 +1798,7 @@ def main():
     mc.add_argument("--force", action="store_true")
     bp = sub.add_parser("branch-plan")
     bp.add_argument("--names", required=True)
+    bp.add_argument("--core-ref", default="", help="the ref checked: the baseline is the newest scored commit it contains")
     bp.add_argument("--wpt-commit", default="")
     bp.add_argument("--shards", type=int, default=0)
     bp.add_argument("--out", required=True)
