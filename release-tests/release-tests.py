@@ -1883,6 +1883,62 @@ def cmd_branch_report(a):
     summary(text[:900000])
 
 
+# ---- branch check results on a branch, readable without the API ------------------------------
+CHECKS_BRANCH = "branch-checks"
+CHECKS_COLUMNS = ["run_id", "finished_utc", "core_ref", "core_commit", "selection", "names", "names_run", "chrome",
+                  "passed", "baseline", "difference", "worse", "better", "crash", "stall", "timeout", "crash_new",
+                  "baseline_run_id", "workflow_run_url", "report_url"]
+
+
+def cmd_branch_record(a):
+    """Put a branch check's report on the branch branch-checks (checks.csv, checks/<run id>/report.md
+    and report.json), so agents read it with git fetch or raw.githubusercontent.com, not the API."""
+    rep = json.load(open(os.path.join(a.report, "report.json")))
+    rid = os.environ.get("GITHUB_RUN_ID") or "local"
+    inc, diff = rep.get("incidents") or {}, rep.get("incidents_since_baseline") or {}
+    tot = rep["totals"]
+    row = {"run_id": rid, "finished_utc": now_utc(), "core_ref": rep["core_ref"], "core_commit": rep["core_commit"],
+           "selection": rep["inputs"].get("selection", ""), "names": tot["names"], "names_run": tot["run"], "chrome": tot["chrome"],
+           "passed": tot["passed"], "baseline": tot["baseline"], "difference": tot["passed"] - tot["baseline"],
+           "worse": len(rep["worse"]), "better": len(rep["better"]), "crash": len(inc.get("crash", [])),
+           "stall": len(inc.get("stall", [])), "timeout": len(inc.get("timeout", [])),
+           "crash_new": len((diff.get("crash") or {}).get("new", [])) if diff else "",
+           "baseline_run_id": rep["baseline"]["run_id"], "workflow_run_url": a.run_url,
+           "report_url": f"https://raw.githubusercontent.com/{BUILDS_REPO}/{CHECKS_BRANCH}/checks/{rid}/report.md"}
+    repo = os.path.abspath(a.repo)
+    tmp = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), f"checks-{os.getpid()}")
+    for attempt in range(1, 6):
+        tree = f"{tmp}-{attempt}"
+        if subprocess.run(["git", "-C", repo, "fetch", "-q", "origin", f"+refs/heads/{CHECKS_BRANCH}:refs/remotes/origin/{CHECKS_BRANCH}"]).returncode:
+            time.sleep(5 * attempt)
+            continue
+        subprocess.run(["git", "-C", repo, "worktree", "add", "-q", "--detach", tree, f"refs/remotes/origin/{CHECKS_BRANCH}"], check=True)
+        d = os.path.join(tree, "checks", rid)
+        os.makedirs(d, exist_ok=True)
+        for f in ("report.md", "report.json"):
+            shutil.copyfile(os.path.join(a.report, f), os.path.join(d, f))
+        known = {r["run_id"] for r in (csv.DictReader(open(os.path.join(tree, "checks.csv"))) if os.path.exists(os.path.join(tree, "checks.csv")) else [])}
+        if rid not in known:
+            append_csv(os.path.join(tree, "checks.csv"), CHECKS_COLUMNS, [row])
+        subprocess.run(["git", "-C", tree, "add", "-A"], check=True)
+        if subprocess.run(["git", "-C", tree, "diff", "--cached", "--quiet"]).returncode == 0:
+            log("nothing new on the branch")
+            return
+        msg = f"branch check {rid}: {rep['core_ref']} {row['difference']:+,} on {tot['names']:,} names"
+        subprocess.run(["git", "-C", tree, "-c", "user.name=github-actions[bot]", "-c",
+                        "user.email=41898282+github-actions[bot]@users.noreply.github.com", "commit", "-q", "-m", msg], check=True)
+        if a.no_push:
+            log(f"committed, not pushed: {tree}")
+            return
+        if subprocess.run(["git", "-C", tree, "push", "-q", "origin", f"HEAD:refs/heads/{CHECKS_BRANCH}"]).returncode == 0:
+            log(f"pushed: {msg}; {row['report_url']}")
+            summary(f"Report on the branch `{CHECKS_BRANCH}` (no API needed): {row['report_url']}")
+            return
+        subprocess.run(["git", "-C", repo, "worktree", "remove", "--force", tree])
+        time.sleep(5 * attempt)
+    log(f"could not push to {CHECKS_BRANCH} after 5 attempts (the report is in the run's artifact)")
+
+
 # ---- seed: a local full run --------------------------------------------------------------------
 
 def cmd_seed_local(a):
@@ -2012,6 +2068,11 @@ def main():
     br = sub.add_parser("branch-report")
     for k in ("--inputs", "--shards-dir", "--out", "--core-ref", "--core-commit"):
         br.add_argument(k, required=True)
+    bk = sub.add_parser("branch-record")
+    bk.add_argument("--report", required=True)
+    bk.add_argument("--repo", default=".")
+    bk.add_argument("--run-url", default="")
+    bk.add_argument("--no-push", action="store_true")
     sl = sub.add_parser("seed-local")
     for k in ("--report", "--run-id", "--started", "--finished", "--commit", "--commit-utc", "--release-tag",
               "--server-failures", "--wall-minutes", "--core-commit-of-report", "--note", "--out"):
@@ -2019,7 +2080,7 @@ def main():
     a = ap.parse_args()
     {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge, "wpt-changes": cmd_wpt_changes, "wpt-incidents": cmd_wpt_incidents,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
-     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "tail-gate-report": cmd_tail_gate_report, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
+     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "tail-gate-report": cmd_tail_gate_report, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report, "branch-record": cmd_branch_record}[a.cmd](a)
 
 
 if __name__ == "__main__":

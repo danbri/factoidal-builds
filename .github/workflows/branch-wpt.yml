@@ -17,6 +17,8 @@ name: Branch WPT check
 # names: comma list of WPT path prefixes (/dom/abort/, /css/css-color/parsing/), and/or
 #   sample:N (every Nth name of the full list, a regression check: sample:20 is about
 #   4,700 names). Both may be combined.
+# The report is also put on the branch branch-checks (checks.csv, checks/<run id>/report.md),
+#   readable without the API: curl -s https://raw.githubusercontent.com/danbri/factoidal-builds/branch-checks/checks.csv
 # Result: the job summary (table per directory: Chrome subtests, passed on this ref,
 #   passed on the baseline, difference; the tests that got worse) and the artifact
 #   branch-wpt-results: report.md, report.json, results.jsonl (one line a test, every
@@ -331,6 +333,9 @@ jobs:
     if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Writes the report to the branch branch-checks (nothing else).
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -351,3 +356,9 @@ jobs:
           name: branch-wpt-results
           path: ${{ runner.temp }}/report/
           retention-days: 30
+      # The report on the branch branch-checks (checks.csv, checks/<run id>/report.md and
+      # report.json): agents read it with git fetch or raw.githubusercontent.com, not the API.
+      - name: Report to the branch branch-checks
+        run: |
+          python3 release-tests/release-tests.py branch-record --report "$RUNNER_TEMP/report" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
