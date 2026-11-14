@@ -216,8 +216,9 @@ jobs:
             rel=${c#formal/lean4/.lake/build/ir/}
             [ -f "formal/lean4/${rel%.c}.lean" ] || rm -f "$c"
           done
-          python3 tools/lean-tail-recursion-audit.py --gate > "$RUNNER_TEMP/tail-gate.txt" 2>&1
-          RC=$?
+          # bash runs this step with -e: the audit's exit code is taken without ending the step.
+          RC=0
+          python3 tools/lean-tail-recursion-audit.py --gate > "$RUNNER_TEMP/tail-gate.txt" 2>&1 || RC=$?
           python3 ../builds/release-tests/release-tests.py tail-gate-report --log "$RUNNER_TEMP/tail-gate.txt" --exit "$RC" \
             --core . --newer-than "$HOME/leanc-cache/.start" || true
       - name: Save the C object cache
