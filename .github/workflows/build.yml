@@ -339,6 +339,15 @@ jobs:
           mkdir -p core/npm/factoidal/l4-assets core/docs/npm/lean
           L4_WASM_WORK="$HOME/l4wasm-work" core/formal/lean4/Wasm/build-wasm.sh
 
+      # The AES binary gate (core tools/aes-gate.py --binary, skills/aes-hardware-only): no AES
+      # S-box or T-table in what was built; a finding fails the build. Skipped for a core without it.
+      - name: AES gate on the Lean Wasm modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f core/tools/aes-gate.py ] || ! grep -q -- '--binary' core/tools/aes-gate.py; then echo "this core has no binary AES gate"; exit 0; fi
+          { find core/npm/factoidal/l4-assets core/docs/npm/lean core/docs/web/hub/assets/l4 -type f -name '*.wasm' -print0 2>/dev/null || true; } \
+            | xargs -0 -r python3 core/tools/aes-gate.py --binary
       - name: Stage Lean web products
         shell: bash
         run: |
@@ -431,6 +440,15 @@ jobs:
               core/labs/demos/foafnaut/.build/web-render/engines/web-render.mjs \
               "$RUNNER_TEMP/html-wasm-abi.json"
           fi
+      # The AES binary gate (core tools/aes-gate.py --binary, skills/aes-hardware-only): no AES
+      # S-box or T-table in what was built; a finding fails the build. Skipped for a core without it.
+      - name: AES gate on the Foafnaut engines (Wasm)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f core/tools/aes-gate.py ] || ! grep -q -- '--binary' core/tools/aes-gate.py; then echo "this core has no binary AES gate"; exit 0; fi
+          { find core/labs/demos/foafnaut/.build/engines core/labs/demos/foafnaut/.build/web-render/engines -maxdepth 1 -type f \
+            \( -name '*.wasm' -o -name '*.so' -o -name '*.dylib' \) -print0 2>/dev/null || true; } | xargs -0 -r python3 core/tools/aes-gate.py --binary
       - uses: actions/upload-artifact@v4
         with:
           name: foafnaut-engines
@@ -583,6 +601,15 @@ jobs:
           print(json.dumps({'nativeHtmlArchitectures': architectures, 'systemDependencies': dependencies,
                             'scope': 'Architecture and dynamic dependencies; behavior has separate relocated CPU checks, no GPU claim'}))
           PY
+      # The AES binary gate (core tools/aes-gate.py --binary, skills/aes-hardware-only): no AES
+      # S-box or T-table in what was built; a finding fails the build. Skipped for a core without it.
+      - name: AES gate on the macOS bundle (libraries, executables, Wasm)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f core/tools/aes-gate.py ] || ! grep -q -- '--binary' core/tools/aes-gate.py; then echo "this core has no binary AES gate"; exit 0; fi
+          find "$RUNNER_TEMP/foafnaut-out" -type f \( -name '*.wasm' -o -name '*.dylib' -o -name '*.so' -o -perm -u+x \) -size +4k -print0 \
+            | xargs -0 -r python3 core/tools/aes-gate.py --binary
       - uses: actions/upload-artifact@v4
         with:
           name: foafnaut-darwin-arm64

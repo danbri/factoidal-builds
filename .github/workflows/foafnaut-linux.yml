@@ -227,6 +227,14 @@ jobs:
         with:
           path: ~/leanc-cache
           key: leanc-objects-v1-${{ matrix.arch }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+      # The AES binary gate (core tools/aes-gate.py --binary, skills/aes-hardware-only): no AES
+      # S-box or T-table in what was built; a finding fails the build. Skipped for a core without it.
+      - name: AES gate on libweb-render.so
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f core/tools/aes-gate.py ] || ! grep -q -- '--binary' core/tools/aes-gate.py; then echo "this core has no binary AES gate"; exit 0; fi
+          python3 core/tools/aes-gate.py --binary core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so
       - name: Package
         id: pkg
         shell: bash
