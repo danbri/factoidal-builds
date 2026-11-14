@@ -18,6 +18,9 @@ name: Foafnaut macOS engine
 # release-tests.py uses this set for a macOS WPT run when the commit has no
 # foafnaut-darwin-arm64 set.
 #
+# A branch commit on request (dispatch with core_ref and branch=true): the same build and
+# gate, the engine as the run's artifact foafnaut-engine-darwin-arm64, no release.
+#
 # Starts: foafnaut-linux.yml dispatches it for each commit whose Linux engine it has
 # published (a commit that compiles and changes the engine); every three hours for the
 # newest such commit; on request. One build at a time: a waiting run is replaced by a
@@ -40,12 +43,18 @@ on:
         description: 'Rebuild when the release exists'
         type: boolean
         default: false
+      branch:
+        description: 'core_ref is a branch, tag or commit that need not be on main: build and gate it, keep it as the artifact foafnaut-engine-darwin-arm64 of this run (5 days), publish no release'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+# Main: one build at a time, a waiting run is replaced by a newer one. A branch build has
+# the group of its ref, so main's builds and other refs do not replace it.
 concurrency:
-  group: foafnaut-macos
+  group: foafnaut-macos-${{ inputs.branch && inputs.core_ref || 'main' }}
   cancel-in-progress: false
 
 env:
@@ -59,6 +68,7 @@ jobs:
     outputs:
       sha: ${{ steps.r.outputs.sha }}
       short: ${{ steps.r.outputs.short }}
+      release: ${{ steps.r.outputs.release }}
     steps:
       - uses: actions/checkout@v4
       - id: r
@@ -66,11 +76,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           IN_REF: ${{ inputs.core_ref }}
           FORCE: ${{ inputs.force }}
+          BRANCH: ${{ inputs.branch }}
         run: |
           set -euo pipefail
           ARGS=()
           if [ -n "${IN_REF:-}" ]; then ARGS+=(--ref "$IN_REF"); fi
           if [ "${FORCE:-false}" = true ]; then ARGS+=(--force); fi
+          if [ "${BRANCH:-false}" = true ]; then ARGS+=(--branch); fi
           python3 release-tests/release-tests.py macos-candidate ${ARGS[@]+"${ARGS[@]}"}
 
   build:
@@ -180,6 +192,7 @@ jobs:
         env:
           SHA: ${{ needs.resolve.outputs.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SOURCE_REF: ${{ needs.resolve.outputs.release == 'true' && 'main' || inputs.core_ref }}
         run: |
           set -euo pipefail
           python3 - core "$RUNNER_TEMP/pkg" "$SET" "$SHA" "$RUN_URL" <<'PY'
@@ -212,7 +225,7 @@ jobs:
           deno = subprocess.run(["deno", "--version"], capture_output=True, text=True).stdout.splitlines()[0]
           clang = subprocess.run(["xcrun", "clang", "--version"], capture_output=True, text=True).stdout.splitlines()[0]
           json.dump({"built_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "run_url": run_url,
-                     "set": set_, "source_commit": sha, "source_ref": "main", "source_repo": "danbri/factoidal-core",
+                     "set": set_, "source_commit": sha, "source_ref": os.environ.get("SOURCE_REF") or "main", "source_repo": "danbri/factoidal-core",
                      "toolchains": {"lean": tc, "deno": deno, "clang": clang, "platform": f"darwin-{platform.machine()}",
                                     "note": "built by foafnaut-macos.yml: the engine library alone; gates: the engine build "
                                             "(lab #guard tests, hygiene ratchet) and one WPT page; none of build.yml's other gates"},
@@ -244,7 +257,28 @@ jobs:
             --jobs 1 --max-hours 0.1 -- --script-engine bubblepop
           head -c 600 "$RUNNER_TEMP"/gate/part0.jsonl; echo
           python3 -c 'import json,glob,sys; r=[json.loads(l) for f in glob.glob(sys.argv[1]+"/part*.jsonl") for l in open(f) if l.strip()]; assert r and r[0]["harness"]=="OK" and any(s["status"]=="PASS" for s in r[0]["subtests"]), r[:1]; print("gate: harness OK,", sum(s["status"]=="PASS" for s in r[0]["subtests"]), "subtests pass")' "$RUNNER_TEMP/gate"
+      # Every build: the package as an artifact of the run (a branch build has only this).
+      #   gh run download RUN_ID -R danbri/factoidal-builds -n foafnaut-engine-darwin-arm64 -D out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foafnaut-engine-darwin-arm64
+          path: |
+            ${{ runner.temp }}/pkg/foafnaut-engine-darwin-arm64.tar.gz
+            ${{ runner.temp }}/pkg/build-info.json
+          retention-days: 5
+      - name: Branch build, no release
+        if: needs.resolve.outputs.release != 'true'
+        env:
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          {
+            echo "Branch build of core \`$SHA\`: no release. The engine is the artifact of this run:"
+            echo '```'
+            echo "gh run download ${{ github.run_id }} -R ${{ github.repository }} -n foafnaut-engine-darwin-arm64 -D out/ && tar xzf out/foafnaut-engine-darwin-arm64.tar.gz -C out/"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Publish
+        if: needs.resolve.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           SHORT: ${{ needs.resolve.outputs.short }}
@@ -262,6 +296,7 @@ jobs:
       # build (checked scene, CPU reference pixels) against the Linux build of the same
       # commit, whose pack is an asset of its engine release. Never fatal.
       - name: Render pack and report against Linux
+        if: needs.resolve.outputs.release == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}

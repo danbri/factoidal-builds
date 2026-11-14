@@ -1465,12 +1465,21 @@ def cmd_macos_candidate(a):
     asked, else the newest main commit that has a Linux engine release (so it compiles and
     changes the engine). Nothing when that commit has a macOS engine already."""
     by = releases_by_commit(list_releases(2))
-    out = {"sha": "", "short": ""}
+    out = {"sha": "", "short": "", "release": "true"}
+    if a.branch:
+        # A branch commit on request: built and gated the same way, kept as a workflow
+        # artifact only. Releases are of main commits.
+        if not a.ref:
+            die("a branch build needs core_ref", 2)
+        sha = api(f"repos/{CORE_REPO}/commits/{a.ref}")["sha"]
+        gh_output(sha=sha, short=sha[:12], release="false")
+        summary(f"branch build asked: `{a.ref}` = {sha[:12]}; artifact only, no release")
+        return
     if a.ref:
         sha = api(f"repos/{CORE_REPO}/commits/{a.ref}")["sha"]
         status = api(f"repos/{CORE_REPO}/compare/main...{sha}").get("status")
         if status not in ("behind", "identical"):
-            die(f"{sha} is not on core main ({status})", 2)
+            die(f"{sha} is not on core main ({status}); for a branch commit dispatch with branch=true (artifact only)", 2)
         why = f"asked: {sha[:12]}"
     else:
         last, e = newest_complete(by, [ENGINE_SET["linux-x86_64"]])
@@ -1484,7 +1493,7 @@ def cmd_macos_candidate(a):
     if ENGINE_SET["macos-arm64"] in have and not a.force:
         why += f"; it has {have[ENGINE_SET['macos-arm64']]['tag_name']}: no build"
     else:
-        out = {"sha": sha, "short": sha[:12]}
+        out = {"sha": sha, "short": sha[:12], "release": "true"}
         why += "; no macOS engine yet: build"
     gh_output(**out)
     summary(why)
@@ -1795,6 +1804,7 @@ def main():
     tg.add_argument("--newer-than", default="")
     mc = sub.add_parser("macos-candidate")
     mc.add_argument("--ref", default="")
+    mc.add_argument("--branch", action="store_true", help="a branch commit: artifact only, no release")
     mc.add_argument("--force", action="store_true")
     bp = sub.add_parser("branch-plan")
     bp.add_argument("--names", required=True)
