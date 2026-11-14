@@ -209,6 +209,14 @@ jobs:
           mkdir -p "$RUNNER_TEMP/engine"
           cp core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so "$RUNNER_TEMP/engine/"
           tr -d ' \n' < core/formal/lean4/lean-toolchain > "$RUNNER_TEMP/engine/lean-toolchain"
+      # The AES binary gate (core tools/aes-gate.py --binary, skills/aes-hardware-only): no AES
+      # S-box or T-table in the built library; a finding fails the check. Skipped for a core without it.
+      - name: AES gate on libweb-render.so
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f core/tools/aes-gate.py ] || ! grep -q -- '--binary' core/tools/aes-gate.py; then echo "this core has no binary AES gate"; exit 0; fi
+          python3 core/tools/aes-gate.py --binary core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so
       - name: Save the C object cache
         if: steps.build.outputs.misses != '' && steps.build.outputs.misses >= 30
         uses: actions/cache/save@v4
