@@ -258,3 +258,36 @@ jobs:
             --notes "Built from https://github.com/$CORE_REPO/commit/$SHA (main) by $RUN_URL. The macOS arm64 Foafnaut engine library alone (foafnaut/libweb-render.dylib, static Lean runtime), for drawing pages and WPT runs with the same commit of factoidal-core. Not the packaged demo set (foafnaut-darwin-arm64) and without build.yml's other gates; gate here: the engine build and one WPT page. build-info.json lists the sha256 of every file." \
             "$RUNNER_TEMP/pkg/$SET.tar.gz" "$RUNNER_TEMP/pkg/build-info.json"
           echo "Published $TAG" >> "$GITHUB_STEP_SUMMARY"
+      # The render report (release-tests/render-report.py): core's fixture pages drawn by this
+      # build (checked scene, CPU reference pixels) against the Linux build of the same
+      # commit, whose pack is an asset of its engine release. Never fatal.
+      - name: Render pack and report against Linux
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python3 builds/release-tests/render-report.py draw --bin core/labs/demos/foafnaut/.build/web-render/web-render-native \
+            --fixtures core/labs/demos/foafnaut/web-render/fixtures --out "$RUNNER_TEMP/render/macos-arm64" --platform macos-arm64 --commit "$SHA"
+          tar -czf "$RUNNER_TEMP/render-macos-arm64.tar.gz" -C "$RUNNER_TEMP/render" macos-arm64
+          gh release upload "build-$SHORT-$SET" -R "${{ github.repository }}" "$RUNNER_TEMP/render-macos-arm64.tar.gz" --clobber
+          if gh release download "build-$SHORT-foafnaut-linux-x86_64" -R "${{ github.repository }}" -p render-linux-x86_64.tar.gz -D "$RUNNER_TEMP/render-dl" 2> /dev/null; then
+            tar -xzf "$RUNNER_TEMP/render-dl/render-linux-x86_64.tar.gz" -C "$RUNNER_TEMP/render"
+            python3 builds/release-tests/render-report.py compare --a "$RUNNER_TEMP/render/linux-x86_64" --b "$RUNNER_TEMP/render/macos-arm64" --out "$RUNNER_TEMP/render-report"
+            tar -czf "$RUNNER_TEMP/render-report.tar.gz" -C "$RUNNER_TEMP" render-report
+            gh release upload "build-$SHORT-$SET" -R "${{ github.repository }}" "$RUNNER_TEMP/render-report.tar.gz" "$RUNNER_TEMP/render-report/report.md#render-report.md" --clobber
+          else
+            echo "No render pack on build-$SHORT-foafnaut-linux-x86_64: no render report (the pack of this build is on the release)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: render
+          path: |
+            ${{ runner.temp }}/render/
+            ${{ runner.temp }}/render-report/
+          if-no-files-found: ignore
+          retention-days: 30

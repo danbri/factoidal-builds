@@ -328,3 +328,22 @@ jobs:
         run: |
           gh workflow run foafnaut-macos.yml -R "${{ github.repository }}" -f core_ref="$SHA" \
             && echo "Started foafnaut-macos.yml for $SHA" >> "$GITHUB_STEP_SUMMARY" || echo "::warning::foafnaut-macos.yml not started"
+      # The render pack of this build (release-tests/render-report.py draw): core's fixture
+      # pages as checked scenes and CPU reference pixels, an asset of the engine release.
+      # foafnaut-macos.yml compares its own pack with this one. After the full run has
+      # started, and never fatal: the engine release does not wait for it.
+      - name: Render pack
+        if: matrix.arch == 'x86_64'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          SET: ${{ steps.pkg.outputs.set }}
+        run: |
+          set -euo pipefail
+          export LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)
+          python3 builds/release-tests/render-report.py draw --bin core/labs/demos/foafnaut/.build/web-render/web-render-native \
+            --fixtures core/labs/demos/foafnaut/web-render/fixtures --out "$RUNNER_TEMP/render/linux-x86_64" --platform linux-x86_64 --commit "$SHA"
+          tar -czf "$RUNNER_TEMP/render-linux-x86_64.tar.gz" -C "$RUNNER_TEMP/render" linux-x86_64
+          gh release upload "build-$SHORT-$SET" -R "${{ github.repository }}" "$RUNNER_TEMP/render-linux-x86_64.tar.gz" --clobber
