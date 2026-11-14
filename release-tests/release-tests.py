@@ -357,7 +357,7 @@ def cmd_resolve(a):
     elif event == "schedule":
         trigger = "schedule"
     else:
-        trigger = "manual"
+        trigger = a.trigger or "manual"
     if a.release and not short:
         m = re.fullmatch(r"(?:build-)?([0-9a-f]{12})[0-9a-f]*(?:-.+)?", a.release.strip())
         if not m or m[1] not in by:
@@ -1290,7 +1290,9 @@ def cmd_branch_plan(a):
     baseline = {n: passing[n][0] for n in names if n in passing}
     json.dump({"run": {k: base[k] for k in ("run_id", "factoidal_commit", "wpt_commit", "platform", "share_pct", "started_utc", "result_url")},
                "passed": baseline}, open(os.path.join(a.out, "baseline.json"), "w"))
-    shards = a.shards or max(1, min(20, -(-len(names) // 3000)))
+    # At most 8 runners: the account runs 20 Linux jobs at a time, shared with the full
+    # runs of main and other branch checks.
+    shards = min(a.shards, 12) if a.shards else max(1, min(8, -(-len(names) // 3000)))
     web = newest_complete(releases_by_commit(list_releases(1)), ["foafnaut-web"])[1]
     inputs = {"wpt_commit": wpt_commit, "names": len(names), "selection": a.names, "selection_notes": notes, "shards": shards,
               "denominator": sum(chrome[n]["c"][1] for n in names), "wpt_same_as_baseline": bool(same),
@@ -1429,7 +1431,8 @@ def main():
     r.add_argument("--platforms", default="macos-arm64")
     r.add_argument("--script-engine", default="bubblepop", choices=["bubblepop", "quickjs"])
     r.add_argument("--shards", type=int, default=4, help="macOS shards")
-    r.add_argument("--linux-shards", type=int, default=16)
+    r.add_argument("--linux-shards", type=int, default=12)
+    r.add_argument("--trigger", default="", help="dispatch only: the trigger to record (factoidal-release from foafnaut-linux.yml)")
     r.add_argument("--build-workflow", default="", help="workflow_run: the name of the workflow that ended")
     r.add_argument("--force", action="store_true")
     r.add_argument("--wait-minutes", type=int, default=0, help="schedule only: how long to wait for a running build")

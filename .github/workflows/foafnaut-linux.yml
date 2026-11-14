@@ -3,7 +3,7 @@ name: Foafnaut Linux engine
 # Builds the native Foafnaut engine library for Linux (libweb-render.so) from one
 # factoidal-core commit on main and publishes it as release
 # build-<12 hex>-foafnaut-linux-<arch> (arch x86_64 on ubuntu-latest, arm64 on
-# ubuntu-24.04-arm), with <set>.tar.gz and build-info.json in the format of build.yml's
+# ubuntu-24.04-arm, only on a dispatch with arm64=true), with <set>.tar.gz and build-info.json in the format of build.yml's
 # releases (sha256 of the tarball and of every file).
 #
 # Why a workflow of its own: build.yml holds one pending run in its concurrency group,
@@ -45,6 +45,10 @@ on:
         description: '40-hex factoidal-core commit on main (empty: the commit of the newest foafnaut-darwin-arm64 release)'
         required: false
         default: ''
+      arm64:
+        description: 'Also build arm64 (never built automatically: it would hold the queue of main)'
+        type: boolean
+        default: false
       force:
         description: 'Rebuild when the release exists'
         type: boolean
@@ -79,6 +83,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           FROM: ${{ github.event.workflow_run.name }}
+          ARM64: ${{ inputs.arm64 }}
           IN_REF: ${{ inputs.core_ref }}
           FORCE: ${{ inputs.force }}
           BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -108,7 +113,8 @@ jobs:
           case "$STATUS" in behind|identical) ;; *) echo "::error::$SHA is not on core main ($STATUS)"; exit 1;; esac
           SHORT=${SHA:0:12}
           ARCHES=()
-          for A in x86_64 arm64; do
+          WANT="x86_64"; if [ "${ARM64:-false}" = true ]; then WANT="x86_64 arm64"; fi
+          for A in $WANT; do
             if [ "${FORCE:-false}" != true ] && gh release view "build-$SHORT-foafnaut-linux-$A" -R "$REPO" > /dev/null 2>&1; then
               echo "build-$SHORT-foafnaut-linux-$A exists"; continue
             fi
@@ -126,6 +132,7 @@ jobs:
     timeout-minutes: 120
     permissions:
       contents: write
+      actions: write
     strategy:
       fail-fast: false
       matrix:
@@ -284,3 +291,13 @@ jobs:
           gh release create "$TAG" -R "${{ github.repository }}" --latest=false --title "$TAG" \
             --notes "Built from https://github.com/$CORE_REPO/commit/$SHA (main) by $RUN_URL. Linux native Foafnaut engine library (libweb-render.so) for the WPT runner; needs the Lean toolchain named in foafnaut/lean-toolchain at run time (foafnaut/README-linux.txt)." \
             "$RUNNER_TEMP/pkg/$SET.tar.gz" "$RUNNER_TEMP/pkg/build-info.json"
+      # The Linux full WPT run of this commit starts now, not when this workflow ends.
+      - name: Start the Linux full run
+        if: matrix.arch == 'x86_64'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+        run: |
+          gh workflow run release-tests.yml -R "${{ github.repository }}" -f release="build-$SHORT" \
+            -f platforms=linux-x86_64 -f suites=wpt -f trigger=factoidal-release
+          echo "Started release-tests.yml for build-$SHORT on Linux" >> "$GITHUB_STEP_SUMMARY"

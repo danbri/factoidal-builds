@@ -21,7 +21,8 @@ name: Release tests
 #   manual             workflow_dispatch: a release tag or core commit, a WPT commit,
 #                      suites, platforms, shards. Branch builds publish no release, so
 #                      only commits on core main can be tested.
-#   (Linux engine)     each finished foafnaut-linux.yml run that published a Linux engine
+#   (Linux engine)     foafnaut-linux.yml starts this workflow (dispatch, trigger
+#                      factoidal-release) as soon as it has published a Linux engine
 #                      library: the Linux WPT run of that commit.
 #
 # The WPT run: every name that Chrome runs at the WPT commit (94,406 names at
@@ -36,7 +37,9 @@ name: Release tests
 # Cost, measured 2026-11-13 (free for this public repository; GitHub runs at most 5 macOS
 # jobs at a time for the account, shared with build.yml, and 20 jobs in all):
 #   macOS: 4 shards x 38-54 min = about 180 macOS minutes a run, 45-55 min wall.
-#   Linux: 16 shards x 13-19 min = about 270 Linux minutes a run, about 20 min wall.
+#   Linux: 16 shards x 13-19 min = about 270 Linux minutes a run, about 20 min wall
+#   (measured with 16; 12 since 2026-11-14, so that a full run needs fewer of the
+#   account's 20 Linux jobs while branch checks run).
 #   Each day: 4 scheduled runs = about 1,080 Linux + 180 macOS minutes, plus one Linux
 #   run for each main commit with a Linux engine (foafnaut-linux.yml builds one every 20
 #   min when main changes engine code) and one macOS run for each build.yml release (none
@@ -45,7 +48,7 @@ name: Release tests
 
 on:
   workflow_run:
-    workflows: ['Build Factoidal from factoidal-core', 'Foafnaut Linux engine']
+    workflows: ['Build Factoidal from factoidal-core']
     types: [completed]
   schedule:
     - cron: '41 13 * * *'
@@ -80,7 +83,12 @@ on:
       linux_shards:
         description: 'WPT shards on Linux'
         required: false
-        default: '16'
+        default: '12'
+      trigger:
+        description: 'Recorded trigger (foafnaut-linux.yml passes factoidal-release)'
+        type: choice
+        options: [manual, factoidal-release]
+        default: manual
       force:
         description: 'Run also when a valid run of this commit exists'
         type: boolean
@@ -123,9 +131,10 @@ jobs:
           IN_SHARDS: ${{ inputs.shards }}
           IN_LSHARDS: ${{ inputs.linux_shards }}
           IN_FORCE: ${{ inputs.force }}
+          IN_TRIGGER: ${{ inputs.trigger }}
         run: |
           set -euo pipefail
-          SHARDS=${IN_SHARDS:-4}; LSHARDS=${IN_LSHARDS:-16}
+          SHARDS=${IN_SHARDS:-4}; LSHARDS=${IN_LSHARDS:-12}
           for v in "$SHARDS" "$LSHARDS"; do
             [[ "$v" =~ ^[0-9]+$ ]] && [ "$v" -ge 1 ] && [ "$v" -le 32 ] || { echo "::error::shards are 1 to 32"; exit 2; }
           done
@@ -140,6 +149,7 @@ jobs:
                 --release "${IN_RELEASE:-}" --wpt-commit "${IN_WPT:-}" --suites "$SUITES" --platforms "$PLATFORMS"
                 --script-engine "${IN_ENGINE:-bubblepop}" --shards "$SHARDS" --linux-shards "$LSHARDS" --out "$RUNNER_TEMP/plan.json")
           if [ "${IN_FORCE:-false}" = true ]; then ARGS+=(--force); fi
+          if [ "${IN_TRIGGER:-manual}" = factoidal-release ]; then ARGS+=(--trigger factoidal-release); fi
           if [ "$EVENT" = schedule ]; then ARGS+=(--wait-minutes 60); fi
           python3 release-tests/release-tests.py resolve "${ARGS[@]}"
       - name: WPT inputs (Chrome's summary and the full list)
