@@ -371,7 +371,7 @@ def cmd_baseline(a):  # noqa: C901
             if (on_main or {}).get("status") in ("ahead", "identical"):
                 print(f"tag={tag}")
                 print(f"commit={sha}")
-                log(f"baseline {tag} ({status} of the head)")
+                log(f"baseline {tag} (the head is {status} of it)")
                 return
     die("no Linux engine release of main is an ancestor of the head")
 
