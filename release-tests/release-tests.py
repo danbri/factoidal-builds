@@ -853,6 +853,138 @@ def run_id_of(plan, suite, platform_):
     return f"{t}-{suite}-{platform_}" + (f"-gh{gh}a{att}" if gh else "-local")
 
 
+# ---- what changed since the previous full run ----------------------------------------------
+DROP_ALERT_POINTS = 0.2              # a fall of the share by more than this is reported as a drop
+
+
+def load_full(path_or_url, work):
+    """A factoidal-wpt-full-v1 result from a file (.json or .json.gz) or an address."""
+    p = path_or_url
+    if re.match(r"https?://", p):
+        p = os.path.join(work, os.path.basename(path_or_url))
+        http(path_or_url, dest=p, timeout=300)
+    with (gzip.open(p, "rt") if p.endswith(".gz") else open(p)) as f:
+        return json.load(f)
+
+
+def previous_valid_run(runs, row):
+    """The newest valid full run of the same platform, script engine and WPT commit whose
+    engine commit is not newer than this one's (another commit, or an earlier run of the
+    same commit: then the difference is flakiness)."""
+    c = [r for r in runs if r["suite"] == "wpt" and r["valid"] == "true" and r["kind"] == "full" and r["platform"] == row["platform"]
+         and r["script_engine"] == row["script_engine"] and r["wpt_commit"] == row["wpt_commit"] and r["run_id"] != row["run_id"]
+         and r.get("result_url") and (r["commit_utc"] or "") <= (row["commit_utc"] or "") and (r["started_utc"] or "") < (row["started_utc"] or "~")]
+    c.sort(key=lambda r: (r["commit_utc"] or "", r["started_utc"] or ""))
+    return c[-1] if c else None
+
+
+def full_changes(prev, cur, limit=60):
+    """Differences between two full results: totals, each directory (top level and the
+    finer strata) whose passed count changed, and the tests that lost or gained subtests."""
+    def table(key):
+        rows = []
+        for d in sorted(set(prev.get(key, {})) | set(cur.get(key, {}))):
+            b, a = prev.get(key, {}).get(d, {}), cur.get(key, {}).get(d, {})
+            delta = a.get("passed", 0) - b.get("passed", 0)
+            if delta:
+                rows.append({"dir": d, "chrome": a.get("chrome", b.get("chrome", 0)), "before": b.get("passed", 0), "after": a.get("passed", 0), "delta": delta})
+        return sorted(rows, key=lambda r: (r["delta"], r["dir"]))
+    pb, pa = prev.get("passing", {}), cur.get("passing", {})
+    worse, better = [], []
+    for n in set(pb) | set(pa):
+        b, a = pb.get(n, [0, 0, 0])[0], pa.get(n, [0, 0, 0])[0]
+        if a != b:
+            (worse if a < b else better).append({"test": n, "before": b, "after": a, "chrome": (pa.get(n) or pb.get(n))[2]})
+    worse.sort(key=lambda t: (t["after"] - t["before"], t["test"]))
+    better.sort(key=lambda t: (t["before"] - t["after"], t["test"]))
+    lost = {}
+    for t in worse:
+        e = lost.setdefault(group_of(t["test"]), {"lost": 0, "tests": 0})
+        e["lost"] += t["before"] - t["after"]
+        e["tests"] += 1
+    lost_by_dir = sorted(({"dir": d, **e} for d, e in lost.items()), key=lambda e: (-e["lost"], e["dir"]))
+    tb, ta = prev["totals"], cur["totals"]
+    den = cur["denominator"]["subtests"] if isinstance(cur.get("denominator"), dict) else cur.get("denominator")
+    outcomes = {k: ta.get("outcomes", {}).get(k, 0) - tb.get("outcomes", {}).get(k, 0)
+                for k in sorted(set(ta.get("outcomes", {})) | set(tb.get("outcomes", {})))}
+    return {"passed_before": tb["passed"], "passed_after": ta["passed"], "passed_delta": ta["passed"] - tb["passed"],
+            "points": round(100 * (ta["passed"] - tb["passed"]) / den, 4) if den else None,
+            "outcomes_delta": {k: v for k, v in outcomes.items() if v},
+            "directories": table("directories"), "strata": table("strata"), "lost_by_directory": lost_by_dir,
+            "tests_worse": len(worse), "tests_better": len(better), "subtests_lost": sum(t["before"] - t["after"] for t in worse),
+            "subtests_gained": sum(t["after"] - t["before"] for t in better),
+            "worse": worse[:limit], "better": better[:limit], "worse_all": worse, "better_all": better}
+
+
+def changes_markdown(ch, limit=25):
+    p, c = ch["previous"], ch["changes"]
+    drop = c["points"] is not None and c["points"] < -DROP_ALERT_POINTS
+    L = [f"### {'DROP: ' if drop else ''}Since the previous full run: {c['passed_delta']:+,} subtests ({c['points']:+.4f} points)", "",
+         f"Previous: `{p['run_id']}`, core `{p['commit'][:9]}`, {p['share_pct']}%. This run: core `{ch['commit'][:9]}`, {ch['share_pct']}%"
+         + (" (the same commit: the difference is flakiness)." if p["commit"] == ch["commit"] else f"; {len(ch['commits_between'])} commits between."),
+         f"Tests that lost subtests: {c['tests_worse']:,} (-{c['subtests_lost']:,}); that gained: {c['tests_better']:,} (+{c['subtests_gained']:,}). "
+         f"Page outcomes: {', '.join(f'{k} {v:+}' for k, v in c['outcomes_delta'].items()) or 'unchanged'}.", ""]
+    down = [d for d in c["strata"] if d["delta"] < 0]
+    up = sorted((d for d in c["strata"] if d["delta"] > 0), key=lambda d: -d["delta"])
+    for title, rows in (("Directories that fell", down), ("Directories that rose", up)):
+        if rows:
+            L += [f"**{title}** ({len(rows)}; the first {min(limit, len(rows))})", "", "| directory | Chrome | before | after | change |", "| --- | ---: | ---: | ---: | ---: |"]
+            L += [f"| {d['dir']} | {d['chrome']:,} | {d['before']:,} | {d['after']:,} | {d['delta']:+,} |" for d in rows[:limit]] + [""]
+    if c.get("lost_by_directory"):
+        rows = c["lost_by_directory"]
+        L += [f"**Where subtests were lost** (the losses alone, whatever the directory gained elsewhere; {len(rows)} directories, the first {min(limit, len(rows))})", "",
+              "| directory | subtests lost | tests |", "| --- | ---: | ---: |"]
+        L += [f"| {d['dir']} | {d['lost']:,} | {d['tests']:,} |" for d in rows[:limit]] + [""]
+    if c["worse"]:
+        L += [f"**Tests that lost most** (the first {min(limit, len(c['worse']))} of {c['tests_worse']:,})", "", "| test | before | after | Chrome |", "| --- | ---: | ---: | ---: |"]
+        L += [f"| {t['test']} | {t['before']:,} | {t['after']:,} | {t['chrome']:,} |" for t in c["worse"][:limit]] + [""]
+    if ch["commits_between"]:
+        L += [f"**Commits between** ({len(ch['commits_between'])})", ""] + [f"- `{x['sha'][:9]}` {x['subject']}" for x in ch["commits_between"][:80]] + [""]
+    return "\n".join(L)
+
+
+def changes_since_previous(row, cur_full, work):
+    """The changes record of a run against the previous valid one, or None. Never fatal."""
+    try:
+        prev = previous_valid_run(read_csv_url("runs.csv"), row)
+        if not prev:
+            return None
+        os.makedirs(work, exist_ok=True)
+        c = full_changes(load_full(prev["result_url"], work), cur_full)
+        between = []
+        if prev["factoidal_commit"] != row["factoidal_commit"]:
+            try:
+                cmp = api(f"repos/{CORE_REPO}/compare/{prev['factoidal_commit']}...{row['factoidal_commit']}")
+                between = [{"sha": x["sha"], "subject": x["commit"]["message"].splitlines()[0][:140],
+                            "committed_utc": x["commit"]["committer"]["date"]} for x in cmp.get("commits", [])]
+            except RuntimeError as e:
+                log(f"commits between: {e}")
+        return {"format": "factoidal-wpt-changes-v1", "run_id": row["run_id"], "commit": row["factoidal_commit"], "share_pct": row["share_pct"],
+                "previous": {"run_id": prev["run_id"], "commit": prev["factoidal_commit"], "share_pct": prev["share_pct"],
+                             "share_ex_encoding_pct": prev["share_ex_encoding_pct"], "result_url": prev["result_url"]},
+                "drop_alert": c["points"] is not None and c["points"] < -DROP_ALERT_POINTS, "commits_between": between, "changes": c}
+    except Exception as e:  # a missing previous file must not lose the run's record
+        log(f"changes since the previous run: {type(e).__name__}: {e}")
+        return None
+
+
+def cmd_wpt_changes(a):
+    """Compare two full results by hand: --prev and --cur are files or addresses."""
+    os.makedirs(a.out, exist_ok=True)
+    prev, cur = load_full(a.prev, a.out), load_full(a.cur, a.out)
+    c = full_changes(prev, cur)
+    den = cur["denominator"]["subtests"]
+    ch = {"format": "factoidal-wpt-changes-v1", "run_id": cur.get("notes", {}).get("run_id", ""), "commit": a.cur_commit,
+          "share_pct": f"{100 * cur['totals']['passed'] / den:.4f}",
+          "previous": {"run_id": prev.get("notes", {}).get("run_id", ""), "commit": a.prev_commit,
+                       "share_pct": f"{100 * prev['totals']['passed'] / den:.4f}"},
+          "drop_alert": c["points"] < -DROP_ALERT_POINTS, "commits_between": [], "changes": c}
+    json.dump(ch, open(os.path.join(a.out, "changes.json"), "w"), indent=1)
+    md = changes_markdown(ch, a.limit)
+    open(os.path.join(a.out, "changes.md"), "w").write(md + "\n")
+    print(md)
+
+
 def cmd_wpt_merge(a):
     plan = json.load(open(a.plan))
     inputs = json.load(open(os.path.join(a.inputs, "inputs.json")))
@@ -926,6 +1058,19 @@ def cmd_wpt_merge(a):
             "server_failures_first_pass": m["server_failures_first_pass"],
             "totals": totals, "shards": metas,
             "directories": {k: {kk: v[kk] for kk in ("names", "run", "chrome", "passed", "reported", "share", "outcomes")} for k, v in dirs.items()}}
+    # What changed since the previous valid full run: the summary goes into meta.json and
+    # the job summary, the whole record (every test that changed) into changes.json.
+    ch = changes_since_previous(row, rep, os.path.join(a.out, "previous")) if totals and not reasons else None
+    if ch:
+        full = dict(ch, changes=dict(ch["changes"]))
+        with gzip.open(os.path.join(a.out, f"{run_id}.wpt-changes.json.gz"), "wt") as f:
+            json.dump(full, f)
+        meta["changes_url"] = f"https://github.com/{BUILDS_REPO}/releases/download/{RESULTS_RELEASE}/{run_id}.wpt-changes.json.gz"
+        for k in ("worse_all", "better_all"):
+            ch["changes"].pop(k)
+        meta["since_previous"] = ch
+        open(os.path.join(a.out, "changes.md"), "w").write(changes_markdown(ch) + "\n")
+        shutil.rmtree(os.path.join(a.out, "previous"), ignore_errors=True)
     json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"), indent=1)
     json.dump(row, open(os.path.join(a.out, "row.json"), "w"), indent=1)
     if totals:
@@ -938,6 +1083,8 @@ def cmd_wpt_merge(a):
             f"{row['names_run']:,} of {row['names_total']:,} names; outcomes {totals.get('outcomes')}; server failures {server_failures}; "
             f"{len(present)} of {plan['shards']} shards; wall {wall} min. Run `{run_id}`.")
     summary(text)
+    if ch:
+        summary(changes_markdown(ch))
 
 
 # ---- the other suites -------------------------------------------------------------------------
@@ -1221,6 +1368,9 @@ def cmd_record(a):
             if not os.path.exists(os.path.join(d, "meta.json")):
                 with open(os.path.join(d, "meta.json"), "w") as f:
                     json.dump(m, f, indent=1)
+            if m.get("since_previous") and not os.path.exists(os.path.join(d, "changes.md")):
+                with open(os.path.join(d, "changes.md"), "w") as f:
+                    f.write(changes_markdown(m["since_previous"], 40) + "\n")
         subprocess.run(["git", "-C", tree, "add", "-A"], check=True)
         if subprocess.run(["git", "-C", tree, "diff", "--cached", "--quiet"]).returncode == 0:
             log("nothing new on the branch")
@@ -1542,6 +1692,12 @@ def main():
     for k in ("--plan", "--inputs", "--shards-dir", "--core", "--out"):
         m.add_argument(k, required=True)
     m.add_argument("--platform", default="macos-arm64")
+    wc = sub.add_parser("wpt-changes")
+    for k in ("--prev", "--cur", "--out"):
+        wc.add_argument(k, required=True)
+    wc.add_argument("--prev-commit", default="")
+    wc.add_argument("--cur-commit", default="")
+    wc.add_argument("--limit", type=int, default=25)
     g = sub.add_parser("suite-groups")
     g.add_argument("--json", action="store_true")
     sr = sub.add_parser("suite-run")
@@ -1575,7 +1731,7 @@ def main():
               "--server-failures", "--wall-minutes", "--core-commit-of-report", "--note", "--out"):
         sl.add_argument(k, required=True)
     a = ap.parse_args()
-    {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge,
+    {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge, "wpt-changes": cmd_wpt_changes,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
      "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
 

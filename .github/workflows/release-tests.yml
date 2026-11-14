@@ -293,6 +293,7 @@ jobs:
           path: ${{ runner.temp }}/shards
       - name: Merge, score, validity
         env:
+          GH_TOKEN: ${{ github.token }}
           PLATFORMS: ${{ needs.resolve.outputs.platforms }}
         run: |
           set -euo pipefail
@@ -440,7 +441,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob globstar
-          FILES=("$RUNNER_TEMP"/rec/**/*.wpt-full.json.gz)
+          FILES=("$RUNNER_TEMP"/rec/**/*.wpt-full.json.gz "$RUNNER_TEMP"/rec/**/*.wpt-changes.json.gz)
           [ ${#FILES[@]} -gt 0 ] || exit 0
           gh release view test-results > /dev/null 2>&1 || gh release create test-results --target main --latest=false \
             --title 'Test results: full result files' \
