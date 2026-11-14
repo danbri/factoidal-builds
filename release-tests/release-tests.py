@@ -623,6 +623,23 @@ def cmd_wpt_shard(a):
         except OSError:
             return None
 
+    def cgroup_line():
+        # The shard runs in a systemd scope with MemoryMax: the scope's own use (page cache
+        # and shared memory count) can be at the limit while the machine has memory free,
+        # and then every process in it waits in reclaim. Pressure "full" says so.
+        try:
+            rel = next(l.split("::", 1)[1].strip() for l in open("/proc/self/cgroup") if "::" in l)
+            base = "/sys/fs/cgroup" + rel
+            mb = lambda n: int(n) // (1 << 20)
+            stat = dict(l.split()[:2] for l in open(base + "/memory.stat"))
+            ev = dict(l.split()[:2] for l in open(base + "/memory.events"))
+            full = next((l for l in open(base + "/memory.pressure") if l.startswith("full")), "")
+            m = re.search(r"avg10=([0-9.]+)", full)
+            return (f"scope memory {mb(open(base + '/memory.current').read())} MB (anon {mb(stat.get('anon', 0))}, file {mb(stat.get('file', 0))}, "
+                    f"shmem {mb(stat.get('shmem', 0))}), at max {ev.get('max', '?')} times, pressure full avg10 {m[1] if m else '?'}")
+        except (OSError, StopIteration, ValueError):
+            return "scope memory ?"
+
     def memory_guard():
         # Linux runners stop without a word when memory runs out (2026-11-13: 6 of 16
         # shards). Kill the largest test process first: core's tool records the test it
@@ -660,7 +677,7 @@ def cmd_wpt_shard(a):
                 busy = "; ".join(f"{c:.0f}% {a}" for c, a in cpu)
             except (OSError, ValueError):
                 load, busy = "?", "?"
-            log(f"memory available {avail} MB; disk free {disk} MB; largest processes {top} MB; load {load}; busiest: {busy}; on {on}")
+            log(f"memory available {avail} MB; disk free {disk} MB; largest processes {top} MB; load {load}; busiest: {busy}; {cgroup_line()}; on {on}")
         if avail < a.min_free_mb:
             ps = subprocess.run(["ps", "-eo", "pid=,rss=,args="], capture_output=True, text=True).stdout.splitlines()
             procs = [(int(l.split(None, 2)[1]), int(l.split(None, 2)[0]), l.split(None, 2)[2]) for l in ps
