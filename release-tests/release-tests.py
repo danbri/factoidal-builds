@@ -970,6 +970,138 @@ def changes_markdown(ch, limit=25):
     return "\n".join(L)
 
 
+# ---- crashes, stalls and harness timeouts by name ----------------------------------------------
+# A CRASH (the page or its process ended without the harness completion), a STALL (no result in
+# the runner's wall-time limit) and a TIMEOUT (the harness's own timeout) are kept by name with
+# each run, with the reason when the result says it, and compared with the previous valid full run:
+# crashes and hangs are safety defects (core: skills/local-lean-rules section 11).
+
+def incident_reason(c, kills=()):
+    """Why a CRASH or STALL ended, from the runner's record of it."""
+    msg = c.get("message") or ""
+    m = re.match(r"runner exit (-?\d+)", msg)
+    if m:
+        code = int(m[1])
+        if code < 0:
+            try:
+                sig = signal.Signals(-code).name
+            except ValueError:
+                sig = f"signal {-code}"
+            r = f"the test process was killed ({sig})"
+            if -code == signal.SIGKILL and kills:
+                r += f"; the shard's memory guard killed {len(kills)} test process(es) at " + ", ".join(
+                    f"{k.get('rss_mb')} MB ({k.get('available_mb')} MB free, {k.get('utc')})" for k in kills[:3])
+            return r
+        return f"the test process ended with exit {code}"
+    if msg:
+        return msg[:200]
+    errs = [e for e in (c.get("errors") or []) if isinstance(e, str)]
+    for key in ("memory limit", "step budget"):
+        hit = [e for e in errs if key in e]
+        if hit:
+            return hit[0][:200] + (f" (x{len(hit)})" if len(hit) > 1 else "")
+    n = len(c.get("subtests") or [])
+    if errs:
+        return f"{errs[0][:160]} (then no harness completion; {n} subtests reported)"
+    return f"the page ended without the harness completion ({n} subtests reported)"
+
+
+def run_incidents(shard_dirs_kills):
+    """CRASH, STALL and TIMEOUT names of a run: [(results dir, memory-guard kills of that shard)]."""
+    out = {"format": "factoidal-wpt-incidents-v1", "crash": [], "stall": [], "timeout": []}
+    for d, kills in shard_dirs_kills:
+        for n, (c, line) in read_results(d).items():
+            h = str(c.get("harness", "")).split(" ")[0]
+            name = "/" + n.lstrip("/")
+            if h == "CRASH":
+                out["crash"].append({"test": name, "reason": incident_reason(c, kills), "subtests": len(c.get("subtests") or []),
+                                     "ms": c.get("ms")})
+            elif h == "STALL":
+                out["stall"].append({"test": name, "reason": incident_reason(c, kills)})
+            elif h == "TIMEOUT":
+                out["timeout"].append(name)
+    out["crash"].sort(key=lambda e: e["test"])
+    out["stall"].sort(key=lambda e: e["test"])
+    out["timeout"].sort()
+    return out
+
+
+def incidents_diff(prev, cur, scope=None):
+    """New and gone names of each kind; scope limits both sides to a set of names (a branch check)."""
+    def names(inc, k):
+        s = {e if isinstance(e, str) else e["test"] for e in inc.get(k, [])}
+        return s & scope if scope is not None else s
+    d = {}
+    for k in ("crash", "stall", "timeout"):
+        a, b = names(prev, k), names(cur, k)
+        d[k] = {"before": len(a), "after": len(b), "new": sorted(b - a), "gone": sorted(a - b)}
+    return d
+
+
+def run_incidents_of(run_id):
+    """runs/<run_id>/incidents.json on the results branch (raw.githubusercontent.com, no API call)."""
+    try:
+        return json.loads(http(f"{RAW}/runs/{run_id}/incidents.json", tries=2))
+    except (RuntimeError, ValueError) as e:
+        log(f"incidents of {run_id}: {e}")
+        return None
+
+
+def incidents_markdown(inc, diff=None, prev_id=None, title="Crashes, stalls and harness timeouts", limit=80):
+    top = lambda n: n.strip("/").split("/")[0]
+    L = [f"### {title}", "",
+         f"CRASH {len(inc['crash'])}, STALL {len(inc['stall'])}, TIMEOUT {len(inc['timeout'])}"
+         + (f"; against `{prev_id}`: " + ", ".join(f"{k.upper()} {v['before']} -> {v['after']} (+{len(v['new'])} new, -{len(v['gone'])} gone)"
+                                                 for k, v in diff.items()) if diff else "; no list of the previous run to compare with") + ".", ""]
+    for k in ("crash", "stall"):
+        es = inc[k]
+        if not es:
+            continue
+        new = set(diff[k]["new"]) if diff else set()
+        L += [f"**{k.upper()}** ({len(es)}, by top directory" + ("; NEW: not in the previous run's list" if diff else "") + ")", ""]
+        for t in sorted({top(e["test"]) for e in es}):
+            L.append(f"- {t}/")
+            L += [f"  - `{e['test']}`{' NEW' if e['test'] in new else ''}: {e['reason']}" for e in es if top(e["test"]) == t]
+        L.append("")
+    if diff:
+        for k, what in (("crash", "No longer CRASH"), ("stall", "No longer STALL"), ("timeout", "No longer TIMEOUT")):
+            if diff[k]["gone"]:
+                L += [f"**{what}** ({len(diff[k]['gone'])}): " + ", ".join(f"`{n}`" for n in diff[k]["gone"][:limit])
+                      + (f" and {len(diff[k]['gone']) - limit} more" if len(diff[k]["gone"]) > limit else ""), ""]
+        if diff["timeout"]["new"]:
+            L += [f"**New TIMEOUT** ({len(diff['timeout']['new'])}): " + ", ".join(f"`{n}`" for n in diff["timeout"]["new"][:limit])
+                  + (f" and {len(diff['timeout']['new']) - limit} more" if len(diff["timeout"]["new"]) > limit else ""), ""]
+    return "\n".join(L)
+
+
+def shard_result_dirs(shards_dir, prefix):
+    """[(results dir, memory-guard kills)] of the shard artifacts <prefix><k>/ under shards_dir."""
+    out = []
+    for dn in sorted(os.listdir(shards_dir)) if os.path.isdir(shards_dir) else []:
+        d = os.path.join(shards_dir, dn)
+        if dn.startswith(prefix) and os.path.isdir(os.path.join(d, "results")):
+            kills = []
+            if os.path.exists(os.path.join(d, "shard-meta.json")):
+                kills = (json.load(open(os.path.join(d, "shard-meta.json"))).get("memory") or {}).get("kills", [])
+            out.append((os.path.join(d, "results"), kills))
+    return out
+
+
+def cmd_wpt_incidents(a):
+    """The incidents of a run from its shard artifacts, by hand (gh run download RUN -p 'wpt-shard-*'
+    -D DIR): --shards-dir DIR, --prev the previous run's incidents.json (a file or an address)."""
+    inc = run_incidents(shard_result_dirs(a.shards_dir, a.prefix))
+    diff = None
+    if a.prev:
+        prev = json.loads(http(a.prev)) if re.match(r"https?://", a.prev) else json.load(open(a.prev))
+        diff = incidents_diff(prev, inc)
+    os.makedirs(a.out, exist_ok=True)
+    json.dump(inc, open(os.path.join(a.out, "incidents.json"), "w"), indent=1)
+    md = incidents_markdown(inc, diff, a.prev_id or a.prev)
+    open(os.path.join(a.out, "incidents.md"), "w").write(md + "\n")
+    print(md)
+
+
 def changes_since_previous(row, cur_full, work):
     """The changes record of a run against the previous valid one, or None. Never fatal."""
     try:
@@ -1098,6 +1230,22 @@ def cmd_wpt_merge(a):
         meta["since_previous"] = ch
         open(os.path.join(a.out, "changes.md"), "w").write(changes_markdown(ch) + "\n")
         shutil.rmtree(os.path.join(a.out, "previous"), ignore_errors=True)
+    # Crashes, stalls and harness timeouts by name, against the previous valid full run.
+    # Never fatal: the record of the run comes first.
+    inc_md = None
+    try:
+        inc = run_incidents(shard_result_dirs(a.shards_dir, f"wpt-shard-{a.platform}-"))
+        prev_row = previous_valid_run(read_csv_url("runs.csv"), row)
+        prev_inc = run_incidents_of(prev_row["run_id"]) if prev_row else None
+        diff = incidents_diff(prev_inc, inc) if prev_inc else None
+        json.dump(inc, open(os.path.join(a.out, "incidents.json"), "w"), indent=1)
+        meta["incidents"] = {"crash": inc["crash"], "stall": inc["stall"], "timeout_count": len(inc["timeout"]),
+                             "timeouts_url": f"{RAW}/runs/{run_id}/incidents.json",
+                             "previous_run_id": prev_row["run_id"] if prev_inc else None, "since_previous": diff}
+        inc_md = incidents_markdown(inc, diff, prev_row["run_id"] if prev_inc else None)
+        open(os.path.join(a.out, "incidents.md"), "w").write(inc_md + "\n")
+    except Exception as e:
+        log(f"incidents: {type(e).__name__}: {e}")
     json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"), indent=1)
     json.dump(row, open(os.path.join(a.out, "row.json"), "w"), indent=1)
     if totals:
@@ -1112,6 +1260,8 @@ def cmd_wpt_merge(a):
     summary(text)
     if ch:
         summary(changes_markdown(ch))
+    if inc_md:
+        summary(inc_md)
 
 
 # ---- the other suites -------------------------------------------------------------------------
@@ -1357,11 +1507,13 @@ def append_csv(path, columns, rows):
 def cmd_record(a):
     """Append rows found under --from (row.json + meta.json, suite-rows.json + suite-metas.json,
     rival-rows.json) to the results branch, with a new worktree each attempt, and push."""
-    runs, metas, rivals, diffs = [], {}, [], []
+    runs, metas, rivals, diffs, extra = [], {}, [], [], {}
     for dp, _, fs in os.walk(a.src):
         if "row.json" in fs and "meta.json" in fs:
             row = json.load(open(os.path.join(dp, "row.json")))
             metas[row["run_id"]] = json.load(open(os.path.join(dp, "meta.json")))
+            # Files kept beside meta.json on the branch (incidents: crashes, stalls, timeouts by name).
+            extra[row["run_id"]] = [os.path.join(dp, f) for f in ("incidents.json", "incidents.md") if f in fs]
             (diffs if row["kind"] == "differential" else runs).append(row)
         if "suite-rows.json" in fs:
             runs += json.load(open(os.path.join(dp, "suite-rows.json")))
@@ -1398,6 +1550,9 @@ def cmd_record(a):
             if m.get("since_previous") and not os.path.exists(os.path.join(d, "changes.md")):
                 with open(os.path.join(d, "changes.md"), "w") as f:
                     f.write(changes_markdown(m["since_previous"], 40) + "\n")
+            for src in extra.get(rid, []):
+                if not os.path.exists(os.path.join(d, os.path.basename(src))):
+                    shutil.copyfile(src, os.path.join(d, os.path.basename(src)))
         subprocess.run(["git", "-C", tree, "add", "-A"], check=True)
         if subprocess.run(["git", "-C", tree, "diff", "--cached", "--quiet"]).returncode == 0:
             log("nothing new on the branch")
@@ -1680,9 +1835,19 @@ def cmd_branch_report(a):
         elif p > b:
             better.append({"name": n, "baseline": b, "now": p, "chrome": ch})
     tot = {k: sum(g[k] for g in groups.values()) for k in ("names", "run", "chrome", "passed", "baseline")}
+    # Crashes, stalls and harness timeouts of the checked names, against the baseline run's
+    # (when that run has its list on the results branch).
+    try:
+        inc = run_incidents(shard_result_dirs(a.shards_dir, "branch-shard-"))
+        base_inc = run_incidents_of(base["run"]["run_id"])
+        inc_diff = incidents_diff(base_inc, inc, scope=set(names)) if base_inc else None
+    except Exception as e:  # the report must not be lost
+        log(f"incidents: {type(e).__name__}: {e}")
+        inc, base_inc, inc_diff = {"crash": [], "stall": [], "timeout": []}, None, None
     report = {"format": "factoidal-branch-wpt-v1", "core_ref": a.core_ref, "core_commit": a.core_commit, "inputs": inputs,
               "baseline": base["run"], "totals": tot, "groups": dict(sorted(groups.items())), "worse": worse, "better": better,
-              "missing": missing, "shard_notes": shard_notes, "note": "a development check of selected names, not a score"}
+              "missing": missing, "shard_notes": shard_notes, "incidents": inc, "incidents_since_baseline": inc_diff,
+              "note": "a development check of selected names, not a score"}
     json.dump(report, open(os.path.join(a.out, "report.json"), "w"), indent=1)
     d = tot["passed"] - tot["baseline"]
     md = [f"## Branch WPT check: `{a.core_ref}` ({a.core_commit[:12]})", "",
@@ -1691,6 +1856,8 @@ def cmd_branch_report(a):
           f"Baseline: `{base['run']['run_id']}` (core `{base['run']['factoidal_commit'][:12]}`). A development check of the selected names, not a score.", ""]
     if missing or shard_notes:
         md += ["**Incomplete:** " + "; ".join(shard_notes + ([f"{len(missing)} names have no result"] if missing else [])), ""]
+    md += [incidents_markdown(inc, inc_diff, base["run"]["run_id"] if base_inc else None,
+                              title="Crashes, stalls and harness timeouts of these names (against the baseline)", limit=40), ""]
     md += ["| Directory | Names | Chrome subtests | Passed | Baseline | Difference | Outcomes |", "| --- | ---: | ---: | ---: | ---: | ---: | --- |"]
     order = sorted(groups.items(), key=lambda kv: (-abs(kv[1]["passed"] - kv[1]["baseline"]), kv[0]))
     for k, g in order[:150]:
@@ -1797,6 +1964,12 @@ def main():
     wc.add_argument("--prev-commit", default="")
     wc.add_argument("--cur-commit", default="")
     wc.add_argument("--limit", type=int, default=25)
+    wi = sub.add_parser("wpt-incidents")
+    wi.add_argument("--shards-dir", required=True)
+    wi.add_argument("--out", required=True)
+    wi.add_argument("--prefix", default="", help="shard directory prefix (wpt-shard-linux-x86_64-, branch-shard-)")
+    wi.add_argument("--prev", default="", help="the previous run's incidents.json (file or address)")
+    wi.add_argument("--prev-id", default="")
     g = sub.add_parser("suite-groups")
     g.add_argument("--json", action="store_true")
     sr = sub.add_parser("suite-run")
@@ -1837,7 +2010,7 @@ def main():
               "--server-failures", "--wall-minutes", "--core-commit-of-report", "--note", "--out"):
         sl.add_argument(k, required=True)
     a = ap.parse_args()
-    {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge, "wpt-changes": cmd_wpt_changes,
+    {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge, "wpt-changes": cmd_wpt_changes, "wpt-incidents": cmd_wpt_incidents,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
      "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "tail-gate-report": cmd_tail_gate_report, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
 
