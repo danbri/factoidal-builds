@@ -74,18 +74,22 @@ jobs:
               return subprocess.run(["gh", "api", f"repos/{os.environ['CORE_REPO']}/commits/{ref}", "--jq", ".sha"],
                                     capture_output=True, text=True, check=True).stdout.strip()
           items = []
+          # Fixtures, harness and benchmarks: the head's own for a gate and for a main commit's
+          # record; main's newest for a backfill (older commits have none). Host sources are
+          # always those of the engine's own commit.
           if os.environ.get("TAGS"):
+              tools = sha_of("main")
               for t in [x.strip() for x in os.environ["TAGS"].split(",") if x.strip()]:
                   m = re.fullmatch(r"(?:build-)?([0-9a-f]{12})(?:-foafnaut-linux-x86_64)?", t)
                   if not m:
                       raise SystemExit(f"not a tag or 12-hex commit: {t}")
                   items.append({"sha": sha_of(m[1]), "tag": f"build-{m[1]}-foafnaut-linux-x86_64", "artifact": "",
-                                "mode": "record", "compare": os.environ.get("COMPARE") == "true"})
+                                "mode": "record", "compare": os.environ.get("COMPARE") == "true", "tools": tools})
           else:
               sha = os.environ["SHA"]
               mode = os.environ["MODE"]
               items.append({"sha": sha, "tag": "" if os.environ.get("ARTIFACT") else f"build-{sha[:12]}-foafnaut-linux-x86_64",
-                            "artifact": os.environ.get("ARTIFACT", ""), "mode": mode, "compare": True})
+                            "artifact": os.environ.get("ARTIFACT", ""), "mode": mode, "compare": True, "tools": sha})
           print("matrix=" + json.dumps({"include": items}))
           EOF
 
@@ -121,13 +125,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ${{ env.CORE_REPO }}
-          ref: ${{ matrix.sha }}
+          ref: ${{ matrix.tools }}
           path: core
           sparse-checkout: |
             labs/demos/foafnaut
             tests/browser-wpt
             docs/web/hub/foafnaut
             third_party/fonts/noto-sans
+      - uses: actions/checkout@v4
+        if: matrix.tools != matrix.sha
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ matrix.sha }}
+          path: headhost
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
       - uses: actions/checkout@v4
         if: steps.base.outputs.commit != ''
         with:
@@ -172,7 +185,8 @@ jobs:
       - name: Run the fixtures
         run: |
           set -euo pipefail
-          ENG=(--engine "head=$RUNNER_TEMP/head/libweb-render.so:$GITHUB_WORKSPACE/core" --ld "head=${{ steps.eng.outputs.head }}")
+          HOST=$GITHUB_WORKSPACE/core; [ -d headhost ] && HOST=$GITHUB_WORKSPACE/headhost
+          ENG=(--engine "head=$RUNNER_TEMP/head/libweb-render.so:$HOST" --ld "head=${{ steps.eng.outputs.head }}")
           if [ -n "${{ steps.base.outputs.tag }}" ]; then
             ENG=(--engine "base=$RUNNER_TEMP/base/libweb-render.so:$GITHUB_WORKSPACE/base" --ld "base=${{ steps.eng.outputs.base }}" "${ENG[@]}")
           fi
