@@ -1011,18 +1011,47 @@ def incident_reason(c, kills=()):
     return f"the page ended without the harness completion ({n} subtests reported)"
 
 
+FATAL_LINE = re.compile(r"overflowed its stack|fatal runtime error|panic|PANIC|Segmentation fault|out of memory|Killed|Aborted|SIGSEGV|SIGBUS")
+
+
+def fatal_lines(shard_dir):
+    """What the runner processes printed about a fatal end, by the test they were on: the lines
+    of the shard's part logs (part*.log or part*.log.gz) between START <test> and the next line
+    of a result, that say stack overflow, panic, abort, segmentation fault or out of memory."""
+    out = {}
+    for fn in sorted(os.listdir(shard_dir)) if os.path.isdir(shard_dir) else []:
+        if not re.fullmatch(r"part\d+\.log(\.gz)?", fn):
+            continue
+        try:
+            f = gzip.open(os.path.join(shard_dir, fn), "rt", errors="replace") if fn.endswith(".gz") else open(os.path.join(shard_dir, fn), errors="replace")
+            cur = None
+            with f:
+                for l in f:
+                    if l.startswith("START "):
+                        cur = l[6:].strip()
+                    elif cur and FATAL_LINE.search(l):
+                        out.setdefault(cur, [])
+                        if len(out[cur]) < 3 and l.strip() not in out[cur]:
+                            out[cur].append(l.strip()[:160])
+        except OSError:
+            continue
+    return out
+
+
 def run_incidents(shard_dirs_kills):
     """CRASH, STALL and TIMEOUT names of a run: [(results dir, memory-guard kills of that shard)]."""
     out = {"format": "factoidal-wpt-incidents-v1", "crash": [], "stall": [], "timeout": []}
     for d, kills in shard_dirs_kills:
+        fatal = fatal_lines(os.path.dirname(d))
         for n, (c, line) in read_results(d).items():
             h = str(c.get("harness", "")).split(" ")[0]
             name = "/" + n.lstrip("/")
+            said = "; ".join(fatal.get(n.lstrip("/"), []))
             if h == "CRASH":
-                out["crash"].append({"test": name, "reason": incident_reason(c, kills), "subtests": len(c.get("subtests") or []),
-                                     "ms": c.get("ms")})
+                out["crash"].append({"test": name, "reason": incident_reason(c, kills) + (f" [{said}]" if said else ""),
+                                     "subtests": len(c.get("subtests") or []), "ms": c.get("ms")})
             elif h == "STALL":
-                out["stall"].append({"test": name, "reason": incident_reason(c, kills)})
+                out["stall"].append({"test": name, "reason": incident_reason(c, kills) + (f" [{said}]" if said else "")})
             elif h == "TIMEOUT":
                 out["timeout"].append(name)
     out["crash"].sort(key=lambda e: e["test"])
