@@ -10,6 +10,10 @@ name: Branch WPT check
 #   gh run watch --repo danbri/factoidal-builds <run id>      # or: gh run list --workflow branch-wpt.yml
 #   gh run download --repo danbri/factoidal-builds <run id> -n branch-wpt-results -D out/
 #
+# dangerously_enable_webdriver_endpoint (default false): the wdspec names (webdriver/tests/classic/)
+#   run: the runner asks the engine for its WebDriver endpoint (loopback only, a secret in every
+#   request path) and drives it with pytest from the WPT tree (core tests/browser-wpt/wdspec-run.py).
+#   Without it every wdspec name is SKIP, as in the full runs of main.
 # names: comma list of WPT path prefixes (/dom/abort/, /css/css-color/parsing/), and/or
 #   sample:N (every Nth name of the full list, a regression check: sample:20 is about
 #   4,700 names). Both may be combined.
@@ -49,6 +53,11 @@ on:
         description: '40-hex WPT commit (empty: the one of the newest valid full run)'
         required: false
         default: ''
+      dangerously_enable_webdriver_endpoint:
+        description: 'Run the wdspec names (webdriver/tests/classic/): the runner starts the engine WebDriver endpoint (loopback, secret) and drives it with pytest'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -289,15 +298,18 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          WEBDRIVER: ${{ inputs.dangerously_enable_webdriver_endpoint }}
         run: |
           set -euo pipefail
+          WD=()
+          if [ "${WEBDRIVER:-false}" = true ]; then WD=(--dangerously-enable-webdriver-endpoint); fi
           sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" "HOME=$HOME" \
             systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue --uid="$(id -u)" --gid="$(id -g)" -- \
             "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/inputs" --core core \
             --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
             --engine-lib "$RUNNER_TEMP/lib/libweb-render.so" --web-tag "${{ needs.plan.outputs.web_tag }}" \
             --index ${{ matrix.shard }} --shards ${{ matrix.shards }} --platform linux-x86_64 \
-            --script-engine bubblepop --jobs 3 --max-minutes 45 --retry-minutes 10 --pydeps "$RUNNER_TEMP/pydeps"
+            --script-engine bubblepop --jobs 3 --max-minutes 45 --retry-minutes 10 --pydeps "$RUNNER_TEMP/pydeps" ${WD[@]+"${WD[@]}"}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

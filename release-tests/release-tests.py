@@ -609,6 +609,11 @@ def cmd_wpt_shard(a):
     extra = ["--", "--script-engine", a.script_engine, "--wpt-commit", inputs["wpt_commit"]]
     if a.script_engine == "quickjs":
         extra += ["--quickjs-wasm", os.path.join(web, "wasm-guests/qjs-wasmvm.wasm")]
+    # WebDriver: remote control of the engine on a loopback port with a secret, for the wdspec
+    # names only; off unless the run asks (core: docs/designissues/2026-11-14-input-webdriver.md).
+    if a.webdriver:
+        extra += ["--dangerously-enable-webdriver-endpoint"]
+    meta["webdriver_endpoint"] = bool(a.webdriver)
     # The WPT server is checked every 30 s for the whole run: a server that stops makes
     # every later test "fetch failed", which a score must not count.
     probes = {"ok": 0, "failed": 0, "streak_max": 0, "streak": 0, "up_seen": False}
@@ -1954,6 +1959,8 @@ def main():
     s.add_argument("--retry-max", type=int, default=15000, help="retry the server-failure names once when at most this many")
     s.add_argument("--retry-minutes", type=int, default=40)
     s.add_argument("--min-free-mb", type=int, default=1200, help="Linux: below this, kill the largest test process")
+    s.add_argument("--dangerously-enable-webdriver-endpoint", dest="webdriver", action="store_true",
+                   help="run the wdspec names (webdriver/tests/classic/) against the engine's WebDriver endpoint (loopback, secret)")
     m = sub.add_parser("wpt-merge")
     for k in ("--plan", "--inputs", "--shards-dir", "--core", "--out"):
         m.add_argument(k, required=True)
