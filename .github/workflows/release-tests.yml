@@ -97,6 +97,17 @@ on:
 permissions:
   contents: read
 
+# The Linux full runs of main that foafnaut-linux.yml starts (one for each engine it
+# publishes): one at a time, and a waiting one is replaced by a newer one. While main
+# gets a push every few minutes an engine is published every 13 minutes and a run takes
+# 27: without this, two or three runs overlap and hold 26 to 39 of the account's 40 Linux
+# jobs, and branch checks wait. The run that is replaced is of an older commit; the newer
+# run measures its changes too (the record of changes names the commits between).
+# Every other run (schedule, build.yml, by hand) has a group of its own.
+concurrency:
+  group: ${{ (github.event_name == 'workflow_dispatch' && inputs.trigger == 'factoidal-release' && inputs.platforms == 'linux-x86_64') && 'release-tests-main-linux' || format('release-tests-{0}', github.run_id) }}
+  cancel-in-progress: false
+
 env:
   CORE_REPO: danbri/factoidal-core
 
