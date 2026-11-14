@@ -1912,6 +1912,173 @@ def cmd_branch_report(a):
     summary(text[:900000])
 
 
+# ---- Test262 as a suite of its own ------------------------------------------------------------
+# The whole upstream suite (tc39/test262) at a pinned commit, run by core's `leanjs test262-files`
+# (BubblePopJS's interpreter, L4Factoidal.JS) with Test262's rules: every file in each mode it is
+# run in (sloppy and strict unless a flag says one; module tests once), negative tests by phase
+# and type, async tests by $DONE. A run is one row of runs.csv (suite test262): passed runs of
+# all runs; meta.json has each section (language, built-ins, annexB, intl402, staging).
+TEST262_SECTIONS = ["test/language", "test/built-ins", "test/annexB", "test/intl402", "test/staging"]
+
+
+def test262_files(root):
+    out = []
+    for sec in TEST262_SECTIONS:
+        for dp, dns, fns in os.walk(os.path.join(root, sec)):
+            dns.sort()
+            for fn in sorted(fns):
+                if fn.endswith(".js") and not fn.endswith("_FIXTURE.js"):
+                    out.append(os.path.relpath(os.path.join(dp, fn), root))
+    return out
+
+
+def cmd_test262_run(a):
+    """Run the files in --jobs processes of chunks; a process that ends early or says nothing
+    for --stall seconds has its current test recorded (CRASH or STALL) and the rest of its chunk
+    runs in a new process."""
+    import threading, queue
+    root, out = os.path.abspath(a.root), os.path.abspath(a.out)
+    os.makedirs(out, exist_ok=True)
+    files = test262_files(root)
+    chunks = [files[i:i + a.chunk] for i in range(0, len(files), a.chunk)]
+    q = queue.Queue()
+    for c in chunks:
+        q.put(c)
+    lines, lock, t0 = [], threading.Lock(), time.time()
+
+    def run_chunk(names, k):
+        while names:
+            lst = os.path.join(out, f"chunk-{k}.list")
+            with open(lst, "w") as f:
+                f.write("\n".join(names) + "\n")
+            p = subprocess.Popen([a.leanjs, "test262-files", root, lst], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                 errors="replace", bufsize=1)
+            got, cur, last = [], None, [time.time()]
+            done_names = set()
+
+            def watchdog():
+                while p.poll() is None:
+                    if time.time() - last[0] > a.stall:
+                        p.kill()
+                        return
+                    time.sleep(2)
+            threading.Thread(target=watchdog, daemon=True).start()
+            for l in p.stdout:
+                last[0] = time.time()
+                l = l.rstrip("\n")
+                if l.startswith("START "):
+                    cur = l[6:]
+                    continue
+                if l[:5] in ("PASS ", "FAIL ", "SKIP "):
+                    got.append(l)
+                    done_names.add(l.split(" ")[1])
+                    cur = None
+            p.wait()
+            err = p.stderr.read()[-300:].replace("\n", " ")
+            with lock:
+                lines.extend(got)
+            if cur is None:
+                return
+            # The process ended (or stalled) during `cur`: record it, run the rest.
+            rel, mode = cur.rsplit(" ", 1)
+            stalled = time.time() - last[0] > a.stall
+            kind = "STALL" if stalled else "CRASH"
+            why = f"no line in {a.stall} s" if stalled else f"exit {p.returncode}: {err.strip()[:200]}"
+            with lock:
+                lines.append(f"{kind} {rel} {mode} {why}")
+                if mode == "sloppy" and kind == "CRASH":
+                    lines.append(f"{kind} {rel} strict not run after the crash of its sloppy run")
+            i = names.index(rel)
+            names = names[i + 1:]
+
+    def worker(k):
+        while True:
+            try:
+                c = q.get_nowait()
+            except queue.Empty:
+                return
+            run_chunk(c, k)
+    ts = [threading.Thread(target=worker, args=(k,)) for k in range(a.jobs)]
+    for th in ts:
+        th.start()
+    for th in ts:
+        th.join()
+    lines.sort(key=lambda l: (l.split(" ")[1], l.split(" ")[2] if len(l.split(" ")) > 2 else ""))
+    with open(os.path.join(out, "results.txt"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+    json.dump({"files": len(files), "lines": len(lines), "seconds": round(time.time() - t0), "jobs": a.jobs},
+              open(os.path.join(out, "run.json"), "w"))
+    log(f"test262: {len(files)} files, {len(lines)} runs in {round(time.time() - t0)} s")
+
+
+def cmd_test262_score(a):
+    """results.txt -> row.json and meta.json (suite test262) for record."""
+    res = os.path.join(a.results, "results.txt")
+    runinfo = json.load(open(os.path.join(a.results, "run.json")))
+    secs, outcomes, fails = {}, {}, {}
+    files_all, files_pass = {}, {}
+    for l in open(res):
+        parts = l.rstrip("\n").split(" ", 3)
+        if len(parts) < 3:
+            continue
+        st, rel, mode = parts[0], parts[1], parts[2]
+        sec = "/".join(rel.split("/")[:2])
+        s = secs.setdefault(sec, {"runs": 0, "passed": 0, "failed": 0, "skipped": 0, "crash": 0, "stall": 0, "files": 0, "files_passed": 0})
+        s["runs"] += 1
+        s[{"PASS": "passed", "FAIL": "failed", "SKIP": "skipped", "CRASH": "crash", "STALL": "stall"}.get(st, "failed")] += 1
+        outcomes[st] = outcomes.get(st, 0) + 1
+        files_all.setdefault(rel, True)
+        files_pass[rel] = files_pass.get(rel, True) and st == "PASS"
+        if st != "PASS":
+            why = (parts[3] if len(parts) > 3 else "")[:60]
+            fails[(st, why)] = fails.get((st, why), 0) + 1
+    for rel, ok in files_pass.items():
+        s = secs["/".join(rel.split("/")[:2])]
+        s["files"] += 1
+        s["files_passed"] += 1 if ok else 0
+    for s in secs.values():
+        s["share_pct"] = round(100 * s["passed"] / s["runs"], 4) if s["runs"] else 0.0
+    runs = sum(s["runs"] for s in secs.values())
+    passed = sum(s["passed"] for s in secs.values())
+    started = a.started or now_utc()
+    rid = f"{started.replace('-', '').replace(':', '')[:13]}Z-test262-linux-x86_64" + (f"-gh{os.environ['GITHUB_RUN_ID']}a{os.environ.get('GITHUB_RUN_ATTEMPT', '1')}" if os.environ.get("GITHUB_RUN_ID") else "-local")
+    expected = runinfo["files"]
+    reasons = []
+    if len(files_all) != expected:
+        reasons.append(f"{expected - len(files_all)} of {expected} files have no result")
+    row = {"run_id": rid, "started_utc": started, "finished_utc": now_utc(), "trigger": a.trigger, "suite": "test262",
+           "platform": "linux-x86_64", "engine": "bubblepopjs-leanjs", "script_engine": "bubblepop", "factoidal_commit": a.core_commit,
+           "commit_utc": a.commit_utc, "release_tag": "", "wpt_commit": a.test262_commit, "names_total": expected, "names_run": len(files_all),
+           "passed": passed, "denominator": runs, "share_pct": f"{100 * passed / runs:.4f}" if runs else "0",
+           "share_ex_encoding_pct": "", "ok": outcomes.get("PASS", 0), "error": outcomes.get("FAIL", 0), "skip": outcomes.get("SKIP", 0),
+           "crash": outcomes.get("CRASH", 0), "stall": outcomes.get("STALL", 0), "timeout": 0, "no_result": 0, "other": 0,
+           "failed": outcomes.get("FAIL", 0), "server_failures": 0, "valid": "false" if reasons else "true", "invalid_reason": "; ".join(reasons),
+           "kind": "full", "shards": 1, "wall_minutes": round(runinfo["seconds"] / 60, 1), "runner": f"ubuntu-latest x1 ({runinfo['jobs']} processes)",
+           "workflow_run_url": a.run_url, "result_url": "", "meta_url": f"{RAW}/runs/{rid}/meta.json"}
+    meta = {"format": "factoidal-release-test-run-v1", "row": row,
+            "rules": "tc39/test262 at wpt_commit (the column holds the Test262 commit for this suite); sections " + ", ".join(TEST262_SECTIONS)
+                     + "; every file in each mode Test262 runs it in (sloppy and strict unless onlyStrict/noStrict/raw; module once); "
+                     "passed = runs that passed; denominator = all runs, skipped and crashed ones included (not passed)",
+            "sections": dict(sorted(secs.items())), "outcomes": outcomes,
+            "files": {"total": len(files_all), "all_modes_passed": sum(1 for v in files_pass.values() if v)},
+            "top_failures": [{"status": k[0], "why": k[1], "runs": v} for k, v in sorted(fails.items(), key=lambda kv: -kv[1])[:60]],
+            "crashes": [l.rstrip() for l in open(res) if l.startswith(("CRASH", "STALL"))][:500], "run": runinfo}
+    os.makedirs(a.out, exist_ok=True)
+    json.dump(row, open(os.path.join(a.out, "row.json"), "w"), indent=1)
+    json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"), indent=1)
+    L = [f"### Test262 (tc39/test262 `{a.test262_commit[:10]}`) on BubblePopJS, core `{a.core_commit[:12]}`: "
+         f"{passed:,} of {runs:,} runs = **{row['share_pct'][:6]}%**" + ("" if not reasons else " (INVALID: " + "; ".join(reasons) + ")"), "",
+         f"Files: {len(files_all):,}; files passing in all their modes: {meta['files']['all_modes_passed']:,}. Outcomes: {outcomes}. {row['wall_minutes']} min.", "",
+         "| section | runs | passed | share | failed | skipped | crash | stall | files | files passed |", "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    L += [f"| {k} | {s['runs']:,} | {s['passed']:,} | {s['share_pct']:.2f}% | {s['failed']:,} | {s['skipped']:,} | {s['crash']} | {s['stall']} | {s['files']:,} | {s['files_passed']:,} |"
+          for k, s in sorted(secs.items())]
+    L += ["", "Most common reasons (first 60 characters):", ""] + [f"- {f['runs']:,} {f['status']} {f['why']}" for f in meta["top_failures"][:25]]
+    md = "\n".join(L) + "\n"
+    open(os.path.join(a.out, "summary.md"), "w").write(md)
+    summary(md)
+    print(md)
+
+
 # ---- branch check results on a branch, readable without the API ------------------------------
 CHECKS_BRANCH = "branch-checks"
 CHECKS_COLUMNS = ["run_id", "finished_utc", "core_ref", "core_commit", "selection", "names", "names_run", "chrome",
@@ -2097,6 +2264,19 @@ def main():
     br = sub.add_parser("branch-report")
     for k in ("--inputs", "--shards-dir", "--out", "--core-ref", "--core-commit"):
         br.add_argument(k, required=True)
+    t2 = sub.add_parser("test262-run")
+    t2.add_argument("--leanjs", required=True)
+    t2.add_argument("--root", required=True)
+    t2.add_argument("--out", required=True)
+    t2.add_argument("--jobs", type=int, default=4)
+    t2.add_argument("--chunk", type=int, default=500)
+    t2.add_argument("--stall", type=int, default=120)
+    t3 = sub.add_parser("test262-score")
+    for k in ("--results", "--out", "--core-commit", "--test262-commit"):
+        t3.add_argument(k, required=True)
+    for k in ("--commit-utc", "--started", "--run-url"):
+        t3.add_argument(k, default="")
+    t3.add_argument("--trigger", default="manual")
     bk = sub.add_parser("branch-record")
     bk.add_argument("--report", required=True)
     bk.add_argument("--repo", default=".")
@@ -2109,7 +2289,7 @@ def main():
     a = ap.parse_args()
     {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge, "wpt-changes": cmd_wpt_changes, "wpt-incidents": cmd_wpt_incidents,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
-     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "tail-gate-report": cmd_tail_gate_report, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report, "branch-record": cmd_branch_record}[a.cmd](a)
+     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "tail-gate-report": cmd_tail_gate_report, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report, "branch-record": cmd_branch_record, "test262-run": cmd_test262_run, "test262-score": cmd_test262_score}[a.cmd](a)
 
 
 if __name__ == "__main__":

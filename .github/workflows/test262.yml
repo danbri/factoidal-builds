@@ -1,0 +1,127 @@
+name: Test262 on BubblePopJS
+
+# The whole tc39/test262 suite at a pinned commit, run with Test262's own rules by core's
+# `leanjs test262-files` (BubblePopJS's interpreter, L4Factoidal.JS): every file in each mode
+# Test262 runs it in (sloppy and strict unless onlyStrict/noStrict/raw; module tests once),
+# negative tests by phase and type, async tests by $DONE. Sections: test/language,
+# test/built-ins, test/annexB, test/intl402, test/staging (test/harness is the harness's own).
+#
+# Result: the job summary (passed runs of all runs, by section), the artifact test262-result
+# (results.txt: one line a run), and, for a commit of main, one row of runs.csv on wpt-scores
+# (suite test262; the column wpt_commit holds the Test262 commit) with runs/<run_id>/meta.json
+# (each section, outcomes, the commonest failure reasons, crashed and stalled tests).
+#
+# This is not the WPT-hosted number (WPT /third_party/test262/, scored against what Chrome
+# passes, in a page): that one counts subtests of the tests Chrome passes in a browser; this
+# one counts every run of every file of the upstream suite.
+#
+#   gh workflow run test262.yml -R danbri/factoidal-builds                 # newest main
+#   gh workflow run test262.yml -R danbri/factoidal-builds -f core_ref=wip/x   # a branch: no record
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core branch, tag or commit (empty: main)'
+        required: false
+        default: ''
+      test262_commit:
+        description: 'tc39/test262 commit (empty: the pinned one)'
+        required: false
+        default: ''
+  schedule:
+    - cron: '41 */3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test262-${{ inputs.core_ref || 'main' }}
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  # tc39/test262 main on 2026-11-14.
+  TEST262_PINNED: 2e58f87d8350ad51224617a041c6e041d52f8444
+
+jobs:
+  test262:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ inputs.core_ref || 'main' }}
+          T262: ${{ inputs.test262_commit }}
+        run: |
+          set -euo pipefail
+          SHA=$(gh api "repos/$CORE_REPO/commits/$REF" --jq .sha)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "utc=$(gh api "repos/$CORE_REPO/commits/$SHA" --jq .commit.committer.date)" >> "$GITHUB_OUTPUT"
+          case "$(gh api "repos/$CORE_REPO/compare/main...$SHA" --jq .status)" in behind|identical) ON_MAIN=true;; *) ON_MAIN=false;; esac
+          echo "on_main=$ON_MAIN" >> "$GITHUB_OUTPUT"
+          echo "t262=${T262:-$TEST262_PINNED}" >> "$GITHUB_OUTPUT"
+          echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ steps.ref.outputs.sha }}
+          path: core
+      - name: Install elan and the pinned Lean
+        run: |
+          set -euo pipefail
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+      # build.yml's Lake cache of the newest Linux build (restore only).
+      - name: Restore build.yml's Lake cache
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Build leanjs
+        run: |
+          set -euo pipefail
+          cd core/formal/lean4
+          T0=$(date +%s)
+          lake build leanjs 2>&1 | tail -40
+          echo "leanjs built in $(( $(date +%s) - T0 )) s" | tee -a "$GITHUB_STEP_SUMMARY"
+          if ! .lake/build/bin/leanjs 2>&1 | grep -q test262-files; then
+            echo "::error::this core's leanjs has no test262-files command (core main d48b559ee or later with the Test262 driver)"; exit 1
+          fi
+      - name: Test262 at the pinned commit
+        env:
+          T262: ${{ steps.ref.outputs.t262 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/test262"
+          curl -sSfL "https://codeload.github.com/tc39/test262/tar.gz/$T262" | tar xz -C "$RUNNER_TEMP/test262" --strip-components=1
+          python3 builds/release-tests/release-tests.py test262-run --leanjs core/formal/lean4/.lake/build/bin/leanjs \
+            --root "$RUNNER_TEMP/test262" --out "$RUNNER_TEMP/t262" --jobs 4 --chunk 400 --stall 120
+      - name: Score
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 builds/release-tests/release-tests.py test262-score --results "$RUNNER_TEMP/t262" --out "$RUNNER_TEMP/rec/test262" \
+            --core-commit "${{ steps.ref.outputs.sha }}" --commit-utc "${{ steps.ref.outputs.utc }}" --test262-commit "${{ steps.ref.outputs.t262 }}" \
+            --started "${{ steps.ref.outputs.started }}" --run-url "$RUN_URL" --trigger "${{ github.event_name == 'schedule' && 'schedule' || 'manual' }}"
+          cp "$RUNNER_TEMP/t262/results.txt" "$RUNNER_TEMP/rec/test262/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test262-result
+          path: ${{ runner.temp }}/rec/
+          retention-days: 30
+      - name: Record on wpt-scores (a commit of main only)
+        if: steps.ref.outputs.on_main == 'true'
+        run: |
+          rm -f "$RUNNER_TEMP/rec/test262/results.txt"
+          cd builds && python3 release-tests/release-tests.py record --from "$RUNNER_TEMP/rec"
