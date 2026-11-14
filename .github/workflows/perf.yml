@@ -1,0 +1,208 @@
+name: Performance gate
+
+# Core's performance fixtures (labs/demos/foafnaut/fixtures/perf, made by make_fixtures.py)
+# and BubblePopJS page benchmarks (js_perf_bench.ts), run by release-tests/perf.py with two
+# engine libraries on one Linux runner, samples interleaved. Rules and margins: core's
+# skills/perf-gate/SKILL.md and the top of release-tests/perf.py.
+#
+#   gate    (branch-wpt.yml): the branch's engine (artifact branch-engine of the calling run)
+#           against the newest Linux engine release of a main commit that is an ancestor of
+#           the branch. FAILS when a counter or a time rises past the margins.
+#   record  (release-tests.yml, and by hand for a backfill): a main engine release; its rows go
+#           to perf.csv on the branch wpt-scores. With an older main engine on the same runner
+#           the job summary also shows the change since that engine (reported, never fatal).
+#
+#   gh workflow run perf.yml --repo danbri/factoidal-builds -f engine_tags=c3d227a9fe05,64af7ef92b5f
+#
+# Cost: one Linux runner for about 10-20 minutes for each engine measured.
+
+on:
+  workflow_call:
+    inputs:
+      core_sha:
+        description: 'factoidal-core commit (40 hex) of the head engine'
+        type: string
+        required: true
+      engine_artifact:
+        description: 'artifact of the calling run with libweb-render.so and lean-toolchain (gate); empty: the release of core_sha'
+        type: string
+        default: ''
+      mode:
+        type: string
+        default: gate
+      allow:
+        description: 'fixture.metric list of rises accepted on purpose (shown, not fatal)'
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      engine_tags:
+        description: 'comma list: build-<12 hex>-foafnaut-linux-x86_64 tags or 12-hex main commits; each is recorded in perf.csv'
+        required: true
+      compare:
+        description: 'also run the previous main engine and show the change (doubles the time)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.p.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ inputs.core_sha }}
+          TAGS: ${{ inputs.engine_tags }}
+          ARTIFACT: ${{ inputs.engine_artifact }}
+          MODE: ${{ inputs.mode || 'record' }}
+          COMPARE: ${{ inputs.compare }}
+        run: |
+          set -euo pipefail
+          python3 - >> "$GITHUB_OUTPUT" <<'EOF'
+          import json, os, re, subprocess
+          def sha_of(ref):
+              return subprocess.run(["gh", "api", f"repos/{os.environ['CORE_REPO']}/commits/{ref}", "--jq", ".sha"],
+                                    capture_output=True, text=True, check=True).stdout.strip()
+          items = []
+          if os.environ.get("TAGS"):
+              for t in [x.strip() for x in os.environ["TAGS"].split(",") if x.strip()]:
+                  m = re.fullmatch(r"(?:build-)?([0-9a-f]{12})(?:-foafnaut-linux-x86_64)?", t)
+                  if not m:
+                      raise SystemExit(f"not a tag or 12-hex commit: {t}")
+                  items.append({"sha": sha_of(m[1]), "tag": f"build-{m[1]}-foafnaut-linux-x86_64", "artifact": "",
+                                "mode": "record", "compare": os.environ.get("COMPARE") == "true"})
+          else:
+              sha = os.environ["SHA"]
+              mode = os.environ["MODE"]
+              items.append({"sha": sha, "tag": "" if os.environ.get("ARTIFACT") else f"build-{sha[:12]}-foafnaut-linux-x86_64",
+                            "artifact": os.environ.get("ARTIFACT", ""), "mode": mode, "compare": True})
+          print("matrix=" + json.dumps({"include": items}))
+          EOF
+
+  perf:
+    name: Perf ${{ matrix.mode }} ${{ matrix.tag || 'branch engine' }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - name: Baseline (newest Linux engine release of main that the head contains)
+        id: base
+        if: matrix.compare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          EXCL=$([ "${{ matrix.mode }}" = record ] && echo --exclude-self || true)
+          if python3 builds/release-tests/perf.py baseline --head "${{ matrix.sha }}" $EXCL > "$RUNNER_TEMP/base.txt"; then
+            cat "$RUNNER_TEMP/base.txt" >> "$GITHUB_OUTPUT"
+          else
+            echo "No Linux engine release of main is an ancestor of the head: no comparison." >> "$GITHUB_STEP_SUMMARY"
+            [ "${{ matrix.mode }}" = gate ] && { echo "::error::perf gate: no baseline engine (rebase the branch on main)"; exit 1; }
+          fi
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ matrix.sha }}
+          path: core
+          sparse-checkout: |
+            labs/demos/foafnaut
+            tests/browser-wpt
+            docs/web/hub/foafnaut
+            third_party/fonts/noto-sans
+      - uses: actions/checkout@v4
+        if: steps.base.outputs.commit != ''
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ steps.base.outputs.commit }}
+          path: base
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      - uses: actions/download-artifact@v4
+        if: matrix.artifact != ''
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ runner.temp }}/head
+      - name: Engines
+        id: eng
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          get() {  # tag dir: the release's library and its lean-toolchain
+            mkdir -p "$2"
+            gh release download "$1" -R "$GITHUB_REPOSITORY" -p 'foafnaut-linux-x86_64.tar.gz' -D "$2"
+            tar -xzf "$2/foafnaut-linux-x86_64.tar.gz" -C "$2"
+            mv "$2/foafnaut/libweb-render.so" "$2/foafnaut/lean-toolchain" "$2/"
+          }
+          [ -n "${{ matrix.tag }}" ] && get "${{ matrix.tag }}" "$RUNNER_TEMP/head"
+          [ -n "${{ steps.base.outputs.tag }}" ] && get "${{ steps.base.outputs.tag }}" "$RUNNER_TEMP/base"
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none > /dev/null
+          for side in head base; do
+            [ -f "$RUNNER_TEMP/$side/lean-toolchain" ] || continue
+            T=$(tr -d ' \n' < "$RUNNER_TEMP/$side/lean-toolchain")
+            "$HOME/.elan/bin/elan" toolchain install "$T" > /dev/null 2>&1
+            D=$(ls -d "$HOME/.elan/toolchains/$(echo "$T" | sed 's|/|--|; s|:|---|')/lib/lean" 2>/dev/null || ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)
+            echo "$side=$D" >> "$GITHUB_OUTPUT"
+            echo "$side engine: Lean $T ($D)"
+          done
+          echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.eng.outputs.deno }}
+      - name: Run the fixtures
+        run: |
+          set -euo pipefail
+          ENG=(--engine "head=$RUNNER_TEMP/head/libweb-render.so:$GITHUB_WORKSPACE/core" --ld "head=${{ steps.eng.outputs.head }}")
+          if [ -n "${{ steps.base.outputs.tag }}" ]; then
+            ENG=(--engine "base=$RUNNER_TEMP/base/libweb-render.so:$GITHUB_WORKSPACE/base" --ld "base=${{ steps.eng.outputs.base }}" "${ENG[@]}")
+          fi
+          python3 builds/release-tests/perf.py run --core core "${ENG[@]}" --out "$RUNNER_TEMP/perf" --samples 3
+      - name: Compare (gate)
+        if: steps.base.outputs.tag != ''
+        env:
+          ALLOW: ${{ inputs.allow }}
+          MODE: ${{ matrix.mode }}
+        run: |
+          set -uo pipefail
+          {
+            echo "Head: core \`${{ matrix.sha }}\` (${{ matrix.tag || matrix.artifact }}). Base: \`${{ steps.base.outputs.commit }}\` (${{ steps.base.outputs.tag }})."
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          RC=0
+          python3 builds/release-tests/perf.py compare --summary "$RUNNER_TEMP/perf/summary.json" --base base --head head \
+            --allow "${ALLOW:-}" --out "$RUNNER_TEMP/perf" || RC=$?
+          if [ "$MODE" = gate ]; then exit $RC; fi
+          [ $RC -eq 0 ] || echo "::warning::main ${{ matrix.sha }} is slower than ${{ steps.base.outputs.commit }} on the perf fixtures (see the summary)"
+      - name: Rows for perf.csv
+        if: always() && matrix.mode == 'record'
+        run: |
+          [ -f "$RUNNER_TEMP/perf/summary.json" ] || { echo "::error::no perf summary to record"; exit 1; }
+          python3 builds/release-tests/perf.py rows --summary "$RUNNER_TEMP/perf/summary.json" --label head \
+            --core-commit "${{ matrix.sha }}" --engine-tag "${{ matrix.tag }}" --out "$RUNNER_TEMP/perf/rows.json"
+          cd builds && python3 release-tests/perf.py record --rows "$RUNNER_TEMP/perf/rows.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-${{ matrix.mode }}-${{ matrix.tag || 'branch' }}
+          path: ${{ runner.temp }}/perf/
+          retention-days: 30

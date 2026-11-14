@@ -49,6 +49,10 @@ on:
         description: '40-hex WPT commit (empty: the one of the newest valid full run)'
         required: false
         default: ''
+      perf_allow:
+        description: 'Performance gate: fixture.metric list of rises accepted on purpose (skills/perf-gate)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -331,3 +335,18 @@ jobs:
           name: branch-wpt-results
           path: ${{ runner.temp }}/report/
           retention-days: 30
+
+  # The performance gate (perf.yml, core's skills/perf-gate): the branch's engine against the
+  # newest Linux engine release of main that the branch contains, on one runner. Fails when a
+  # counter or a time rises past the stated margins. Runs beside the tests (needs only the build).
+  perf:
+    name: Performance gate
+    needs: build
+    uses: ./.github/workflows/perf.yml
+    permissions:
+      contents: write
+    with:
+      core_sha: ${{ needs.build.outputs.sha }}
+      engine_artifact: branch-engine
+      mode: gate
+      allow: ${{ inputs.perf_allow }}

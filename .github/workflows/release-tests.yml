@@ -460,3 +460,17 @@ jobs:
           gh release upload test-results "${FILES[@]}" --clobber
       - name: Append to runs.csv and write meta.json
         run: python3 release-tests/release-tests.py record --from "$RUNNER_TEMP/rec"
+
+  # The performance record (perf.yml, core's skills/perf-gate): the Linux engine of this main
+  # commit on the perf fixtures, rows appended to perf.csv on wpt-scores, and the change since
+  # the previous main engine in the job summary (a warning, not a failure: main is merged).
+  perf:
+    name: Performance record
+    needs: resolve
+    if: needs.resolve.outputs.wpt == 'true' && contains(needs.resolve.outputs.platforms, 'linux-x86_64') && inputs.script_engine != 'quickjs'
+    uses: ./.github/workflows/perf.yml
+    permissions:
+      contents: write
+    with:
+      core_sha: ${{ needs.resolve.outputs.core_commit }}
+      mode: record
