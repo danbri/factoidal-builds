@@ -24,11 +24,12 @@ name: Foafnaut Linux engine
 # Cost: Linux minutes only, about 25-35 min a build for each arch.
 
 on:
-  # build.yml: the commit that run published. The other two only give a tick for the
+  # build.yml: the commit that run published. Branch WPT check only gives a tick for the
   # same check as the schedule (GitHub starts scheduled runs late or not at all when it
-  # is busy; these workflows end often while people work).
+  # is busy; branch checks end often while people work). Not Release tests: that
+  # workflow starts on each run of this one, and the two would start each other.
   workflow_run:
-    workflows: ['Build Factoidal from factoidal-core', 'Branch WPT check', 'Release tests']
+    workflows: ['Build Factoidal from factoidal-core', 'Branch WPT check']
     types: [completed]
   schedule:
     # Every 20 minutes: the newest main commit, when it has no Linux engine release and
