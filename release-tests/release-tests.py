@@ -726,6 +726,49 @@ def cmd_wpt_shard(a):
     elif retry_names:
         retry["skipped"] = f"more than {a.retry_max} names: not retried"
     text = open(tool_log, errors="replace").read()
+    # Completion passes: a test process that ends with exit 0 in the middle of a test is
+    # not started again by core's tool (before core 2026-11-14), and the rest of its list
+    # is not run (fa4b3c77a: 200 names after a Test262 page). The test it ended on is
+    # recorded as CRASH, and the names with no result run in a new pass.
+    completion = []
+    log_dir = results
+    for attempt in range(6):
+        have = read_results(results)
+        missing = [n for n in mine if n.lstrip("/") not in have]
+        if not missing or "stopped at --max-hours" in text or time.time() - t0 > (a.max_minutes + a.retry_minutes) * 60:
+            break
+        blamed = []
+        for fn in sorted(os.listdir(log_dir)):
+            if re.fullmatch(r"part\d+\.log", fn):
+                starts = [l[6:].strip() for l in open(os.path.join(log_dir, fn), errors="replace") if l.startswith("START ")]
+                if starts and starts[-1] not in have:
+                    blamed.append(starts[-1])
+        with open(os.path.join(results, f"zy-ended-{attempt}.jsonl"), "w") as f:
+            for n in blamed:
+                f.write(json.dumps({"file": n, "harness": "CRASH", "message": "the test process ended during this test with no result (exit 0)", "subtests": []}) + "\n")
+        rest = [n for n in missing if n.lstrip("/") not in set(blamed)]
+        entry = {"pass": attempt, "missing": len(missing), "ended_on": blamed, "run": len(rest)}
+        completion.append(entry)
+        log(f"completion pass {attempt}: {len(missing)} names had no result; ended on {blamed}; running {len(rest)}")
+        if not rest:
+            break
+        for _ in range(40):
+            if not any(port_open(p) for p in WPT_PORTS):
+                break
+            time.sleep(1)
+        cdir = os.path.join(work, f"complete-{attempt}")
+        os.makedirs(cdir, exist_ok=True)
+        with open(os.path.join(cdir, "rest.list"), "w") as f:
+            f.write("\n".join(rest) + "\n")
+        entry["tool_exit"] = run_logged([sys.executable, tool, "run", "--list", os.path.join(cdir, "rest.list"), "--dir", cdir, "--wpt-root", wpt_root,
+                                         "--native-engine", lib, "--jobs", str(a.jobs), "--max-hours", f"{a.retry_minutes / 60:.3f}"] + extra,
+                                        os.path.join(out, "completion-tool.log"), a.retry_minutes * 60 + 300, env=env, cwd=work, monitor=monitor)
+        got = read_results(cdir)
+        with open(os.path.join(results, f"zz-complete-{attempt}.jsonl"), "w") as f:
+            for n, (c, line) in sorted(got.items()):
+                f.write(line if line.endswith("\n") else line + "\n")
+        entry["results"] = len(got)
+        log_dir = cdir
     done = read_results(results)
     want = {n.lstrip("/") for n in mine}
     ran = len(want & set(done))
@@ -744,7 +787,7 @@ def cmd_wpt_shard(a):
         elif fn.endswith(".log"):
             with open(src, "rb") as fi, gzip.open(os.path.join(out, fn + ".gz"), "wb") as fo:
                 shutil.copyfileobj(fi, fo)
-    finish(tool_exit=rc, run_seconds=run_seconds, retry=retry, memory=memory, names_run=ran, outcomes=outcomes, server_failures=server_failures,
+    finish(tool_exit=rc, run_seconds=run_seconds, retry=retry, completion=completion, memory=memory, names_run=ran, outcomes=outcomes, server_failures=server_failures,
            wptserve={"probes_ok": probes["ok"], "probes_failed": probes["failed"], "failed_streak_max": probes["streak_max"],
                      "exited_during_run": "wptserve exited" in text, "stopped_at_limit": "stopped at --max-hours" in text},
            jobs=a.jobs, max_minutes=a.max_minutes)
