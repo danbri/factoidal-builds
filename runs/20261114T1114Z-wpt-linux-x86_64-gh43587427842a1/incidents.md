@@ -6,9 +6,9 @@ CRASH 61, STALL 18, TIMEOUT 4382; against `20261114T1029Z-wpt-linux-x86_64-gh435
 
 - IndexedDB/
   - `/IndexedDB/idbindex-multientry.any.html` NEW: halted: memory limit: the script's heap is full (x5)
-  - `/IndexedDB/keypath.any.html` NEW: the test process was killed (SIGABRT)
-  - `/IndexedDB/keypath.any.sharedworker.html` NEW: the test process was killed (SIGABRT)
-  - `/IndexedDB/keypath.any.worker.html` NEW: the test process was killed (SIGABRT)
+  - `/IndexedDB/keypath.any.html` NEW: the test process was killed (SIGABRT) [thread 'main' (2518) has overflowed its stack; fatal runtime error: stack overflow, aborting]
+  - `/IndexedDB/keypath.any.sharedworker.html` NEW: the test process was killed (SIGABRT) [thread 'main' (2535) has overflowed its stack; fatal runtime error: stack overflow, aborting]
+  - `/IndexedDB/keypath.any.worker.html` NEW: the test process was killed (SIGABRT) [thread 'main' (2531) has overflowed its stack; fatal runtime error: stack overflow, aborting]
 - connection-allowlist/
   - `/connection-allowlist/tentative/dedicated-worker.sub.window.html`: the page ended without the harness completion (4 subtests reported)
 - content-security-policy/
