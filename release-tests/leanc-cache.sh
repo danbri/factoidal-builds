@@ -16,7 +16,9 @@ for a in "$@"; do
   prev=$a
 done
 if [ "$compile" = 1 ] && [ -n "$src" ] && [ -n "$out" ] && [ -f "$src" ] && [ -n "${LEANC_CACHE:-}" ]; then
-  key=$( { printf '%s\n' "${LEANC_ID:-}"; for a in "$@"; do [ "$a" = "$src" ] || [ "$a" = "$out" ] || printf '%s\n' "$a"; done; cat "$src"; } | sha256sum | cut -d' ' -f1)
+  # macOS has no sha256sum: shasum -a 256 prints the same digest.
+  if command -v sha256sum > /dev/null 2>&1; then H=(sha256sum); else H=(shasum -a 256); fi
+  key=$( { printf '%s\n' "${LEANC_ID:-}"; for a in "$@"; do [ "$a" = "$src" ] || [ "$a" = "$out" ] || printf '%s\n' "$a"; done; cat "$src"; } | "${H[@]}" | cut -d' ' -f1)
   if [ -s "$LEANC_CACHE/$key.o" ]; then
     cp "$LEANC_CACHE/$key.o" "$out" && { touch "$LEANC_CACHE/$key.o"; printf . >> "$LEANC_CACHE/.hits"; exit 0; }
   fi

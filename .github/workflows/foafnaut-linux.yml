@@ -301,3 +301,13 @@ jobs:
           gh workflow run release-tests.yml -R "${{ github.repository }}" -f release="build-$SHORT" \
             -f platforms=linux-x86_64 -f suites=wpt -f trigger=factoidal-release
           echo "Started release-tests.yml for build-$SHORT on Linux" >> "$GITHUB_STEP_SUMMARY"
+      # The macOS engine library of the same commit (foafnaut-macos.yml: one build at a
+      # time, a waiting run is replaced by a newer one).
+      - name: Start the macOS engine build
+        if: matrix.arch == 'x86_64'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          gh workflow run foafnaut-macos.yml -R "${{ github.repository }}" -f core_ref="$SHA" \
+            && echo "Started foafnaut-macos.yml for $SHA" >> "$GITHUB_STEP_SUMMARY" || echo "::warning::foafnaut-macos.yml not started"

@@ -1,0 +1,260 @@
+name: Foafnaut macOS engine
+
+# Builds the native Foafnaut engine library for macOS arm64 (libweb-render.dylib) from
+# one factoidal-core commit on main and publishes it as release
+# build-<12 hex>-foafnaut-engine-darwin-arm64, with <set>.tar.gz and build-info.json in
+# the format of build.yml's releases (sha256 of the tarball and of every file). The
+# library is at foafnaut/libweb-render.dylib in the tarball, as in build.yml's
+# foafnaut-darwin-arm64 set, and links Lean's runtime statically: it needs no Lean.
+#
+# Why: build.yml publishes foafnaut-darwin-arm64 only when every gate of that workflow
+# passes (the Linux lean job with its tail-recursion gate, the Wasm engines and their
+# Deno tests, the packaged demos). While main fails one of them, no macOS engine of a
+# newer commit exists, and nothing can draw a page or run WPT with current main on a Mac.
+# This workflow is foafnaut-linux.yml for macOS: the engine build alone
+# (labs/demos/foafnaut/build-web-render.sh --native, with the lab's #guard tests and the
+# hygiene ratchet), then one WPT page through core's runner as the gate. It is not the
+# packaged demo set and claims none of build.yml's other gates; build-info.json says so.
+# release-tests.py uses this set for a macOS WPT run when the commit has no
+# foafnaut-darwin-arm64 set.
+#
+# Starts: foafnaut-linux.yml dispatches it for each commit whose Linux engine it has
+# published (a commit that compiles and changes the engine); every three hours for the
+# newest such commit; on request. One build at a time: a waiting run is replaced by a
+# newer one, so under a stream of commits the newest wins.
+#
+# Cost: one macOS runner, about 15-40 min a build (build.yml's macOS Lake cache and a C
+# object cache serve what did not change). The account runs 5 macOS jobs at a time,
+# shared with build.yml (2-3) and a macOS WPT run (4).
+
+on:
+  schedule:
+    - cron: '52 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core commit on main (empty: the newest with a Linux engine release)'
+        required: false
+        default: ''
+      force:
+        description: 'Rebuild when the release exists'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foafnaut-macos
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  SET: foafnaut-engine-darwin-arm64
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.r.outputs.sha }}
+      short: ${{ steps.r.outputs.short }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IN_REF: ${{ inputs.core_ref }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ -n "${IN_REF:-}" ]; then ARGS+=(--ref "$IN_REF"); fi
+          if [ "${FORCE:-false}" = true ]; then ARGS+=(--force); fi
+          python3 release-tests/release-tests.py macos-candidate ${ARGS[@]+"${ARGS[@]}"}
+
+  build:
+    name: libweb-render.dylib arm64
+    needs: resolve
+    if: needs.resolve.outputs.sha != ''
+    runs-on: macos-15
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - name: Install elan and the pinned Lean
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+      - name: Pins
+        id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      # build.yml's Lake cache of its newest macOS lean job (same path, so the same cache
+      # version; restore only) and the C objects of the last engine build here.
+      - name: Restore build.yml's Lake cache
+        id: lake
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Restore the C object cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Build libweb-render.dylib
+        id: build
+        shell: bash
+        env:
+          CACHE_KEY: ${{ steps.lake.outputs.cache-matched-key }}
+        run: |
+          set -uo pipefail
+          LOG=$RUNNER_TEMP/build.log
+          mkdir -p "$HOME/leanc-cache" "$HOME/leanc-shim"
+          rm -f "$HOME/leanc-cache/.hits" "$HOME/leanc-cache/.misses"; touch "$HOME/leanc-cache/.start"
+          cp builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"; chmod +x "$HOME/leanc-shim/leanc"
+          export LEANC_REAL=$(ls "$HOME"/.elan/toolchains/*/bin/leanc | head -1) LEANC_CACHE="$HOME/leanc-cache"
+          export LEANC_ID="$(tr -d ' \n' < core/formal/lean4/lean-toolchain) darwin-arm64"
+          T0=$(date +%s)
+          PATH="$HOME/leanc-shim:$PATH" bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
+          RC=$?
+          HITS=$(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null | tr -d ' ' || echo 0); MISSES=$(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null | tr -d ' ' || echo 0)
+          echo "misses=${MISSES:-0}" >> "$GITHUB_OUTPUT"
+          T1=$(date +%s)
+          {
+            echo "Build exit $RC in $(( (T1 - T0) / 60 )) min $(( (T1 - T0) % 60 )) s. Lake cache: ${CACHE_KEY:-none restored}."
+            echo "Lake built $(grep -cE '^(✔|⚠|ℹ) \[[0-9]+/[0-9]+\] Built ' "$LOG" || true) modules here; $(grep -cE 'Replayed ' "$LOG" || true) replayed from the cache. C objects: ${HITS:-0} from the cache, ${MISSES:-0} compiled."
+            echo "First lab module: $(grep -m1 -E '^LEAN ' "$LOG" | cut -c1-80); first C compile: $(grep -m1 -E '^NATIVE ' "$LOG" | cut -c1-80); end: $(date -u)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RC" -ne 0 ] || [ ! -f core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.dylib ]; then
+            {
+              echo "**The commit did not build on macOS.** First errors:"
+              echo '```'
+              grep -n -E -A6 ': error: |^error: |^✖ |build refused' "$LOG" | head -80 | cut -c1-400
+              echo '```'
+              echo "Last lines:"
+              echo '```'
+              tail -25 "$LOG" | cut -c1-400
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          # Keep only the objects this build used.
+          find "$HOME/leanc-cache" -name '*.o' ! -newer "$HOME/leanc-cache/.start" -delete
+          ls -la core/labs/demos/foafnaut/.build/web-render/engines/
+      - name: Save the C object cache
+        if: steps.build.outputs.misses != '' && steps.build.outputs.misses >= 30
+        uses: actions/cache/save@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: ${{ runner.temp }}/build.log
+          retention-days: 7
+      - name: Package
+        shell: bash
+        env:
+          SHA: ${{ needs.resolve.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 - core "$RUNNER_TEMP/pkg" "$SET" "$SHA" "$RUN_URL" <<'PY'
+          import datetime, hashlib, io, json, os, platform, shutil, subprocess, sys, tarfile
+          core, out, set_, sha, run_url = sys.argv[1:]
+          eng = os.path.join(core, "labs/demos/foafnaut/.build/web-render")
+          stage = os.path.join(out, "stage"); d = os.path.join(stage, "foafnaut"); os.makedirs(d)
+          shutil.copy(os.path.join(eng, "engines/libweb-render.dylib"), d)
+          if os.path.exists(os.path.join(eng, "engine-build.txt")):
+              shutil.copy(os.path.join(eng, "engine-build.txt"), d)
+          tc = open(os.path.join(core, "formal/lean4/lean-toolchain")).read().strip()
+          open(os.path.join(d, "lean-toolchain"), "w").write(tc + "\n")
+          open(os.path.join(d, "otool.txt"), "w").write(subprocess.run(["otool", "-L", os.path.join(d, "libweb-render.dylib")], capture_output=True, text=True).stdout)
+          open(os.path.join(d, "README-engine.txt"), "w").write(
+              f"libweb-render.dylib: the Foafnaut engine (BubblePopKit) for macOS arm64, factoidal-core {sha}.\n"
+              "The engine library alone, built by foafnaut-macos.yml: not the packaged demo set of build.yml\n"
+              "(foafnaut-darwin-arm64), and with none of that workflow's other gates. It links Lean's runtime\n"
+              "statically and needs no Lean. Use it with factoidal-core at the same commit:\n"
+              "  labs/demos/foafnaut/run_html.ts ... --native-engine libweb-render.dylib\n"
+              "  tests/browser-wpt/wpt-score.py run ... --native-engine libweb-render.dylib\n")
+          h = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
+          tarball = os.path.join(out, set_ + ".tar.gz"); files = {}
+          with tarfile.open(tarball, "w:gz") as tf:
+              for dp, _, fs in sorted(os.walk(stage)):
+                  for f in sorted(fs):
+                      p = os.path.join(dp, f); rel = os.path.relpath(p, stage)
+                      files[rel] = {"sha256": h(p), "size": os.path.getsize(p)}
+                      ti = tf.gettarinfo(p, arcname=rel); ti.uid = ti.gid = 0; ti.uname = ti.gname = ""; ti.mtime = 0
+                      tf.addfile(ti, open(p, "rb"))
+          deno = subprocess.run(["deno", "--version"], capture_output=True, text=True).stdout.splitlines()[0]
+          clang = subprocess.run(["xcrun", "clang", "--version"], capture_output=True, text=True).stdout.splitlines()[0]
+          json.dump({"built_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "run_url": run_url,
+                     "set": set_, "source_commit": sha, "source_ref": "main", "source_repo": "danbri/factoidal-core",
+                     "toolchains": {"lean": tc, "deno": deno, "clang": clang, "platform": f"darwin-{platform.machine()}",
+                                    "note": "built by foafnaut-macos.yml: the engine library alone; gates: the engine build "
+                                            "(lab #guard tests, hygiene ratchet) and one WPT page; none of build.yml's other gates"},
+                     "artifacts": {os.path.basename(tarball): {"sha256": h(tarball), "size": os.path.getsize(tarball), "files": files}}},
+                    open(os.path.join(out, "build-info.json"), "w"), indent=1)
+          print(json.dumps(files, indent=1))
+          PY
+      - name: 'Gate, one WPT page through the runner with this library'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+        run: |
+          set -euo pipefail
+          # The runner loads the Wasm module and, for WPT, never calls it: this commit's when
+          # build.yml has published it, else the newest released one.
+          WEB="build-$SHORT-foafnaut-web"
+          gh release view "$WEB" -R "${{ github.repository }}" > /dev/null 2>&1 || WEB=$(gh api "repos/${{ github.repository }}/releases?per_page=100" --jq '[.[]|select(.tag_name|test("^build-[0-9a-f]{12}-foafnaut-web$"))]|sort_by(.published_at)|last|.tag_name')
+          echo "Wasm module from $WEB"
+          gh release download "$WEB" -R "${{ github.repository }}" -p foafnaut-web.tar.gz -D "$RUNNER_TEMP/web"
+          mkdir -p "$RUNNER_TEMP/web/x" && tar -xzf "$RUNNER_TEMP/web/foafnaut-web.tar.gz" -C "$RUNNER_TEMP/web/x"
+          RT=core/labs/demos/foafnaut/.build/native-html/runtime; mkdir -p "$RT"
+          cp "$RUNNER_TEMP/web/x/docs/web/hub/html-webgpu/runtime/web-render."{mjs,wasm} "$RT/"
+          python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+          echo /dom/nodes/Node-textContent.html > "$RUNNER_TEMP/one.list"
+          python3 core/tests/browser-wpt/wpt-score.py tree --wpt-root "$RUNNER_TEMP/wpt" --list "$RUNNER_TEMP/one.list" > /dev/null
+          PYTHONPATH="$RUNNER_TEMP/pydeps" python3 core/tests/browser-wpt/wpt-score.py run --list "$RUNNER_TEMP/one.list" \
+            --dir "$RUNNER_TEMP/gate" --wpt-root "$RUNNER_TEMP/wpt" --native-engine "$RUNNER_TEMP/pkg/stage/foafnaut/libweb-render.dylib" \
+            --jobs 1 --max-hours 0.1 -- --script-engine bubblepop
+          head -c 600 "$RUNNER_TEMP"/gate/part0.jsonl; echo
+          python3 -c 'import json,glob,sys; r=[json.loads(l) for f in glob.glob(sys.argv[1]+"/part*.jsonl") for l in open(f) if l.strip()]; assert r and r[0]["harness"]=="OK" and any(s["status"]=="PASS" for s in r[0]["subtests"]), r[:1]; print("gate: harness OK,", sum(s["status"]=="PASS" for s in r[0]["subtests"]), "subtests pass")' "$RUNNER_TEMP/gate"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TAG="build-$SHORT-$SET"
+          gh release delete "$TAG" -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" -R "${{ github.repository }}" --latest=false --title "$TAG" \
+            --notes "Built from https://github.com/$CORE_REPO/commit/$SHA (main) by $RUN_URL. The macOS arm64 Foafnaut engine library alone (foafnaut/libweb-render.dylib, static Lean runtime), for drawing pages and WPT runs with the same commit of factoidal-core. Not the packaged demo set (foafnaut-darwin-arm64) and without build.yml's other gates; gate here: the engine build and one WPT page. build-info.json lists the sha256 of every file." \
+            "$RUNNER_TEMP/pkg/$SET.tar.gz" "$RUNNER_TEMP/pkg/build-info.json"
+          echo "Published $TAG" >> "$GITHUB_STEP_SUMMARY"

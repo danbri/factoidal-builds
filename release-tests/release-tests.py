@@ -46,6 +46,10 @@ PROBE_FAILURES_MAX = 3               # consecutive failed probes of the WPT serv
 # makes it; until then a Linux WPT run has no engine and resolve does not plan one).
 ENGINE_SET = {"macos-arm64": "foafnaut-darwin-arm64", "linux-x86_64": "foafnaut-linux-x86_64"}
 ENGINE_FILE = {"macos-arm64": "foafnaut/libweb-render.dylib", "linux-x86_64": "foafnaut/libweb-render.so"}
+# The engine library alone for macOS (foafnaut-macos.yml): built for main commits without
+# build.yml's other gates, so that a commit has a macOS engine when build.yml publishes
+# no foafnaut-darwin-arm64 set. It stands in for that set where only the library is needed.
+MAC_ENGINE_ONLY = "foafnaut-engine-darwin-arm64"
 RUNNER_LABEL = {"macos-arm64": "macos-15", "linux-x86_64": "ubuntu-latest"}
 
 RUNS_COLUMNS = [
@@ -180,6 +184,9 @@ def releases_by_commit(releases):
         c = re.search(r"/commit/([0-9a-f]{40})", r.get("body") or "")
         if c and c[1].startswith(m[1]):
             e["commit"] = c[1]
+    for e in by.values():
+        if MAC_ENGINE_ONLY in e["sets"]:
+            e["sets"].setdefault(ENGINE_SET["macos-arm64"], e["sets"][MAC_ENGINE_ONLY])
     return by
 
 
@@ -562,12 +569,14 @@ def cmd_wpt_shard(a):
     # The engine: the release's library and the Wasm module that the runner also loads.
     engine_dir = os.path.abspath(a.engine_dir)
     sets = {}
+    # The set's name is the tag's: build-<12 hex>-<set> (macOS: the full set or the engine-only one).
+    eset = (re.fullmatch(r"build-[0-9a-f]{12}-(.+)", a.engine_tag or "") or [None, ENGINE_SET[a.platform]])[1]
     if not a.engine_lib:
-        sets[ENGINE_SET[a.platform]] = fetch_set(a.engine_tag, ENGINE_SET[a.platform], engine_dir)
+        sets[ENGINE_SET[a.platform]] = fetch_set(a.engine_tag, eset, engine_dir)
     sets["foafnaut-web"] = fetch_set(a.web_tag, "foafnaut-web", engine_dir)
     meta["release_sets"] = sets
     # --engine-lib: a library built from a branch (branch-wpt.yml); no release names it.
-    lib = os.path.abspath(a.engine_lib) if a.engine_lib else os.path.join(engine_dir, ENGINE_SET[a.platform], ENGINE_FILE[a.platform])
+    lib = os.path.abspath(a.engine_lib) if a.engine_lib else os.path.join(engine_dir, eset, ENGINE_FILE[a.platform])
     web = os.path.join(engine_dir, "foafnaut-web", "docs/web/hub")
     if not os.path.exists(lib):
         finish(error=f"the release has no {ENGINE_FILE[a.platform]}")
@@ -1291,6 +1300,36 @@ def cmd_linux_candidate(a):
     summary(why)
 
 
+def cmd_macos_candidate(a):
+    """The main commit to build the macOS engine library for (foafnaut-macos.yml): the one
+    asked, else the newest main commit that has a Linux engine release (so it compiles and
+    changes the engine). Nothing when that commit has a macOS engine already."""
+    by = releases_by_commit(list_releases(2))
+    out = {"sha": "", "short": ""}
+    if a.ref:
+        sha = api(f"repos/{CORE_REPO}/commits/{a.ref}")["sha"]
+        status = api(f"repos/{CORE_REPO}/compare/main...{sha}").get("status")
+        if status not in ("behind", "identical"):
+            die(f"{sha} is not on core main ({status})", 2)
+        why = f"asked: {sha[:12]}"
+    else:
+        last, e = newest_complete(by, [ENGINE_SET["linux-x86_64"]])
+        if not last:
+            gh_output(**out)
+            summary("no Linux engine release: nothing to build")
+            return
+        sha = e["commit"] or api(f"repos/{CORE_REPO}/commits/{last}")["sha"]
+        why = f"newest main commit with a Linux engine: {sha[:12]}"
+    have = by.get(sha[:12], {"sets": {}})["sets"]
+    if ENGINE_SET["macos-arm64"] in have and not a.force:
+        why += f"; it has {have[ENGINE_SET['macos-arm64']]['tag_name']}: no build"
+    else:
+        out = {"sha": sha, "short": sha[:12]}
+        why += "; no macOS engine yet: build"
+    gh_output(**out)
+    summary(why)
+
+
 # ---- branch check (branch-wpt.yml): a development check, never a score ---------------------
 
 def group_of(name):
@@ -1520,6 +1559,9 @@ def main():
     rc.add_argument("--no-push", action="store_true")
     lc = sub.add_parser("linux-candidate")
     lc.add_argument("--dispatch-build", action="store_true")
+    mc = sub.add_parser("macos-candidate")
+    mc.add_argument("--ref", default="")
+    mc.add_argument("--force", action="store_true")
     bp = sub.add_parser("branch-plan")
     bp.add_argument("--names", required=True)
     bp.add_argument("--wpt-commit", default="")
@@ -1535,7 +1577,7 @@ def main():
     a = ap.parse_args()
     {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
-     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
+     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
 
 
 if __name__ == "__main__":
