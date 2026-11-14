@@ -10,12 +10,11 @@ name: Release tests
 #                      full WPT run (unless that commit already has a valid one at the
 #                      same WPT commit) and the other conformance suites
 #   schedule           four times a day (01:41, 07:41, 13:41, 19:41 UTC, away from
-#                      build.yml's poll at :23): the full WPT run of the newest complete
-#                      release on macOS and Linux, run also when nothing changed
-#                      (repeat_of names the last valid run of that commit: repeats show
-#                      flakiness). It may wait up to 60 min for a build that is about to
-#                      end. It never builds. (Linux is planned to take over 3 of the 4
-#                      runs once its runners stop failing; see release-tests/README-results.md.)
+#                      build.yml's poll at :23): the full WPT run of the newest release
+#                      with an engine, on Linux; the 13:41 run also on macOS. Run also
+#                      when nothing changed (repeat_of names the last valid run of that
+#                      commit: repeats show flakiness). It may wait up to 60 min for a
+#                      build that is about to end. It never builds.
 #   browser-release    a scheduled run whose WPT commit is new on wpt.fyi (new aligned
 #                      runs of Chrome, Firefox, Safari and Edge): the same run, and the
 #                      other browsers' results at that commit go to rivals.csv
@@ -38,16 +37,19 @@ name: Release tests
 # jobs at a time for the account, shared with build.yml, and 20 jobs in all):
 #   macOS: 4 shards x 38-54 min = about 180 macOS minutes a run, 45-55 min wall.
 #   Linux: 16 shards x 13-19 min = about 270 Linux minutes a run, about 20 min wall.
-#   Each day: 4 scheduled runs = about 720 macOS + 1,080 Linux minutes, plus one macOS and
-#   one Linux run for each new main release (none when that commit already has a valid
-#   run at the same WPT commit). The other suites: 6 Linux jobs of 1-5 min each.
+#   Each day: 4 scheduled runs = about 1,080 Linux + 180 macOS minutes, plus one Linux
+#   run for each main commit with a Linux engine (foafnaut-linux.yml builds one every 20
+#   min when main changes engine code) and one macOS run for each build.yml release (none
+#   when that commit already has a valid run at the same WPT commit on that platform).
+#   The other suites: 6 Linux jobs of 1-5 min each.
 
 on:
   workflow_run:
     workflows: ['Build Factoidal from factoidal-core', 'Foafnaut Linux engine']
     types: [completed]
   schedule:
-    - cron: '41 1,7,13,19 * * *'
+    - cron: '41 13 * * *'
+    - cron: '41 1,7,19 * * *'
   workflow_dispatch:
     inputs:
       release:
@@ -128,9 +130,9 @@ jobs:
             [[ "$v" =~ ^[0-9]+$ ]] && [ "$v" -ge 1 ] && [ "$v" -le 32 ] || { echo "::error::shards are 1 to 32"; exit 2; }
           done
           case "$EVENT" in
-            # Every scheduled run on macOS (the score of record) and Linux, while Linux
-            # runners still stop during some runs (2026-11-13; see the README).
-            schedule) PLATFORMS=linux-x86_64,macos-arm64; SUITES=wpt,w3c;;
+            # Linux for every scheduled run; macOS, the shipping platform, with the 13:41
+            # run as the cross-check (its runners are few and build.yml needs them).
+            schedule) if [ "$CRON" = '41 13 * * *' ]; then PLATFORMS=linux-x86_64,macos-arm64; else PLATFORMS=linux-x86_64; fi; SUITES=wpt,w3c;;
             workflow_run) if [ "$BUILD_WORKFLOW" = 'Foafnaut Linux engine' ]; then PLATFORMS=linux-x86_64; SUITES=wpt; else PLATFORMS=macos-arm64; SUITES=wpt,w3c; fi;;
             *) PLATFORMS=${IN_PLATFORMS:-linux-x86_64,macos-arm64}; SUITES=${IN_SUITES:-wpt,w3c};;
           esac

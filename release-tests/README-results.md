@@ -16,6 +16,11 @@ on `main`). Every file here can be fetched without credentials:
 - **Only rows with `valid` = `true` and `kind` = `full` are scores.** Invalid runs are kept,
   with `invalid_reason`, so that failures stay visible. They are never shown as a score.
 - Rows are only appended. A row is never changed or deleted.
+- **Platforms.** macOS arm64 is the shipping platform. Linux x86_64 runs the same engine
+  source and gets a result first (a Linux engine is built within 20 minutes of a main
+  commit that changes engine code; a full run takes 20 minutes). On the same commit the
+  two agree closely (6dde36491: 71.2202% Linux, 71.2245% macOS). A valid Linux row is the
+  score of a commit while that commit has no valid macOS row.
 - A full WPT run is valid only if all of these are true (`wpt_validity` in
   `release-tests.py`):
   1. every name that Chrome runs at the WPT commit was run (`names_run` = `names_total`);
@@ -29,7 +34,9 @@ on `main`). Every file here can be fetched without credentials:
   4. every shard gave results;
   5. in every shard the WPT server answered for the whole run (a probe every 10 s, no 3
      failed probes in a row, no "wptserve exited"), and no shard stopped at its time limit;
-  6. the release that a shard ran is of the same core commit as the runner code;
+  6. the engine library that a shard ran is of the same core commit as the runner code
+     (the Wasm module, which a native run loads and never calls, may be of an earlier
+     release: `plan.release_sets.foafnaut-web.note` in meta.json says so);
   7. Chrome's summary gave a denominator.
 - Another suite's run is valid if its runner ended (exit 0 or 1, not a time-out), its log
   has a score line, and it found at least one test (`suite_validity`).

@@ -364,11 +364,11 @@ def cmd_resolve(a):
             die(f"no release of core commit {a.release}", 2)
         short, why = m[1], f"named by the dispatch ({a.release})"
     # The candidate: the newest commit with every set that the asked runs need.
-    need = sorted({ENGINE_SET[p] for p in platforms} | {"foafnaut-web"}) if "wpt" in suites_wanted else []
+    need = sorted({ENGINE_SET[p] for p in platforms}) if "wpt" in suites_wanted else []
     if not short and "wpt" in suites_wanted and not newest_complete(by, need)[0] and "linux-x86_64" in platforms:
         platforms = [p for p in platforms if p != "linux-x86_64"] or ["macos-arm64"]
         plan["platform_note"] = "no release has a Linux engine yet: macOS only"
-        need = sorted({ENGINE_SET[p] for p in platforms} | {"foafnaut-web"})
+        need = sorted({ENGINE_SET[p] for p in platforms})
     if not short:
         waited = 0
         while True:
@@ -408,6 +408,14 @@ def cmd_resolve(a):
     on_main = api(f"repos/{CORE_REPO}/compare/main...{commit}").get("status") in ("behind", "identical")
     sets = {s: {"tag": r["tag_name"], "published_at": r.get("published_at"), "url": r.get("html_url")}
             for s, r in sorted(entry["sets"].items())}
+    if "foafnaut-web" not in sets and "wpt" in suites_wanted:
+        # A Linux engine built before build.yml published this commit: the runner loads
+        # (and for WPT never calls) the Wasm module, so the newest released one serves.
+        wshort, w = newest_complete(by, ["foafnaut-web"])
+        if w:
+            r = w["sets"]["foafnaut-web"]
+            sets["foafnaut-web"] = {"tag": r["tag_name"], "published_at": r.get("published_at"), "url": r.get("html_url"),
+                                    "note": f"of core {wshort}, not of this commit: the Wasm module is loaded, not used, by a native run"}
     plan.update({
         "trigger": trigger, "core_commit": commit, "core_short": short, "on_main": on_main,
         "commit_author_utc": c["commit"]["author"]["date"], "commit_committer_utc": c["commit"]["committer"]["date"],
@@ -569,7 +577,9 @@ def cmd_wpt_shard(a):
     os.makedirs(runtime, exist_ok=True)
     for n in ("web-render.mjs", "web-render.wasm"):
         shutil.copyfile(os.path.join(web, "html-webgpu/runtime", n), os.path.join(runtime, n))
-    for c in ([] if a.engine_lib else [sets[ENGINE_SET[a.platform]], sets["foafnaut-web"]]):
+    # The engine library must be of the runner's commit. The Wasm module may be of another
+    # (resolve says so in the plan): a native run loads it and never calls it.
+    for c in ([] if a.engine_lib else [sets[ENGINE_SET[a.platform]]]):
         if c["build_info"]["source_commit"] != meta["tool_commit"]:
             meta.setdefault("problems", []).append(f"{c['tag']} is of core {c['build_info']['source_commit'][:12]}, the runner of {meta['tool_commit'][:12]}")
     # The WPT tree for this shard's names (core's tool, from GitHub's tarball of the commit).
@@ -1179,6 +1189,65 @@ def cmd_record(a):
     die("could not push to the results branch after 5 attempts")
 
 
+# ---- main on Linux without waiting for build.yml (foafnaut-linux.yml's schedule) ------------
+
+ENGINE_PATHS = ("formal/lean4/", "labs/demos/foafnaut/", "tools/wasmvm/", "tests/browser-wpt/")
+NOT_ENGINE = re.compile(r"\.(md|json|txt|html|png|svg)$")
+
+
+def engine_changed(base, head):
+    """True when base...head changes a file that the engine or the WPT runner is built from."""
+    cmp = api(f"repos/{CORE_REPO}/compare/{base}...{head}")
+    files = [f["filename"] for f in cmp.get("files", [])]
+    if cmp.get("status") not in ("ahead",) or len(files) >= 300:
+        return True, f"compare status {cmp.get('status')}, {len(files)} files"
+    hit = [f for f in files if f.startswith(ENGINE_PATHS) and not (f.startswith("tests/browser-wpt/") and NOT_ENGINE.search(f))]
+    return bool(hit), (f"{len(hit)} engine files changed, e.g. {hit[0]}" if hit else f"{len(files)} files changed, none of the engine")
+
+
+def cmd_linux_candidate(a):
+    """The newest main commit, when it has no Linux engine release and it changes engine
+    code since the newest commit that has one. Also starts build.yml for main when no
+    build run was made since that commit (the hourly poll of build.yml is often late)."""
+    head = api(f"repos/{CORE_REPO}/commits/main")
+    sha, when = head["sha"], head["commit"]["committer"]["date"]
+    by = releases_by_commit(list_releases(2))
+    short = sha[:12]
+    have = by.get(short, {"sets": {}})["sets"]
+    out = {"sha": "", "short": "", "arches": "[]"}
+    lset = ENGINE_SET["linux-x86_64"]
+    if lset in have:
+        why = f"main {short} has a Linux engine release"
+    else:
+        last, _ = newest_complete(by, [lset])
+        changed, note = engine_changed(by[last]["commit"] or last, sha) if last else (True, "no Linux engine release yet")
+        if changed:
+            out = {"sha": sha, "short": short, "arches": '["x86_64"]'}
+            why = f"main {short}: {note} since {last}: build"
+        else:
+            why = f"main {short}: {note} since {last}: no build (same engine as {last})"
+    # build.yml for main: the macOS and other sets.
+    if a.dispatch_build and "linux-x86_64" not in have:
+        runs = api(f"repos/{BUILDS_REPO}/actions/workflows/build.yml/runs?per_page=30").get("workflow_runs", [])
+        mine = [r for r in runs if r["event"] in ("schedule", "push") or (r["event"] == "workflow_dispatch" and (r.get("actor") or {}).get("login") == "github-actions[bot]")]
+        seen = [r for r in mine if r["created_at"] > when]
+        busy = [r for r in mine if r["status"] != "completed"]
+        if not seen and not busy:
+            req = urllib.request.Request(f"https://api.github.com/repos/{BUILDS_REPO}/actions/workflows/build.yml/dispatches", method="POST",
+                                         data=json.dumps({"ref": "main"}).encode(),
+                                         headers={"Authorization": f"Bearer {os.environ.get('GH_TOKEN')}", "Accept": "application/vnd.github+json",
+                                                  "User-Agent": "factoidal-release-tests"})
+            try:
+                urllib.request.urlopen(req, timeout=60).read()
+                why += "; build.yml started for main (no build run since that commit)"
+            except urllib.error.HTTPError as e:
+                why += f"; build.yml not started: HTTP {e.code}"
+        else:
+            why += f"; build.yml: {'a run is active' if busy else 'a run was made after that commit'}"
+    gh_output(**out)
+    summary(why)
+
+
 # ---- branch check (branch-wpt.yml): a development check, never a score ---------------------
 
 def group_of(name):
@@ -1403,6 +1472,8 @@ def main():
     rc.add_argument("--from", dest="src", required=True)
     rc.add_argument("--repo", default=".")
     rc.add_argument("--no-push", action="store_true")
+    lc = sub.add_parser("linux-candidate")
+    lc.add_argument("--dispatch-build", action="store_true")
     bp = sub.add_parser("branch-plan")
     bp.add_argument("--names", required=True)
     bp.add_argument("--wpt-commit", default="")
@@ -1418,7 +1489,7 @@ def main():
     a = ap.parse_args()
     {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
-     "record": cmd_record, "seed-local": cmd_seed_local, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
+     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
 
 
 if __name__ == "__main__":

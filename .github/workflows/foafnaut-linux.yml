@@ -27,6 +27,14 @@ on:
   workflow_run:
     workflows: ['Build Factoidal from factoidal-core']
     types: [completed]
+  schedule:
+    # Every 20 minutes: the newest main commit, when it has no Linux engine release and
+    # changes engine code (release-tests/release-tests.py linux-candidate). x86_64 only.
+    # The finished build starts the Linux full WPT run (release-tests.yml), so a main
+    # commit has a score in about an hour without a macOS runner. The same step starts
+    # build.yml for main when no build run was made since that commit: build.yml's own
+    # hourly poll is often late (2026-11-13: none for two hours).
+    - cron: '7,27,47 * * * *'
   workflow_dispatch:
     inputs:
       core_ref:
@@ -41,6 +49,7 @@ on:
 permissions:
   contents: read
 
+# One build at a time; a waiting run is replaced by a newer one (the newest commit wins).
 concurrency:
   group: foafnaut-linux
   cancel-in-progress: false
@@ -51,15 +60,20 @@ env:
 jobs:
   resolve:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+      actions: write
     outputs:
       sha: ${{ steps.r.outputs.sha }}
       short: ${{ steps.r.outputs.short }}
       arches: ${{ steps.r.outputs.arches }}
     steps:
+      - uses: actions/checkout@v4
       - id: r
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
           IN_REF: ${{ inputs.core_ref }}
           FORCE: ${{ inputs.force }}
           BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -67,6 +81,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ "$EVENT" = schedule ]; then
+            python3 release-tests/release-tests.py linux-candidate --dispatch-build
+            exit 0
+          fi
           if [ -n "${IN_REF:-}" ]; then
             SHA=$(gh api "repos/$CORE_REPO/commits/$IN_REF" --jq .sha)
           else
@@ -132,13 +150,53 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ steps.pins.outputs.deno }}
+      # build.yml's Lake cache of the newest build (restore only) and the C objects of the
+      # last engine build (release-tests/leanc-cache.sh): unchanged modules are not
+      # compiled again.
+      - name: Restore build.yml's Lake cache
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-${{ matrix.arch }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-${{ matrix.arch }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Restore the C object cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-${{ matrix.arch }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            leanc-objects-v1-${{ matrix.arch }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
       - name: Build libweb-render.so
+        id: build
         shell: bash
         run: |
           set -euo pipefail
-          cd core/formal/lean4
-          bash ../../labs/demos/foafnaut/build-web-render.sh --native 2>&1 | tail -40
-          ls -la ../../labs/demos/foafnaut/.build/web-render/engines/
+          mkdir -p "$HOME/leanc-cache" "$HOME/leanc-shim"
+          rm -f "$HOME/leanc-cache/.hits" "$HOME/leanc-cache/.misses"; touch "$HOME/leanc-cache/.start"
+          cp builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"; chmod +x "$HOME/leanc-shim/leanc"
+          export LEANC_REAL=$(ls "$HOME"/.elan/toolchains/*/bin/leanc | head -1) LEANC_CACHE="$HOME/leanc-cache"
+          export LEANC_ID="$(tr -d ' \n' < core/formal/lean4/lean-toolchain) ${{ matrix.arch }}"
+          T0=$(date +%s)
+          RC=0
+          PATH="$HOME/leanc-shim:$PATH" bash core/labs/demos/foafnaut/build-web-render.sh --native > "$RUNNER_TEMP/build.log" 2>&1 || RC=$?
+          HITS=$(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null || echo 0); MISSES=$(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null || echo 0)
+          echo "Build exit $RC in $(( ($(date +%s) - T0) / 60 )) min; C objects: $HITS from the cache, $MISSES compiled." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "misses=$MISSES" >> "$GITHUB_OUTPUT"
+          if [ "$RC" -ne 0 ]; then
+            grep -n -E -A6 ': error: |^error: |build refused' "$RUNNER_TEMP/build.log" | head -60 | cut -c1-400
+            tail -30 "$RUNNER_TEMP/build.log" | cut -c1-400
+            exit 1
+          fi
+          # Keep only the objects this build used.
+          find "$HOME/leanc-cache" -name '*.o' ! -newer "$HOME/leanc-cache/.start" -delete
+          ls -la core/labs/demos/foafnaut/.build/web-render/engines/
+      - name: Save the C object cache
+        if: steps.build.outputs.misses != '0' && steps.build.outputs.misses != ''
+        uses: actions/cache/save@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-${{ matrix.arch }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
       - name: Package
         id: pkg
         shell: bash
@@ -190,7 +248,12 @@ jobs:
           set -euo pipefail
           T=$(tr -d ' \n' < core/formal/lean4/lean-toolchain)
           export LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)
-          gh release download "build-$SHORT-foafnaut-web" -R "${{ github.repository }}" -p foafnaut-web.tar.gz -D "$RUNNER_TEMP/web"
+          # The runner loads the Wasm module and, for WPT, never calls it: this commit's when
+          # build.yml has published it, else the newest released one.
+          WEB="build-$SHORT-foafnaut-web"
+          gh release view "$WEB" -R "${{ github.repository }}" > /dev/null 2>&1 || WEB=$(gh api "repos/${{ github.repository }}/releases?per_page=100" --jq '[.[]|select(.tag_name|test("^build-[0-9a-f]{12}-foafnaut-web$"))]|sort_by(.published_at)|last|.tag_name')
+          echo "Wasm module from $WEB"
+          gh release download "$WEB" -R "${{ github.repository }}" -p foafnaut-web.tar.gz -D "$RUNNER_TEMP/web"
           mkdir -p "$RUNNER_TEMP/web/x" && tar -xzf "$RUNNER_TEMP/web/foafnaut-web.tar.gz" -C "$RUNNER_TEMP/web/x"
           RT=core/labs/demos/foafnaut/.build/native-html/runtime; mkdir -p "$RT"
           cp "$RUNNER_TEMP/web/x/docs/web/hub/html-webgpu/runtime/web-render."{mjs,wasm} "$RT/"

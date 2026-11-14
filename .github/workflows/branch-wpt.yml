@@ -22,8 +22,9 @@ name: Branch WPT check
 # Build: core's labs/demos/foafnaut/build-web-render.sh --native on ubuntu-latest, as
 # foafnaut-linux.yml. The Lake build directory comes from build.yml's newest Linux cache
 # (restore only: this workflow saves no cache, the repository is at its cache limit), so
-# unchanged formal/lean4 modules are not compiled again. When the branch does not compile,
-# the first errors are in the job summary.
+# unchanged formal/lean4 modules are not compiled again; the C objects of unchanged
+# modules come from a small object cache (release-tests/leanc-cache.sh). When the branch
+# does not compile, the first errors are in the job summary.
 # The runner also loads the Wasm module of the newest foafnaut-web release of main (it is
 # loaded, not used, when the engine is the native library).
 #
@@ -94,6 +95,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
           repository: ${{ env.CORE_REPO }}
           ref: ${{ inputs.core_ref }}
           path: core
@@ -121,7 +125,17 @@ jobs:
           key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
           restore-keys: |
             lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      # The C objects of the last engine build (release-tests/leanc-cache.sh): Lean's C for
+      # a module that did not change is the same bytes, so its object is not compiled again.
+      - name: Restore the C object cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
       - name: Build
+        id: build
         shell: bash
         env:
           CACHE_KEY: ${{ steps.lake.outputs.cache-matched-key }}
@@ -129,9 +143,16 @@ jobs:
         run: |
           set -uo pipefail
           LOG=$RUNNER_TEMP/build.log
+          mkdir -p "$HOME/leanc-cache" "$HOME/leanc-shim"
+          rm -f "$HOME/leanc-cache/.hits" "$HOME/leanc-cache/.misses"; touch "$HOME/leanc-cache/.start"
+          cp builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"; chmod +x "$HOME/leanc-shim/leanc"
+          export LEANC_REAL=$(ls "$HOME"/.elan/toolchains/*/bin/leanc | head -1) LEANC_CACHE="$HOME/leanc-cache"
+          export LEANC_ID="$(tr -d ' \n' < core/formal/lean4/lean-toolchain) x86_64"
           T0=$(date +%s)
-          bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
+          PATH="$HOME/leanc-shim:$PATH" bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
           RC=$?
+          HITS=$(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null || echo 0); MISSES=$(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null || echo 0)
+          echo "misses=$MISSES" >> "$GITHUB_OUTPUT"
           T1=$(date +%s)
           # Where the time went: the Lake build ends at the first LEAN line, the lab's
           # Lean modules at the first NATIVE line.
@@ -141,7 +162,7 @@ jobs:
             echo "Build exit $RC in $(( (T1 - T0) / 60 )) min $(( (T1 - T0) % 60 )) s. Lake cache: ${CACHE_KEY:-none restored}$([ "$CACHE_HIT" = true ] && echo ' (exact)')."
             if [ -n "$L" ] && [ -n "$N" ]; then
               echo "Parts: formal/lean4 (lake build) $(( (L - T0) / 60 )) min, lab Lean modules $(( (N - L) / 60 )) min, C compile and link $(( (T1 - N) / 60 )) min."
-              echo "Lake built $(grep -cE '^(✔|⚠|ℹ) \[[0-9]+/[0-9]+\] Built ' "$LOG" || true) modules here; $(grep -cE 'Replayed ' "$LOG" || true) replayed from the cache."
+              echo "Lake built $(grep -cE '^(✔|⚠|ℹ) \[[0-9]+/[0-9]+\] Built ' "$LOG" || true) modules here; $(grep -cE 'Replayed ' "$LOG" || true) replayed from the cache. C objects: $HITS from the cache, $MISSES compiled."
             fi
             echo
           } >> "$GITHUB_STEP_SUMMARY"
@@ -149,19 +170,27 @@ jobs:
             {
               echo "**The branch did not build.** First errors:"
               echo '```'
-              grep -n -E -A6 '(^|: )error[: ]|^✖|unknown (constant|identifier)|build refused|refused' "$LOG" | head -80 | cut -c1-400
+              grep -n -E -A6 ': error: |^error: |^✖ |build refused' "$LOG" | head -80 | cut -c1-400
               echo '```'
               echo "Last lines:"
               echo '```'
               tail -25 "$LOG" | cut -c1-400
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            grep -m5 -E '(^|: )error[: ]' "$LOG" | cut -c1-300 | while IFS= read -r line; do echo "::error::$line"; done
+            grep -m5 -E ': error: |^error: ' "$LOG" | cut -c1-300 | sed "s|$GITHUB_WORKSPACE/core/||" | while IFS= read -r line; do echo "::error::$line"; done
             exit 1
           fi
+          # Keep only the objects this build used.
+          find "$HOME/leanc-cache" -name '*.o' ! -newer "$HOME/leanc-cache/.start" -delete
           mkdir -p "$RUNNER_TEMP/engine"
           cp core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so "$RUNNER_TEMP/engine/"
           tr -d ' \n' < core/formal/lean4/lean-toolchain > "$RUNNER_TEMP/engine/lean-toolchain"
+      - name: Save the C object cache
+        if: steps.build.outputs.misses != '' && steps.build.outputs.misses >= 30
+        uses: actions/cache/save@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
