@@ -230,11 +230,13 @@ jobs:
           # Linux: the shard runs in a systemd scope with a memory limit, so that when a
           # test makes its process too large the kernel kills that process (core's tool
           # records the test as CRASH and goes on) and not the runner (2026-11-13: runners
-          # stopped with no result).
+          # stopped with no result). OOMPolicy=continue: without it systemd stops the whole
+          # scope, this step included, when the kernel kills one process in it (seen as
+          # "Terminated", exit 143, with 12 GB free: one test asks for a huge allocation).
           WRAP=()
           if [ "${{ matrix.platform }}" != macos-arm64 ]; then
             # sudo resets PATH and drops LD_LIBRARY_PATH (Lean's shared runtime): pass them on.
-            WRAP=(sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}" "HOME=$HOME" systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 --uid="$(id -u)" --gid="$(id -g)" --)
+            WRAP=(sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}" "HOME=$HOME" systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue --uid="$(id -u)" --gid="$(id -g)" --)
           fi
           # ${WRAP[@]+...}: macOS has bash 3.2, where an empty array is unbound under set -u.
           ${WRAP[@]+"${WRAP[@]}"} "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/wpt-inputs" --core core \

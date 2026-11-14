@@ -225,7 +225,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" "HOME=$HOME" \
-            systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 --uid="$(id -u)" --gid="$(id -g)" -- \
+            systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue --uid="$(id -u)" --gid="$(id -g)" -- \
             "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/inputs" --core core \
             --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
             --engine-lib "$RUNNER_TEMP/lib/libweb-render.so" --web-tag "${{ needs.plan.outputs.web_tag }}" \
