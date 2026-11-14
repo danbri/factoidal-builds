@@ -203,6 +203,23 @@ jobs:
           # Keep only the objects this build used.
           find "$HOME/leanc-cache" -name '*.o' ! -newer "$HOME/leanc-cache/.start" -delete
           ls -la core/labs/demos/foafnaut/.build/web-render/engines/
+      # build.yml's tail-recursion gate, reported (the engine release does not wait for it):
+      # while it fails on main, build.yml publishes no linux, web or macOS release.
+      - name: Tail-recursion gate (reported)
+        if: matrix.arch == 'x86_64'
+        shell: bash
+        run: |
+          set -uo pipefail
+          cd core
+          [ -f tools/lean-tail-recursion-audit.py ] || exit 0
+          find formal/lean4/.lake/build/ir -name '*.c' | while read -r c; do
+            rel=${c#formal/lean4/.lake/build/ir/}
+            [ -f "formal/lean4/${rel%.c}.lean" ] || rm -f "$c"
+          done
+          python3 tools/lean-tail-recursion-audit.py --gate > "$RUNNER_TEMP/tail-gate.txt" 2>&1
+          RC=$?
+          python3 ../builds/release-tests/release-tests.py tail-gate-report --log "$RUNNER_TEMP/tail-gate.txt" --exit "$RC" \
+            --core . --newer-than "$HOME/leanc-cache/.start" || true
       - name: Save the C object cache
         if: steps.build.outputs.misses != '0' && steps.build.outputs.misses != ''
         uses: actions/cache/save@v4

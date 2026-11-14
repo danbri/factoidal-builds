@@ -1480,6 +1480,39 @@ def cmd_macos_candidate(a):
     summary(why)
 
 
+def cmd_tail_gate_report(a):
+    """The result of core's tail-recursion gate as a job summary and annotations. The
+    declarations of modules compiled in this job (their .c is newer than --newer-than) are
+    of this ref or of main since the Lake cache was made; the others come from that cache
+    and may be of an older main."""
+    text = open(a.log, errors="replace").read()
+    if a.exit == 0:
+        summary("Tail-recursion gate (build.yml's): passes.\n")
+        return
+    lines = text.splitlines()
+    start = next((i for i, l in enumerate(lines) if l.startswith("GATE FAIL")), None)
+    if start is None:
+        summary(f"Tail-recursion gate: the audit ended with exit {a.exit} and no GATE FAIL list. Last lines:\n```\n" + "\n".join(lines[-15:]) + "\n```\n")
+        print(f"::warning::tail-recursion audit: exit {a.exit}")
+        return
+    ref_time = os.path.getmtime(a.newer_than) if a.newer_than and os.path.exists(a.newer_than) else 0
+    own, cached = [], []
+    for l in lines[start + 1:]:
+        m = re.match(r"\s+(\S+)\s+\(([^)]*)\)\s+(formal/lean4/(\S+)\.lean):(\d+)", l)
+        if not m:
+            continue
+        c = os.path.join(a.core, "formal/lean4/.lake/build/ir", m[4] + ".c")
+        fresh = os.path.exists(c) and os.path.getmtime(c) > ref_time
+        (own if fresh else cached).append(f"{m[1]} ({m[2]}) {m[3]}:{m[5]}")
+    out = [f"**Tail-recursion gate (build.yml's): FAIL.** {len(own)} declaration(s) in modules compiled here (this ref's, or main's since the Lake cache was made)"
+           + (f", {len(cached)} in modules taken from the Lake cache (an older main: check them on main)" if cached else "") + ". "
+           "With these on main, build.yml publishes no linux, web or macOS release. Make each tail-recursive or structural, "
+           "or add a line with its bound to tools/lean-tail-recursion-allow.txt.", "", "```"] + own + (["-- from the cache:"] + cached if cached else []) + ["```", ""]
+    summary("\n".join(out))
+    for d in own[:10]:
+        print(f"::warning::tail-recursion gate: {d} is not in tools/lean-tail-recursion-allow.txt")
+
+
 # ---- branch check (branch-wpt.yml): a development check, never a score ---------------------
 
 def group_of(name):
@@ -1715,6 +1748,11 @@ def main():
     rc.add_argument("--no-push", action="store_true")
     lc = sub.add_parser("linux-candidate")
     lc.add_argument("--dispatch-build", action="store_true")
+    tg = sub.add_parser("tail-gate-report")
+    tg.add_argument("--log", required=True)
+    tg.add_argument("--exit", type=int, required=True)
+    tg.add_argument("--core", default=".")
+    tg.add_argument("--newer-than", default="")
     mc = sub.add_parser("macos-candidate")
     mc.add_argument("--ref", default="")
     mc.add_argument("--force", action="store_true")
@@ -1733,7 +1771,7 @@ def main():
     a = ap.parse_args()
     {"resolve": cmd_resolve, "wpt-inputs": cmd_wpt_inputs, "wpt-shard": cmd_wpt_shard, "wpt-merge": cmd_wpt_merge, "wpt-changes": cmd_wpt_changes,
      "suite-groups": cmd_suite_groups, "suite-run": cmd_suite_run, "suite-score": cmd_suite_score, "rivals": cmd_rivals,
-     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
+     "record": cmd_record, "seed-local": cmd_seed_local, "linux-candidate": cmd_linux_candidate, "macos-candidate": cmd_macos_candidate, "tail-gate-report": cmd_tail_gate_report, "branch-plan": cmd_branch_plan, "branch-report": cmd_branch_report}[a.cmd](a)
 
 
 if __name__ == "__main__":
