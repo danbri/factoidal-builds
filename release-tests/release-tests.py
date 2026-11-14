@@ -650,7 +650,17 @@ def cmd_wpt_shard(a):
                     on.append(starts[-1][6:] if starts else "-")
                 except OSError:
                     on.append("-")
-            log(f"memory available {avail} MB; disk free {disk} MB; largest processes {top} MB; on {on}")
+            # Load and the busiest processes: run 43550560855 shard 9 made no progress for
+            # 31 min (03:38-04:09Z) with memory and disk free; this line is to show what ran.
+            try:
+                load = " ".join(f"{x:.1f}" for x in os.getloadavg())
+                cpu = sorted(((float(l.split(None, 2)[0]), l.split(None, 2)[2][:60]) for l in
+                              subprocess.run(["ps", "-eo", "pcpu=,pid=,args="], capture_output=True, text=True).stdout.splitlines()
+                              if len(l.split(None, 2)) == 3), reverse=True)[:3]
+                busy = "; ".join(f"{c:.0f}% {a}" for c, a in cpu)
+            except (OSError, ValueError):
+                load, busy = "?", "?"
+            log(f"memory available {avail} MB; disk free {disk} MB; largest processes {top} MB; load {load}; busiest: {busy}; on {on}")
         if avail < a.min_free_mb:
             ps = subprocess.run(["ps", "-eo", "pid=,rss=,args="], capture_output=True, text=True).stdout.splitlines()
             procs = [(int(l.split(None, 2)[1]), int(l.split(None, 2)[0]), l.split(None, 2)[2]) for l in ps
