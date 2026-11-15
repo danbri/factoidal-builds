@@ -39,10 +39,6 @@ name: Real-page survey
 # Cost: macOS about 40-60 min (15 pages, two runs each, offline and live); Linux about 10 min.
 
 on:
-  # TEMPORARY branch test (remove before merge): the survey of the two releases of the brief.
-  push:
-    branches: [wip/realpages-ci]
-    paths: ['.github/workflows/realpages.yml', 'release-tests/realpages.py']
   workflow_run:
     workflows: ['Build Factoidal from factoidal-core', 'Foafnaut macOS engine', 'Foafnaut Linux engine']
     types: [completed]
@@ -95,7 +91,7 @@ jobs:
           WORKFLOW: ${{ github.event.workflow_run.name }}
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           CREATED: ${{ github.event.workflow_run.created_at }}
-          RELEASE: ${{ github.event_name == 'push' && 'build-cc73af028afe-foafnaut-darwin-arm64,build-6efc9cffbee3-foafnaut-linux-x86_64' || inputs.release }}
+          RELEASE: ${{ inputs.release }}
           PLATFORMS: ${{ inputs.platforms }}
         run: |
           python3 release-tests/realpages.py resolve --event "$EVENT" --workflow "${WORKFLOW:-}" --conclusion "${CONCLUSION:-}" \
@@ -128,7 +124,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ${{ env.CORE_REPO }}
-          ref: ${{ github.event_name == 'push' && 'main' || inputs.survey_ref || 'main' }}
+          ref: ${{ inputs.survey_ref || 'main' }}
           path: tools
           sparse-checkout: |
             labs/demos/foafnaut/realpages
@@ -171,7 +167,7 @@ jobs:
           TAG: ${{ matrix.tag }}
           ONLY: ${{ inputs.only }}
         run: |
-          set -uo pipefail
+          set +e -uo pipefail  # GitHub runs bash with -e; each exit is read below
           P=${{ matrix.platform }}; T=tools/labs/demos/foafnaut/realpages
           for MODE in offline live; do
             K=$P-$MODE; S=$RUNNER_TEMP/survey-$MODE
