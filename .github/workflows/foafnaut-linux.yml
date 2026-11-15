@@ -371,3 +371,15 @@ jobs:
             --fixtures core/labs/demos/foafnaut/web-render/fixtures --out "$RUNNER_TEMP/render/linux-x86_64" --platform linux-x86_64 --commit "$SHA"
           tar -czf "$RUNNER_TEMP/render-linux-x86_64.tar.gz" -C "$RUNNER_TEMP/render" linux-x86_64
           gh release upload "build-$SHORT-$SET" -R "${{ github.repository }}" "$RUNNER_TEMP/render-linux-x86_64.tar.gz" --clobber
+
+  # Textnaut on the x86_64 release just published, on a runner with no Lean toolchain:
+  # installed with textnaut --install-native, compared with the Wasm engine, timed.
+  textnaut-native:
+    needs: [resolve, build]
+    if: contains(needs.resolve.outputs.arches, 'x86_64')
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/textnaut-native.yml
+    with:
+      release: build-${{ needs.resolve.outputs.short }}-foafnaut-linux-x86_64
