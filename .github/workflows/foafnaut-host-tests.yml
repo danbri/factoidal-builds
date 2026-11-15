@@ -3,7 +3,7 @@ name: Foafnaut host tests
 # core's labs/demos/foafnaut/test.sh on the engines of one build.yml run, on Linux, as
 # soon as the foafnaut-engines job has uploaded them: a failing test is known about
 # 45 minutes after dispatch, not after the macOS bundle job (2.5 hours). test.sh runs
-# every check and lists all the failures at its end (core e43f97e16 and later; an older
+# every check and lists all the failures at its end (core a00f54025 and later; an older
 # test.sh stops at the first).
 #
 # Checks that need web-render-native, libweb-render.dylib or macOS print NOT RUN here;
@@ -15,8 +15,6 @@ name: Foafnaut host tests
 # The engines must be built from the same core commit for the result to mean anything.
 
 on:
-  push:  # TEMPORARY (ci-fast branch test; removed before merge)
-    branches: [ci-fast]
   workflow_call:
     inputs:
       core_sha:
@@ -43,22 +41,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: ${{ inputs.core_sha || inputs.core_ref || 'wip/ci-fast' }}
+          ref: ${{ inputs.core_sha || inputs.core_ref }}
           path: core
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
       - uses: actions/download-artifact@v4
-        if: inputs.engines_run_id == '' && github.event_name != 'push'
+        if: inputs.engines_run_id == ''
         with:
           name: foafnaut-engines
           path: core/labs/demos/foafnaut/.build
       - uses: actions/download-artifact@v4
-        if: inputs.engines_run_id != '' || github.event_name == 'push'
+        if: inputs.engines_run_id != ''
         with:
           name: foafnaut-engines
           path: core/labs/demos/foafnaut/.build
-          run-id: ${{ inputs.engines_run_id || '43686125908' }}
+          run-id: ${{ inputs.engines_run_id }}
           github-token: ${{ github.token }}
       - name: test.sh on the engines (every check; all failures listed at the end)
         shell: bash
