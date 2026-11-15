@@ -133,18 +133,22 @@ core's Spinal Tap page) live on each Foafnaut release. It builds nothing.
   only) that published a release; by hand:
   `gh workflow run realpages.yml -f release=build-<12 hex>-foafnaut-darwin-arm64` (comma list for
   several; `survey_ref` picks the core ref of the survey tools, `only` a few pages).
+- Twice on each platform: offline, every page replayed from its snapshot in
+  [`third_party/realpages/`](third_party/realpages/README.md) (public pages vendored as fair use
+  for testing, with URL, fetch time, header fields, licence and attribution; about 10.5 MB), the
+  gate; and live, the pages as they are now, for drift (information only).
 - macOS (`macos-15`): `run_html.ts` of the release's own core commit, off screen, on the release's
   library; GPU numbers, idle CPU, script turns, scroll latency, memory, liberal-mode skips, and the
-  layout similarity against headless Chrome. Linux: Textnaut on the `.so` (load, layout, CPU, memory).
-- Results: the job summary (table with changes against the survey of the previous release, and
-  regressions); release assets `realpages-<platform>.json` and `.md`; `realpages/trend.csv`,
-  `realpages/runs/<run_id>/` and `realpages/latest-|previous-<platform>.json` on the branch
-  `wpt-scores`. Pictures and logs: artifact `realpages-<platform>-pictures`, 7 days, never in git
-  or a release (the pages are copyright).
-- A crash or exit of the browser fails the job; a worse verdict, a number over 1.5 times the
-  previous one (above a noise floor) or a drop in layout similarity is a warning; an unreachable
-  page is neither.
-- Cost: macOS about 20-30 min a release, Linux about 5 min.
+  layout similarity against headless Chrome (the snapshot's picture offline, Chrome now live).
+  Linux: Textnaut on the `.so` (load, layout, CPU, memory).
+- Results: the job summary (tables with changes against the survey of the previous release, and
+  regressions); release assets `realpages-<platform>-<mode>.json` and `.md`; `realpages/trend.csv`,
+  `realpages/runs/<run_id>/` and `realpages/latest-|previous-<platform>-<mode>.json` on the branch
+  `wpt-scores`. Pictures and logs of each run: artifact `realpages-<platform>-pictures`, 7 days.
+- A crash or exit of the browser on a snapshot fails the job; a worse verdict, a number over 1.5
+  times the previous one (above a noise floor) or a drop in layout similarity is a warning; an
+  unreachable live page is neither.
+- Cost: macOS about 40-60 min a release, Linux about 10 min.
 
 ## Single-file executables (`exe` set)
 

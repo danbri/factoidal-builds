@@ -4,7 +4,8 @@
   resolve   which releases to survey: the release a finished build run published, or a
             dispatched tag, or the newest of each platform. Writes the job matrix.
   previous  the summary to compare with: the newest survey of another release of that
-            platform on the results branch (realpages/latest-<p>.json, else previous-<p>.json).
+            platform and mode (<platform>-offline, <platform>-live) on the results branch
+            (realpages/latest-<key>.json, else previous-<key>.json).
   record    append the trend rows and the summaries to the results branch (wpt-scores,
             directory realpages/), with a new worktree each attempt, and push.
 
@@ -131,7 +132,7 @@ def cmd_previous(a):
 def cmd_record(a):
     found = []
     for path in sorted(glob.glob(os.path.join(a.src, "**", "summary-*.json"), recursive=True)):
-        p = re.fullmatch(r"summary-(\w+)\.json", os.path.basename(path))[1]
+        p = re.fullmatch(r"summary-([\w-]+)\.json", os.path.basename(path))[1]
         trend = os.path.join(os.path.dirname(path), f"trend-{p}.csv")
         found.append((p, json.load(open(path)), open(trend).read().splitlines() if os.path.exists(trend) else []))
     if not found:
@@ -164,7 +165,7 @@ def record_in(tree, found, run_id, no_push):
     trend_path = os.path.join(d, "trend.csv")
     known = set()
     if os.path.exists(trend_path):
-        known = {(r["run_id"], r["platform"]) for r in csv.DictReader(open(trend_path))}
+        known = {(r["run_id"], r["platform"] + (f"-{r['mode']}" if r.get("mode") else "")) for r in csv.DictReader(open(trend_path))}
     for p, summary, rows in found:
         with open(os.path.join(d, "runs", run_id, f"{p}.json"), "w") as f:
             json.dump(summary, f, indent=1)

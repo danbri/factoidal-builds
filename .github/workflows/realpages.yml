@@ -1,25 +1,33 @@
 name: Real-page survey
 
 # Everyday pages (Wikipedia desktop and mobile skins, BBC News, GitHub, MDN, a blog, Hacker
-# News, a W3C spec, and core's Spinal Tap showcase page) on each Foafnaut release, probed
-# live: core's labs/demos/foafnaut/realpages/survey.ts with its page list (URLs only) and
-# budgets, compared with the survey of the release before (compare.ts).
+# News, a W3C spec, and core's Spinal Tap showcase page) on each Foafnaut release: core's
+# labs/demos/foafnaut/realpages/survey.ts with its page list and budgets, compared with the
+# survey of the release before (compare.ts). Each platform runs it twice:
+#
+#   offline (the gate): every page answered from its snapshot in third_party/realpages of this
+#     repository (public pages vendored as fair use for testing, with provenance; README there),
+#     replayed into the host by core's realpages/replay.ts: the same bytes each time, so a
+#     change is the engine's. The reference picture is the one taken with the snapshot.
+#   live (information): the pages as they are now, and headless Chrome now; the network and
+#     the pages drift, so nothing here fails the job.
 #
 #   macOS (macos-15, GPU): run_html.ts of the release's own core commit off screen on the
 #     release's libweb-render.dylib: verdict, first frame, first layout, GPU per frame, idle
 #     CPU over 15 s, longest script turn, scroll latency p50/p95, peak RSS, liberal-mode
-#     skips, crash or exit, and the layout similarity against headless Chrome's picture.
+#     skips, crash or exit, and the layout similarity against Chrome's picture.
 #   Linux (ubuntu-latest, no window): Textnaut on the self-contained libweb-render.so: load,
 #     layout, rows, links, wall, CPU, peak RSS, crash or exit.
 #
-# Results: the job summary (table with changes against the previous release, regressions);
-# summary JSON and table as assets realpages-<platform>.json/.md of the release; one row per
-# page in realpages/trend.csv on the branch wpt-scores (with realpages/runs/<run_id>/ and
-# latest-/previous-<platform>.json). Pictures and logs are the artifact realpages-<platform>-
-# pictures, kept 7 days: the pages are copyright and never go into git or a release.
-# A crash or exit of the browser fails the job; every other regression is a warning: a
-# verdict worse than before, a number over 1.5 times the previous one (above a noise floor),
-# layout similarity down by more than 0.05. A page that cannot be fetched is "unreachable".
+# Results: the job summary (tables with changes against the previous release, regressions);
+# release assets realpages-<platform>-<mode>.json/.md; one row per page in
+# realpages/trend.csv on the branch wpt-scores (with realpages/runs/<run_id>/ and
+# latest-/previous-<platform>-<mode>.json). Pictures and logs: the artifact
+# realpages-<platform>-pictures, kept 7 days.
+# A crash or exit of the browser in the offline survey fails the job; every other
+# regression is a warning: a verdict worse than before, a number over 1.5 times the previous
+# one (above a noise floor), layout similarity down by more than 0.05. A live page that cannot
+# be fetched is "unreachable".
 #
 # Starts: after each run of build.yml (foafnaut-darwin-arm64), foafnaut-macos.yml
 # (foafnaut-engine-darwin-arm64) and foafnaut-linux.yml (foafnaut-linux-x86_64) that
@@ -28,7 +36,7 @@ name: Real-page survey
 #   gh workflow run realpages.yml -R danbri/factoidal-builds -f release=build-<12 hex>-foafnaut-linux-x86_64 -f survey_ref=<core branch>
 # One survey at a time for each platform; a waiting one is replaced by a newer one.
 #
-# Cost: macOS about 20-30 min (15 pages, two runs each plus Chrome); Linux about 5 min.
+# Cost: macOS about 40-60 min (15 pages, two runs each, offline and live); Linux about 10 min.
 
 on:
   # TEMPORARY branch test (remove before merge): the survey of the two releases of the brief.
@@ -115,6 +123,7 @@ jobs:
           sparse-checkout: |
             labs/demos/foafnaut
             docs/web/hub/foafnaut
+            third_party/fonts
       # The survey tools: survey_ref (default main), so a survey of an older release uses today's rules.
       - uses: actions/checkout@v4
         with:
@@ -152,41 +161,42 @@ jobs:
           echo "LIB=$LIB" >> "$GITHUB_ENV"
           { echo "Engine: \`$TAG\` (\`$(basename "$LIB")\`, sha256 $(shasum -a 256 "$LIB" | cut -c1-16)); host: core \`${{ matrix.core_commit }}\`; Wasm modules: \`$WEB\`; survey tools: core \`${{ steps.pins.outputs.tools }}\`"
             echo "Window library: ${WINDOW:+from the release}${WINDOW:-built from native_window.m of the host}"; } >> "$GITHUB_STEP_SUMMARY"
-      - name: Previous survey
-        env:
-          TAG: ${{ matrix.tag }}
-        run: python3 builds/release-tests/realpages.py previous --platform "${{ matrix.platform }}" --release "$TAG" --out "$RUNNER_TEMP/previous.json"
-      - name: Survey
+      # Offline first (the gate): each page from its snapshot in third_party/realpages of this
+      # repository, replayed into the host (core's realpages/replay.ts), so a change in the
+      # numbers is the engine's. Then live (drift, information only): the pages as they are now.
+      - name: Survey offline (snapshots; the gate) and live (information)
+        id: survey
         shell: bash
         env:
           TAG: ${{ matrix.tag }}
           ONLY: ${{ inputs.only }}
         run: |
-          set -euo pipefail
-          ARGS=(--platform "${{ matrix.platform }}" --engine "$LIB" --host "$PWD/host/labs/demos/foafnaut" --out "$RUNNER_TEMP/survey" --release "$TAG")
-          [ -z "${ONLY:-}" ] || ARGS+=(--only "$ONLY")
-          if [ "${{ matrix.platform }}" = macos ]; then ARGS+=(--chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"); fi
-          deno run -A tools/labs/demos/foafnaut/realpages/survey.ts "${ARGS[@]}"
-      - name: Table, regressions
-        id: cmp
-        shell: bash
-        run: |
           set -uo pipefail
-          P=${{ matrix.platform }}; S=$RUNNER_TEMP/survey
-          cp "$S/summary.json" "$S/summary-$P.json"
-          PREV=(); [ -f "$RUNNER_TEMP/previous.json" ] && PREV=(--previous "$RUNNER_TEMP/previous.json")
-          deno run --allow-read --allow-write tools/labs/demos/foafnaut/realpages/compare.ts --current "$S/summary.json" "${PREV[@]}" \
-            --markdown "$S/table-$P.md" --trend "$S/trend-$P.csv" --run-id "${{ github.run_id }}" \
-            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --annotate
-          echo "rc=$?" >> "$GITHUB_OUTPUT"
-          cat "$S/table-$P.md" >> "$GITHUB_STEP_SUMMARY"
+          P=${{ matrix.platform }}; T=tools/labs/demos/foafnaut/realpages
+          for MODE in offline live; do
+            K=$P-$MODE; S=$RUNNER_TEMP/survey-$MODE
+            python3 builds/release-tests/realpages.py previous --platform "$K" --release "$TAG" --out "$RUNNER_TEMP/previous-$K.json"
+            ARGS=(--platform "$P" --engine "$LIB" --host "$PWD/host/labs/demos/foafnaut" --out "$S" --release "$TAG")
+            [ -z "${ONLY:-}" ] || ARGS+=(--only "$ONLY")
+            if [ "$MODE" = offline ]; then ARGS+=(--snapshots "$PWD/builds/third_party/realpages");
+            elif [ "$P" = macos ]; then ARGS+=(--chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"); fi
+            deno run -A "$T/survey.ts" "${ARGS[@]}" || { echo "::error::the $MODE survey did not finish"; echo "rc_$MODE=9" >> "$GITHUB_OUTPUT"; continue; }
+            cp "$S/summary.json" "$S/summary-$K.json"
+            PREV=(); [ -f "$RUNNER_TEMP/previous-$K.json" ] && PREV=(--previous "$RUNNER_TEMP/previous-$K.json")
+            INFO=(); [ "$MODE" = live ] && INFO=(--informational)
+            deno run --allow-read --allow-write "$T/compare.ts" --current "$S/summary.json" "${PREV[@]}" "${INFO[@]}" \
+              --markdown "$S/table-$K.md" --trend "$S/trend-$K.csv" --run-id "${{ github.run_id }}" \
+              --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --annotate
+            echo "rc_$MODE=$?" >> "$GITHUB_OUTPUT"
+            { cat "$S/table-$K.md"; echo; } >> "$GITHUB_STEP_SUMMARY"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: realpages-${{ matrix.platform }}-pictures
           path: |
-            ${{ runner.temp }}/survey/shots/
-            ${{ runner.temp }}/survey/logs/
+            ${{ runner.temp }}/survey-*/shots/
+            ${{ runner.temp }}/survey-*/logs/
           retention-days: 7
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
@@ -194,14 +204,14 @@ jobs:
         with:
           name: realpages-${{ matrix.platform }}-summary
           path: |
-            ${{ runner.temp }}/survey/summary-*.json
-            ${{ runner.temp }}/survey/table-*.md
-            ${{ runner.temp }}/survey/trend-*.csv
+            ${{ runner.temp }}/survey-*/summary-*.json
+            ${{ runner.temp }}/survey-*/table-*.md
+            ${{ runner.temp }}/survey-*/trend-*.csv
           if-no-files-found: ignore
-      - name: A crash or exit of the browser fails the survey
-        if: steps.cmp.outputs.rc != '0'
+      - name: A crash or exit of the browser on a snapshot fails the survey
+        if: steps.survey.outputs.rc_offline != '0'
         run: |
-          echo "::error::a page crashed or the browser exited (see the findings in the table)"
+          echo "::error::offline survey: a page crashed or the browser exited, or the survey did not finish (see the table)"
           exit 1
 
   record:
@@ -224,7 +234,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 release-tests/realpages.py record --src "$RUNNER_TEMP/rec"
-          for J in "$RUNNER_TEMP"/rec/*/summary-*.json; do
+          for J in "$RUNNER_TEMP"/rec/*/*/summary-*.json "$RUNNER_TEMP"/rec/*/summary-*.json; do
             [ -f "$J" ] || continue
             P=$(basename "$J" .json); P=${P#summary-}
             TAG=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["release"])' "$J")

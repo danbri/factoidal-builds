@@ -35,8 +35,8 @@ class RealpagesTests(unittest.TestCase):
             def survey(release, run):
                 src = os.path.join(tempfile.mkdtemp(dir=t), 'realpages-macos-summary')
                 os.makedirs(src)
-                Path(src, 'summary-macos.json').write_text(json.dumps({'release': release, 'pages': []}))
-                Path(src, 'trend-macos.csv').write_text(f'run_id,platform,page\n{run},macos,hn\n{run},macos,wp-stub\n')
+                Path(src, 'summary-macos-offline.json').write_text(json.dumps({'release': release, 'pages': []}))
+                Path(src, 'trend-macos-offline.csv').write_text(f'run_id,platform,mode,page\n{run},macos,offline,hn\n{run},macos,offline,wp-stub\n')
                 os.environ['GITHUB_RUN_ID'] = run
                 RP.cmd_record(type('A', (), {'src': os.path.dirname(src), 'repo': repo, 'no_push': False})())
 
@@ -46,11 +46,11 @@ class RealpagesTests(unittest.TestCase):
             out = os.path.join(t, 'out')
             git('clone', '-q', '-b', 'wpt-scores', origin, out, cwd=t)
             d = Path(out, 'realpages')
-            self.assertEqual(json.loads((d / 'latest-macos.json').read_text())['release'], 'build-b-foafnaut-darwin-arm64')
-            self.assertEqual(json.loads((d / 'previous-macos.json').read_text())['release'], 'build-a-foafnaut-darwin-arm64')
+            self.assertEqual(json.loads((d / 'latest-macos-offline.json').read_text())['release'], 'build-b-foafnaut-darwin-arm64')
+            self.assertEqual(json.loads((d / 'previous-macos-offline.json').read_text())['release'], 'build-a-foafnaut-darwin-arm64')
             rows = (d / 'trend.csv').read_text().splitlines()
-            self.assertEqual(rows, ['run_id,platform,page', '1,macos,hn', '1,macos,wp-stub', '2,macos,hn', '2,macos,wp-stub'])
-            self.assertTrue((d / 'runs' / '2' / 'macos.json').exists())
+            self.assertEqual(rows, ['run_id,platform,mode,page', '1,macos,offline,hn', '1,macos,offline,wp-stub', '2,macos,offline,hn', '2,macos,offline,wp-stub'])
+            self.assertTrue((d / 'runs' / '2' / 'macos-offline.json').exists())
             self.assertTrue(Path(out, 'runs.csv').exists())
 
 
