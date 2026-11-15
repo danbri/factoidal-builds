@@ -184,7 +184,7 @@ jobs:
             cp "$S/summary.json" "$S/summary-$K.json"
             PREV=(); [ -f "$RUNNER_TEMP/previous-$K.json" ] && PREV=(--previous "$RUNNER_TEMP/previous-$K.json")
             INFO=(); [ "$MODE" = live ] && INFO=(--informational)
-            deno run --allow-read --allow-write "$T/compare.ts" --current "$S/summary.json" "${PREV[@]}" "${INFO[@]}" \
+            deno run --allow-read --allow-write "$T/compare.ts" --current "$S/summary.json" ${PREV[@]+"${PREV[@]}"} ${INFO[@]+"${INFO[@]}"} \
               --markdown "$S/table-$K.md" --trend "$S/trend-$K.csv" --run-id "${{ github.run_id }}" \
               --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --annotate
             echo "rc_$MODE=$?" >> "$GITHUB_OUTPUT"
