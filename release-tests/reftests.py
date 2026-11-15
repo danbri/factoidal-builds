@@ -23,8 +23,9 @@ scripts on BubblePopJS). Like wpt.fyi, a reftest is one test: PASS or not.
 
 Score: tests passing of all reftests in the directory at the WPT commit. Rivals: the same
 tests' statuses in wpt.fyi's runs at the same WPT commit (Chrome, Firefox, Safari, Edge).
-Valid when every shard is present, every test has a status, and ERROR + CRASH + STALL
-(harness and engine failures to draw) are under 0.5% of tests.
+Valid when every shard is present, every test has a status, and ERROR (the harness's failures)
+is under 0.5% of tests. CRASH and STALL are the engine's defects: listed in meta.json
+`incidents`, never ignored.
 """
 import argparse, csv, datetime, gzip, importlib.util, io, json, os, re, subprocess, sys, time, urllib.request
 
@@ -212,7 +213,8 @@ def cmd_score(a):
     for t in tests:
         st[t["status"]] = st.get(t["status"], 0) + 1
     passed = st.get("PASS", 0)
-    harness = sum(st.get(k, 0) for k in ("ERROR", "CRASH", "STALL"))
+    # the harness's failures (ERROR); CRASH and STALL are the engine's, listed in meta.json
+    harness = st.get("ERROR", 0)
     reasons = []
     if len(got_idx) != want:
         reasons.append(f"{len(got_idx)} of {want} shards")
@@ -221,7 +223,7 @@ def cmd_score(a):
     if any(not t["status"] for t in tests):
         reasons.append("tests with no status")
     if total and harness >= HARNESS_ERROR_MAX * total:
-        reasons.append(f"ERROR/CRASH/STALL {harness} of {total} tests (limit {HARNESS_ERROR_MAX:.1%})")
+        reasons.append(f"ERROR {harness} of {total} tests (limit {HARNESS_ERROR_MAX:.1%})")
     # rivals: the same tests in wpt.fyi's runs at the same WPT commit
     rivals, rival_rows = {}, []
     for b, info in plan.get("rivals", {}).items():
@@ -287,7 +289,7 @@ def cmd_score(a):
                       "library with its CPU raster (op render, cpu:true), Noto Sans and the Hub's fallback fonts "
                       "(third_party/fonts), page scripts on BubblePopJS; reftest-wait honoured for up to 6 s of page time "
                       "(TIMEOUT after). A reftest is one test, PASS or not, as on wpt.fyi."),
-            "validity": {"rules": f"every shard present; every test has a status; ERROR+CRASH+STALL under {HARNESS_ERROR_MAX:.1%} of tests",
+            "validity": {"rules": f"every shard present; every test has a status; ERROR (harness) under {HARNESS_ERROR_MAX:.1%} of tests",
                          "valid": not reasons, "reasons": reasons},
             "totals": {"tests": total, "passed": passed, "share_pct": round(share, 4), "statuses": st, "harness_errors": harness,
                        **{f"{b}_passed": sum(1 for v in rivals[b].values() if v == "P") for b in rivals},
@@ -298,6 +300,7 @@ def cmd_score(a):
                        # pictures may lack the same part
                        "passed_with_skips": sum(1 for t in tests if t["status"] == "PASS" and t.get("skipped"))},
             "directories": dict(sorted(dirs.items())), "rivals": rival_rows, "since_previous": since,
+            "incidents": [{"test": t["test"], "status": t["status"], "message": t.get("message")} for t in tests if t["status"] in ("CRASH", "STALL")],
             "shards": [{"shard": s["shard"], "tests": len(s["tests"]), "wallSeconds": s["wallSeconds"], "pagesDrawn": s["pagesDrawn"],
                         "engineSha256": s["engine"]["sha256"]} for s in shards],
             "plan": {k: v for k, v in plan.items() if k != "rivals"}}

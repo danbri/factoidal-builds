@@ -106,7 +106,7 @@ directory on the release's engine library (core tests/browser-wpt/wpt-reftests.p
 rules, the CPU raster, Noto Sans). They carry no weight in the WPT rows above (wpt.fyi gives a
 reftest no subtests), so they are suites of their own. In `runs.csv`: `passed` and
 `denominator` are tests (a reftest is one test, PASS or not), `ok` = PASS, `failed` = FAIL,
-`error`, `timeout`, `crash`, `stall`; `server_failures` = ERROR + CRASH + STALL (valid under
+`error`, `timeout`, `crash`, `stall`; `server_failures` = ERROR, the harness's failures (valid under
 0.5%); `share_ex_encoding_pct` empty; `engine` = native-cpu-raster. `reftest-rivals.csv`:
 `recorded_utc`, `suite`, `wpt_commit`, `browser`, `version`, `wptfyi_run_id`, `passed`,
 `denominator` (the suite's tests), `share_pct`, `status` (ok or unavailable), `reason`.

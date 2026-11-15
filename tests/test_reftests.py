@@ -75,7 +75,7 @@ class ReftestsTests(unittest.TestCase):
             json.dump(plan, open(os.path.join(t, "plan.json"), "w"))
             sd = os.path.join(t, "shards", "s0")
             os.makedirs(sd)
-            json.dump(shard(0, 16, [("/css/a.html", "PASS"), ("/css/b.html", "CRASH")]), open(os.path.join(sd, "results.json"), "w"))
+            json.dump(shard(0, 16, [("/css/a.html", "PASS"), ("/css/b.html", "ERROR")]), open(os.path.join(sd, "results.json"), "w"))
             RF.rt.read_csv_url = lambda name: []
             out = os.path.join(t, "out")
             with contextlib.redirect_stdout(io.StringIO()):
@@ -84,7 +84,7 @@ class ReftestsTests(unittest.TestCase):
             row = json.load(open(os.path.join(out, "row.json")))
             self.assertEqual(row["valid"], "false")
             self.assertIn("1 of 16 shards", row["invalid_reason"])
-            self.assertIn("ERROR/CRASH/STALL 1 of 2", row["invalid_reason"])
+            self.assertIn("ERROR 1 of 2", row["invalid_reason"])
 
 
 if __name__ == "__main__":
