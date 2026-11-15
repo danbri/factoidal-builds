@@ -1,0 +1,9 @@
+# Test262 features left out of the second number ("without the excluded features") of a full
+# Test262 run (test262.py score). The headline counts every file; this list only makes the
+# second number. One feature a line, the reason after '#'. The stage 3 proposals of the pinned
+# Test262 commit (features.txt, "Proposed language features") are added to it automatically.
+# Change it only on purpose: it changes the second number of every later run.
+IsHTMLDDA              # Test-Harness Feature: a host object ($262.IsHTMLDDA) a JavaScript engine alone does not have
+host-gc-required       # Test-Harness Feature: needs $262.gc
+cross-realm            # needs $262.createRealm (a second realm from the host); the runner gives none
+tail-call-optimization # proper tail calls: V8 and SpiderMonkey do not ship them either

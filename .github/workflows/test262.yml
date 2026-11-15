@@ -1,0 +1,214 @@
+name: Test262 full run
+
+# The whole tc39/test262 suite at a pinned commit on BubblePopJS, recorded on the branch
+# wpt-scores beside the WPT runs (runs.csv suite "test262", runs/<run_id>/meta.json,
+# changes.md, directories.csv, features.csv; test262-rivals.csv). Rules, validity and
+# columns: release-tests/test262.py and core skills/wpt-runs.
+#
+# Engine: core's `leanjs test262-files`, built here from the release's core commit with
+# build.yml's Lake cache: the Lean JavaScript interpreter (L4Factoidal.JS) that the engine
+# library runs page scripts with. Test262 needs no page, so it runs without the browser host.
+#
+# What starts a run:
+#   factoidal-release  each finished build.yml or "Foafnaut Linux engine" run: the newest
+#                      Linux release of core main (skipped when that commit already has a
+#                      valid run at the pinned Test262 commit)
+#   schedule           six times a day, the newest Linux release of main (repeats included:
+#                      they show flakiness)
+#   manual             workflow_dispatch: a core ref (a branch run is not recorded), a
+#                      Test262 commit, shards
+#
+#   gh workflow run test262.yml -R danbri/factoidal-builds
+#   gh workflow run test262.yml -R danbri/factoidal-builds -f core_ref=wip/x   # not recorded
+
+on:
+  push:                                   # TEMPORARY: branch test, removed before merge
+    branches: [wip/test262]
+  workflow_run:
+    workflows: ['Build Factoidal from factoidal-core', 'Foafnaut Linux engine']
+    types: [completed]
+  schedule:
+    - cron: '11 0,4,8,12,16,20 * * *'
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core branch, tag or commit (empty: the newest Linux release of main)'
+        required: false
+        default: ''
+      test262_commit:
+        description: 'tc39/test262 commit, 40 hex (empty: the pinned one)'
+        required: false
+        default: ''
+      shards:
+        description: 'runners for the tests'
+        required: false
+        default: '8'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test262-${{ inputs.core_ref || 'main' }}
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  # tc39/test262 main on 2026-11-14, the revision test262.fyi ran on 2026-11-15 (so rival
+  # engines compare at the same commit). Bump on purpose: comparisons are per commit.
+  TEST262_PINNED: 2e58f87d8350ad51224617a041c6e041d52f8444
+
+jobs:
+  plan:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.p.outputs.sha }}
+      utc: ${{ steps.p.outputs.utc }}
+      on_main: ${{ steps.p.outputs.on_main }}
+      release_tag: ${{ steps.p.outputs.release_tag }}
+      run: ${{ steps.p.outputs.run }}
+      t262: ${{ steps.t.outputs.t262 }}
+      started: ${{ steps.t.outputs.started }}
+      shards: ${{ steps.t.outputs.shards }}
+      matrix: ${{ steps.t.outputs.matrix }}
+      trigger: ${{ steps.t.outputs.trigger }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: t
+        env:
+          T262: ${{ inputs.test262_commit }}
+          SHARDS: ${{ inputs.shards || '8' }}
+        run: |
+          set -euo pipefail
+          echo "t262=${T262:-$TEST262_PINNED}" >> "$GITHUB_OUTPUT"
+          echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "shards=$SHARDS" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(python3 -c "import json;print(json.dumps(list(range($SHARDS))))")" >> "$GITHUB_OUTPUT"
+          case "${{ github.event_name }}" in workflow_run) T=factoidal-release;; schedule) T=schedule;; *) T=manual;; esac
+          echo "trigger=$T" >> "$GITHUB_OUTPUT"
+      - id: p
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 release-tests/test262.py plan --ref "${{ inputs.core_ref || (github.event_name == 'push' && 'wip/t262-ci' || '') }}" --trigger "${{ steps.t.outputs.trigger }}" \
+            --test262-commit "${{ steps.t.outputs.t262 }}"
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.plan.outputs.sha }}
+          path: core
+          sparse-checkout: |
+            formal/lean4
+      - name: Install elan and the pinned Lean
+        run: |
+          set -euo pipefail
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+      # build.yml's Lake cache of the newest Linux build (restore only: never saved from here).
+      - name: Restore build.yml's Lake cache
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Build leanjs
+        run: |
+          set -euo pipefail
+          cd core/formal/lean4
+          T0=$(date +%s)
+          lake build leanjs 2>&1 | tail -40
+          echo "leanjs of core ${{ needs.plan.outputs.sha }} built in $(( $(date +%s) - T0 )) s" | tee -a "$GITHUB_STEP_SUMMARY"
+          if ! .lake/build/bin/leanjs 2>&1 | grep -q test262-files; then
+            echo "::error::this core's leanjs has no test262-files command"; exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/bin" && cp .lake/build/bin/leanjs "$RUNNER_TEMP/bin/"
+          ldd "$RUNNER_TEMP/bin/leanjs" || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: leanjs
+          path: ${{ runner.temp }}/bin/leanjs
+          retention-days: 3
+
+  shard:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: leanjs
+          path: ${{ runner.temp }}/bin
+      - name: Test262 shard ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          chmod +x "$RUNNER_TEMP/bin/leanjs"
+          mkdir -p "$RUNNER_TEMP/test262"
+          curl -sSfL --retry 4 "https://codeload.github.com/tc39/test262/tar.gz/${{ needs.plan.outputs.t262 }}" | tar xz -C "$RUNNER_TEMP/test262" --strip-components=1
+          python3 release-tests/test262.py list --root "$RUNNER_TEMP/test262" --out "$RUNNER_TEMP/files.json"
+          python3 release-tests/test262.py run --leanjs "$RUNNER_TEMP/bin/leanjs" --root "$RUNNER_TEMP/test262" \
+            --files "$RUNNER_TEMP/files.json" --out "$RUNNER_TEMP/out/test262-shard-${{ matrix.shard }}" \
+            --shard ${{ matrix.shard }} --shards ${{ needs.plan.outputs.shards }} --jobs 4 --chunk 200 --stall 120 --rss-mb 3000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test262-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 14
+
+  score:
+    needs: [plan, build, shard]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: test262-shard-*
+          path: ${{ runner.temp }}/shards
+          merge-multiple: true
+      - name: Score
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/test262"
+          curl -sSfL --retry 4 "https://codeload.github.com/tc39/test262/tar.gz/${{ needs.plan.outputs.t262 }}" | tar xz -C "$RUNNER_TEMP/test262" --strip-components=1
+          python3 release-tests/test262.py list --root "$RUNNER_TEMP/test262" --out "$RUNNER_TEMP/files.json"
+          python3 release-tests/test262.py score --files "$RUNNER_TEMP/files.json" --shards-dir "$RUNNER_TEMP/shards" \
+            --shards ${{ needs.plan.outputs.shards }} --out "$RUNNER_TEMP/rec" \
+            --core-commit "${{ needs.plan.outputs.sha }}" --commit-utc "${{ needs.plan.outputs.utc }}" \
+            --test262-commit "${{ needs.plan.outputs.t262 }}" --release-tag "${{ needs.plan.outputs.release_tag }}" \
+            --started "${{ needs.plan.outputs.started }}" --run-url "$RUN_URL" --trigger "${{ needs.plan.outputs.trigger }}" \
+            --result-url "https://github.com/${{ github.repository }}/releases/download/test-results/RUN_ID.test262.txt.gz"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test262-result
+          path: ${{ runner.temp }}/rec/
+          retention-days: 30
+      - name: Result file to the release test-results (a commit of main only)
+        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload test-results "$RUNNER_TEMP"/rec/*.test262.txt.gz --clobber -R "${{ github.repository }}"
+      - name: Record on wpt-scores (a commit of main only)
+        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push'
+        run: python3 release-tests/test262.py record --from "$RUNNER_TEMP/rec"
