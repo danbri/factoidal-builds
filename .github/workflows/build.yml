@@ -976,6 +976,9 @@ jobs:
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write   # the ci-metrics branch
+      actions: write    # read job logs; delete superseded caches
     steps:
       - uses: actions/checkout@v4
       - name: Timing and cache record
@@ -992,3 +995,10 @@ jobs:
           retention-days: 90
       - name: Record on the branch ci-metrics
         run: scripts/record-ci-metrics.sh "$RUNNER_TEMP/m/ci-metrics-$GITHUB_RUN_ID.json"
+      # Old entries of the .lake, ccache and leanc object cache families go (the newest two of
+      # each stay), so the 10 GB store does not evict the small compiler caches first. Speed only:
+      # every restore falls back to the newest entry and each tool checks what it restores.
+      - name: Drop superseded caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci-metrics.py prune --keep 2

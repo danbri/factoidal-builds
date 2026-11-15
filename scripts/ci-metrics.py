@@ -213,6 +213,43 @@ def cmd_trend(a):
               f"{f'{h[0]}/{h[1]}' if h else '-'} |")
 
 
+# Families whose old entries are dropped: each run saves a new key (a new source hash or run
+# id), and the repository's 10 GB cache store then evicts by last use, which on 2026-11-15
+# dropped the 26 MB Emscripten ccache within six hours while ten 1 GB .lake caches stayed.
+# Deleting a cache never changes a build's result, only its speed: every restore falls back to
+# the newest of its family, and each tool checks what it restores.
+PRUNE_FAMILIES = ("lake-", "ccache-emcc-", "leanc-objects-")
+
+
+def family(key):
+    return key.rsplit("-", 1)[0]
+
+
+def cmd_prune(a):
+    caches = []
+    page = 1
+    while True:
+        got = api(f"repos/{REPO}/actions/caches?per_page=100&page={page}")["actions_caches"]
+        caches += got
+        if len(got) < 100:
+            break
+        page += 1
+    fams = {}
+    for c in caches:
+        if c["key"].startswith(PRUNE_FAMILIES):
+            fams.setdefault(family(c["key"]), []).append(c)
+    freed = 0
+    for f, cs in sorted(fams.items()):
+        cs.sort(key=lambda c: c["created_at"], reverse=True)
+        for c in cs[a.keep:]:
+            print(f"delete {c['key']} ({c['size_in_bytes'] // 1048576} MB, created {c['created_at']})")
+            if not a.dry_run:
+                subprocess.run(["gh", "api", "-X", "DELETE", f"repos/{REPO}/actions/caches/{c['id']}"], check=True,
+                               capture_output=True)
+            freed += c["size_in_bytes"]
+    print(f"cache prune: {freed // 1048576} MB {'would be ' if a.dry_run else ''}freed; kept the newest {a.keep} of each family")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -223,11 +260,14 @@ def main():
     rc = sub.add_parser("record")
     rc.add_argument("--file", required=True)
     rc.add_argument("--dir", required=True)
+    pr = sub.add_parser("prune")
+    pr.add_argument("--keep", type=int, default=2)
+    pr.add_argument("--dry-run", action="store_true")
     tr = sub.add_parser("trend")
     tr.add_argument("--n", type=int, default=10)
     tr.add_argument("--records")
     a = p.parse_args()
-    {"run": cmd_run, "record": cmd_record, "trend": cmd_trend}[a.cmd](a)
+    {"run": cmd_run, "record": cmd_record, "prune": cmd_prune, "trend": cmd_trend}[a.cmd](a)
 
 
 if __name__ == "__main__":
