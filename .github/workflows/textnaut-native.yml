@@ -1,0 +1,153 @@
+name: Textnaut on the native Linux engine
+
+# Textnaut on the self-contained Linux engine library (libweb-render.so), on a runner with NO
+# Lean toolchain: installs the library as a user would (textnaut --install-native TAG, which
+# checks it by SHA-256 against the release's build-info.json), then renders local fixture
+# pages of core with the native engine and with the Wasm engine of the same commit, checks
+# the text grids are the same, checks that textnaut picks the installed library by itself,
+# and times the first render and keys on a pseudo-terminal for both engines
+# (core's labs/demos/foafnaut/textnaut/engine_parity.py). Results in the job summary and the
+# artifact textnaut-native.
+#
+# foafnaut-linux.yml calls it after it publishes an x86_64 engine release. By hand:
+#   gh workflow run textnaut-native.yml -R danbri/factoidal-builds -f release=build-<12 hex>-foafnaut-linux-x86_64
+#   gh workflow run textnaut-native.yml -R danbri/factoidal-builds -f engine_run_id=<branch-wpt.yml run> -f core_ref=<branch>
+# engine_run_id takes the branch-engine artifact of a Branch WPT check run instead of a release
+# (a branch build, before merge); the Wasm engine is then the newest foafnaut-web release.
+#
+# Cost: one Linux runner, about 5-10 minutes.
+
+on:
+  workflow_call:
+    inputs:
+      release: { type: string, required: false, default: '' }
+      core_ref: { type: string, required: false, default: '' }
+      engine_run_id: { type: string, required: false, default: '' }
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Linux engine release tag (build-<12 hex>-foafnaut-linux-x86_64); empty: the newest self-contained one'
+        required: false
+        default: ''
+      core_ref:
+        description: 'factoidal-core ref for Textnaut and the fixtures (empty: the commit of the engine)'
+        required: false
+        default: ''
+      engine_run_id:
+        description: 'A branch-wpt.yml run whose branch-engine artifact to use instead of a release'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  textnaut-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: No Lean toolchain on this runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v lean || command -v elan || command -v leanc || [ -d "$HOME/.elan" ]; then echo "::error::a Lean toolchain is installed"; exit 1; fi
+          echo "No lean, elan or leanc on PATH; no ~/.elan." >> "$GITHUB_STEP_SUMMARY"
+      - name: Choose the engine and the core commit
+        id: c
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RELEASE: ${{ inputs.release }}
+          CORE_REF: ${{ inputs.core_ref }}
+          RUN_ID: ${{ inputs.engine_run_id }}
+        run: |
+          set -euo pipefail
+          WEB=""
+          if [ -n "$RUN_ID" ]; then
+            gh run download "$RUN_ID" -R "$REPO" -n branch-engine -D "$RUNNER_TEMP/branch-engine"
+            ls -la "$RUNNER_TEMP/branch-engine"
+            SHA=${CORE_REF:?core_ref is needed with engine_run_id}
+          else
+            if [ -z "$RELEASE" ]; then
+              for T in $(gh api "repos/$REPO/releases?per_page=100" --jq '[.[]|select(.tag_name|test("^build-[0-9a-f]{12}-foafnaut-linux-x86_64$"))]|sort_by(.published_at)|reverse|.[].tag_name'); do
+                if gh release download "$T" -R "$REPO" -p build-info.json -O - | python3 -c 'import json,sys; sys.exit(0 if (json.load(sys.stdin).get("library") or {}).get("self_contained") else 1)'; then RELEASE=$T; break; fi
+              done
+              [ -n "$RELEASE" ] || { echo "::error::no self-contained Linux engine release"; exit 1; }
+            fi
+            SHA=$(gh release download "$RELEASE" -R "$REPO" -p build-info.json -O - | python3 -c 'import json,sys; print(json.load(sys.stdin)["source_commit"])')
+            WEB="build-${SHA:0:12}-foafnaut-web"
+            gh release view "$WEB" -R "$REPO" > /dev/null 2>&1 || WEB=""
+            [ -z "$CORE_REF" ] || SHA=$CORE_REF
+          fi
+          # The Wasm engine: the same commit's foafnaut-web release, else the newest one.
+          [ -n "$WEB" ] || WEB=$(gh api "repos/$REPO/releases?per_page=100" --jq '[.[]|select(.tag_name|test("^build-[0-9a-f]{12}-foafnaut-web$"))]|sort_by(.published_at)|last|.tag_name')
+          gh release download "$WEB" -R "$REPO" -p foafnaut-web.tar.gz -D "$RUNNER_TEMP/web"
+          mkdir -p "$RUNNER_TEMP/wasm"
+          tar -xzf "$RUNNER_TEMP/web/foafnaut-web.tar.gz" -C "$RUNNER_TEMP/web" docs/web/hub/html-webgpu/runtime/web-render.mjs docs/web/hub/html-webgpu/runtime/web-render.wasm
+          mv "$RUNNER_TEMP"/web/docs/web/hub/html-webgpu/runtime/web-render.* "$RUNNER_TEMP/wasm/"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"; echo "release=$RELEASE" >> "$GITHUB_OUTPUT"
+          { echo "Engine: ${RELEASE:-branch-engine of run $RUN_ID}; Wasm engine: $WEB; core: $SHA"; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ steps.c.outputs.sha }}
+          path: core
+          sparse-checkout: |
+            npm/textnaut
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pins
+        id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Install the native engine as a user would
+        shell: bash
+        env:
+          RELEASE: ${{ steps.c.outputs.release }}
+        run: |
+          set -euo pipefail
+          node core/npm/textnaut/scripts/sync.mjs
+          export FOAFNAUT_HOME=$RUNNER_TEMP/foafnaut-home
+          echo "FOAFNAUT_HOME=$FOAFNAUT_HOME" >> "$GITHUB_ENV"
+          if [ -n "$RELEASE" ]; then
+            node core/npm/textnaut/bin/textnaut.mjs --install-native "$RELEASE"
+          else
+            mkdir -p "$FOAFNAUT_HOME/versions/branch/foafnaut"
+            cp "$RUNNER_TEMP/branch-engine/libweb-render.so" "$FOAFNAUT_HOME/versions/branch/foafnaut/"
+            ln -s versions/branch "$FOAFNAUT_HOME/current"
+          fi
+          LIB=$FOAFNAUT_HOME/current/foafnaut/libweb-render.so
+          echo "LIB=$LIB" >> "$GITHUB_ENV"
+          ldd "$LIB"
+          if ldd "$LIB" | grep -q 'not found'; then echo "::error::the library needs a missing library"; exit 1; fi
+          echo "libweb-render.so: $(du -h "$LIB" | cut -f1); needs: $(readelf -dW "$LIB" | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p' | tr '\n' ' ')" >> "$GITHUB_STEP_SUMMARY"
+      - name: Native against Wasm, first render and keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd core/labs/demos/foafnaut
+          PAGES=$(ls web-render/fixtures/*.html | sort)
+          RC=0
+          python3 textnaut/engine_parity.py --cmd "node $GITHUB_WORKSPACE/core/npm/textnaut/bin/textnaut.mjs" \
+            --native "$LIB" --wasm-dir "$RUNNER_TEMP/wasm" --runs 3 --json "$RUNNER_TEMP/textnaut-native.json" \
+            --expect-auto-native pages/showcase.html $PAGES 2>&1 | tee "$RUNNER_TEMP/textnaut-native.txt" || RC=$?
+          { echo '```'; grep -E '^(PASS|FAIL|  )|failed$' "$RUNNER_TEMP/textnaut-native.txt" | cut -c1-300; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $RC
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: textnaut-native
+          path: |
+            ${{ runner.temp }}/textnaut-native.json
+            ${{ runner.temp }}/textnaut-native.txt
+          retention-days: 14

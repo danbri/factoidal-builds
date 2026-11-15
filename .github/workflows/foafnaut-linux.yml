@@ -12,14 +12,15 @@ name: Foafnaut Linux engine
 # foafnaut releases that run published, and on request.
 #
 # The build is core's labs/demos/foafnaut/build-web-render.sh --native (Lean modules
-# from source with the pinned toolchain; no Emscripten). On Linux the library links
-# Lean's shared runtime (libleanshared*.so; libleanrt.a can not go into a shared
-# library, see that script), so a user needs the same Lean toolchain:
-# `elan toolchain install $(cat foafnaut/lean-toolchain)` and
-# LD_LIBRARY_PATH=~/.elan/toolchains/<toolchain>/lib/lean. The release says so in
-# foafnaut/README-linux.txt. Gate: one WPT page through core's runner with this library
-# (start check), and core's native_html_test.ts when present. This is a CPU engine
-# library for the WPT runner and the desktop; no GPU, no window.
+# from source with the pinned toolchain; no Emscripten). From factoidal-core 2026-11-15 on,
+# the library is self-contained: Lean's runtime (recompiled with initial-exec TLS by
+# core's build-leanrt-no-gmp.sh, hence libc++-dev), Init, Std, libuv and libc++ are linked
+# in, and it needs only the C library. build-info.json says so ("library":
+# {"self_contained": true}); Textnaut's --install-native installs only such releases.
+# Older commits link Lean's shared runtime and need the toolchain at run time
+# (foafnaut/README-linux.txt says which). Gate: one WPT page through core's runner with
+# this library, with no LD_LIBRARY_PATH when it is self-contained. This is a CPU engine
+# library for Textnaut and the WPT runner; no GPU, no window.
 #
 # Cost: Linux minutes only, about 25-35 min a build for each arch.
 
@@ -155,7 +156,7 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           T=$(tr -d ' \n' < core/formal/lean4/lean-toolchain)
           elan toolchain install "$T"
-          sudo apt-get update -q && sudo apt-get install -y -q libuv1-dev
+          sudo apt-get update -q && sudo apt-get install -y -q libuv1-dev libc++-dev libc++abi-dev
       - name: Pins
         id: pins
         run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
@@ -244,6 +245,23 @@ jobs:
           T=$(tr -d ' \n' < core/formal/lean4/lean-toolchain)
           echo "$T" > "$STAGE/foafnaut/lean-toolchain"
           ldd "$STAGE/foafnaut/libweb-render.so" > "$STAGE/foafnaut/ldd.txt" || true
+          NEEDED=$(readelf -dW "$STAGE/foafnaut/libweb-render.so" | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p' | sort | tr '\n' ' ')
+          SELF=true
+          for lib in $NEEDED; do case "$lib" in libc.so.*|libm.so.*|libdl.so.*|libpthread.so.*|librt.so.*|ld-linux*) ;; *) SELF=false;; esac; done
+          echo "$NEEDED" > "$STAGE/foafnaut/needed.txt"
+          echo "self_contained=$SELF" >> "$GITHUB_OUTPUT"
+          echo "libweb-render.so needs: $NEEDED (self-contained: $SELF)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$SELF" = true ]; then
+          cat > "$STAGE/foafnaut/README-linux.txt" <<EOF
+          libweb-render.so: the Foafnaut engine (BubblePopKit) for Linux $ARCH, factoidal-core $SHA.
+          It is self-contained: it needs only the C library (glibc), no Lean toolchain.
+          Textnaut uses it once it is in ~/.foafnaut/current/foafnaut/:
+            npx -y @foafos/textnaut --install-native     # fetches and checks this kind of release
+            npx -y @foafos/textnaut https://info.cern.ch/
+          or by hand: textnaut --engine /path/to/libweb-render.so PAGE (or TEXTNAUT_NATIVE=/path/...).
+          Also usable with factoidal-core's tests/browser-wpt/testharness-run.ts --native-engine libweb-render.so.
+          EOF
+          else
           cat > "$STAGE/foafnaut/README-linux.txt" <<EOF
           libweb-render.so: the Foafnaut engine (BubblePopKit) for Linux $ARCH, factoidal-core $SHA.
           It links Lean's shared runtime. Install the same toolchain and point the loader at it:
@@ -252,10 +270,11 @@ jobs:
           Use it with factoidal-core's tests/browser-wpt/testharness-run.ts --native-engine libweb-render.so
           (the Wasm module of the same commit's foafnaut-web release goes in labs/demos/foafnaut/.build/native-html/runtime).
           EOF
+          fi
           ( cd "$STAGE" && find . -type f | sort | tar --owner=0 --group=0 --numeric-owner --mtime='1970-01-01' -czf "$OUT/$SET.tar.gz" -T - )
-          python3 - "$STAGE" "$OUT/$SET.tar.gz" "$SET" "$SHA" "$RUN_URL" "$T" > "$OUT/build-info.json" <<'EOF'
+          python3 - "$STAGE" "$OUT/$SET.tar.gz" "$SET" "$SHA" "$RUN_URL" "$T" "$SELF" "$NEEDED" > "$OUT/build-info.json" <<'EOF'
           import hashlib, json, os, platform, subprocess, sys, datetime
-          stage, tarball, set_, sha, run_url, tc = sys.argv[1:]
+          stage, tarball, set_, sha, run_url, tc, self_contained, needed = sys.argv[1:]
           h = lambda p: hashlib.sha256(open(p, 'rb').read()).hexdigest()
           files = {}
           for dp, _, fs in os.walk(stage):
@@ -266,6 +285,7 @@ jobs:
                             "set": set_, "source_commit": sha, "source_ref": "main", "source_repo": "danbri/factoidal-core",
                             "toolchains": {"lean": tc, "deno": deno, "platform": f"linux-{platform.machine()}",
                                            "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"},
+                            "library": {"self_contained": self_contained == "true", "needed": needed.split()},
                             "artifacts": {os.path.basename(tarball): {"sha256": h(tarball), "size": os.path.getsize(tarball), "files": files}}}, indent=1))
           EOF
           echo "set=$SET" >> "$GITHUB_OUTPUT"
@@ -274,10 +294,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SHORT: ${{ needs.resolve.outputs.short }}
+          SELF_CONTAINED: ${{ steps.pkg.outputs.self_contained }}
         run: |
           set -euo pipefail
           T=$(tr -d ' \n' < core/formal/lean4/lean-toolchain)
-          export LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)
+          # A self-contained library is checked with no path to the toolchain's libraries.
+          if [ "${SELF_CONTAINED:-false}" != true ]; then export LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1); fi
           # The runner loads the Wasm module and, for WPT, never calls it: this commit's when
           # build.yml has published it, else the newest released one.
           WEB="build-$SHORT-foafnaut-web"
@@ -301,13 +323,14 @@ jobs:
           SHORT: ${{ needs.resolve.outputs.short }}
           SHA: ${{ needs.resolve.outputs.sha }}
           SET: ${{ steps.pkg.outputs.set }}
+          SELF_CONTAINED: ${{ steps.pkg.outputs.self_contained }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           TAG="build-$SHORT-$SET"
           gh release delete "$TAG" -R "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
           gh release create "$TAG" -R "${{ github.repository }}" --latest=false --title "$TAG" \
-            --notes "Built from https://github.com/$CORE_REPO/commit/$SHA (main) by $RUN_URL. Linux native Foafnaut engine library (libweb-render.so) for the WPT runner; needs the Lean toolchain named in foafnaut/lean-toolchain at run time (foafnaut/README-linux.txt)." \
+            --notes "Built from https://github.com/$CORE_REPO/commit/$SHA (main) by $RUN_URL. Linux native Foafnaut engine library (libweb-render.so) for Textnaut and the WPT runner; $([ "$SELF_CONTAINED" = true ] && echo 'self-contained: needs only the C library (textnaut --install-native installs it)' || echo 'needs the Lean toolchain named in foafnaut/lean-toolchain at run time') (foafnaut/README-linux.txt)." \
             "$RUNNER_TEMP/pkg/$SET.tar.gz" "$RUNNER_TEMP/pkg/build-info.json"
       # The Linux full WPT run of this commit starts now, not when this workflow ends.
       - name: Start the Linux full run
@@ -348,3 +371,15 @@ jobs:
             --fixtures core/labs/demos/foafnaut/web-render/fixtures --out "$RUNNER_TEMP/render/linux-x86_64" --platform linux-x86_64 --commit "$SHA"
           tar -czf "$RUNNER_TEMP/render-linux-x86_64.tar.gz" -C "$RUNNER_TEMP/render" linux-x86_64
           gh release upload "build-$SHORT-$SET" -R "${{ github.repository }}" "$RUNNER_TEMP/render-linux-x86_64.tar.gz" --clobber
+
+  # Textnaut on the x86_64 release just published, on a runner with no Lean toolchain:
+  # installed with textnaut --install-native, compared with the Wasm engine, timed.
+  textnaut-native:
+    needs: [resolve, build]
+    if: contains(needs.resolve.outputs.arches, 'x86_64')
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/textnaut-native.yml
+    with:
+      release: build-${{ needs.resolve.outputs.short }}-foafnaut-linux-x86_64
