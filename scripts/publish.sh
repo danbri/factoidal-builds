@@ -51,6 +51,7 @@ declare -A TOOLS=(
 
 PUBLISHED=()
 SKIPPED=()
+KEPT=()
 SETS="linux-x86_64 darwin-arm64 web"
 if [ "${FOAFNAUT:-false}" = true ]; then SETS="$SETS foafnaut-darwin-arm64"; fi
 if [ "${FOAFNAUT_WEB:-false}" = true ]; then SETS="$SETS foafnaut-web"; fi
@@ -71,19 +72,18 @@ for SET in $SETS; do
     SKIPPED+=("$SET")
     continue
   fi
-  # A web release that a published npm version names is never replaced
-  # (danbri/factoidal issue 1038, P7): its version.json names this tag and
-  # its run, and a consumer checks the wasm against them. A forced rebuild
-  # of such a commit keeps the old web release; the run is red so the
-  # refusal is seen. Exit 2 of the check (registry not readable) refuses too.
-  if [ "$SET" = web ] && gh release view "build-$SHORT-web" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-    NAMED_RC=0
-    python3 scripts/npm-names-release.py "build-$SHORT-web" "$SHA" || NAMED_RC=$?
-    if [ "$NAMED_RC" -ne 1 ]; then
-      echo "::error::web not replaced: build-$SHORT-web exists and an npm version names it (or the registry could not be read; check exit $NAMED_RC). The existing release is kept."
-      SKIPPED+=("$SET")
-      continue
-    fi
+  # A published release is immutable: a later run of the same commit never deletes it or
+  # replaces its assets. Consumers pin a release by tag and by the sha256 of its tarball
+  # (@factoidal/core's version.json, Textnaut's foafnaut-web pin, fetch-builds.sh), and a
+  # rebuild never has the same bytes: build-info.json carries the build time and run, and
+  # the foafnaut-web runtime manifests name the run. 2026-11-15: a run that rebuilt
+  # ff075ad5a for its missing macOS bundle replaced build-ff075ad5af99-foafnaut-web, and
+  # Textnaut's pin no longer matched. Such a retry now publishes only the missing sets.
+  # To replace a bad release, delete it by hand first (gh release delete TAG --cleanup-tag).
+  if gh release view "build-$SHORT-$SET" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+    echo "::notice::$SET: release build-$SHORT-$SET exists and is kept as published (releases are never replaced)"
+    KEPT+=("$SET")
+    continue
   fi
   STAGE="$OUT/stage-$SET"
   mkdir -p "$STAGE"
@@ -129,10 +129,6 @@ for SET in $SETS; do
     cp "$ART/web-gates/l4diff.txt" "$OUT/$SET/"
     EXTRA+=("$OUT/$SET/l4diff.txt")
   fi
-  if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-    echo "replacing existing release $TAG (forced rebuild)"
-    gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
-  fi
   RUN_URL="${GITHUB_SERVER_URL:-https://github.com}/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
   INSTALL="Install with tools/fetch-builds.sh in a factoidal-core checkout."
   if [ "$SET" = foafnaut-darwin-arm64 ]; then
@@ -158,7 +154,7 @@ PY
   PUBLISHED+=("$SET")
 done
 
-echo "published: ${PUBLISHED[*]:-none}; skipped: ${SKIPPED[*]:-none}"
+echo "published: ${PUBLISHED[*]:-none}; kept (already published): ${KEPT[*]:-none}; skipped: ${SKIPPED[*]:-none}"
 if [ ${#PUBLISHED[@]} -gt 0 ]; then
   # The pointers are derived data, so each attempt writes them on top of the
   # CURRENT main in a separate worktree and pushes; nothing is rebased. (Run

@@ -27,6 +27,9 @@ name: Build Factoidal from factoidal-core
 #              committed source); Linux also builds JS + wasm and runs
 #              `build-ocaml.sh test`. Two jobs: fstar (Linux) and
 #              fstar-macos; web-gates waits only for fstar.
+#   foafnaut-host-tests  core's labs/demos/foafnaut/test.sh on the foafnaut-engines
+#              artifact (Linux, Wasm engines), beside the macOS bundle job; gates
+#              foafnaut-web. The bundle job runs test.sh again with the native library.
 #   web-gates  the npm package suite on both engines, the engine comparison,
 #              the known-defects cases, and the Touchstone LWS client lab
 #              (tools/lws-touchstone-client.sh; JDK 25 and Maven; any
@@ -40,7 +43,7 @@ on:
         required: false
         default: ''
       force:
-        description: 'Rebuild even when releases for this commit exist'
+        description: 'Rebuild even when releases for this commit exist (runs the gates; an existing release is never replaced)'
         type: boolean
         default: false
   schedule:
@@ -58,6 +61,7 @@ on:
 
 permissions:
   contents: write
+  actions: read   # foafnaut-host-tests.yml may read another run's artifact when dispatched alone
 
 # One group for each ref: a dispatch of a branch or commit has a group of its own, so the
 # hourly poll, pushes here and builds of other refs never cancel its pending run
@@ -187,7 +191,8 @@ jobs:
         with:
           name: owl-reader-assurance-linux
           path: ${{ runner.temp }}/owl-public-boundary.json
-          if-no-files-found: error
+          # always(): after a failed gate the report may not exist; that gate's error is the one to read.
+          if-no-files-found: warn
           retention-days: 30
 
       - name: HACL* extern probe (Ed25519 vectors + sha256 differential)
@@ -409,7 +414,8 @@ jobs:
           set -euo pipefail
           source ~/emsdk/emsdk_env.sh
           bash core/labs/demos/foafnaut/build-engines.sh --runtime-cache "$HOME/l4wasm-work"
-          bash core/labs/demos/foafnaut/test.sh --skip-build
+          # test.sh runs in foafnaut-host-tests, on these engines and the HTML engine below,
+          # so that a failing test does not stop the engine build or hide the other failures.
           python3 core/tests/external/svg/suite.py --check-fixtures
           python3 -m unittest discover -s core/tests/external/svg -p test_suite.py -v
       # Older core revisions lack the shared stroke producer required by this
@@ -537,6 +543,17 @@ jobs:
           path: ${{ runner.temp }}/foafnaut-web/
           if-no-files-found: error
           retention-days: 7
+
+  # core's test.sh on the engines just built, on Linux, beside the slow macOS bundle job:
+  # a test failure shows about 45 minutes after dispatch instead of 2.5 hours, and test.sh
+  # lists every failing check. The bundle job runs test.sh again with the native library
+  # (the native halves of the Wasm-and-native tests); here those print NOT RUN.
+  foafnaut-host-tests:
+    needs: [resolve, foafnaut-engines]
+    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
+    uses: ./.github/workflows/foafnaut-host-tests.yml
+    with:
+      core_sha: ${{ needs.resolve.outputs.sha }}
 
   foafnaut:
     needs: [resolve, lean, foafnaut-engines]
@@ -1073,7 +1090,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates, foafnaut-engines, foafnaut]
+    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates, foafnaut-engines, foafnaut-host-tests, foafnaut]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -1089,5 +1106,8 @@ jobs:
           SHORT: ${{ needs.resolve.outputs.short }}
           REF: ${{ needs.resolve.outputs.ref }}
           FOAFNAUT: ${{ needs.resolve.outputs.foafnaut }}
-          FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' }}
+          # The engines' tests (test.sh, in foafnaut-host-tests) gate the web runtime. Until
+          # 2026-11-15 test.sh ran inside foafnaut-engines before the HTML engine existed, so
+          # only its first part gated; now all of it does, on the Wasm engines.
+          FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
         run: scripts/publish.sh

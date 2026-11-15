@@ -175,6 +175,20 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         self.assertIn('foafnaut-darwin-arm64 not published: missing artifacts', result.stdout)
         self.assertNotIn('"create"', (self.root / 'gh.jsonl').read_text())
 
+    def test_existing_release_is_never_replaced(self):
+        stage = self.root / 'art/foafnaut-darwin-arm64/stage/foafnaut'
+        stage.mkdir(parents=True)
+        (stage / 'gallery.svg').write_text('<svg/>')
+        meta = stage.parents[1] / 'meta'
+        meta.mkdir()
+        (meta / 'toolchains-foafnaut.json').write_text('{"deno":"2.9.4"}')
+        result = self.run_script('publish.sh', FOAFNAUT='true', TEST_EXISTING='all')
+        commands = [json.loads(line) for line in (self.root / 'gh.jsonl').read_text().splitlines()]
+        self.assertFalse([a for a in commands if a[:2] in (['release', 'create'], ['release', 'delete'])])
+        self.assertIn('foafnaut-darwin-arm64: release build-', result.stdout)
+        self.assertIn('kept (already published): foafnaut-darwin-arm64', result.stdout)
+        self.assertFalse((self.root / 'release-out/latest-foafnaut-darwin-arm64.json').exists())
+
     def test_demo_archive_provenance_and_permissions(self):
         stage = self.root / 'art/foafnaut-darwin-arm64/stage/foafnaut'
         stage.mkdir(parents=True)

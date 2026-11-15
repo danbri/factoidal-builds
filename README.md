@@ -165,10 +165,13 @@ none. The suite gate is the `web-gates` job of the build run. The tarball
 is a workflow artifact. Use `dist_tag=latest` only to make the version the
 default install.
 
-A forced rebuild never replaces a `web` release that a published
-`@factoidal/core` version names (`scripts/npm-names-release.py` reads each
-version's `l4-assets/version.json`); the run keeps the old release and is
-red.
+A release is never replaced. A rebuild of a commit (a retry for a missing
+set, or `force`) publishes only the sets that have no release yet and keeps
+the others as they were published: consumers pin a release by tag and by
+the sha256 of its tarball (`@factoidal/core`'s `l4-assets/version.json`,
+Textnaut's `foafnaut-web` pin), and a rebuild never has the same bytes. To
+replace a bad release, delete it by hand first.
+(`scripts/npm-names-release.py` reports which npm versions name a release.)
 
 One-time owner step on npmjs.com before the first run: package
 `@factoidal/core` → Settings → Trusted Publisher → GitHub Actions, with
