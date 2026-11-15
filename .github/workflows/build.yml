@@ -397,6 +397,22 @@ jobs:
           fi
           ~/emsdk/emsdk install 6.0.8
           ~/emsdk/emsdk activate 6.0.8
+      # build-web-render.sh runs `lake build` on part of the library. This job does not wait for
+      # the lean job, so it gets the newest earlier Linux cache, and Lake rebuilds what changed.
+      - name: Restore .lake from the lean job's cache
+        id: lake
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Rebuild modules that include_str non-Lean files
+        # As in the lean job: an older cache (restore-keys) may hold a stale BubblePopJS prelude.
+        if: steps.lake.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null || true
       - name: Restore the Lean runtime cache
         shell: bash
         run: |
@@ -576,6 +592,23 @@ jobs:
         with:
           name: foafnaut-engines
           path: core/labs/demos/foafnaut/.build
+      # build-web-render.sh --native runs `lake build` on part of the library: 70 of this job's
+      # 99 minutes on 2026-11-15 (run 43686125908) with no cache. The macOS lean job of this run
+      # (a need of this job) saved its .lake under this exact key.
+      - name: Restore .lake from the lean job's cache
+        id: lake
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Rebuild modules that include_str non-Lean files
+        # As in the lean job: an older cache (restore-keys) may hold a stale BubblePopJS prelude.
+        if: steps.lake.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null || true
       - name: Install pinned Lean for fresh native source preparation
         run: |
           curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
