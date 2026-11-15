@@ -62,7 +62,10 @@ RUNS_COLUMNS = [
 ]
 RIVALS_COLUMNS = ["recorded_utc", "wpt_commit", "browser", "version", "channel", "wptfyi_run_id", "run_time_utc",
                   "passed", "denominator", "share_pct", "share_ex_encoding_pct", "names_total", "names_reported",
-                  "partial", "summary_url"]
+                  "partial", "summary_url", "status", "reason"]
+# rivals.csv had no status/reason before 2026-11-15: append_csv extends that one header in place
+# (the rows already there keep their fields; the two new ones read as empty = "ok").
+RIVALS_COLUMNS_V1 = RIVALS_COLUMNS[:-2]
 RIVALS = [("chrome", "stable"), ("firefox", "stable"), ("safari", "stable"), ("edge", "stable"),
           ("servo", "experimental"), ("wpewebkit", "experimental"), ("ladybird", "experimental")]
 PARTIAL_BELOW = 0.95                 # a rival run reporting fewer of Chrome's names is partial
@@ -1265,18 +1268,47 @@ def cmd_rivals(a):
     want = {n: v["c"][1] for n, v in chrome.items() if v["c"][1] > 0}
     den = sum(v["c"][1] for v in chrome.values())
     enc_den = sum(c for n, c in want.items() if top(n) == "encoding")
-    known = {(r["wpt_commit"], r["wptfyi_run_id"]) for r in read_csv_url("rivals.csv")}
-    rows = []
+    old = read_csv_url("rivals.csv")
+    known = {(r["wpt_commit"], r["wptfyi_run_id"]) for r in old}
+    known_missing = {(r["wpt_commit"], r["browser"]) for r in old if r.get("status") == "unavailable"}
+    rows, missing = [], []
+
+    def unavailable(product, channel, reason):
+        # A rival that wpt.fyi cannot give is recorded as such (once per WPT commit) and never
+        # fails the job: our own numbers must always be recorded.
+        missing.append((product, reason))
+        log(f"{product}: unavailable: {reason}")
+        if (a.wpt_commit, product) not in known_missing:
+            rows.append({"recorded_utc": now_utc(), "wpt_commit": a.wpt_commit, "browser": product, "channel": channel,
+                         "status": "unavailable", "reason": reason[:200]})
+
     for product, channel in RIVALS:
         label = "&label=stable" if channel == "stable" else ""
-        runs = wptfyi_runs(f"product={product}&label=master{label}&sha={a.wpt_commit}")
+        runs, err = None, ""
+        for attempt in range(3):          # a few tries a few seconds apart; a 404 is "no run"
+            try:
+                runs = wptfyi_runs(f"product={product}&label=master{label}&sha={a.wpt_commit}")
+                break
+            except Exception as e:  # noqa: BLE001 - any failure of one rival is that rival's
+                err = str(e)
+                if "404" in err:
+                    runs = []
+                    break
+                time.sleep(5 * (attempt + 1))
+        if runs is None:
+            unavailable(product, channel, f"wpt.fyi did not answer: {err}")
+            continue
         if not runs:
-            log(f"{product}: no {channel} run at {a.wpt_commit[:10]}")
+            unavailable(product, channel, f"no {channel} run on wpt.fyi at this WPT commit")
             continue
         r = runs[0]
         if (a.wpt_commit, str(r["id"])) in known:
             continue
-        s = load_summary(r["results_url"], os.path.join(work, f"{product}.json"))
+        try:
+            s = load_summary(r["results_url"], os.path.join(work, f"{product}.json"))
+        except Exception as e:  # noqa: BLE001
+            unavailable(product, channel, f"summary of wpt.fyi run {r['id']} not loaded: {e}")
+            continue
         passed = enc = reported = 0
         for n, c in want.items():
             v = s.get(n)
@@ -1291,14 +1323,16 @@ def cmd_rivals(a):
                      "denominator": den, "share_pct": f"{100 * passed / den:.4f}",
                      "share_ex_encoding_pct": f"{100 * (passed - enc) / (den - enc_den):.4f}", "names_total": len(want),
                      "names_reported": reported, "partial": str(reported < PARTIAL_BELOW * len(want)).lower(),
-                     "summary_url": r["results_url"]})
+                     "summary_url": r["results_url"], "status": "ok", "reason": ""})
         os.remove(os.path.join(work, f"{product}.json"))
         log(f"{product} {r.get('browser_version')}: {passed} ({100 * passed / den:.2f}%), {reported} of {len(want)} names")
     os.makedirs(a.out, exist_ok=True)
     json.dump(rows, open(os.path.join(a.out, "rival-rows.json"), "w"), indent=1)
-    if rows:
+    ok = [r for r in rows if r.get("status") == "ok"]
+    if ok or missing:
         summary("### Other browsers at WPT " + a.wpt_commit[:10] + "\n\n" + "\n".join(
-            f"- {r['browser']} {r['version']}: {r['share_pct'][:5]}%{' (partial run)' if r['partial'] == 'true' else ''}" for r in rows))
+            [f"- {r['browser']} {r['version']}: {r['share_pct'][:5]}%{' (partial run)' if r['partial'] == 'true' else ''}" for r in ok]
+            + [f"- {p}: unavailable ({why})" for p, why in missing]))
 
 
 # ---- record ---------------------------------------------------------------------------------
@@ -1308,6 +1342,13 @@ def append_csv(path, columns, rows):
     if not new:
         with open(path) as f:
             head = next(csv.reader(f), [])
+        if head != columns and head == columns[:len(head)] and head == RIVALS_COLUMNS_V1:
+            # the one allowed widening: rivals.csv gains status and reason (header line only)
+            with open(path) as f:
+                rest = f.read().split("\n", 1)[1]
+            with open(path, "w") as f:
+                f.write(",".join(columns) + "\n" + rest)
+            head = columns
         if head != columns:
             die(f"{path}: its columns are not {columns[:4]}...; runs.csv is never rewritten, so a column change needs a new file")
     with open(path, "a", newline="") as f:
@@ -1349,8 +1390,11 @@ def cmd_record(a):
         known_d = {r["run_id"] for r in (csv.DictReader(open(os.path.join(tree, "differential.csv"))) if os.path.exists(os.path.join(tree, "differential.csv")) else [])}
         if diffs:
             append_csv(os.path.join(tree, "differential.csv"), RUNS_COLUMNS, [r for r in diffs if r["run_id"] not in known_d])
-        known_r = {(r["wpt_commit"], r["wptfyi_run_id"]) for r in (csv.DictReader(open(os.path.join(tree, "rivals.csv"))) if os.path.exists(os.path.join(tree, "rivals.csv")) else [])}
-        new_rivals = [r for r in rivals if (r["wpt_commit"], str(r["wptfyi_run_id"])) not in known_r]
+        old_r = list(csv.DictReader(open(os.path.join(tree, "rivals.csv")))) if os.path.exists(os.path.join(tree, "rivals.csv")) else []
+        known_r = {(r["wpt_commit"], r["wptfyi_run_id"]) for r in old_r if r.get("status") != "unavailable"}
+        known_m = {(r["wpt_commit"], r["browser"]) for r in old_r if r.get("status") == "unavailable"}
+        new_rivals = [r for r in rivals if (r.get("status") == "unavailable" and (r["wpt_commit"], r["browser"]) not in known_m)
+                      or (r.get("status") != "unavailable" and (r["wpt_commit"], str(r["wptfyi_run_id"])) not in known_r)]
         if new_rivals:
             append_csv(os.path.join(tree, "rivals.csv"), RIVALS_COLUMNS, new_rivals)
         for rid, m in metas.items():
