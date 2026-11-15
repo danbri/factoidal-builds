@@ -27,9 +27,10 @@ OUT=release-out
 mkdir -p "$OUT" latest
 
 declare -A NEEDS=(
-  [linux-x86_64]="fstar-linux-x86_64/stage-native lean-linux-x86_64/stage"
-  [darwin-arm64]="fstar-darwin-arm64/stage-native lean-darwin-arm64/stage"
-  [web]="fstar-linux-x86_64/stage-web lean-wasm/stage"
+  # Lean only since 2026-11-15: automatic F* builds stopped, so no set carries F* products.
+  [linux-x86_64]="lean-linux-x86_64/stage"
+  [darwin-arm64]="lean-darwin-arm64/stage"
+  [web]="lean-wasm/stage"
   [foafnaut-darwin-arm64]="foafnaut-darwin-arm64/stage"
   [foafnaut-web]="foafnaut-web/stage"
 )
@@ -42,9 +43,9 @@ declare -A REQUIRES=(
   [foafnaut-web]=""
 )
 declare -A TOOLS=(
-  [linux-x86_64]="fstar-linux-x86_64/meta/toolchains-fstar-linux-x86_64.json lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json"
-  [darwin-arm64]="fstar-darwin-arm64/meta/toolchains-fstar-darwin-arm64.json lean-darwin-arm64/meta/toolchains-lean-darwin-arm64.json"
-  [web]="fstar-linux-x86_64/meta/toolchains-fstar-linux-x86_64.json lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json lean-wasm/meta/toolchains-lean-wasm.json"
+  [linux-x86_64]="lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json"
+  [darwin-arm64]="lean-darwin-arm64/meta/toolchains-lean-darwin-arm64.json"
+  [web]="lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json lean-wasm/meta/toolchains-lean-wasm.json"
   [foafnaut-darwin-arm64]="foafnaut-darwin-arm64/meta/toolchains-foafnaut.json"
   [foafnaut-web]="foafnaut-web/meta/toolchains-foafnaut-web.json"
 )
@@ -116,18 +117,6 @@ for SET in $SETS; do
   if [ "$SET" = web ] && [ -f "$ART/lean-linux-x86_64/meta/lean-scoreboard.txt" ]; then
     cp "$ART/lean-linux-x86_64/meta/lean-scoreboard.txt" "$OUT/$SET/"
     EXTRA+=("$OUT/$SET/lean-scoreboard.txt")
-  fi
-  if [ "$SET" = web ] && [ -f "$ART/web-gates/engine-compare.txt" ]; then
-    cp "$ART/web-gates/engine-compare.txt" "$OUT/$SET/"
-    EXTRA+=("$OUT/$SET/engine-compare.txt")
-  fi
-  if [ "$SET" = web ] && [ -f "$ART/web-gates/known-defects.txt" ]; then
-    cp "$ART/web-gates/known-defects.txt" "$OUT/$SET/"
-    EXTRA+=("$OUT/$SET/known-defects.txt")
-  fi
-  if [ "$SET" = web ] && [ -f "$ART/web-gates/l4diff.txt" ]; then
-    cp "$ART/web-gates/l4diff.txt" "$OUT/$SET/"
-    EXTRA+=("$OUT/$SET/l4diff.txt")
   fi
   RUN_URL="${GITHUB_SERVER_URL:-https://github.com}/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
   INSTALL="Install with tools/fetch-builds.sh in a factoidal-core checkout."

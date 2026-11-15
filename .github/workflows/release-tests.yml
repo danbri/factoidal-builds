@@ -44,7 +44,7 @@ name: Release tests
 #   run for each main commit with a Linux engine (foafnaut-linux.yml builds one every 20
 #   min when main changes engine code) and one macOS run for each build.yml release (none
 #   when that commit already has a valid run at the same WPT commit on that platform).
-#   The other suites: 6 Linux jobs of 1-5 min each.
+#   The other suites: one Linux job (lean-w3c; the F* suites stopped on 2026-11-15).
 
 on:
   workflow_run:
@@ -348,7 +348,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [jsonld, lean-w3c, misc, owl, shapes, w3c]
+        # Lean only since 2026-11-15 (automatic F* builds stopped; the F* runners left the release).
+        group: [lean-w3c]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -400,7 +401,6 @@ jobs:
           ref: ${{ needs.resolve.outputs.core_commit }}
           path: core
           sparse-checkout: |
-            formal/fstar
             docs/test-results
       - uses: actions/download-artifact@v4
         with:

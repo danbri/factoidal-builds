@@ -3,10 +3,10 @@ name: Build Factoidal from factoidal-core
 # Builds one danbri/factoidal-core commit and publishes its artifacts as
 # releases of this repository, one per artifact set:
 #
-#   build-<12 hex>-linux-x86_64   bin/linux-x86_64/  F* CLI + runners, Lean CLI
+#   build-<12 hex>-linux-x86_64   bin/linux-x86_64/  Lean CLI and W3C runner
 #   build-<12 hex>-darwin-arm64   bin/darwin-arm64/  same, macOS arm64
-#   build-<12 hex>-web            npm/ + docs/       F* JS/wasm bundles, Lean wasm,
-#                                                    generated F* dashboard
+#   build-<12 hex>-web            npm/ + docs/       Lean wasm
+#   (Lean only since 2026-11-15: no F* build, test or release product runs here.)
 #   build-<12 hex>-foafnaut-darwin-arm64  experimental native graphics demos
 #   build-<12 hex>-foafnaut-web   experimental SVG WebGPU runtime
 #
@@ -22,16 +22,11 @@ name: Build Factoidal from factoidal-core
 #              the Lean conformance scoreboard when core carries it.
 #   lean-wasm  Wasm/build-wasm.sh (Emscripten 6.0.8, cached work dir from
 #              the toolchain-cache branch) and the npm Lean-engine tests.
-#   fstar      extract + compile; the re-extracted .ml must equal core's
-#              committed .ml (else the binary would not be built from the
-#              committed source); Linux also builds JS + wasm and runs
-#              `build-ocaml.sh test`. Two jobs: fstar (Linux) and
-#              fstar-macos; web-gates waits only for fstar.
 #   foafnaut-host-tests  core's labs/demos/foafnaut/test.sh on the foafnaut-engines
 #              artifact (Linux, Wasm engines), beside the macOS bundle job; gates
 #              foafnaut-web. The bundle job runs test.sh again with the native library.
-#   web-gates  the npm package suite on both engines, the engine comparison,
-#              the known-defects cases, and the Touchstone LWS client lab
+#   web-gates  the npm package suite on the Lean engine, the OWL package checks
+#              and the Touchstone LWS client lab
 #              (tools/lws-touchstone-client.sh; JDK 25 and Maven; any
 #              non-zero exit fails the job and so the web release).
 
@@ -247,9 +242,9 @@ jobs:
           for b in l4factoidal l4w3c l4wasm-cli; do
             cp core/formal/lean4/.lake/build/bin/$b "$D/"
           done
-          # l4diff runs in web-gates beside the F* Linux binary. It is a
-          # tool of this pipeline, not a release product: tools/ is not in
-          # any set publish.sh assembles.
+          # l4diff (Lean against F*) ran in web-gates until F* builds stopped on 2026-11-15;
+          # it is still staged for manual use. A tool of this pipeline, not a release
+          # product: tools/ is not in any set publish.sh assembles.
           if [ "${{ matrix.platform }}" = linux-x86_64 ] && [ -x core/formal/lean4/.lake/build/bin/l4diff ]; then
             mkdir -p "$RUNNER_TEMP/out/tools"
             cp core/formal/lean4/.lake/build/bin/l4diff "$RUNNER_TEMP/out/tools/"
@@ -642,239 +637,13 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # The F* build is two jobs with one step list (a YAML anchor), so that
-  # web-gates waits only for the Linux job, the one whose web products it
-  # tests. The macOS job (38 min in run 40132069195, against 26 min on
-  # Linux) is still needed by publish for the darwin-arm64 set.
-  fstar:
-    needs: resolve
-    if: needs.resolve.outputs.proceed == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux-x86_64
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 300
-    steps: &fstar-steps
-      - uses: actions/checkout@v4
-        with:
-          path: builds
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ env.CORE_REPO }}
-          ref: ${{ needs.resolve.outputs.sha }}
-          path: core
-          submodules: ${{ matrix.platform == 'linux-x86_64' && 'recursive' || 'false' }}
-
-      # restore + explicit save (below), so a run that fails after the
-      # toolchain install still keeps the ~20-minute opam/F* install.
-      - name: Restore opam
-        id: opam-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.opam
-          key: opam-fstar-2025.12.15-${{ runner.os }}-v4
-          restore-keys: |
-            opam-fstar-2025.12.15-${{ runner.os }}-
-
-      - name: Restore F* .checked files
-        id: checked-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: core/formal/fstar/*.fst.checked
-          key: fstar-checked-${{ runner.os }}-${{ hashFiles('core/formal/fstar/*.fst', 'core/formal/fstar/*.fsti') }}
-          restore-keys: |
-            fstar-checked-${{ runner.os }}-
-
-      - name: Install system deps (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y opam libgmp-dev pkg-config
-
-      - name: Install system deps (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          # bash: build-ocaml.sh uses bash 4 features (declare -A); macOS
-          # ships bash 3.2, and Homebrew's bash comes first on PATH.
-          # coreutils: build-ocaml.sh calls sha256sum and nproc (GNU names);
-          # its gnubin directory goes first on PATH for every later step.
-          for pkg in opam gmp pkg-config zstd bash coreutils; do
-            brew list --formula "$pkg" >/dev/null 2>&1 || brew install "$pkg"
-          done
-          echo "$(brew --prefix coreutils)/libexec/gnubin" >> "$GITHUB_PATH"
-
-      - name: Install binaryen (wasm-merge)
-        if: runner.os == 'Linux'
-        run: |
-          set -euo pipefail
-          BINARYEN_VERSION=version_129
-          URL="https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz"
-          # Run 12 failed on a cut-off download (gzip: unexpected end of
-          # file): fetch to a file, test the archive, retry.
-          for i in 1 2 3 4; do
-            if curl -fsSL --retry 3 --retry-all-errors -o "$RUNNER_TEMP/binaryen.tar.gz" "$URL" \
-               && gzip -t "$RUNNER_TEMP/binaryen.tar.gz"; then
-              break
-            fi
-            [ "$i" -eq 4 ] && { echo "::error::binaryen download failed 4 times"; exit 1; }
-            sleep $((i * i * 4))
-          done
-          sudo tar -xzf "$RUNNER_TEMP/binaryen.tar.gz" -C /usr/local --strip-components=1
-          wasm-merge --version
-
-      - name: Setup opam + F*
-        shell: bash
-        env:
-          # macOS: let opam install the Homebrew packages F* depends on
-          # (python@3.9 on macos runners) instead of stopping at a prompt.
-          OPAMCONFIRMLEVEL: unsafe-yes
-        run: |
-          if [ ! -d ~/.opam ]; then
-            opam init -y --disable-sandboxing
-            opam switch create fstar ocaml-base-compiler.4.14.1
-          fi
-          eval $(opam env --switch=fstar)
-          opam pin add z3 4.13.3 -y --no-action
-          opam pin add fstar 2025.12.15 -y --no-action
-          # F* is pinned: core's .checked cache, the toolchain-cache branch and
-          # the extraction drift check all assume this version.
-          opam install -y fstar.2025.12.15 z3.4.13.3 zarith sha digestif uucp ocamlfind
-          if [ "$RUNNER_OS" = Linux ]; then
-            # JS and wasm bundles (build-ocaml.sh js / wasm): the same set as
-            # core's tools/install-toolchain-cache.sh.
-            opam install -y js_of_ocaml js_of_ocaml-compiler zarith_stubs_js wasm_of_ocaml-compiler
-          fi
-          echo "OPAMSWITCH=fstar" >> "$GITHUB_ENV"
-
-      - name: Save opam
-        if: steps.opam-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.opam
-          key: opam-fstar-2025.12.15-${{ runner.os }}-v4
-
-      - name: Extract + compile
-        working-directory: core/formal/fstar
-        shell: bash
-        run: |
-          set -euo pipefail
-          eval $(opam env --switch=fstar)
-          bash ./build-ocaml.sh extract
-          bash ./build-ocaml.sh compile
-
-      # .checked files are keyed by F* on their source digests, so a partial
-      # set saved from a failed extraction is still valid input next time.
-      - name: Save F* .checked files
-        if: always() && steps.checked-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: core/formal/fstar/*.fst.checked
-          key: fstar-checked-${{ runner.os }}-${{ hashFiles('core/formal/fstar/*.fst', 'core/formal/fstar/*.fsti') }}
-
-      - name: The binary is built from core's committed .ml
-        working-directory: core
-        shell: bash
-        run: |
-          DRIFT=$(git status --porcelain -- 'formal/fstar/ocaml-output/*.ml')
-          if [ -n "$DRIFT" ]; then
-            echo "::error::re-extraction differs from the committed .ml (core's check-extraction gate must be green first):"
-            echo "$DRIFT"
-            git diff --stat -- 'formal/fstar/ocaml-output/*.ml'
-            exit 1
-          fi
-
-      - name: JS + wasm bundles, npm copies (Linux)
-        if: runner.os == 'Linux'
-        working-directory: core/formal/fstar
-        shell: bash
-        run: |
-          set -euo pipefail
-          eval $(opam env --switch=fstar)
-          bash ./build-ocaml.sh js
-          bash ./build-ocaml.sh wasm
-          # factoidal.wasm.js and the two npm-entry wasm mirrors: the npm
-          # step refuses to copy when package.json lists them and they are absent.
-          bash ./build-ocaml.sh wasm-factoidal
-          bash ./build-ocaml.sh npm
-
-      - name: KaRaMeL C delta-log demo (Linux)
-        if: runner.os == 'Linux'
-        run: builds/scripts/build-deltalog-demo.sh core builds
-
-      - name: W3C suites + dashboard (Linux)
-        if: runner.os == 'Linux'
-        working-directory: core/formal/fstar
-        shell: bash
-        run: |
-          set -euo pipefail
-          eval $(opam env --switch=fstar)
-          bash ./build-ocaml.sh test
-
-      - name: Native round trip (macOS)
-        if: runner.os == 'macOS'
-        working-directory: core/formal/fstar/ocaml-output
-        shell: bash
-        run: |
-          set -o pipefail
-          # The macOS checkout skips submodules; the round trip needs the
-          # W3C manifests (run 12 failed: no manifest.ttl in bind).
-          git -C ../../.. submodule update --init --depth 1 third_party/testing/w3c
-          ../../../bin/darwin-arm64/w3c_runner bind 2>&1 | tee "$RUNNER_TEMP/macos_smoke.log"
-          grep -q 'bind' "$RUNNER_TEMP/macos_smoke.log"
-
-      - name: Stage F* products
-        shell: bash
-        run: |
-          set -euo pipefail
-          eval $(opam env --switch=fstar)
-          mkdir -p "$RUNNER_TEMP/out/meta"
-          if [ "${{ runner.os }}" = Linux ]; then
-            builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-native" \
-              bin/${{ matrix.platform }} formal/fstar/c-output/deltalog/demo/delta_log_demo
-          else
-            builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-native" bin/${{ matrix.platform }}
-          fi
-          if [ "${{ runner.os }}" = Linux ]; then
-            builds/scripts/stage-products.sh core "$RUNNER_TEMP/out/stage-web" \
-              docs/fstar-extracted docs/test-results docs/npm/factoidal npm/factoidal
-          fi
-          python3 - "$RUNNER_TEMP/out/meta/toolchains-fstar-${{ matrix.platform }}.json" <<'PY'
-          import json, subprocess, sys
-          def out(*a):
-              r = subprocess.run(list(a), capture_output=True, text=True)
-              return (r.stdout or r.stderr).strip().splitlines()[0] if (r.stdout or r.stderr) else ''
-          json.dump({'fstar': out('fstar.exe', '--version'), 'ocaml': out('ocamlfind', 'ocamlopt', '-version'),
-                     'opam': out('opam', '--version'), 'z3': out('z3', '--version')}, open(sys.argv[1], 'w'))
-          PY
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: fstar-${{ matrix.platform }}
-          path: ${{ runner.temp }}/out/
-          retention-days: 7
-
-  fstar-macos:
-    needs: resolve
-    if: needs.resolve.outputs.proceed == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-15
-            platform: darwin-arm64
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 300
-    steps: *fstar-steps
-
+  # No F* jobs since 2026-11-15: the project is Lean first, and automatic F* builds, tests
+  # and release products stopped (the F* sources stay in core). The fstar and fstar-macos
+  # jobs are in this file's history (builds commit 34e80a1) if F* is ever built again.
   web-gates:
-    # The npm package's own suite runs both engines (F* JS/wasm bundles and
-    # the Lean wasm module) and compares them, so it needs the outputs of
-    # the fstar Linux job and of lean-wasm installed into one core checkout.
-    # The web release is published only when this job passes.
-    needs: [resolve, lean, lean-wasm, fstar]
+    # The npm package's own suite, on the Lean wasm module of lean-wasm installed into a
+    # core checkout. The web release is published only when this job passes.
+    needs: [resolve, lean, lean-wasm]
     if: needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -887,17 +656,13 @@ jobs:
           submodules: recursive
       - uses: actions/download-artifact@v4
         with:
-          name: fstar-linux-x86_64
-          path: art/fstar
-      - uses: actions/download-artifact@v4
-        with:
           name: lean-wasm
           path: art/lean-wasm
-      - name: Install both engines' web products into the checkout
+      - name: Install the Lean engine's web products into the checkout
         shell: bash
         run: |
           set -euo pipefail
-          for d in art/fstar/stage-web art/lean-wasm/stage; do
+          for d in art/lean-wasm/stage; do
             ( cd "$d" && tar -cf - . ) | ( cd core && tar -xpf - )
           done
       - uses: actions/setup-node@v4
@@ -981,7 +746,7 @@ jobs:
             ${{ runner.temp }}/owl-package/sha256.json
           if-no-files-found: warn
           retention-days: 30
-      - name: npm package suite (both engines)
+      - name: npm package suite
         working-directory: core/npm/factoidal
         shell: bash
         run: |
@@ -1047,71 +812,6 @@ jobs:
           bash tools/lws-touchstone-client.sh 2>&1 | tee "$RUNNER_TEMP/out/lws-touchstone-client.txt" || LAB_RC=$?
           echo "lws-touchstone-client exit code: $LAB_RC" | tee -a "$RUNNER_TEMP/out/lws-touchstone-client.txt"
           exit "$LAB_RC"
-      - name: Engine comparison, Lean npm package vs F* npm-entry bundle
-        working-directory: core
-        shell: bash
-        run: |
-          # From core's npm 0.9.0 (issue 713 stage 3) the package is Lean
-          # only; the F* bundle is compared from outside the package. A
-          # gate: a disagreement fails the web set. Older core commits have
-          # no tests/engine-compare and skip.
-          set -o pipefail
-          mkdir -p "$RUNNER_TEMP/out"
-          if [ ! -x tests/engine-compare/run.sh ]; then
-            echo "core commit has no tests/engine-compare/run.sh" | tee "$RUNNER_TEMP/out/engine-compare.txt"
-            exit 0
-          fi
-          ENTRY=docs/fstar-extracted/factoidal-npm-entry.js
-          [ -f "$ENTRY" ] || ENTRY=npm/factoidal/factoidal-npm-entry.js
-          tests/engine-compare/run.sh "$ENTRY" 2>&1 | tee "$RUNNER_TEMP/out/engine-compare.txt"
-      - uses: actions/download-artifact@v4
-        with:
-          name: lean-linux-x86_64
-          path: art/lean-linux
-      - name: Differential, Lean vs F* engine (SPARQL 1.1 manifest-all)
-        working-directory: core
-        shell: bash
-        run: |
-          # A measurement published with the web release, not a gate: a
-          # disagreement says one engine is wrong and needs reading. The exit
-          # code is recorded with the output.
-          mkdir -p "$RUNNER_TEMP/out" bin/linux-x86_64
-          if [ ! -f ../art/lean-linux/tools/l4diff ]; then
-            echo "l4diff not staged by the lean job (core commit without it)" | tee "$RUNNER_TEMP/out/l4diff.txt"
-            exit 0
-          fi
-          cp ../art/fstar/stage-native/bin/linux-x86_64/factoidal bin/linux-x86_64/factoidal
-          cp ../art/lean-linux/tools/l4diff "$RUNNER_TEMP/l4diff"
-          chmod +x bin/linux-x86_64/factoidal "$RUNNER_TEMP/l4diff"
-          DIFF_RC=0
-          timeout 1800 "$RUNNER_TEMP/l4diff" --fstar bin/linux-x86_64/factoidal \
-            third_party/testing/w3c/sparql/sparql11/manifest-all.ttl \
-            > "$RUNNER_TEMP/out/l4diff.txt" 2>&1 || DIFF_RC=$?
-          echo "l4diff exit code: $DIFF_RC" >> "$RUNNER_TEMP/out/l4diff.txt"
-          tail -n 40 "$RUNNER_TEMP/out/l4diff.txt"
-      - name: Known defects (expected failures of the F* engine, checked against Lean)
-        working-directory: core
-        shell: bash
-        run: |
-          # Each case reproduces an open issue (XFAIL). A case that stops
-          # reproducing (XPASS) or breaks (ERROR) fails the web set, so a
-          # fix cannot go unnoticed (CLAUDE.md: a stated shortfall is a
-          # failing test plus an open issue). Older core commits without the
-          # OWL cases still run the cases they have.
-          set -o pipefail
-          mkdir -p "$RUNNER_TEMP/out" bin/linux-x86_64
-          if [ ! -x tests/known-defects/run.sh ]; then
-            echo "core commit has no tests/known-defects/run.sh" | tee "$RUNNER_TEMP/out/known-defects.txt"
-            exit 0
-          fi
-          for b in factoidal owl_runner; do
-            cp ../art/fstar/stage-native/bin/linux-x86_64/$b bin/linux-x86_64/$b
-          done
-          for b in l4factoidal l4w3c; do
-            cp ../art/lean-linux/stage/bin/linux-x86_64/$b bin/linux-x86_64/$b
-          done
-          chmod +x bin/linux-x86_64/factoidal bin/linux-x86_64/owl_runner bin/linux-x86_64/l4factoidal bin/linux-x86_64/l4w3c
-          tests/known-defects/run.sh 2>&1 | tee "$RUNNER_TEMP/out/known-defects.txt"
       - name: Mark web gates passed
         run: |
           mkdir -p "$RUNNER_TEMP/out"
@@ -1123,7 +823,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [resolve, lean, lean-wasm, fstar, fstar-macos, web-gates, foafnaut-engines, foafnaut-host-tests, foafnaut]
+    needs: [resolve, lean, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests, foafnaut]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
