@@ -128,7 +128,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ${{ env.CORE_REPO }}
-          ref: ${{ github.event_name == 'push' && 'wip/realpages-ci' || inputs.survey_ref || 'main' }}
+          ref: ${{ github.event_name == 'push' && 'main' || inputs.survey_ref || 'main' }}
           path: tools
           sparse-checkout: |
             labs/demos/foafnaut/realpages

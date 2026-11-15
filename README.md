@@ -135,7 +135,7 @@ core's Spinal Tap page) live on each Foafnaut release. It builds nothing.
   several; `survey_ref` picks the core ref of the survey tools, `only` a few pages).
 - Twice on each platform: offline, every page replayed from its snapshot in
   [`third_party/realpages/`](third_party/realpages/README.md) (public pages vendored as fair use
-  for testing, with URL, fetch time, header fields, licence and attribution; about 15.6 MB), the
+  for testing, with URL, fetch time, header fields, licence and attribution; about 18.6 MB), the
   gate; and live, the pages as they are now, for drift (information only).
 - macOS (`macos-15`): `run_html.ts` of the release's own core commit, off screen, on the release's
   library; GPU numbers, idle CPU, script turns, scroll latency, memory, liberal-mode skips, and the
