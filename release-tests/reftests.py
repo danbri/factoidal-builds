@@ -293,7 +293,10 @@ def cmd_score(a):
                        **{f"{b}_passed": sum(1 for v in rivals[b].values() if v == "P") for b in rivals},
                        **{f"{b}_share_pct": round(100 * sum(1 for v in rivals[b].values() if v == "P") / total, 4) for b in rivals if total},
                        "passed_where_chrome_passes": sum(1 for t in tests if t["status"] == "PASS" and rivals.get("chrome", {}).get(t["test"]) == "P"),
-                       "chrome_passes_we_fail": sum(1 for t in tests if t["status"] != "PASS" and rivals.get("chrome", {}).get(t["test"]) == "P")},
+                       "chrome_passes_we_fail": sum(1 for t in tests if t["status"] != "PASS" and rivals.get("chrome", {}).get(t["test"]) == "P"),
+                       # passes of pages where the engine skipped something (test or reference): both
+                       # pictures may lack the same part
+                       "passed_with_skips": sum(1 for t in tests if t["status"] == "PASS" and t.get("skipped"))},
             "directories": dict(sorted(dirs.items())), "rivals": rival_rows, "since_previous": since,
             "shards": [{"shard": s["shard"], "tests": len(s["tests"]), "wallSeconds": s["wallSeconds"], "pagesDrawn": s["pagesDrawn"],
                         "engineSha256": s["engine"]["sha256"]} for s in shards],
@@ -304,11 +307,13 @@ def cmd_score(a):
     json.dump(rival_rows, open(os.path.join(a.out, "rivals.json"), "w"), indent=1)
     buf = io.StringIO()
     w = csv.writer(buf, delimiter="\t", lineterminator="\n")
-    w.writerow(["test", "status", *rivals.keys(), "max_difference", "total_pixels", "ms", "message"])
+    w.writerow(["test", "status", *rivals.keys(), "max_difference", "total_pixels", "ms", "skipped", "message"])
     for t in tests:
         e = next((x for x in t["edges"] if "holds" in x and not x["holds"]), None) or (t["edges"][0] if t["edges"] else {})
         w.writerow([t["test"], t["status"], *[rivals[b].get(t["test"]) or "" for b in rivals],
-                    e.get("maxDifference", ""), e.get("totalPixels", ""), t.get("ms", ""), (t.get("message") or "").replace("\t", " ")[:300]])
+                    e.get("maxDifference", ""), e.get("totalPixels", ""), t.get("ms", ""),
+                    "; ".join(sorted({m for v in (t.get("skipped") or {}).values() for m in v}))[:300].replace("\t", " "),
+                    (t.get("message") or "").replace("\t", " ")[:300]])
     name = "results.tsv" + (".gz" if total > 3000 else "")
     if name.endswith(".gz"):
         with gzip.open(os.path.join(a.out, name), "wt") as f:
@@ -347,7 +352,8 @@ def summary_md(meta):
          f"{t['passed']:,} of {t['tests']:,} = **{t['share_pct']:.2f}%**"
          + ("" if r["valid"] == "true" else f" (INVALID: {r['invalid_reason']})"), "",
          "Same tests on wpt.fyi at the same WPT commit: " + (", ".join(f"{x['browser']} {x['version']} {x['passed']:,} ({float(x['share_pct']):.2f}%)" for x in riv) or "none"),
-         "", f"Statuses: {', '.join(f'{k} {v}' for k, v in sorted(t['statuses'].items()))}. Where Chrome passes and Foafnaut does not: {t['chrome_passes_we_fail']}.",
+         "", f"Statuses: {', '.join(f'{k} {v}' for k, v in sorted(t['statuses'].items()))}. Where Chrome passes and Foafnaut does not: {t['chrome_passes_we_fail']}. "
+         f"Passes where the engine skipped something on the test or a reference: {t['passed_with_skips']}.",
          f"Wall {r['wall_minutes']} min on {r['shards']} shard(s).", "",
          "| directory | tests | Foafnaut | " + " | ".join(x["browser"] for x in riv) + " |", "|---|---:|---:|" + "---:|" * len(riv)]
     for d, v in meta["directories"].items():
