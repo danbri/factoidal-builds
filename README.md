@@ -1,9 +1,11 @@
 # factoidal-builds
 
 Builds and compiled artifacts for Factoidal. The source is
-[danbri/factoidal-core](https://github.com/danbri/factoidal-core): the F\*
-tree (`formal/fstar`), the Lean 4 tree (`formal/lean4`) and the experimental
-graphics lab (`labs/demos/foafnaut`). This repository owns build automation
+[danbri/factoidal-core](https://github.com/danbri/factoidal-core): the Lean 4
+tree (`formal/lean4`) and the Foafnaut lab (`labs/demos/foafnaut`). The project
+is Lean first: since 2026-11-15 no F\* build, test or release product runs
+here (the F\* sources stay in core, and its F\* workflows run only by hand).
+This repository owns build automation
 and generated releases; application source stays in factoidal-core.
 
 ## What runs
@@ -22,8 +24,7 @@ other commit runs the gates and publishes nothing. Jobs and their gates:
 |---|---|---|
 | `lean` (Linux, macOS arm64) | full `lake build`; `l4factoidal`, `l4w3c`, `l4wasm-cli` | every theorem and `#guard`, the HACL\* extern probe, the dispatch and CLI smoke scripts; Linux also the tail-recursion audit and `tests/dataflow/run.sh`. The Lean conformance scoreboard (Linux) is a measurement, not a gate |
 | `lean-wasm` (Linux) | `Wasm/build-wasm.sh` with Emscripten 6.0.8 | the build itself and its check that the wasm copies agree. It runs no tests: the npm tests run in `web-gates` |
-| `fstar` (Linux), `fstar-macos` | `build-ocaml.sh extract`, `compile`; Linux also `js`, `wasm`, `npm` | the re-extracted `.ml` equal core's committed `.ml`; Linux runs `build-ocaml.sh test` (W3C suites, dashboard) |
-| `web-gates` (Linux) | nothing; installs the `fstar` web products and the `lean-wasm` module into one checkout | `npm test` in `npm/factoidal` (Node 22), with no skipped test; `tests/engine-compare/run.sh`; `tests/known-defects/run.sh`. The `l4diff` differential is a measurement, not a gate |
+| `web-gates` (Linux) | nothing; installs the `lean-wasm` module into a checkout | `npm test` in `npm/factoidal` (Node 22), with no skipped test; the OWL package checks; the Touchstone LWS client lab |
 | `foafnaut-engines` (Linux, when present) | small Lean WASM engines with the shared runtime cache, including the RDF-driven graph when present | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests; packages a browser runtime only from these fresh tested engines |
 | `foafnaut` (macOS arm64) | three Deno-compiled graphics executables, Cocoa sidecar, launchers and SVG fixtures | requires the Lean gates and engines job; repeats portable tests, relocates the package, checks all compiled CPU engines and native library loading. No GPU/window or SVG visual pass is inferred |
 | `publish` | packs each complete set | a set whose jobs did not all pass is not published, and the run is red; the `web` set also needs `web-gates` |
@@ -34,8 +35,8 @@ One release per (core commit, set), tagged `build-<12 hex core commit>-<set>`:
 
 | Set | Content (paths relative to a core checkout) |
 |---|---|
-| `linux-x86_64`, `darwin-arm64` | `bin/<platform>/`: the F\* CLI, HTTP server and suite runners, and the Lean CLI `l4factoidal`, `l4w3c`, `l4wasm-cli` |
-| `web` | F\* JS and wasm bundles (`docs/fstar-extracted/`, `npm/factoidal/`), the Lean wasm module (`docs/web/hub/assets/l4/`, `npm/factoidal/l4-assets/`, `npm/factoidal-lean/`), the generated F\* dashboard (`docs/test-results/`), and the Lean scoreboard (`lean-scoreboard.json`, `.txt`) |
+| `linux-x86_64`, `darwin-arm64` | `bin/<platform>/`: the Lean CLI `l4factoidal`, `l4w3c`, `l4wasm-cli` |
+| `web` | the Lean wasm module (`docs/web/hub/assets/l4/`, `npm/factoidal/l4-assets/`, `npm/factoidal-lean/`) and the Lean scoreboard (`lean-scoreboard.json`, `.txt`) |
 | `foafnaut-darwin-arm64` (when present) | `foafnaut/`: native UI (springs, layout, vectors, and the RDF-driven FOAFNaut browser when present), Lean-generated still renderer, SVG subset renderer, Cocoa sidecar, `.command` launchers, sample SVGs and source/toolchain provenance |
 | `foafnaut-web` (when the SVG hub page and `SVGStroke.lean` are present) | `docs/web/hub/svg-webgpu/runtime/`: Lean-generated SVG and render-plan WASM plus minimal JS host adapters |
 
@@ -186,7 +187,8 @@ workflows moved from `danbri/factoidal`, inactive, with what each needs to be
 ported), and `latest/<set>.json` pointers written by the `publish` job.
 `toolchain-cache` (F\* binary chunks, KaRaMeL, the Lean wasm work dir) and
 `checked-cache` (F\* `.checked` files) are orphan branches read by core's
-`tools/install-toolchain-cache.sh` and by `build.yml`.
+`tools/install-toolchain-cache.sh`; `build.yml` reads only the Lean wasm work dir
+from `toolchain-cache` (the F\* parts are no longer used by any workflow here).
 
 Old releases may be deleted at any time; they are reproducible from the
 source commit named in `build-info.json`.
