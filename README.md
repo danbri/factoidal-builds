@@ -121,6 +121,35 @@ branch. `wpt-score.yml` (sampled) is retired: manual smoke check only, nothing r
 `build-<sha12>-foafnaut-linux-<arch>`; it needs the pinned Lean toolchain at run time
 (`foafnaut/README-linux.txt` in the archive).
 
+## Real-page survey
+
+`.github/workflows/realpages.yml` (helper `release-tests/realpages.py`; the survey is core's
+`labs/demos/foafnaut/realpages/`, skill `skills/realpages-survey`) measures everyday pages
+(Wikipedia desktop and mobile skins, BBC News, GitHub, MDN, a blog, Hacker News, a W3C spec,
+core's Spinal Tap page) live on each Foafnaut release. It builds nothing.
+
+- Starts after each run of `build.yml` (`foafnaut-darwin-arm64`), `foafnaut-macos.yml`
+  (`foafnaut-engine-darwin-arm64`) and `foafnaut-linux.yml` (`foafnaut-linux-x86_64`, self-contained
+  only) that published a release; by hand:
+  `gh workflow run realpages.yml -f release=build-<12 hex>-foafnaut-darwin-arm64` (comma list for
+  several; `survey_ref` picks the core ref of the survey tools, `only` a few pages).
+- Twice on each platform: offline, every page replayed from its snapshot in
+  [`third_party/realpages/`](third_party/realpages/README.md) (public pages vendored as fair use
+  for testing, with URL, fetch time, header fields, licence and attribution; about 18.6 MB), the
+  gate; and live, the pages as they are now, for drift (information only).
+- macOS (`macos-15`): `run_html.ts` of the release's own core commit, off screen, on the release's
+  library; GPU numbers, idle CPU, script turns, scroll latency, memory, liberal-mode skips, and the
+  layout similarity against headless Chrome (the snapshot's picture offline, Chrome now live).
+  Linux: Textnaut on the `.so` (load, layout, CPU, memory).
+- Results: the job summary (tables with changes against the survey of the previous release, and
+  regressions); release assets `realpages-<platform>-<mode>.json` and `.md`; `realpages/trend.csv`,
+  `realpages/runs/<run_id>/` and `realpages/latest-|previous-<platform>-<mode>.json` on the branch
+  `wpt-scores`. Pictures and logs of each run: artifact `realpages-<platform>-pictures`, 7 days.
+- A crash or exit of the browser on a snapshot fails the job; a worse verdict, a number over 1.5
+  times the previous one (above a noise floor) or a drop in layout similarity is a warning; an
+  unreachable live page is neither.
+- Cost: macOS about 40-60 min a release, Linux about 10 min.
+
 ## Single-file executables (`exe` set)
 
 `.github/workflows/exe.yml` builds the `factoidal` CLI as one executable file
