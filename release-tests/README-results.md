@@ -55,7 +55,7 @@ on `main`). Every file here can be fetched without credentials:
 | `trigger` | `factoidal-release` (a build.yml run published releases), `schedule` (4 times a day), `browser-release` (a scheduled run at a WPT commit with new aligned browser runs on wpt.fyi), `manual` |
 | `suite` | `wpt`, or a suite key: `sparql`, `rdf`, `rdf12`, `rdf12c14n`, `rdf12entail`, `sparql12`, `rdfc10`, `shacl_*`, `shex`, `jsonld_*`, `owl*`, `rml_core`, `rif_core`, `vc_stage1`, `did_key`, `csvw_*`, `xml_conformance`, `xslt`, `mathml`, `jsonschema`, `schematron` (the F\* runners; keys of core's `formal/fstar/generate-report.sh`), `l4w3c-sparql11`, `l4w3c-sparql12`, `l4w3c-rdf11`, `l4w3c-rdf12`, `l4w3c-rdfc10` (the Lean `l4w3c`) |
 | `platform` | `macos-arm64` or `linux-x86_64` |
-| `engine` | `bubblepopkit-native` (the release's engine library), `fstar`, `lean` |
+| `engine` | `bubblepopkit-native` (the release's engine library), `lean`; `fstar` only in rows before 2026-11-15, when the F\* suites stopped |
 | `script_engine` | WPT: `bubblepop` (BubblePopJS) or `quickjs` (differential only) |
 | `factoidal_commit` | the factoidal-core commit (40 hex) of the release |
 | `commit_utc` | committer date of that commit |

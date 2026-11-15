@@ -1116,53 +1116,16 @@ def cmd_wpt_merge(a):
 
 # ---- the other suites -------------------------------------------------------------------------
 
-# (key in generate-report.sh's latest.json totals or "l4w3c:<name>", group, log file name,
-#  runner in bin/linux-x86_64, arguments, time budget in s, submodules needed).
+# ("l4w3c:<name>", group, log file name, runner in bin/linux-x86_64, arguments, time budget
+#  in s, submodules needed). Lean only: the F* suites (and their runners in the release) were
+#  dropped on 2026-11-15 when automatic F* builds stopped; a key without the l4w3c: prefix is
+#  read from formal/fstar/generate-report.sh's totals if one is added back.
 SUITES = [
-    ("sparql", "w3c", "sparql_results.log", "w3c_runner", [], 1800, ["w3c"]),
-    ("rdf", "w3c", "rdf_results.log", "w3c_runner", ["--rdf"], 1800, ["w3c"]),
-    ("rdf12", "w3c", "rdf12_results.log", "w3c_runner", ["--rdf12"], 900, ["w3c"]),
-    ("rdf12c14n", "w3c", "rdf12c14n_results.log", "w3c_runner", ["--rdf12c14n"], 600, ["w3c"]),
-    ("rdf12entail", "w3c", "rdf12entail_results.log", "w3c_runner", ["--rdf12entail"], 600, ["w3c"]),
-    ("sparql12", "w3c", "sparql12_results.log", "w3c_runner", ["--sparql12"], 900, ["w3c"]),
     ("l4w3c:sparql11", "lean-w3c", "l4w3c_sparql11.log", "l4w3c", ["--quiet", "third_party/testing/w3c/sparql/sparql11/manifest-all.ttl"], 1800, ["w3c"]),
     ("l4w3c:sparql12", "lean-w3c", "l4w3c_sparql12.log", "l4w3c", ["--quiet", "third_party/testing/w3c/sparql/sparql12/manifest.ttl"], 900, ["w3c"]),
     ("l4w3c:rdf11", "lean-w3c", "l4w3c_rdf11.log", "l4w3c", ["--quiet", "third_party/testing/w3c/rdf/rdf11/manifest.ttl"], 900, ["w3c"]),
     ("l4w3c:rdf12", "lean-w3c", "l4w3c_rdf12.log", "l4w3c", ["--quiet", "third_party/testing/w3c/rdf/rdf12/manifest.ttl"], 900, ["w3c"]),
     ("l4w3c:rdfc10", "lean-w3c", "l4w3c_rdfc10.log", "l4w3c", ["--quiet", "third_party/testing/rdf-canon/tests/manifest.ttl"], 900, ["rdf-canon"]),
-    ("rdfc10", "shapes", "rdfc10_results.log", "rdfc10_runner", [], 600, ["rdf-canon"]),
-    ("shacl_core", "shapes", "shacl_results.log", "shacl_runner", [], 300, ["shacl"]),
-    ("shacl_sparql", "shapes", "shacl_sparql_results.log", "shacl_runner", ["third_party/testing/shacl/data-shapes-test-suite/tests/sparql/manifest.ttl"], 300, ["shacl"]),
-    ("shacl12_core", "shapes", "shacl12_core_results.log", "shacl_runner", ["third_party/testing/shacl/shacl12-test-suite/tests/core/manifest.ttl"], 600, ["shacl"]),
-    ("shacl12_node_expr", "shapes", "shacl12_node_expr_results.log", "shacl_runner", ["third_party/testing/shacl/shacl12-test-suite/tests/node-expr/manifest.ttl"], 300, ["shacl"]),
-    ("shacl12_sparql", "shapes", "shacl12_sparql_results.log", "shacl_runner", ["third_party/testing/shacl/shacl12-test-suite/tests/sparql/manifest.ttl"], 300, ["shacl"]),
-    ("shacl12_rules", "shapes", "shacl12_rules_results.log", "shacl_runner", ["third_party/testing/shacl/shacl12-test-suite/tests/rules/eval/manifest.ttl"], 300, ["shacl"]),
-    ("shacl12_rules_syntax", "shapes", "shacl12_rules_syntax_results.log", "shacl_runner", ["third_party/testing/shacl/shacl12-test-suite/tests/rules/syntax/manifest.ttl"], 300, ["shacl"]),
-    ("shacl12_rules_wellformed", "shapes", "shacl12_rules_wellformed_results.log", "shacl_runner", ["third_party/testing/shacl/shacl12-test-suite/tests/rules/wellformed/manifest.ttl"], 300, ["shacl"]),
-    ("shacl12_rules_stratification", "shapes", "shacl12_rules_stratification_results.log", "shacl_runner", ["third_party/testing/shacl/shacl12-test-suite/tests/rules/stratification/manifest.ttl"], 300, ["shacl"]),
-    ("shex", "shapes", "shex_results.log", "shex_runner", [], 600, ["shex"]),
-    ("jsonld_tordf", "jsonld", "jsonld_results.log", "jsonld_runner", [], 600, ["json-ld"]),
-    ("jsonld_fromrdf", "jsonld", "jsonld_fromrdf_results.log", "jsonld_fromrdf_runner", [], 600, ["json-ld"]),
-    ("jsonld_expand", "jsonld", "jsonld_expand_results.log", "jsonld_expand_runner", [], 600, ["json-ld"]),
-    ("jsonld_compact", "jsonld", "jsonld_compact_results.log", "jsonld_compact_runner", [], 600, ["json-ld"]),
-    ("jsonld_flatten", "jsonld", "jsonld_flatten_results.log", "jsonld_flatten_runner", [], 600, ["json-ld"]),
-    ("owl_rl_positive_entailment", "owl", "owl_profile_rl_results.log", "owl_runner", [], 900, []),
-    ("owl2_profile_el", "owl", "owl_profile_el_results.log", "owl_runner", ["third_party/testing/owl/profile-EL.rdf", "--regime", "rl"], 600, []),
-    ("owl2_profile_ql", "owl", "owl_profile_ql_results.log", "owl_runner", ["third_party/testing/owl/profile-QL.rdf", "--regime", "rl"], 600, []),
-    ("owl2_dl_inconsistency", "owl", "owl_type_inconsistency_results.log", "owl_runner", ["third_party/testing/owl/type-inconsistency.rdf", "--regime", "dl"], 1800, []),
-    ("owl_syntax_dl_species", "owl", "owl_syntax_dl_results.log", "owl_runner", ["third_party/testing/owl/syntax-dl.rdf", "--species"], 600, []),
-    ("rml_core", "misc", "rml_results.log", "rml_runner", [], 600, ["rml", "rml-modules/rml-core"]),
-    ("rif_core", "misc", "rif_results.log", "rif_runner", [], 600, []),
-    ("vc_stage1", "misc", "vc_results.log", "vc_runner", [], 300, ["vc"]),
-    ("did_key", "misc", "did_results.log", "did_runner", [], 300, ["did"]),
-    ("csvw_csv2rdf", "misc", "csvw_results.log", "csvw_runner", [], 900, ["csvw"]),
-    ("csvw_csv2json", "misc", "csvw_json_results.log", "csvw_runner", ["--json"], 900, ["csvw"]),
-    ("csvw_validation", "misc", "csvw_validate_results.log", "csvw_runner", ["--validate"], 900, ["csvw"]),
-    ("xml_conformance", "misc", "xml_conformance_results.log", "xml_runner", ["third_party/testing/xml/xmlconf"], 900, []),
-    ("xslt", "misc", "xslt_results.log", "xslt_runner", ["third_party/testing/xslt/manifest.json"], 600, []),
-    ("mathml", "misc", "mathml_results.log", "mathml_runner", [], 300, []),
-    ("jsonschema", "misc", "jsonschema_results.log", "jsonschema_runner", [], 300, []),
-    ("schematron", "misc", "schematron_results.log", "schematron_runner", [], 300, []),
 ]
 SUITE_GROUPS = sorted({s[1] for s in SUITES})
 
@@ -1242,12 +1205,13 @@ def cmd_suite_score(a):
     for fn in os.listdir(os.path.join(a.logs, "logs")):
         shutil.copyfile(os.path.join(a.logs, "logs", fn), os.path.join(od, fn))
     totals = {}
-    rc = subprocess.run(["bash", "formal/fstar/generate-report.sh"], cwd=core, capture_output=True, text=True)
-    latest = os.path.join(core, "docs/test-results/latest.json")
-    if rc.returncode == 0 and os.path.exists(latest):
-        totals = json.load(open(latest)).get("totals", {})
-    else:
-        log("generate-report.sh failed: " + (rc.stderr or "")[-2000:])
+    if any(not s[0].startswith("l4w3c:") for s in SUITES):
+        rc = subprocess.run(["bash", "formal/fstar/generate-report.sh"], cwd=core, capture_output=True, text=True)
+        latest = os.path.join(core, "docs/test-results/latest.json")
+        if rc.returncode == 0 and os.path.exists(latest):
+            totals = json.load(open(latest)).get("totals", {})
+        else:
+            log("generate-report.sh failed: " + (rc.stderr or "")[-2000:])
     rows, metas = [], {}
     for key, group, logname, runner, args, budget, subs in SUITES:
         st = status.get(key)
