@@ -129,7 +129,7 @@ jobs:
           curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
           "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
-          sudo apt-get update -q > /dev/null && sudo apt-get install -y -q libuv1-dev > /dev/null
+          sudo apt-get update -q > /dev/null && sudo apt-get install -y -q libuv1-dev libc++-dev libc++abi-dev > /dev/null
       # build.yml's Lake cache of the newest Linux build (same path, so the same cache
       # version). Restore only.
       - name: Restore build.yml's Lake cache
