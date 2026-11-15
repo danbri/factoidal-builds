@@ -450,7 +450,7 @@ jobs:
       # build-web-render.sh. ccache keys each object on the compiler's bytes, its flags and the
       # preprocessed source with every header, so a hit is the object the compile would make; the
       # cache key below only picks which earlier store to start from (same Emscripten and Lean).
-      - name: Cold build: ccache off
+      - name: Cold build, ccache off
         if: ${{ inputs.cold }}
         run: echo "CCACHE_DISABLE=1" >> "$GITHUB_ENV"
       - name: Restore the Emscripten ccache
