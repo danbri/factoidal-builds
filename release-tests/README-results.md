@@ -99,6 +99,22 @@ names Chrome runs), `denominator` (Chrome's subtests), `share_pct`,
 names in the browser's summary), `partial` (`true` when fewer than 95% of Chrome's names
 are reported: the share is then not comparable), `summary_url` (wpt.fyi summary_v2).
 
+## WPT reftests (suites wpt-reftest-svg, wpt-reftest-css)
+
+`reftests.yml` ("WPT reftests", release-tests/reftests.py) runs WPT's reftests of one
+directory on the release's engine library (core tests/browser-wpt/wpt-reftests.py: WPT's
+rules, the CPU raster, Noto Sans). They carry no weight in the WPT rows above (wpt.fyi gives a
+reftest no subtests), so they are suites of their own. In `runs.csv`: `passed` and
+`denominator` are tests (a reftest is one test, PASS or not), `ok` = PASS, `failed` = FAIL,
+`error`, `timeout`, `crash`, `stall`; `server_failures` = ERROR + CRASH + STALL (valid under
+0.5%); `share_ex_encoding_pct` empty; `engine` = native-cpu-raster. `reftest-rivals.csv`:
+`recorded_utc`, `suite`, `wpt_commit`, `browser`, `version`, `wptfyi_run_id`, `passed`,
+`denominator` (the suite's tests), `share_pct`, `status` (ok or unavailable), `reason`.
+`runs/RUN_ID/` holds `meta.json` (totals with each rival's passes, statuses, directories,
+`since_previous`), `results.tsv` (`.gz` over 3,000 tests: every test with its status, the
+rivals' statuses, maxDifference, totalPixels, ms and message), `changes.md` and
+`directories.csv`.
+
 ## runs/RUN_ID/meta.json
 
 `row` (the CSV row), `plan` (trigger, core commit, author and committer dates, subject,

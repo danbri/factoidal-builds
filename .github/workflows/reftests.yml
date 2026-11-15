@@ -1,0 +1,247 @@
+name: WPT reftests
+
+# WPT reftests (pictures compared with a reference page) of each Foafnaut Linux release,
+# recorded on the branch `wpt-scores` as suites of their own: wpt-reftest-svg (svg/), and
+# wpt-reftest-css (css/) when asked for. The headline WPT score (release-tests.yml) counts
+# testharness subtests only: reftests weigh nothing there, so they are measured here.
+#
+# How: release-tests/reftests.py (plan, paths, score, record) around core's
+# tests/browser-wpt/wpt-reftests.py and reftest-render.ts: every reftest item of the WPT
+# manifest at the WPT commit of the newest valid full WPT run, drawn by the release's engine
+# library (libweb-render.so) with its CPU raster, Noto Sans and the Hub's fallback fonts,
+# page scripts on BubblePopJS; compared by wptrunner's rules (== and !=, reference chains,
+# fuzzy annotations, viewport size). Chrome, Firefox, Safari and Edge on the same tests at
+# the same WPT commit come from wpt.fyi (reftest-rivals.csv).
+#
+# Records: runs.csv rows (suite wpt-reftest-<dir>), reftest-rivals.csv, runs/<run_id>/
+# (meta.json, results.tsv[.gz] with every test, changes.md against the previous valid run,
+# directories.csv). Pictures of the tests that do not pass (test, reference, difference):
+# the artifact reftest-failures-<suite>-<shard>, kept 5 days.
+#
+# Starts: after each "Foafnaut Linux engine" run (its new release; skipped when that core
+# commit already has a valid run at the same WPT commit), twice a day (the newest Linux
+# release), and by hand:
+#   gh workflow run reftests.yml -R danbri/factoidal-builds [-f release=build-<12 hex>-foafnaut-linux-x86_64]
+#     [-f suites=svg,css] [-f wpt_commit=<sha>] [-f tools_ref=<core branch>] [-f record=false]
+#
+# Cost: svg/ (685 tests, about 1,050 pages) one runner, about 10 minutes; css/ (25,800 tests)
+# 16 runners.
+
+on:
+  workflow_run:
+    workflows: ['Foafnaut Linux engine']
+    types: [completed]
+  schedule:
+    - cron: '17 5,17 * * *'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release tag build-<12 hex>-foafnaut-linux-x86_64; empty: the newest'
+        required: false
+        default: ''
+      suites:
+        description: 'Suites, comma list: svg, css'
+        required: false
+        default: 'svg'
+      wpt_commit:
+        description: 'WPT commit; empty: the one of the newest valid full WPT run'
+        required: false
+        default: ''
+      tools_ref:
+        description: 'factoidal-core ref of the reftest tools (tests/browser-wpt/wpt-reftests.py, reftest-render.ts)'
+        required: false
+        default: 'main'
+      force:
+        description: 'Run even when this commit already has a valid run at the WPT commit'
+        type: boolean
+        default: false
+      record:
+        description: 'Record on the results branch'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reftests-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    outputs:
+      any: ${{ steps.p.outputs.any }}
+      matrix: ${{ steps.p.outputs.matrix }}
+      suites_json: ${{ steps.p.outputs.suites_json }}
+      core_commit: ${{ steps.p.outputs.core_commit }}
+      tag: ${{ steps.p.outputs.tag }}
+      web_tag: ${{ steps.p.outputs.web_tag }}
+      wpt_commit: ${{ steps.p.outputs.wpt_commit }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          T=manual; [ "${{ github.event_name }}" = workflow_run ] && T=factoidal-release; [ "${{ github.event_name }}" = schedule ] && T=schedule
+          F=(); [ "${{ inputs.force }}" = true ] && F=(--force)
+          python3 release-tests/reftests.py plan --event "${{ github.event_name }}" --run-created "${{ github.event.workflow_run.created_at }}" \
+            --release "${{ inputs.release }}" --wpt-commit "${{ inputs.wpt_commit }}" --suites "${{ inputs.suites || 'svg' }}" \
+            --trigger "$T" --out "$RUNNER_TEMP/inputs" ${F[@]+"${F[@]}"}
+      - uses: actions/upload-artifact@v4
+        if: steps.p.outputs.any == 'true'
+        with:
+          name: reftest-inputs
+          path: ${{ runner.temp }}/inputs/
+          retention-days: 5
+
+  run:
+    name: ${{ matrix.suite }} ${{ matrix.shard }}/${{ matrix.shards }}
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      # The host: the release's own commit (native_html_*.ts must match the engine's ABI).
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.plan.outputs.core_commit }}
+          path: host
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+            tests/browser-wpt
+      # The reftest tools: tools_ref (default main), copied into the host checkout.
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ inputs.tools_ref || 'main' }}
+          path: tools
+          sparse-checkout: tests/browser-wpt
+      - uses: actions/download-artifact@v4
+        with:
+          name: reftest-inputs
+          path: ${{ runner.temp }}/inputs
+      - name: Pins
+        id: pins
+        run: |
+          echo "deno=v$(grep -E '^DENO_VERSION=' host/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+          echo "tools=$(git -C tools rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          cp tools/tests/browser-wpt/wpt-reftests.py tools/tests/browser-wpt/reftest-render.ts host/tests/browser-wpt/
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Lean's shared runtime (the Linux engine library links it)
+        run: |
+          set -euo pipefail
+          T=$(curl -sSfL "https://raw.githubusercontent.com/${{ env.CORE_REPO }}/${{ needs.plan.outputs.core_commit }}/formal/lean4/lean-toolchain" | tr -d ' \n')
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$T"
+          D=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)
+          echo "LD_LIBRARY_PATH=$D" >> "$GITHUB_ENV"
+      - name: The release's engine and the host's Wasm modules
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          R=$RUNNER_TEMP/rel; mkdir -p "$R/eng" "$R/web"
+          gh release download "${{ needs.plan.outputs.tag }}" -R "${{ github.repository }}" -p foafnaut-linux-x86_64.tar.gz -D "$R"
+          tar -xzf "$R/foafnaut-linux-x86_64.tar.gz" -C "$R/eng"
+          gh release download "${{ needs.plan.outputs.web_tag }}" -R "${{ github.repository }}" -p foafnaut-web.tar.gz -D "$R"
+          tar -xzf "$R/foafnaut-web.tar.gz" -C "$R/web" docs/web/hub/html-webgpu/runtime
+          LIB=$(find "$R/eng" -name 'libweb-render.so' | head -1)
+          [ -n "$LIB" ] || { echo "::error::${{ needs.plan.outputs.tag }} has no engine library"; exit 1; }
+          RT=$R/web/docs/web/hub/html-webgpu/runtime; L=host/labs/demos/foafnaut
+          mkdir -p "$L/.build/native-html/runtime" "$L/.build/engines"
+          cp "$RT/web-render.mjs" "$RT/web-render.wasm" "$L/.build/native-html/runtime/"
+          cp "$RT/render-plan.mjs" "$RT/render-plan.wasm" "$L/.build/engines/"
+          echo "LIB=$LIB" >> "$GITHUB_ENV"
+      - name: WPT at the commit (the suite's directory, its references, support)
+        run: |
+          set -euo pipefail
+          python3 builds/release-tests/reftests.py paths --manifest "$RUNNER_TEMP/inputs/MANIFEST.json" --suite ${{ matrix.suite }} > "$RUNNER_TEMP/paths.txt"
+          cat "$RUNNER_TEMP/paths.txt"
+          git init -q wpt && cd wpt
+          git remote add origin https://github.com/web-platform-tests/wpt.git
+          git config core.sparseCheckout true
+          git sparse-checkout set --no-cone $(cat "$RUNNER_TEMP/paths.txt")
+          git fetch -q --depth 1 --filter=blob:none origin ${{ needs.plan.outputs.wpt_commit }}
+          git checkout -q FETCH_HEAD
+      - name: Run
+        run: |
+          set -euo pipefail
+          C=(); [ -f "$RUNNER_TEMP/inputs/chrome-summary.json" ] && C=(--chrome-summary "$RUNNER_TEMP/inputs/chrome-summary.json")
+          python3 host/tests/browser-wpt/wpt-reftests.py run --manifest "$RUNNER_TEMP/inputs/MANIFEST.json" --wpt-root wpt \
+            --native-engine "$LIB" --prefix ${{ matrix.prefix }} --out "$RUNNER_TEMP/out" --jobs 4 \
+            --shard ${{ matrix.shard }} --shards ${{ matrix.shards }} --no-pictures ${C[@]+"${C[@]}"}
+          { echo "Engine \`${{ needs.plan.outputs.tag }}\`; host core \`${{ needs.plan.outputs.core_commit }}\`; tools core \`${{ steps.pins.outputs.tools }}\`; WPT \`${{ needs.plan.outputs.wpt_commit }}\`"; echo; head -12 "$RUNNER_TEMP/out/summary.md"; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reftest-shard-${{ matrix.suite }}-${{ matrix.shard }}
+          path: |
+            ${{ runner.temp }}/out/results.json
+            ${{ runner.temp }}/out/summary.md
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reftest-failures-${{ matrix.suite }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/out/failures/
+          retention-days: 5
+          if-no-files-found: ignore
+
+  score:
+    name: Score and record ${{ matrix.suite }}
+    needs: [plan, run]
+    if: always() && needs.plan.outputs.any == 'true' && needs.plan.outputs.suites_json != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: ${{ fromJSON(needs.plan.outputs.suites_json) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: reftest-inputs
+          path: ${{ runner.temp }}/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: reftest-shard-${{ matrix.suite }}-*
+          path: ${{ runner.temp }}/shards
+      - name: Score
+        id: s
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 release-tests/reftests.py score --plan "$RUNNER_TEMP/inputs/plan.json" --suite ${{ matrix.suite }} \
+            --shards-dir "$RUNNER_TEMP/shards" --out "$RUNNER_TEMP/score" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reftest-score-${{ matrix.suite }}
+          path: ${{ runner.temp }}/score/
+          retention-days: 30
+      - name: Record
+        if: github.event_name != 'workflow_dispatch' || inputs.record
+        run: python3 release-tests/reftests.py record --src "$RUNNER_TEMP/score"
