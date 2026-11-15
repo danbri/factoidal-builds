@@ -151,7 +151,7 @@ jobs:
           bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/host/labs/demos/foafnaut" "$R/web" "$WINDOW"
           echo "LIB=$LIB" >> "$GITHUB_ENV"
           { echo "Engine: \`$TAG\` (\`$(basename "$LIB")\`, sha256 $(shasum -a 256 "$LIB" | cut -c1-16)); host: core \`${{ matrix.core_commit }}\`; Wasm modules: \`$WEB\`; survey tools: core \`${{ steps.pins.outputs.tools }}\`"
-            echo "Window library: ${WINDOW:+from the release}${WINDOW:-built from the host's native_window.m}"; } >> "$GITHUB_STEP_SUMMARY"
+            echo "Window library: ${WINDOW:+from the release}${WINDOW:-built from native_window.m of the host}"; } >> "$GITHUB_STEP_SUMMARY"
       - name: Previous survey
         env:
           TAG: ${{ matrix.tag }}
