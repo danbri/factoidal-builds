@@ -27,7 +27,8 @@ async function fixture(t){
   await put('formal/lean4/lean-toolchain','FAKE packaging fixture toolchain\n');
   await put(`${LAB}/svg_engine.ts`,'import create from "./.build/engines/svg-engine.mjs";\nexport const value:number=3;\nexport {create};\n');
   await put(`${LAB}/gpu_transport.ts`,'import type {Removed} from "./not-packaged.ts";\nimport {value} from "./render_plan.ts";\nexport const data:number=value;\n');
-  await put(`${LAB}/render_plan.ts`,'import create from "./.build/engines/render-plan.mjs";\nexport const value:number=4;\nexport {create};\n');
+  await put(`${LAB}/render_plan.ts`,'import create from "./.build/engines/render-plan.mjs";\nimport {finite} from "./finite_floats.ts";\nexport const value:number=finite(4);\nexport {create};\n');
+  await put(`${LAB}/finite_floats.ts`,'export const finite=(x:number):number=>Number.isFinite(x)?x:0;\n');
   git(['init','-q']);git(['add','.']);git(['-c','user.name=Packaging Test','-c','user.email=test@example.invalid','commit','-qm','Fake packaging fixtures']);
   const sha=git(['rev-parse','HEAD']);
   const manifest=[...inputs].map(([path,body])=>`${hash(body)}  ${path}`).join('\n')+'\n';

@@ -12,7 +12,7 @@ import {pathToFileURL} from 'node:url';
 
 const LAB='labs/demos/foafnaut';
 export const REQUIRED_RUNTIME_FILES=Object.freeze([
-  'svg_engine.mjs','gpu_transport.mjs','render_plan.mjs',
+  'svg_engine.mjs','gpu_transport.mjs','render_plan.mjs','finite_floats.mjs',
   'engines/svg-engine.mjs','engines/svg-engine.wasm',
   'engines/render-plan.mjs','engines/render-plan.wasm',
 ]);
@@ -26,7 +26,8 @@ export const REQUIRED_SOURCE_FILES=Object.freeze([
   'formal/lean4/L4Factoidal/Math/Affine.lean',
   'formal/lean4/L4Factoidal/Tdb2/Format.lean',
 ]);
-const BRIDGES=['svg_engine','gpu_transport','render_plan'];
+// finite_floats: the finite-float check render_plan.ts imports (core 3e6745f19).
+const BRIDGES=['svg_engine','gpu_transport','render_plan','finite_floats'];
 const BUILD_INPUTS=[`${LAB}/build-engines.sh`,`${LAB}/svg_shim.c`,`${LAB}/render_plan_shim.c`,
   `${LAB}/toolchain-versions.env`,'formal/lean4/lean-toolchain'];
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -68,7 +69,7 @@ export function stripBridge(source,name){
     (_all,prefix,quote,path)=>{
       imports++;
       const target=path.replace(/^\.\/\.build\/engines\//u,'./engines/').replace(/\.ts$/u,'.mjs');
-      if(!['./render_plan.mjs','./engines/svg-engine.mjs','./engines/render-plan.mjs'].includes(target))
+      if(!['./render_plan.mjs','./finite_floats.mjs','./engines/svg-engine.mjs','./engines/render-plan.mjs'].includes(target))
         throw Error(`Unexpected runtime import in ${name}: ${path}`);
       return prefix+quote+target+quote;
     });
