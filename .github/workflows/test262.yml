@@ -5,9 +5,11 @@ name: Test262 full run
 # changes.md, directories.csv, features.csv; test262-rivals.csv). Rules, validity and
 # columns: release-tests/test262.py and core skills/wpt-runs.
 #
-# Engine: core's `leanjs test262-files`, built here from the release's core commit with
-# build.yml's Lake cache: the Lean JavaScript interpreter (L4Factoidal.JS) that the engine
-# library runs page scripts with. Test262 needs no page, so it runs without the browser host.
+# Engine: core's `bubblepop-test262 test262-files` (input realm=page, the score): BubblePopJS on
+# the page realm Foafnaut runs page scripts in (LeanJS.prepareSource: prelude.js on an empty
+# document), built here from the release's core commit with build.yml's Lake cache (restore
+# only). realm=engine builds `leanjs` (the interpreter alone, no page objects): a diagnostic,
+# never recorded.
 #
 # What starts a run:
 #   factoidal-release  each finished build.yml or "Foafnaut Linux engine" run: the newest
@@ -39,6 +41,11 @@ on:
         description: 'tc39/test262 commit, 40 hex (empty: the pinned one)'
         required: false
         default: ''
+      realm:
+        description: 'page (the realm Foafnaut runs page scripts in: bubblepop-test262, the score) or engine (leanjs, the engine alone: not recorded)'
+        type: choice
+        options: [page, engine]
+        default: page
       shards:
         description: 'runners for the tests'
         required: false
@@ -119,23 +126,27 @@ jobs:
           key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
           restore-keys: |
             lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
-      - name: Build leanjs
+      - name: Rebuild modules that include_str non-Lean files
+        # as build.yml: a .lake from an older cache would keep a stale prelude.js in LeanJS
+        run: find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null || true
+      - name: Build the Test262 runner
+        env:
+          EXE: ${{ (inputs.realm || 'page') == 'page' && 'bubblepop-test262' || 'leanjs' }}
         run: |
           set -euo pipefail
           cd core/formal/lean4
           T0=$(date +%s)
-          lake build leanjs 2>&1 | tail -40
-          echo "leanjs of core ${{ needs.plan.outputs.sha }} built in $(( $(date +%s) - T0 )) s" | tee -a "$GITHUB_STEP_SUMMARY"
-          USAGE=$(.lake/build/bin/leanjs 2>&1 || true)
+          lake build "$EXE" 2>&1 | tail -40
+          echo "$EXE of core ${{ needs.plan.outputs.sha }} built in $(( $(date +%s) - T0 )) s" | tee -a "$GITHUB_STEP_SUMMARY"
+          USAGE=$(.lake/build/bin/$EXE 2>&1 || true)
           if ! grep -q test262-files <<< "$USAGE"; then
-            echo "::error::this core's leanjs has no test262-files command"; exit 1
+            echo "::error::this core's $EXE has no test262-files command"; exit 1
           fi
-          mkdir -p "$RUNNER_TEMP/bin" && cp .lake/build/bin/leanjs "$RUNNER_TEMP/bin/"
-          ldd "$RUNNER_TEMP/bin/leanjs" || true
+          mkdir -p "$RUNNER_TEMP/bin" && cp ".lake/build/bin/$EXE" "$RUNNER_TEMP/bin/runner"
       - uses: actions/upload-artifact@v4
         with:
           name: leanjs
-          path: ${{ runner.temp }}/bin/leanjs
+          path: ${{ runner.temp }}/bin/runner
           retention-days: 3
 
   shard:
@@ -155,11 +166,11 @@ jobs:
       - name: Test262 shard ${{ matrix.shard }}
         run: |
           set -euo pipefail
-          chmod +x "$RUNNER_TEMP/bin/leanjs"
+          chmod +x "$RUNNER_TEMP/bin/runner"
           mkdir -p "$RUNNER_TEMP/test262"
           curl -sSfL --retry 4 "https://codeload.github.com/tc39/test262/tar.gz/${{ needs.plan.outputs.t262 }}" | tar xz -C "$RUNNER_TEMP/test262" --strip-components=1
           python3 release-tests/test262.py list --root "$RUNNER_TEMP/test262" --out "$RUNNER_TEMP/files.json"
-          python3 release-tests/test262.py run --leanjs "$RUNNER_TEMP/bin/leanjs" --root "$RUNNER_TEMP/test262" \
+          python3 release-tests/test262.py run --leanjs "$RUNNER_TEMP/bin/runner" --root "$RUNNER_TEMP/test262" \
             --files "$RUNNER_TEMP/files.json" --out "$RUNNER_TEMP/out/test262-shard-${{ matrix.shard }}" \
             --shard ${{ matrix.shard }} --shards ${{ needs.plan.outputs.shards }} --jobs 4 --chunk 200 --stall 120 --rss-mb 3000
       - uses: actions/upload-artifact@v4
@@ -194,6 +205,7 @@ jobs:
             --core-commit "${{ needs.plan.outputs.sha }}" --commit-utc "${{ needs.plan.outputs.utc }}" \
             --test262-commit "${{ needs.plan.outputs.t262 }}" --release-tag "${{ needs.plan.outputs.release_tag }}" \
             --started "${{ needs.plan.outputs.started }}" --run-url "$RUN_URL" --trigger "${{ needs.plan.outputs.trigger }}" \
+            --realm "${{ inputs.realm || 'page' }}" \
             --result-url "https://github.com/${{ github.repository }}/releases/download/test-results/RUN_ID.test262.txt.gz"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -202,12 +214,12 @@ jobs:
           path: ${{ runner.temp }}/rec/
           retention-days: 30
       - name: Result file to the release test-results (a commit of main only)
-        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push'
+        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push' && (inputs.realm || 'page') == 'page'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gh release upload test-results "$RUNNER_TEMP"/rec/*.test262.txt.gz --clobber -R "${{ github.repository }}"
       - name: Record on wpt-scores (a commit of main only)
-        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push'
+        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push' && (inputs.realm || 'page') == 'page'
         run: python3 release-tests/test262.py record --from "$RUNNER_TEMP/rec"

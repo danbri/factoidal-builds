@@ -5,8 +5,9 @@ The whole tc39/test262 suite at a pinned commit: every file under test/ (FIXTURE
 loaded by the tests that import them, not run), each in the modes Test262 runs it in
 (INTERPRETING.md: sloppy and strict, onlyStrict strict, noStrict/raw sloppy, module once as a
 module), with includes, negative tests by phase and type, async tests by $DONE. The runner is
-core's `leanjs test262-files`: the same Lean JavaScript interpreter (L4Factoidal.JS) that the
-engine library runs page scripts with, built from the release's core commit.
+core's `bubblepop-test262 test262-files` (WasmVM/Hosts/Test262Page.lean): BubblePopJS on the
+page realm Foafnaut runs page scripts in (prelude.js on an empty document), built from the
+release's core commit. `--realm engine` (leanjs, the interpreter alone) is a diagnostic only.
 
 Commands:
   plan      choose the core commit (the newest main release), say whether to run
@@ -39,6 +40,12 @@ FYI_ENGINES = {"v8": "V8", "sm": "SpiderMonkey", "jsc": "JavaScriptCore", "qjs_n
                "porffor": "Porffor", "njs": "njs", "v8_exp": "V8 (experimental flags)",
                "sm_exp": "SpiderMonkey (experimental flags)", "jsc_exp": "JavaScriptCore (experimental flags)"}
 FYI = "https://data.test262.fyi"
+RUNNERS = {"page": "bubblepop-test262", "engine": "leanjs"}
+REALM_WHY = {
+    "page": "the page realm Foafnaut runs page scripts in (core WasmVM/Hosts/Test262Page.lean: LeanJS.prepareSource, "
+            "BubblePopJS with tools/wasmvm/quickjs/prelude.js on an empty document), built from the release's core commit",
+    "engine": "the Lean JavaScript interpreter alone (L4Factoidal.JS, leanjs): no page objects, so no Temporal or Intl from "
+              "prelude.js; a diagnostic, not the score"}
 HARNESS_ERROR_MAX = 0.005      # runner-level errors (no result, a harness include missing) per run
 DROP_POINTS = 0.2              # a fall of more than this many points is marked DROP
 
@@ -388,7 +395,7 @@ def cmd_score(a):
     share_ex = 100 * passed_ex / total_ex if total_ex else 0.0
     prev = prev_valid(a.test262_commit, a.platform) if not a.no_prev else None
     row = {"run_id": rid, "started_utc": started, "finished_utc": rt.now_utc(), "trigger": a.trigger, "suite": SUITE,
-           "platform": a.platform, "engine": "bubblepopjs-leanjs", "script_engine": "bubblepop",
+           "platform": a.platform, "engine": "bubblepopjs-page" if a.realm == "page" else "bubblepopjs-engine", "script_engine": "bubblepop",
            "factoidal_commit": a.core_commit, "commit_utc": a.commit_utc, "snapshot_branch": "", "release_tag": a.release_tag,
            "wpt_commit": a.test262_commit, "names_total": total, "names_run": total - len({f for f, _ in no_result}),
            "passed": passed, "denominator": total, "share_pct": f"{share:.4f}", "share_ex_encoding_pct": f"{share_ex:.4f}",
@@ -398,7 +405,7 @@ def cmd_score(a):
            "invalid_reason": "; ".join(reasons), "kind": "full", "shards": a.shards, "wall_minutes": wall,
            "repeat_of": prev["run_id"] if prev and prev["factoidal_commit"] == a.core_commit else "",
            "runner": f"ubuntu-latest x{a.shards} ({shard_infos[0]['jobs'] if shard_infos else '?'} processes each); "
-                     f"leanjs test262-files built from core {a.core_commit[:12]}",
+                     f"{RUNNERS[a.realm]} built from core {a.core_commit[:12]}",
            "workflow_run_url": a.run_url, "result_url": a.result_url.replace("RUN_ID", rid) if a.result_url else "",
            "meta_url": f"{rt.RAW}/runs/{rid}/meta.json"}
     # changes against the previous valid run at the same Test262 commit
@@ -426,9 +433,8 @@ def cmd_score(a):
                       "(the unit of test262.fyi). passed/denominator: files. share_ex_encoding_pct holds, for this suite, the share "
                       "without the files of the excluded features (totals.share_ex_features_pct). $262: global and "
                       "detachArrayBuffer only (createRealm, evalScript, gc, agent, IsHTMLDDA absent: those tests fail)."),
-            "engine": {"script_engine": "bubblepop", "runner": "leanjs test262-files (core formal/lean4/L4Factoidal/JS/Main.lean)",
-                       "why": "the Lean JavaScript interpreter (L4Factoidal.JS) that libweb-render runs page scripts with, from the "
-                              "same core commit as the release; Test262 needs no page, so it runs without the browser's host",
+            "engine": {"script_engine": "bubblepop", "realm": a.realm, "runner": RUNNERS[a.realm] + " test262-files",
+                       "why": REALM_WHY[a.realm],
                        "core_commit": a.core_commit, "release_tag": a.release_tag},
             "validity": {"rules": f"every file listed and every shard present; runs with no result plus harness errors under "
                                   f"{HARNESS_ERROR_MAX:.1%} of runs; at least {a.min_files} files",
@@ -613,6 +619,7 @@ def main():
         p.add_argument(k, default="")
     p.add_argument("--trigger", default="manual")
     p.add_argument("--platform", default="linux-x86_64")
+    p.add_argument("--realm", choices=["page", "engine"], default="page")
     p.add_argument("--min-files", type=int, default=50000)
     p.add_argument("--no-prev", action="store_true")
     p.add_argument("--no-rivals", action="store_true")
