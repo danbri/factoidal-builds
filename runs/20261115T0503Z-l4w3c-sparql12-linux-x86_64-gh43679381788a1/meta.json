@@ -1,0 +1,143 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261115T0503Z-l4w3c-sparql12-linux-x86_64-gh43679381788a1",
+  "started_utc": "2026-11-15T05:03:49Z",
+  "finished_utc": "2026-11-15T05:03:49Z",
+  "trigger": "factoidal-release",
+  "suite": "l4w3c-sparql12",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "3bf480d922cc0da661911565762bb1cacf349733",
+  "commit_utc": "2026-11-15T01:52:03Z",
+  "snapshot_branch": "",
+  "release_tag": "build-3bf480d922cc-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 271,
+  "names_run": 271,
+  "passed": 271,
+  "denominator": 271,
+  "share_pct": "100.0000",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 0,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43679381788",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261115T0503Z-l4w3c-sparql12-linux-x86_64-gh43679381788a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-15T05:03:17Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43679381788",
+  "trigger": "factoidal-release",
+  "core_commit": "3bf480d922cc0da661911565762bb1cacf349733",
+  "core_short": "3bf480d922cc",
+  "on_main": true,
+  "commit_author_utc": "2026-11-15T01:51:41Z",
+  "commit_committer_utc": "2026-11-15T01:52:03Z",
+  "commit_subject": "XSLT result pages are HTML again: the xslt answer gives the result's syntax (html for the output methods html and text, WebXslt.resultSyntax), hosts carry it as the syntax field of the page's requests, and DOM.xmlSyntax reads it before the URL (a .xml URL is XML since 541284703, which made the books-xslt pages fail: no title, or an XML well-formedness error)",
+  "release_sets": {
+   "darwin-arm64": {
+    "tag": "build-3bf480d922cc-darwin-arm64",
+    "published_at": "2026-11-15T05:02:13Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-3bf480d922cc-darwin-arm64"
+   },
+   "foafnaut-darwin-arm64": {
+    "tag": "build-3bf480d922cc-foafnaut-engine-darwin-arm64",
+    "published_at": "2026-11-15T03:55:30Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-3bf480d922cc-foafnaut-engine-darwin-arm64"
+   },
+   "foafnaut-engine-darwin-arm64": {
+    "tag": "build-3bf480d922cc-foafnaut-engine-darwin-arm64",
+    "published_at": "2026-11-15T03:55:30Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-3bf480d922cc-foafnaut-engine-darwin-arm64"
+   },
+   "foafnaut-linux-x86_64": {
+    "tag": "build-3bf480d922cc-foafnaut-linux-x86_64",
+    "published_at": "2026-11-15T03:10:09Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-3bf480d922cc-foafnaut-linux-x86_64"
+   },
+   "foafnaut-web": {
+    "tag": "build-3bf480d922cc-foafnaut-web",
+    "published_at": "2026-11-15T05:03:01Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-3bf480d922cc-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-3bf480d922cc-linux-x86_64",
+    "published_at": "2026-11-15T05:00:52Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-3bf480d922cc-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-3bf480d922cc-web",
+    "published_at": "2026-11-15T05:02:51Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-3bf480d922cc-web"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-15T05:03:20Z",
+  "candidate_why": "published by build run 43665543938",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "76f3efc65c27333e528675406167145735718fab",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": true,
+  "suites": true,
+  "platforms": [
+   "macos-arm64"
+  ],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "runner": "l4w3c",
+  "args": [
+   "--quiet",
+   "third_party/testing/w3c/sparql/sparql12/manifest.ttl"
+  ],
+  "budget_seconds": 900,
+  "started_utc": "2026-11-15T05:03:49Z",
+  "exit": 0,
+  "seconds": 0,
+  "finished_utc": "2026-11-15T05:03:49Z"
+ },
+ "totals": {
+  "pass": 271,
+  "fail": 0,
+  "total": 271,
+  "skip": 0,
+  "unsupported": 0
+ },
+ "command": [
+  "bin/linux-x86_64/l4w3c",
+  "--quiet",
+  "third_party/testing/w3c/sparql/sparql12/manifest.ttl"
+ ],
+ "submodules": [
+  "w3c"
+ ],
+ "parser": "l4w3c TOTAL line",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
