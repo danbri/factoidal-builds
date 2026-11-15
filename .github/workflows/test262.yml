@@ -24,8 +24,6 @@ name: Test262 full run
 #   gh workflow run test262.yml -R danbri/factoidal-builds -f core_ref=wip/x   # not recorded
 
 on:
-  push:                                   # TEMPORARY: branch test, removed before merge
-    branches: [wip/test262]
   workflow_run:
     workflows: ['Build Factoidal from factoidal-core', 'Foafnaut Linux engine']
     types: [completed]
@@ -98,7 +96,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 release-tests/test262.py plan --ref "${{ inputs.core_ref || (github.event_name == 'push' && 'wip/t262-ci' || '') }}" --trigger "${{ steps.t.outputs.trigger }}" \
+          python3 release-tests/test262.py plan --ref "${{ inputs.core_ref }}" --trigger "${{ steps.t.outputs.trigger }}" \
             --test262-commit "${{ steps.t.outputs.t262 }}"
 
   build:
@@ -214,12 +212,12 @@ jobs:
           path: ${{ runner.temp }}/rec/
           retention-days: 30
       - name: Result file to the release test-results (a commit of main only)
-        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push' && (inputs.realm || 'page') == 'page'
+        if: needs.plan.outputs.on_main == 'true' && (inputs.realm || 'page') == 'page'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gh release upload test-results "$RUNNER_TEMP"/rec/*.test262.txt.gz --clobber -R "${{ github.repository }}"
       - name: Record on wpt-scores (a commit of main only)
-        if: needs.plan.outputs.on_main == 'true' && github.event_name != 'push' && (inputs.realm || 'page') == 'page'
+        if: needs.plan.outputs.on_main == 'true' && (inputs.realm || 'page') == 'page'
         run: python3 release-tests/test262.py record --from "$RUNNER_TEMP/rec"
