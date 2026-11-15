@@ -1,0 +1,149 @@
+name: Conformance data
+
+# The data of the Hub's Conformance page (https://danbri.github.io/factoidal/web/hub/conformance/),
+# kept in git on the branch `hub-data` of this repository: conformance/data.json (the newest
+# full WPT run, Test262 through WPT, the newest full Test262 run, other browsers at the same
+# WPT commit) and conformance/history.json (one compact row per engine commit, for the charts).
+# Every change is one commit there, so the branch is the history of the page's numbers.
+#
+# The files are written by factoidal-core's tests/browser-wpt/passmap-data.py --hub from the
+# branch wpt-scores (runs.csv, rivals.csv, runs/<id>/meta.json, the full WPT result file) and
+# checked against core's docs/web/hub/conformance/data.schema.json. A commit is made only when
+# the data changed (generatedAt alone is not a change).
+#
+# Why a branch of this repository and not core: the data is regenerated many times a day, and
+# bot commits on core main would add noise there and race with merges. The Pages build
+# (danbri/factoidal deploy-pages.yml) copies the two files from this branch into the site.
+#
+# What starts it:
+#   workflow_run  each finished "Release tests" run (it records WPT and suite runs on
+#                 wpt-scores) and each finished "Test262" run (full Test262 runs)
+#   schedule      every 3 hours, 20 minutes before the Pages build (41 */3)
+#   manual        workflow_dispatch (core_ref: the core branch or commit whose generator to use)
+#
+# After a data commit it asks danbri/factoidal to rebuild the site when the secret
+# FACTOIDAL_PAGES_DISPATCH_TOKEN is set (fine-grained, "Contents: read and write" on
+# danbri/factoidal); without it the site picks the data up at its next scheduled build.
+
+on:
+  workflow_run:
+    workflows: ["Release tests", "Test262"]
+    types: [completed]
+  schedule:
+    - cron: '21 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: factoidal-core branch or commit of the generator and schema
+        default: main
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: conformance-data
+  cancel-in-progress: false
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Generator and schema from factoidal-core
+        uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ inputs.core_ref || 'main' }}
+          path: core
+          sparse-checkout: |
+            tests/browser-wpt
+            tests/hub/conformance_schema.mjs
+            docs/web/hub/conformance
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Write the data
+        run: |
+          set -euo pipefail
+          python3 core/tests/browser-wpt/passmap-data.py --hub "$RUNNER_TEMP/out" 2> "$RUNNER_TEMP/gen.log" || { cat "$RUNNER_TEMP/gen.log"; exit 1; }
+          cat "$RUNNER_TEMP/gen.log"
+          ls -la "$RUNNER_TEMP/out"
+      - name: Check the data against the schema
+        run: node core/tests/hub/conformance_schema.mjs "$RUNNER_TEMP/out"
+      - name: Commit to hub-data when the data changed
+        id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          REPO="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          SUMMARY=$(python3 - "$RUNNER_TEMP/out/data.json" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          t = d["test262"]; f = (t.get("full") or {}).get("latest"); w = t.get("wpt")
+          parts = [f"WPT {d['latest']['share']:.2f}% ({d['latest']['run']})"]
+          if w: parts.append(f"Test262 through WPT {100 * w['us'] / w['u']:.2f}%")
+          parts.append(f"full Test262 {100 * f['share']:.2f}% ({f['run']})" if f else "no full Test262 run")
+          print("; ".join(parts))
+          PY
+          )
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+          for attempt in 1 2 3 4 5; do
+            rm -rf "$RUNNER_TEMP/hub-data"
+            if git ls-remote --exit-code --heads "$REPO" hub-data > /dev/null; then
+              git clone -q --depth 1 --branch hub-data "$REPO" "$RUNNER_TEMP/hub-data"
+            else
+              git init -q -b hub-data "$RUNNER_TEMP/hub-data"
+              git -C "$RUNNER_TEMP/hub-data" remote add origin "$REPO"
+              printf '%s\n' '# hub-data' '' \
+                'Data files of the Hub pages, written by workflows of this repository. Every change is a commit, so the log of this branch is the history of the numbers.' '' \
+                '- `conformance/`: the Conformance page (https://danbri.github.io/factoidal/web/hub/conformance/), written by `.github/workflows/conformance-data.yml` on main with factoidal-core'"'"'s `tests/browser-wpt/passmap-data.py --hub`; schema `docs/web/hub/conformance/data.schema.json` in factoidal-core.' \
+                > "$RUNNER_TEMP/hub-data/README.md"
+            fi
+            mkdir -p "$RUNNER_TEMP/hub-data/conformance"
+            same=$(python3 - "$RUNNER_TEMP/out" "$RUNNER_TEMP/hub-data/conformance" <<'PY'
+          import json, os, sys
+          def load(d, n):
+              p = os.path.join(d, n)
+              if not os.path.exists(p): return None
+              v = json.load(open(p)); v.pop("generatedAt", None); return v
+          print("yes" if all(load(sys.argv[1], n) == load(sys.argv[2], n) for n in ("data.json", "history.json")) else "no")
+          PY
+          )
+            if [ "$same" = yes ]; then echo "The data is unchanged; nothing to commit."; echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+            cp "$RUNNER_TEMP/out/data.json" "$RUNNER_TEMP/out/history.json" "$RUNNER_TEMP/hub-data/conformance/"
+            git -C "$RUNNER_TEMP/hub-data" add -A
+            git -C "$RUNNER_TEMP/hub-data" commit -q -m "Conformance data: $SUMMARY" -m "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} (${GITHUB_EVENT_NAME})"
+            if git -C "$RUNNER_TEMP/hub-data" push -q origin hub-data; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              echo "sha=$(git -C "$RUNNER_TEMP/hub-data" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "push refused (attempt $attempt); trying again on the new branch head"; sleep $((attempt * 5))
+          done
+          exit 1
+      - name: Ask danbri/factoidal to rebuild the site
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          TOKEN: ${{ secrets.FACTOIDAL_PAGES_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::FACTOIDAL_PAGES_DISPATCH_TOKEN is not set; the site takes the new data at its next scheduled build (every 3 hours at :41)."
+            exit 0
+          fi
+          curl -fsS -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $TOKEN" \
+            https://api.github.com/repos/danbri/factoidal/dispatches \
+            -d '{"event_type":"factoidal-builds-hub-data","client_payload":{"sha":"${{ steps.commit.outputs.sha }}"}}'
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Conformance data"
+            echo "${{ steps.commit.outputs.summary }}"
+            echo
+            echo "Changed: ${{ steps.commit.outputs.changed || 'n/a' }} ${{ steps.commit.outputs.sha }}"
+          } >> "$GITHUB_STEP_SUMMARY"
