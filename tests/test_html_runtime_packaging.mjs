@@ -33,7 +33,8 @@ async function fixture(t,{rdf=false,font=false,document=false,initializer}={}){
  if(initializer)sources[LAB+'/web_render_shim.c']=`initialize_${initializer}(1);\n`;
  for(const[p,b]of Object.entries(sources))await put(p,b);
  await put(LAB+'/gpu_transport.ts','import {x} from "./render_plan.ts";\nexport const y:number=x;\n');
- await put(LAB+'/render_plan.ts','import create from "./.build/engines/render-plan.mjs";\nexport const x:number=1;\nexport {create};\n');
+ await put(LAB+'/render_plan.ts','import create from "./.build/engines/render-plan.mjs";\nimport {finite} from "./finite_floats.ts";\nexport const x:number=finite(1);\nexport {create};\n');
+ await put(LAB+'/finite_floats.ts','export const finite=(v:number):number=>Number.isFinite(v)?v:0;\n');
  await put('.gitignore',LAB+'/.build/\n');
  const git=a=>execFileSync('git',['-C',core,...a],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
  git(['init','-q']);git(['add','.']);git(['-c','user.name=Packaging Test','-c','user.email=test@example.invalid','commit','-qm','Fake HTML packaging inputs']);
