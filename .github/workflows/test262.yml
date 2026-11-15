@@ -126,7 +126,8 @@ jobs:
           T0=$(date +%s)
           lake build leanjs 2>&1 | tail -40
           echo "leanjs of core ${{ needs.plan.outputs.sha }} built in $(( $(date +%s) - T0 )) s" | tee -a "$GITHUB_STEP_SUMMARY"
-          if ! .lake/build/bin/leanjs 2>&1 | grep -q test262-files; then
+          USAGE=$(.lake/build/bin/leanjs 2>&1 || true)
+          if ! grep -q test262-files <<< "$USAGE"; then
             echo "::error::this core's leanjs has no test262-files command"; exit 1
           fi
           mkdir -p "$RUNNER_TEMP/bin" && cp .lake/build/bin/leanjs "$RUNNER_TEMP/bin/"
