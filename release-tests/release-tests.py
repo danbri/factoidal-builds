@@ -11,7 +11,8 @@
                server of the shard's own; check the server for the whole run
   wpt-merge    join the shards, score with core's wpt-full.py, apply the validity rules
   suite-run    run a group of the other conformance suites from the release's binaries
-  suite-score  parse the suite logs (core's generate-report.sh and l4w3c's TOTAL lines)
+  suite-score  parse the suite logs (l4w3c's TOTAL lines; for lean-semweb, core's scoreboard
+               JSON and owl-populations.py's populations.json)
   rivals       other browsers' wpt.fyi results at the WPT commit, on the same scale
   record       append the rows to runs.csv / rivals.csv / differential.csv and write
                runs/<run_id>/meta.json on the results branch, and push
@@ -1130,17 +1131,146 @@ SUITES = [
     ("l4w3c:rdf12", "lean-w3c", "l4w3c_rdf12.log", "l4w3c", ["--quiet", "third_party/testing/w3c/rdf/rdf12/manifest.ttl"], 900, ["w3c"]),
     ("l4w3c:rdfc10", "lean-w3c", "l4w3c_rdfc10.log", "l4w3c", ["--quiet", "third_party/testing/rdf-canon/tests/manifest.ttl"], 900, ["rdf-canon"]),
 ]
-SUITE_GROUPS = sorted({s[1] for s in SUITES})
+
+# ---- lean-semweb: the semantic-web and data-format suites on the built-in engine ---------------
+# The F* runners of these suites left the release on 2026-11-15. Their Lean runners are not
+# release products, so the suites job of this group builds them from the release's core commit
+# (build.yml's Lake cache, restore only, as test262.yml does), runs them through core's
+# tools/lean-scoreboard.sh (one job per runner, its own parsers, a timeout per runner) and
+# runs the OWL 2 test cases population by population (owl-populations.py).
+SEMWEB_GROUP = "lean-semweb"
+SEMWEB_EXES = ["l4shacl", "l4shacl-nodeexpr", "l4shacl-rules", "l4shex", "l4shexc", "l4rif", "l4csvw-rdf",
+               "l4csvw-json", "l4csvw-validate", "l4xmlconf", "l4xslt", "l4schematron", "l4mathml", "l4jsonschema",
+               "l4jsonld-probe", "l4jsonld-api", "l4jsonld-frame", "l4rml", "l4vc-probe", "l4rdf-semantics",
+               "l4owl-probe"]
+SEMWEB_JOBS = ["l4shacl-core10", "l4shacl-sparql10", "l4shacl-core12", "l4shacl-sparql12", "l4shacl-nodeexpr",
+               "l4shacl-rules", "l4shex", "l4shexc", "l4rif", "l4csvw-rdf", "l4csvw-json", "l4csvw-validate",
+               "l4xmlconf", "l4xslt", "l4schematron", "l4mathml", "l4jsonschema", "l4jsonld-probe", "l4jsonld-api",
+               "l4jsonld-frame", "l4rml", "l4vc-probe", "l4rdf-semantics", "l4owl-probe-species"]
+SEMWEB_SUBMODULES = ["w3c", "shacl", "shex", "json-ld", "csvw", "rml", "rml-modules/rml-core", "rml-modules/rml-io",
+                     "rml-modules/rml-cc", "rml-modules/rml-fnml", "rml-modules/rml-star", "vc", "did",
+                     "xslt1-xalan/xalan-test-src"]
+SEMWEB_BUDGET = 2700                 # s, the scoreboard jobs together; each runner also has 1500 s
+OWL_BUDGET = 2400                    # s, the OWL population runs (two processes at once)
+# (suite, scoreboard job, spec_area of the row or None for the job's only row, label or None,
+#  F* suite it continues or "").
+SEMWEB_ROWS = [
+    ("l4-shacl_core", "l4shacl-core10", None, None, "shacl_core"),
+    ("l4-shacl_sparql", "l4shacl-sparql10", None, None, "shacl_sparql"),
+    ("l4-shacl12_core", "l4shacl-core12", None, None, "shacl12_core"),
+    ("l4-shacl12_sparql", "l4shacl-sparql12", None, None, "shacl12_sparql"),
+    ("l4-shacl12_node_expr", "l4shacl-nodeexpr", None, None, "shacl12_node_expr"),
+    ("l4-shacl12_rules", "l4shacl-rules", None, None, ""),
+    ("l4-shex", "l4shex", None, None, "shex"),
+    ("l4-shexc_differential", "l4shexc", "ShEx (ShExC parser vs ShExJ twins)", None, ""),
+    ("l4-shexc_negative_syntax", "l4shexc", "ShEx negative syntax (ShExC reject fixtures)", None, ""),
+    ("l4-shexc_negative_structure", "l4shexc", "ShEx negative structure (ShEx 2.1 section 5.7 schema requirements)", None, ""),
+    ("l4-jsonld_tordf", "l4jsonld-probe", None, None, "jsonld_tordf"),
+    ("l4-jsonld_expand", "l4jsonld-api", "JSON-LD expand", None, "jsonld_expand"),
+    ("l4-jsonld_compact", "l4jsonld-api", "JSON-LD compact", None, "jsonld_compact"),
+    ("l4-jsonld_flatten", "l4jsonld-api", "JSON-LD flatten", None, "jsonld_flatten"),
+    ("l4-jsonld_fromrdf", "l4jsonld-api", "JSON-LD fromRdf", None, "jsonld_fromrdf"),
+    ("l4-jsonld_html", "l4jsonld-api", "JSON-LD html", None, ""),
+    ("l4-jsonld_frame", "l4jsonld-frame", None, None, ""),
+    ("l4-csvw_csv2rdf", "l4csvw-rdf", None, None, "csvw_csv2rdf"),
+    ("l4-csvw_csv2json", "l4csvw-json", None, None, "csvw_csv2json"),
+    ("l4-csvw_validation", "l4csvw-validate", None, None, "csvw_validation"),
+    ("l4-rml_core", "l4rml", "RML-Core", None, "rml_core"),
+    ("l4-rml_io", "l4rml", "RML-IO", None, ""),
+    ("l4-rml_cc", "l4rml", "RML-CC", None, ""),
+    ("l4-rml_star", "l4rml", "RML-star", None, ""),
+    ("l4-rml_fnml", "l4rml", "RML-FNML", None, ""),
+    ("l4-rif_core", "l4rif", None, None, "rif_core"),
+    ("l4-rdf12entail", "l4rdf-semantics", None, None, "rdf12entail"),
+    ("l4-vc_stage1", "l4vc-probe", None, "vc-credential-structural", "vc_stage1"),
+    ("l4-did_key", "l4vc-probe", None, "did:key", "did_key"),
+    ("l4-vc_di_eddsa_rdfc_2022", "l4vc-probe", None, "vc-dataintegrity-eddsa-rdfc-2022", ""),
+    ("l4-vc_di_eddsa_vectors", "l4vc-probe", None, "vc-di-eddsa-spec-vectors", ""),
+    ("l4-vc_di_ecdsa_vectors", "l4vc-probe", None, "vc-di-ecdsa-spec-vectors", ""),
+    ("l4-xml_conformance", "l4xmlconf", None, None, "xml_conformance"),
+    ("l4-xslt", "l4xslt", None, None, "xslt"),
+    ("l4-schematron", "l4schematron", None, None, "schematron"),
+    ("l4-mathml", "l4mathml", None, None, "mathml"),
+    ("l4-jsonschema", "l4jsonschema", None, None, "jsonschema"),
+    ("l4-owl2-species-all", "l4owl-probe-species", None, "species verdict, all cases", ""),
+    ("l4-owl2-species-dl", "l4owl-probe-species", None, "species, cases annotated DL", "owl_syntax_dl_species"),
+    ("l4-owl2-species-full-only", "l4owl-probe-species", None, "species, cases annotated FULL only", ""),
+]
+# OWL 2 populations (owl-populations.py keys) -> suite. EL/QL/RL profile identification has no
+# built-in recogniser: recorded with valid=false and that reason, so the population and its
+# official size show and nothing reads it as a score.
+OWL_POPULATIONS = [
+    ("PositiveEntailmentTest/direct", "l4-owl2-positive-entailment-direct", ""),
+    ("NegativeEntailmentTest/direct", "l4-owl2-negative-entailment-direct", ""),
+    ("ConsistencyTest/direct", "l4-owl2-consistency-direct", ""),
+    ("InconsistencyTest/direct", "l4-owl2-inconsistency-direct", "owl2_dl_inconsistency"),
+    ("PositiveEntailmentTest/rdfbased", "l4-owl2-positive-entailment-rdfbased", ""),
+    ("NegativeEntailmentTest/rdfbased", "l4-owl2-negative-entailment-rdfbased", ""),
+    ("ConsistencyTest/rdfbased", "l4-owl2-consistency-rdfbased", ""),
+    ("InconsistencyTest/rdfbased", "l4-owl2-inconsistency-rdfbased", ""),
+    ("ProfileIdentificationTest/EL", "l4-owl2-profile-el", ""),
+    ("ProfileIdentificationTest/QL", "l4-owl2-profile-ql", ""),
+    ("ProfileIdentificationTest/RL", "l4-owl2-profile-rl", ""),
+]
+NO_PROFILE_CHECKER = "no built-in OWL 2 EL/QL/RL profile recogniser: not run (official size recorded)"
+
+SUITE_GROUPS = sorted({s[1] for s in SUITES} | {SEMWEB_GROUP})
 
 
 def cmd_suite_groups(a):
+    if a.exes:
+        print(" ".join(SEMWEB_EXES if a.exes == SEMWEB_GROUP else []))
+        return
     groups = {g: sorted({sub for s in SUITES if s[1] == g for sub in s[6]}) for g in SUITE_GROUPS}
+    groups[SEMWEB_GROUP] = sorted(SEMWEB_SUBMODULES)
     print(json.dumps(groups) if a.json else "\n".join(f"{g}: {' '.join(v)}" for g, v in groups.items()))
+
+
+def semweb_run(core, out):
+    """The lean-semweb group: core's scoreboard jobs, then the OWL 2 populations. The runners
+    must already be built in core (formal/lean4/.lake/build/bin)."""
+    sw = os.path.join(out, "semweb")
+    os.makedirs(sw, exist_ok=True)
+    status = {}
+    t0 = time.time()
+    st = {"command": ["tools/lean-scoreboard.sh", "--only", ",".join(SEMWEB_JOBS)], "started_utc": now_utc()}
+    with open(os.path.join(sw, "scoreboard.out"), "wb") as f:
+        try:
+            p = subprocess.run(["bash", "tools/lean-scoreboard.sh", "--only", ",".join(SEMWEB_JOBS), "--timeout", "1500",
+                                "--json", os.path.join(sw, "scoreboard.json"), "--logdir", os.path.join(sw, "logs")],
+                               cwd=core, stdout=f, stderr=subprocess.STDOUT, timeout=SEMWEB_BUDGET)
+            st["exit"] = p.returncode
+        except subprocess.TimeoutExpired:
+            st.update(exit=124, error=f"no end in {SEMWEB_BUDGET} s")
+    st.update(seconds=round(time.time() - t0), finished_utc=now_utc())
+    status["scoreboard"] = st
+    log(f"scoreboard: exit {st.get('exit')} in {st['seconds']} s")
+    t0 = time.time()
+    st = {"started_utc": now_utc()}
+    owl = os.path.join(sw, "owl")
+    cmd = [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "owl-populations.py"), "run",
+           "--probe", os.path.join(core, "formal/lean4/.lake/build/bin/l4owl-probe"),
+           "--catalog", os.path.join(core, "third_party/testing/owl/all.rdf"), "--work", owl, "--timeout", str(OWL_BUDGET)]
+    st["command"] = cmd[1:]
+    with open(os.path.join(sw, "owl-populations.out"), "wb") as f:
+        try:
+            st["exit"] = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, timeout=OWL_BUDGET + 120).returncode
+        except subprocess.TimeoutExpired:
+            st.update(exit=124, error=f"no end in {OWL_BUDGET + 120} s")
+    for fn in os.listdir(owl) if os.path.isdir(owl) else []:
+        if fn.endswith(".rdf"):
+            os.remove(os.path.join(owl, fn))      # the split catalogs: made again from all.rdf
+    st.update(seconds=round(time.time() - t0), finished_utc=now_utc())
+    status["owl-populations"] = st
+    log(f"owl populations: exit {st.get('exit')} in {st['seconds']} s")
+    json.dump(status, open(os.path.join(sw, "status.json"), "w"), indent=1)
 
 
 def cmd_suite_run(a):
     core, out = os.path.abspath(a.core), os.path.abspath(a.out)
     os.makedirs(os.path.join(out, "logs"), exist_ok=True)
+    if a.group == SEMWEB_GROUP:
+        return semweb_run(core, out)
     bindir = os.path.join(os.path.abspath(a.bin), "bin", "linux-x86_64")
     status = {"group": a.group, "runner": runner_info(), "suites": {}}
     for key, group, logname, runner, args, budget, _ in SUITES:
@@ -1196,6 +1326,84 @@ def suite_validity(st, t):
     return r
 
 
+def semweb_row(plan, suite, st, p, f, other, total, reasons):
+    run_id = run_id_of(plan, suite, "linux-x86_64")
+    row = {c: "" for c in RUNS_COLUMNS}
+    row.update({
+        "run_id": run_id, "started_utc": (st or {}).get("started_utc", ""), "finished_utc": (st or {}).get("finished_utc", ""),
+        "trigger": plan["trigger"], "suite": suite, "platform": "linux-x86_64", "engine": "lean",
+        "factoidal_commit": plan["core_commit"], "commit_utc": plan["commit_committer_utc"], "snapshot_branch": plan.get("snapshot_branch", ""),
+        "release_tag": plan["release_sets"].get("linux-x86_64", {}).get("tag", ""),
+        "names_total": total, "names_run": p + f, "passed": p, "denominator": total,
+        "share_pct": f"{100 * p / total:.4f}" if total else "", "failed": f, "skip": other,
+        "valid": "false" if reasons else "true", "invalid_reason": "; ".join(reasons), "kind": "full", "shards": 1,
+        "wall_minutes": round(((st or {}).get("seconds") or 0) / 60, 1), "runner": "ubuntu-latest",
+        "workflow_run_url": plan.get("workflow_run_url", ""), "meta_url": f"{RAW}/runs/{run_id}/meta.json",
+    })
+    return run_id, row
+
+
+def semweb_score(plan, logs):
+    """Rows of the lean-semweb group: one per SEMWEB_ROWS entry (from core's scoreboard JSON)
+    and one per OWL 2 population. A missing group, job or row is a row with valid=false."""
+    sw = os.path.join(logs, "semweb")
+    status = json.load(open(os.path.join(sw, "status.json"))) if os.path.exists(os.path.join(sw, "status.json")) else {}
+    sb_path, pop_path = os.path.join(sw, "scoreboard.json"), os.path.join(sw, "owl", "populations.json")
+    sb = json.load(open(sb_path)) if os.path.exists(sb_path) else None
+    pops = json.load(open(pop_path)) if os.path.exists(pop_path) else None
+    rows, metas = [], {}
+    st = status.get("scoreboard")
+    for suite, job, area, label, fstar in SEMWEB_ROWS:
+        reasons, r = [], None
+        if sb is None:
+            reasons.append("the lean-semweb group did not run" if not st else f"no scoreboard JSON (exit {st.get('exit')})")
+        else:
+            cand = [x for x in sb.get("rows", []) if x.get("job") == job and (area is None or x.get("spec_area") == area)
+                    and (label is None or x.get("label") == label)]
+            if len(cand) != 1:
+                reasons.append(f"scoreboard job {job}: {len(cand)} rows match, 1 expected")
+            else:
+                r = cand[0]
+                if r.get("status") != "ok":
+                    reasons.append(f"scoreboard status {r.get('status')}: {r.get('raw_summary_line') or r.get('note') or ''}"[:300])
+                elif not r.get("total"):
+                    reasons.append("0 tests found")
+        p, f, o, tot = ((r or {}).get("pass") or 0, (r or {}).get("fail") or 0, (r or {}).get("other") or 0, (r or {}).get("total") or 0)
+        run_id, row = semweb_row(plan, suite, {**(st or {}), "seconds": (r or {}).get("seconds") or 0}, p, f, o, tot, reasons)
+        rows.append(row)
+        metas[run_id] = {"format": "factoidal-release-test-run-v1", "row": row, "plan": plan, "status": st,
+                         "scoreboard_row": r, "continues_fstar_suite": fstar, "group": SEMWEB_GROUP,
+                         "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+                         "validity": {"valid": not reasons, "reasons": reasons}}
+    st = status.get("owl-populations")
+    for key, suite, fstar in OWL_POPULATIONS:
+        reasons, pp = [], (pops or {}).get("populations", {}).get(key)
+        if pops is None:
+            reasons.append("the lean-semweb group did not run" if not st else f"no populations.json (exit {st.get('exit')})")
+        elif pp is None:
+            reasons.append(f"population {key} not in populations.json")
+        elif key.startswith("ProfileIdentificationTest/"):
+            reasons.append(NO_PROFILE_CHECKER)
+        elif not pp.get("measured"):
+            reasons.append("the probe printed no line for this population"
+                           + (f" ({pops['status'][key.split('/')[1]].get('error')})" if pops.get("status", {}).get(key.split("/")[1], {}).get("error") else ""))
+        elif pp.get("reported") != pp.get("total"):
+            reasons.append(f"the probe reported {pp.get('reported')} units, the official count is {pp.get('total')}")
+        pp = pp or {}
+        sem = key.split("/")[1]
+        pst = dict(st or {}, seconds=((pops or {}).get("status", {}).get(sem) or {}).get("seconds", (st or {}).get("seconds")))
+        run_id, row = semweb_row(plan, suite, pst, pp.get("pass", 0), pp.get("fail", 0), pp.get("other", 0),
+                                 pp.get("total", 0), reasons)
+        rows.append(row)
+        metas[run_id] = {"format": "factoidal-release-test-run-v1", "row": row, "plan": plan, "status": st,
+                         "population": dict(pp, key=key), "source": (pops or {}).get("source"),
+                         "regime": (pops or {}).get("regimes", {}).get(sem), "refute_ms": (pops or {}).get("refute_ms"),
+                         "probe": (pops or {}).get("status", {}).get(sem), "continues_fstar_suite": fstar, "group": SEMWEB_GROUP,
+                         "parser": "release-tests/owl-populations.py (the probe's per-type lines of each split catalog)",
+                         "validity": {"valid": not reasons, "reasons": reasons}}
+    return rows, metas
+
+
 def cmd_suite_score(a):
     plan = json.load(open(a.plan))
     core = os.path.abspath(a.core)
@@ -1249,6 +1457,9 @@ def cmd_suite_score(a):
                          "command": [f"bin/linux-x86_64/{runner}"] + args, "submodules": subs,
                          "parser": "l4w3c TOTAL line" if engine == "lean" else "formal/fstar/generate-report.sh latest.json totals." + key,
                          "validity": {"valid": not reasons, "reasons": reasons}}
+    sr, sm = semweb_score(plan, a.logs)
+    rows += sr
+    metas.update(sm)
     os.makedirs(a.out, exist_ok=True)
     json.dump(rows, open(os.path.join(a.out, "suite-rows.json"), "w"), indent=1)
     json.dump(metas, open(os.path.join(a.out, "suite-metas.json"), "w"), indent=1)
@@ -1807,6 +2018,7 @@ def main():
     wc.add_argument("--limit", type=int, default=25)
     g = sub.add_parser("suite-groups")
     g.add_argument("--json", action="store_true")
+    g.add_argument("--exes", default="", help="print the Lean executables a group builds")
     sr = sub.add_parser("suite-run")
     for k in ("--group", "--core", "--bin", "--out"):
         sr.add_argument(k, required=True)

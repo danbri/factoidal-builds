@@ -39,7 +39,14 @@ on `main`). Every file here can be fetched without credentials:
      release: `plan.release_sets.foafnaut-web.note` in meta.json says so);
   7. Chrome's summary gave a denominator.
 - Another suite's run is valid if its runner ended (exit 0 or 1, not a time-out), its log
-  has a score line, and it found at least one test (`suite_validity`).
+  has a score line, and it found at least one test (`suite_validity`). A lean-semweb row
+  (suite `l4-*`) is valid if core's `tools/lean-scoreboard.sh` gave its row status `ok`
+  with at least one test, or, for an OWL 2 population, if the probe reported exactly the
+  population's official number of units (`semweb_score`). For those rows `names_total` =
+  `denominator` = the full size of the suite or population, `names_run` = pass + fail
+  (decided), `skip` = the rest (unsupported, not refuted, fixture defects, local
+  overrides). OWL 2 EL/QL/RL profile identification has no built-in recogniser: its rows
+  are `valid=false` with that reason and the population's official size.
 - Sampled runs are not scores. The daily sample job of 2026-11-11 to 2026-11-12 is
   retired: its lines are in `retired/sample-history.jsonl`, marked as samples, and not in
   `runs.csv`. `wpt-score.yml` now runs only on request, as a smoke check.
@@ -53,7 +60,7 @@ on `main`). Every file here can be fetched without credentials:
 | `run_id` | `<UTC start, YYYYMMDDTHHMMZ>-<suite>-<platform>-gh<workflow run id>a<attempt>`, or `-local` for a local run. Also the directory `runs/<run_id>/` |
 | `started_utc`, `finished_utc` | first shard start and last shard end (ISO 8601, UTC) |
 | `trigger` | `factoidal-release` (a build.yml run published releases), `schedule` (4 times a day), `browser-release` (a scheduled run at a WPT commit with new aligned browser runs on wpt.fyi), `manual` |
-| `suite` | `wpt`, or a suite key: `sparql`, `rdf`, `rdf12`, `rdf12c14n`, `rdf12entail`, `sparql12`, `rdfc10`, `shacl_*`, `shex`, `jsonld_*`, `owl*`, `rml_core`, `rif_core`, `vc_stage1`, `did_key`, `csvw_*`, `xml_conformance`, `xslt`, `mathml`, `jsonschema`, `schematron` (the F\* runners; keys of core's `formal/fstar/generate-report.sh`), `l4w3c-sparql11`, `l4w3c-sparql12`, `l4w3c-rdf11`, `l4w3c-rdf12`, `l4w3c-rdfc10` (the Lean `l4w3c`) |
+| `suite` | `wpt`, or a suite key: `sparql`, `rdf`, `rdf12`, `rdf12c14n`, `rdf12entail`, `sparql12`, `rdfc10`, `shacl_*`, `shex`, `jsonld_*`, `owl*`, `rml_core`, `rif_core`, `vc_stage1`, `did_key`, `csvw_*`, `xml_conformance`, `xslt`, `mathml`, `jsonschema`, `schematron` (the F\* runners; keys of core's `formal/fstar/generate-report.sh`), `l4w3c-sparql11`, `l4w3c-sparql12`, `l4w3c-rdf11`, `l4w3c-rdf12`, `l4w3c-rdfc10` (the Lean `l4w3c`), and since 2026-11-15 the `l4-*` suites of the lean-semweb group (`SEMWEB_ROWS` and `OWL_POPULATIONS` in release-tests.py: `l4-shacl*`, `l4-shex*`, `l4-jsonld_*`, `l4-csvw_*`, `l4-rml_*`, `l4-rif_core`, `l4-rdf12entail`, `l4-vc_*`, `l4-did_key`, `l4-xml_conformance`, `l4-xslt`, `l4-schematron`, `l4-mathml`, `l4-jsonschema`, and the OWL 2 populations `l4-owl2-<type>-<direct\|rdfbased>`, `l4-owl2-profile-<el\|ql\|rl>`, `l4-owl2-species-<all\|dl\|full-only>`) |
 | `platform` | `macos-arm64` or `linux-x86_64` |
 | `engine` | `bubblepopkit-native` (the release's engine library), `lean`; `fstar` only in rows before 2026-11-15, when the F\* suites stopped |
 | `script_engine` | WPT: `bubblepop` (BubblePopJS) or `quickjs` (differential only) |

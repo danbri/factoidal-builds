@@ -44,7 +44,12 @@ name: Release tests
 #   run for each main commit with a Linux engine (foafnaut-linux.yml builds one every 20
 #   min when main changes engine code) and one macOS run for each build.yml release (none
 #   when that commit already has a valid run at the same WPT commit on that platform).
-#   The other suites: one Linux job (lean-w3c; the F* suites stopped on 2026-11-15).
+#   The other suites: two Linux jobs. lean-w3c runs l4w3c (SPARQL, RDF, RDFC) from the
+#   release. lean-semweb (since 2026-11-15, when the F* runners left the release) builds
+#   the built-in engine's other conformance runners from the release's core commit with
+#   build.yml's Lake cache (restore only) and runs SHACL, ShEx, JSON-LD, CSVW, RML, RIF,
+#   VC/DID, XML, XSLT, Schematron, MathML, JSON Schema and the OWL 2 test cases, the OWL
+#   ones as discrete populations (release-tests/owl-populations.py).
 
 on:
   workflow_run:
@@ -93,6 +98,10 @@ on:
         description: 'Run also when a valid run of this commit exists'
         type: boolean
         default: false
+      record:
+        description: 'Record the rows on wpt-scores (false: a check of this workflow, results in the artifacts only)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -344,12 +353,12 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.suites == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 170
     strategy:
       fail-fast: false
       matrix:
         # Lean only since 2026-11-15 (automatic F* builds stopped; the F* runners left the release).
-        group: [lean-w3c]
+        group: [lean-w3c, lean-semweb]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -375,6 +384,32 @@ jobs:
           set -euo pipefail
           TAG=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["release_sets"]["linux-x86_64"]["tag"])' "$RUNNER_TEMP/plan/plan.json")
           python3 -c 'import importlib.util,sys; s=importlib.util.spec_from_file_location("rt","builds/release-tests/release-tests.py"); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); import json; print(json.dumps(m.fetch_set(sys.argv[1],"linux-x86_64",sys.argv[2])["build_info"]))' "$TAG" "$RUNNER_TEMP/rel"
+      - name: Install elan and the pinned Lean
+        if: matrix.group == 'lean-semweb'
+        run: |
+          set -euo pipefail
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+      # build.yml's Lake cache of the newest Linux build (restore only: never saved from here).
+      - name: Restore build.yml's Lake cache
+        if: matrix.group == 'lean-semweb'
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Build the conformance runners of the built-in engine
+        if: matrix.group == 'lean-semweb'
+        run: |
+          set -euo pipefail
+          find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null > /dev/null || true
+          EXES=$(python3 builds/release-tests/release-tests.py suite-groups --exes lean-semweb)
+          cd core/formal/lean4
+          T0=$(date +%s)
+          lake build $EXES 2>&1 | tail -40
+          echo "runners of core ${{ needs.resolve.outputs.core_commit }} built in $(( $(date +%s) - T0 )) s: $EXES" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run the group
         run: |
           python3 builds/release-tests/release-tests.py suite-run --group "${{ matrix.group }}" --core core \
@@ -422,7 +457,7 @@ jobs:
   record:
     name: Record on wpt-scores
     needs: [resolve, wpt-merge, rivals, suites-score]
-    if: always() && (needs.resolve.outputs.wpt == 'true' || needs.resolve.outputs.suites == 'true')
+    if: always() && (needs.resolve.outputs.wpt == 'true' || needs.resolve.outputs.suites == 'true') && (github.event_name != 'workflow_dispatch' || inputs.record)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
