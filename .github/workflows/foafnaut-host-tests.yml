@@ -1,0 +1,65 @@
+name: Foafnaut host tests
+
+# core's labs/demos/foafnaut/test.sh on the engines of one build.yml run, on Linux, as
+# soon as the foafnaut-engines job has uploaded them: a failing test is known about
+# 45 minutes after dispatch, not after the macOS bundle job (2.5 hours). test.sh runs
+# every check and lists all the failures at its end (core e43f97e16 and later; an older
+# test.sh stops at the first).
+#
+# Checks that need web-render-native, libweb-render.dylib or macOS print NOT RUN here;
+# the macOS bundle job (build-executables.sh) still runs test.sh with the native library.
+#
+# Called by build.yml after foafnaut-engines. Dispatch it alone to test a core commit
+# against the engines of an earlier build.yml run (artifacts are kept 7 days):
+#   gh workflow run foafnaut-host-tests.yml -f core_ref=<sha> -f engines_run_id=<run>
+# The engines must be built from the same core commit for the result to mean anything.
+
+on:
+  push:  # TEMPORARY (ci-fast branch test; removed before merge)
+    branches: [ci-fast]
+  workflow_call:
+    inputs:
+      core_sha:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'factoidal-core commit (the one the engines run built)'
+        required: true
+      engines_run_id:
+        description: 'build.yml run whose foafnaut-engines artifact to test'
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ inputs.core_sha || inputs.core_ref || 'wip/ci-fast' }}
+          path: core
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        if: inputs.engines_run_id == '' && github.event_name != 'push'
+        with:
+          name: foafnaut-engines
+          path: core/labs/demos/foafnaut/.build
+      - uses: actions/download-artifact@v4
+        if: inputs.engines_run_id != '' || github.event_name == 'push'
+        with:
+          name: foafnaut-engines
+          path: core/labs/demos/foafnaut/.build
+          run-id: ${{ inputs.engines_run_id || '43686125908' }}
+          github-token: ${{ github.token }}
+      - name: test.sh on the engines (every check; all failures listed at the end)
+        shell: bash
+        run: bash core/labs/demos/foafnaut/test.sh --skip-build
