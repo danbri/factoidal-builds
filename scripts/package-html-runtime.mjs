@@ -7,7 +7,7 @@ import {readFile,writeFile,lstat,realpath,mkdir,mkdtemp,rename,rm} from 'node:fs
 import {resolve,join,dirname,relative,isAbsolute,sep} from 'node:path';
 import {pathToFileURL} from 'node:url';
 export const HTML_RUNTIME_FILES=Object.freeze(['web-render.mjs','web-render.wasm',
-  'render-plan.mjs','render-plan.wasm','gpu-transport.mjs','render-plan-host.mjs','source-witness.json']);
+  'render-plan.mjs','render-plan.wasm','gpu-transport.mjs','render-plan-host.mjs','finite-floats.mjs','source-witness.json']);
 const LAB='labs/demos/foafnaut',BUILD=LAB+'/.build/web-render';
 const hash=b=>createHash('sha256').update(b).digest('hex');
 function safe(path){
@@ -33,8 +33,10 @@ async function committed(core,path,head){
  return data;
 }
 export function stripHtmlBridge(source,name){
+ // finite_floats: the finite-float check render_plan.ts imports (core 3e6745f19); it imports nothing.
  const targets=name==='gpu_transport'?new Map([['./render_plan.ts','./render-plan-host.mjs']]):
-  name==='render_plan'?new Map([['./.build/engines/render-plan.mjs','./render-plan.mjs']]):null;
+  name==='render_plan'?new Map([['./.build/engines/render-plan.mjs','./render-plan.mjs'],['./finite_floats.ts','./finite-floats.mjs']]):
+  name==='finite_floats'?new Map():null;
  if(!targets)throw Error('Unknown HTML transport');
  let out=stripTypeScriptTypes(source,{mode:'strip',sourceUrl:`${name}.ts`}),seen=0;
  out=out.replace(/^([ \t]*import[ \t]+(?:[^'";\r\n]*?[ \t]+from[ \t]*)?)(["'])([^"'\r\n]+)\2/gmu,
@@ -109,7 +111,7 @@ export async function packageHtmlRuntime({coreDir,outDir,sourceCommit,kind='deve
   if(name.endsWith('.wasm')&&!data.subarray(0,8).equals(Buffer.from([0,97,115,109,1,0,0,0])))throw Error('Invalid WASM module');
   products.set(name,data);
  }
- for(const [input,output]of [['gpu_transport','gpu-transport.mjs'],['render_plan','render-plan-host.mjs']]){
+ for(const [input,output]of [['gpu_transport','gpu-transport.mjs'],['render_plan','render-plan-host.mjs'],['finite_floats','finite-floats.mjs']]){
   const path=LAB+'/'+input+'.ts',data=await committed(core,path,head);
   products.set(output,Buffer.from(stripHtmlBridge(data.toString(),input)));
   sourceInputs.push({path,bytes:data.length,sha256:hash(data)});
