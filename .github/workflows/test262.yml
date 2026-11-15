@@ -105,8 +105,6 @@ jobs:
           repository: ${{ env.CORE_REPO }}
           ref: ${{ needs.plan.outputs.sha }}
           path: core
-          sparse-checkout: |
-            formal/lean4
       - name: Install elan and the pinned Lean
         run: |
           set -euo pipefail
