@@ -1,0 +1,199 @@
+{
+ "format": "factoidal-ci-metrics-v1",
+ "run_id": 43762519050,
+ "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43762519050",
+ "event": "workflow_dispatch",
+ "builds_branch": "wip/ci-cache",
+ "builds_sha": "3a09426bb01d0b92aebdf629e53c501703406d97",
+ "title": "Build Factoidal from factoidal-core",
+ "created_at": "2026-11-15T21:13:50Z",
+ "jobs": [
+  {
+   "name": "resolve",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 0.2,
+   "start_after_dispatch_minutes": 0.07,
+   "end_after_dispatch_minutes": 0.27,
+   "longest_steps": [
+    {
+     "name": "Run scripts/resolve-core.sh",
+     "minutes": 0.13
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.02
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "minutes": 0.0
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "lean-macos (macos-15, darwin-arm64)",
+   "conclusion": "cancelled",
+   "runner": "macos-15",
+   "queue_minutes": 35.55,
+   "minutes": 0.35,
+   "start_after_dispatch_minutes": 35.82,
+   "end_after_dispatch_minutes": 36.17,
+   "longest_steps": [
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.22
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.05
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "minutes": 0.02
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "foafnaut-engines",
+   "conclusion": "failure",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 29.27,
+   "start_after_dispatch_minutes": 0.3,
+   "end_after_dispatch_minutes": 29.57,
+   "longest_steps": [
+    {
+     "name": "Build and check the Lean HTML browser runtime",
+     "minutes": 23.52
+    },
+    {
+     "name": "Build and check the Foafnaut engines",
+     "minutes": 4.95
+    },
+    {
+     "name": "Cache audit (Wasm objects)",
+     "minutes": 0.2
+    },
+    {
+     "name": "Run actions/cache@v4",
+     "minutes": 0.12
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "emsdk-6.0.8-Linux",
+     "result": "hit",
+     "bytes": 480270169,
+     "restored_key": "emsdk-6.0.8-Linux"
+    }
+   ],
+   "cache_audit": {
+    "checked": 12,
+    "compiles": 629,
+    "different": 0
+   }
+  },
+  {
+   "name": "lean (ubuntu-latest, linux-x86_64)",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 36.1,
+   "start_after_dispatch_minutes": 0.32,
+   "end_after_dispatch_minutes": 36.42,
+   "longest_steps": [
+    {
+     "name": "lake build (library, proofs,",
+     "minutes": 35.15
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.78
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.03
+    },
+    {
+     "name": "Post Run actions/checkout@v4",
+     "minutes": 0.03
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "foafnaut",
+   "conclusion": "cancelled",
+   "runner": "macos-15",
+   "queue_minutes": 0.0,
+   "minutes": 0.0,
+   "start_after_dispatch_minutes": 36.17,
+   "end_after_dispatch_minutes": 36.17,
+   "longest_steps": [],
+   "log_error": "GET repos/danbri/factoidal-builds/actions/jobs/132970650852/logs: HTTP 404"
+  },
+  {
+   "name": "publish",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 0.13,
+   "start_after_dispatch_minutes": 36.47,
+   "end_after_dispatch_minutes": 36.6,
+   "longest_steps": [
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.02
+    },
+    {
+     "name": "Assemble, pack and publish each complete set",
+     "minutes": 0.02
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "lean-wasm",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.0,
+   "minutes": 0.0,
+   "start_after_dispatch_minutes": 36.42,
+   "end_after_dispatch_minutes": 36.42,
+   "longest_steps": [],
+   "log_error": "GET repos/danbri/factoidal-builds/actions/jobs/132970726613/logs: HTTP 404"
+  },
+  {
+   "name": "web-gates",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.0,
+   "minutes": 0.0,
+   "start_after_dispatch_minutes": 36.42,
+   "end_after_dispatch_minutes": 36.42,
+   "longest_steps": [],
+   "log_error": "GET repos/danbri/factoidal-builds/actions/jobs/132970727032/logs: HTTP 404"
+  }
+ ],
+ "wall_minutes": 36.6
+}
