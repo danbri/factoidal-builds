@@ -465,6 +465,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ccache -z > /dev/null || true   # this run's ccache statistics only
           source ~/emsdk/emsdk_env.sh
           bash core/labs/demos/foafnaut/build-engines.sh --runtime-cache "$HOME/l4wasm-work"
           # test.sh runs in foafnaut-host-tests, on these engines and the HTML engine below,
@@ -503,7 +504,7 @@ jobs:
           [ -s "$L/compile-commands.txt" ] || { echo "core has no compile-commands.txt: no audit"; exit 0; }
           source ~/emsdk/emsdk_env.sh
           export EM_CACHE="$PWD/$L/emscripten-cache"
-          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "../../$L/compile-commands.txt" 12 "$RUNNER_TEMP/cache-audit-wasm.json" )
+          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "$OLDPWD/$L/compile-commands.txt" 12 "$RUNNER_TEMP/cache-audit-wasm.json" )
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -724,7 +725,7 @@ jobs:
           set -euo pipefail
           L=core/labs/demos/foafnaut/.build/web-render
           [ -s "$L/compile-commands.txt" ] || { echo "core has no compile-commands.txt: no audit"; exit 0; }
-          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "../../$L/compile-commands.txt" 8 "$RUNNER_TEMP/cache-audit-native.json" )
+          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "$OLDPWD/$L/compile-commands.txt" 8 "$RUNNER_TEMP/cache-audit-native.json" )
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -20,11 +20,26 @@ import argparse, datetime as dt, json, os, re, statistics, subprocess, sys
 REPO = os.environ.get("GITHUB_REPOSITORY", "danbri/factoidal-builds")
 
 
+def token():
+    t = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if not t:
+        t = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True).stdout.strip()
+    return t
+
+
 def api(path, raw=False):
-    r = subprocess.run(["gh", "api", path], capture_output=True, text=True)
-    if r.returncode != 0:
-        raise RuntimeError(f"gh api {path}: {r.stderr.strip()}")
-    return r.stdout if raw else json.loads(r.stdout)
+    """GitHub REST GET. Logs come back as text (gh api refuses logs with escape sequences)."""
+    import urllib.request, urllib.error
+    req = urllib.request.Request(f"https://api.github.com/{path}")
+    req.add_header("Accept", "application/vnd.github+json")
+    # Unredirected: the logs endpoint redirects to blob storage, which must not get the token.
+    req.add_unredirected_header("Authorization", f"Bearer {token()}")
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            body = r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"GET {path}: HTTP {e.code}")
+    return body if raw else json.loads(body)
 
 
 def t(s):
@@ -83,7 +98,7 @@ def cmd_run(a):
            "event": run["event"], "builds_branch": run["head_branch"], "builds_sha": run["head_sha"],
            "title": run.get("display_title"), "created_at": run["created_at"], "jobs": []}
     for j in jobs:
-        if j["name"] in a.skip_job or j["status"] != "completed":
+        if j["name"] in a.skip_job or j["status"] != "completed" or j["conclusion"] == "skipped":
             continue
         c, s, e = t(j["created_at"]), t(j["started_at"]), t(j["completed_at"])
         steps = sorted(({"name": x["name"], "minutes": minutes(t(x["started_at"]), t(x["completed_at"]))}
@@ -167,7 +182,7 @@ def cmd_trend(a):
         seen += 1
         order.append(r["id"])
         for j in jobs:
-            if not j["started_at"] or not j["completed_at"]:
+            if not j["started_at"] or not j["completed_at"] or j["conclusion"] not in ("success", "failure"):
                 continue
             name = re.sub(r" \(.*\)$", "", j["name"]) + (" (macOS)" if "macos" in " ".join(j.get("labels") or []) else "")
             d = rows.setdefault(name, {"minutes": [], "queue": [], "last": None})
