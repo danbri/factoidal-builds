@@ -188,7 +188,9 @@ jobs:
           python3 host/tests/browser-wpt/wpt-reftests.py run --manifest "$RUNNER_TEMP/inputs/MANIFEST.json" --wpt-root wpt \
             --native-engine "$LIB" --prefix ${{ matrix.prefix }} --out "$RUNNER_TEMP/out" --jobs 4 \
             --shard ${{ matrix.shard }} --shards ${{ matrix.shards }} --no-pictures ${C[@]+"${C[@]}"}
-          { echo "Engine \`${{ needs.plan.outputs.tag }}\`; host core \`${{ needs.plan.outputs.core_commit }}\`; tools core \`${{ steps.pins.outputs.tools }}\`; WPT \`${{ needs.plan.outputs.wpt_commit }}\`"; echo; head -12 "$RUNNER_TEMP/out/summary.md"; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "Engine \`${{ needs.plan.outputs.tag }}\`; host core \`${{ needs.plan.outputs.core_commit }}\`; tools core \`${{ steps.pins.outputs.tools }}\`; WPT \`${{ needs.plan.outputs.wpt_commit }}\`"; echo; head -14 "$RUNNER_TEMP/out/summary.md"
+            echo; echo "Causes of the tests that do not pass (this shard):"; echo
+            python3 host/tests/browser-wpt/wpt-reftests.py clusters --results "$RUNNER_TEMP/out/results.json" || true; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
