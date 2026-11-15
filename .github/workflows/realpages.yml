@@ -1,0 +1,231 @@
+name: Real-page survey
+
+# Everyday pages (Wikipedia desktop and mobile skins, BBC News, GitHub, MDN, a blog, Hacker
+# News, a W3C spec, and core's Spinal Tap showcase page) on each Foafnaut release, probed
+# live: core's labs/demos/foafnaut/realpages/survey.ts with its page list (URLs only) and
+# budgets, compared with the survey of the release before (compare.ts).
+#
+#   macOS (macos-15, GPU): run_html.ts of the release's own core commit off screen on the
+#     release's libweb-render.dylib: verdict, first frame, first layout, GPU per frame, idle
+#     CPU over 15 s, longest script turn, scroll latency p50/p95, peak RSS, liberal-mode
+#     skips, crash or exit, and the layout similarity against headless Chrome's picture.
+#   Linux (ubuntu-latest, no window): Textnaut on the self-contained libweb-render.so: load,
+#     layout, rows, links, wall, CPU, peak RSS, crash or exit.
+#
+# Results: the job summary (table with changes against the previous release, regressions);
+# summary JSON and table as assets realpages-<platform>.json/.md of the release; one row per
+# page in realpages/trend.csv on the branch wpt-scores (with realpages/runs/<run_id>/ and
+# latest-/previous-<platform>.json). Pictures and logs are the artifact realpages-<platform>-
+# pictures, kept 7 days: the pages are copyright and never go into git or a release.
+# A crash or exit of the browser fails the job; every other regression is a warning: a
+# verdict worse than before, a number over 1.5 times the previous one (above a noise floor),
+# layout similarity down by more than 0.05. A page that cannot be fetched is "unreachable".
+#
+# Starts: after each run of build.yml (foafnaut-darwin-arm64), foafnaut-macos.yml
+# (foafnaut-engine-darwin-arm64) and foafnaut-linux.yml (foafnaut-linux-x86_64) that
+# published a release; by hand:
+#   gh workflow run realpages.yml -R danbri/factoidal-builds -f release=build-<12 hex>-foafnaut-darwin-arm64
+#   gh workflow run realpages.yml -R danbri/factoidal-builds -f release=build-<12 hex>-foafnaut-linux-x86_64 -f survey_ref=<core branch>
+# One survey at a time for each platform; a waiting one is replaced by a newer one.
+#
+# Cost: macOS about 20-30 min (15 pages, two runs each plus Chrome); Linux about 5 min.
+
+on:
+  workflow_run:
+    workflows: ['Build Factoidal from factoidal-core', 'Foafnaut macOS engine', 'Foafnaut Linux engine']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release tag(s), comma list (build-<12 hex>-foafnaut-darwin-arm64, -foafnaut-engine-darwin-arm64, -foafnaut-linux-x86_64); empty: the newest of each platform'
+        required: false
+        default: ''
+      platforms:
+        description: 'With no release: macos, linux or both'
+        required: false
+        default: 'macos,linux'
+      survey_ref:
+        description: 'factoidal-core ref of the survey tools (realpages/)'
+        required: false
+        default: 'main'
+      only:
+        description: 'Page ids to survey, comma list (empty: all)'
+        required: false
+        default: ''
+      record:
+        description: 'Record on the results branch and as release assets'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: realpages-${{ github.event_name == 'workflow_run' && (github.event.workflow_run.name == 'Foafnaut Linux engine' && 'linux' || 'macos') || format('dispatch-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.r.outputs.matrix }}
+      any: ${{ steps.r.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          WORKFLOW: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          CREATED: ${{ github.event.workflow_run.created_at }}
+          RELEASE: ${{ inputs.release }}
+          PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          python3 release-tests/realpages.py resolve --event "$EVENT" --workflow "${WORKFLOW:-}" --conclusion "${CONCLUSION:-}" \
+            --run-created "${CREATED:-}" --release "${RELEASE:-}" --platforms "${PLATFORMS:-macos,linux}"
+
+  survey:
+    name: Survey ${{ matrix.platform }} ${{ matrix.tag }}
+    needs: resolve
+    if: needs.resolve.outputs.any == 'true'
+    runs-on: ${{ matrix.runs_on }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      # The host: the release's own commit (run_html.ts and Textnaut must match the engine).
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ matrix.core_commit }}
+          path: host
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      # The survey tools: survey_ref (default main), so a survey of an older release uses today's rules.
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ inputs.survey_ref || 'main' }}
+          path: tools
+          sparse-checkout: |
+            labs/demos/foafnaut/realpages
+      - name: Pins
+        id: pins
+        run: |
+          echo "deno=v$(grep -E '^DENO_VERSION=' host/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+          echo "tools=$(git -C tools rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: The release's engine and the host's Wasm modules
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ matrix.tag }}
+          SET: ${{ matrix.set }}
+          WEB: ${{ matrix.web_tag }}
+        run: |
+          set -euo pipefail
+          R=$RUNNER_TEMP/rel; mkdir -p "$R/eng" "$R/web"
+          gh release download "$TAG" -R "${{ github.repository }}" -p "$SET.tar.gz" -p build-info.json -D "$R"
+          tar -xzf "$R/$SET.tar.gz" -C "$R/eng"
+          gh release download "$WEB" -R "${{ github.repository }}" -p foafnaut-web.tar.gz -D "$R"
+          tar -xzf "$R/foafnaut-web.tar.gz" -C "$R/web" docs/web/hub/html-webgpu/runtime
+          LIB=$(find "$R/eng" -name 'libweb-render.dylib' -o -name 'libweb-render.so' | head -1)
+          [ -n "$LIB" ] || { echo "::error::$TAG has no engine library"; exit 1; }
+          WINDOW=$(find "$R/eng" -name 'libnative-window.dylib' | head -1)
+          bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/host/labs/demos/foafnaut" "$R/web" "$WINDOW"
+          echo "LIB=$LIB" >> "$GITHUB_ENV"
+          { echo "Engine: \`$TAG\` (\`$(basename "$LIB")\`, sha256 $(shasum -a 256 "$LIB" | cut -c1-16)); host: core \`${{ matrix.core_commit }}\`; Wasm modules: \`$WEB\`; survey tools: core \`${{ steps.pins.outputs.tools }}\`"
+            echo "Window library: ${WINDOW:+from the release}${WINDOW:-built from the host's native_window.m}"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Previous survey
+        env:
+          TAG: ${{ matrix.tag }}
+        run: python3 builds/release-tests/realpages.py previous --platform "${{ matrix.platform }}" --release "$TAG" --out "$RUNNER_TEMP/previous.json"
+      - name: Survey
+        shell: bash
+        env:
+          TAG: ${{ matrix.tag }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          ARGS=(--platform "${{ matrix.platform }}" --engine "$LIB" --host "$PWD/host/labs/demos/foafnaut" --out "$RUNNER_TEMP/survey" --release "$TAG")
+          [ -z "${ONLY:-}" ] || ARGS+=(--only "$ONLY")
+          if [ "${{ matrix.platform }}" = macos ]; then ARGS+=(--chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"); fi
+          deno run -A tools/labs/demos/foafnaut/realpages/survey.ts "${ARGS[@]}"
+      - name: Table, regressions
+        id: cmp
+        shell: bash
+        run: |
+          set -uo pipefail
+          P=${{ matrix.platform }}; S=$RUNNER_TEMP/survey
+          cp "$S/summary.json" "$S/summary-$P.json"
+          PREV=(); [ -f "$RUNNER_TEMP/previous.json" ] && PREV=(--previous "$RUNNER_TEMP/previous.json")
+          deno run --allow-read --allow-write tools/labs/demos/foafnaut/realpages/compare.ts --current "$S/summary.json" "${PREV[@]}" \
+            --markdown "$S/table-$P.md" --trend "$S/trend-$P.csv" --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --annotate
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          cat "$S/table-$P.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: realpages-${{ matrix.platform }}-pictures
+          path: |
+            ${{ runner.temp }}/survey/shots/
+            ${{ runner.temp }}/survey/logs/
+          retention-days: 7
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: realpages-${{ matrix.platform }}-summary
+          path: |
+            ${{ runner.temp }}/survey/summary-*.json
+            ${{ runner.temp }}/survey/table-*.md
+            ${{ runner.temp }}/survey/trend-*.csv
+          if-no-files-found: ignore
+      - name: A crash or exit of the browser fails the survey
+        if: steps.cmp.outputs.rc != '0'
+        run: |
+          echo "::error::a page crashed or the browser exited (see the findings in the table)"
+          exit 1
+
+  record:
+    needs: [resolve, survey]
+    if: always() && needs.resolve.outputs.any == 'true' && (github.event_name == 'workflow_run' || inputs.record)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: realpages-*-summary
+          path: ${{ runner.temp }}/rec
+      - name: Results branch and release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 release-tests/realpages.py record --src "$RUNNER_TEMP/rec"
+          for J in "$RUNNER_TEMP"/rec/*/summary-*.json; do
+            [ -f "$J" ] || continue
+            P=$(basename "$J" .json); P=${P#summary-}
+            TAG=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["release"])' "$J")
+            U=$RUNNER_TEMP/up/$P; mkdir -p "$U"
+            cp "$J" "$U/realpages-$P.json"; cp "$(dirname "$J")/table-$P.md" "$U/realpages-$P.md"
+            gh release upload "$TAG" -R "${{ github.repository }}" "$U/realpages-$P.json" "$U/realpages-$P.md" --clobber
+            echo "Recorded $P survey of $TAG: release assets realpages-$P.json, realpages-$P.md; branch wpt-scores realpages/" >> "$GITHUB_STEP_SUMMARY"
+          done
