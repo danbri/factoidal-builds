@@ -41,6 +41,10 @@ on:
         description: 'Rebuild even when releases for this commit exist (runs the gates; an existing release is never replaced)'
         type: boolean
         default: false
+      cold:
+        description: 'Cold build: restore no .lake, ccache or leanc object cache (skills/foafnaut/ci-caching.md in core)'
+        type: boolean
+        default: false
   schedule:
     # Poll core every hour; a commit that already has releases is skipped
     # (the resolve job ends the run in seconds). A push to core cannot start
@@ -94,6 +98,10 @@ jobs:
           PUSH_AFTER: ${{ github.sha }}
         run: scripts/resolve-core.sh
 
+  # The Lean build is two jobs with one step list (a YAML anchor), so that
+  # lean-wasm and web-gates wait only for the Linux job. With one matrix job they also waited
+  # for a macOS runner: lean-wasm started 85 min after dispatch in run 43709145133, 15 min
+  # after the Linux build had finished.
   lean:
     needs: resolve
     if: needs.resolve.outputs.proceed == 'true'
@@ -103,11 +111,9 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux-x86_64
-          - os: macos-15
-            platform: darwin-arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 330
-    steps:
+    steps: &lean-steps
       - uses: actions/checkout@v4
         with:
           path: builds
@@ -124,6 +130,7 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
       - name: Cache .lake
+        if: ${{ !inputs.cold }}
         uses: actions/cache@v4
         with:
           path: core/formal/lean4/.lake
@@ -262,6 +269,19 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  lean-macos:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 330
+    steps: *lean-steps
+
   lean-wasm:
     needs: [resolve, lean]
     if: needs.resolve.outputs.proceed == 'true'
@@ -284,6 +304,7 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
       - name: Restore .lake from the lean job
+        if: ${{ !inputs.cold }}
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
@@ -362,6 +383,11 @@ jobs:
     if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      EM_COMPILER_WRAPPER: ccache
+      CCACHE_DIR: ${{ github.workspace }}/.ccache-emcc
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 600M
     steps:
       - uses: actions/checkout@v4
         with:
@@ -386,7 +412,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update && sudo apt-get install -y libuv1-dev
+          sudo apt-get update && sudo apt-get install -y libuv1-dev ccache
           if [ ! -x ~/emsdk/emsdk ]; then
             git clone --depth 1 https://github.com/emscripten-core/emsdk ~/emsdk
           fi
@@ -396,6 +422,7 @@ jobs:
       # the lean job, so it gets the newest earlier Linux cache, and Lake rebuilds what changed.
       - name: Restore .lake from the lean job's cache
         id: lake
+        if: ${{ !inputs.cold }}
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
@@ -419,10 +446,26 @@ jobs:
           else
             echo "No cache for $T; build-engines.sh will bootstrap only runtime/Init/Std"
           fi
+      # ccache under Emscripten (EM_COMPILER_WRAPPER) for the C compiles of build-engines.sh and
+      # build-web-render.sh. ccache keys each object on the compiler's bytes, its flags and the
+      # preprocessed source with every header, so a hit is the object the compile would make; the
+      # cache key below only picks which earlier store to start from (same Emscripten and Lean).
+      - name: Cold build, ccache off
+        if: ${{ inputs.cold }}
+        run: echo "CCACHE_DISABLE=1" >> "$GITHUB_ENV"
+      - name: Restore the Emscripten ccache
+        if: ${{ !inputs.cold }}
+        uses: actions/cache/restore@v4
+        with:
+          path: .ccache-emcc
+          key: ccache-emcc-6.0.8-${{ runner.os }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-emcc-6.0.8-${{ runner.os }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
       - name: Build and check the Foafnaut engines
         shell: bash
         run: |
           set -euo pipefail
+          ccache -z > /dev/null || true   # this run's ccache statistics only
           source ~/emsdk/emsdk_env.sh
           bash core/labs/demos/foafnaut/build-engines.sh --runtime-cache "$HOME/l4wasm-work"
           # test.sh runs in foafnaut-host-tests, on these engines and the HTML engine below,
@@ -448,6 +491,33 @@ jobs:
               core/labs/demos/foafnaut/.build/web-render/engines/web-render.mjs \
               "$RUNNER_TEMP/html-wasm-abi.json"
           fi
+      - name: ccache statistics
+        if: always()
+        run: ccache -s || true
+      # A sample of the compiles again with no cache: each object must be the same bytes.
+      - name: Cache audit (Wasm objects)
+        if: needs.resolve.outputs.foafnaut_web == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          L=core/labs/demos/foafnaut/.build/web-render
+          [ -s "$L/compile-commands.txt" ] || { echo "core has no compile-commands.txt: no audit"; exit 0; }
+          source ~/emsdk/emsdk_env.sh
+          export EM_CACHE="$PWD/$L/emscripten-cache"
+          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "$OLDPWD/$L/compile-commands.txt" 12 "$RUNNER_TEMP/cache-audit-wasm.json" )
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cache-audit-wasm
+          path: ${{ runner.temp }}/cache-audit-wasm.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Save the Emscripten ccache
+        if: always() && !inputs.cold
+        uses: actions/cache/save@v4
+        with:
+          path: .ccache-emcc
+          key: ccache-emcc-6.0.8-${{ runner.os }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
       - uses: actions/upload-artifact@v4
         with:
           name: foafnaut-engines
@@ -567,7 +637,7 @@ jobs:
       core_sha: ${{ needs.resolve.outputs.sha }}
 
   foafnaut:
-    needs: [resolve, lean, foafnaut-engines]
+    needs: [resolve, lean-macos, foafnaut-engines]
     if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
     runs-on: macos-15
     timeout-minutes: 150  # 60 cancelled run 43620498679 at 60 min (2026-11-14) in "Package, relocate and check the native demos"; 30 was cancelled on 2026-11-08 (run 42520417546)
@@ -592,6 +662,7 @@ jobs:
       # (a need of this job) saved its .lake under this exact key.
       - name: Restore .lake from the lean job's cache
         id: lake
+        if: ${{ !inputs.cold }}
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
@@ -608,8 +679,62 @@ jobs:
         run: |
           curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      # The C objects of Lean's generated C, by content (release-tests/leanc-cache.sh: key is the
+      # toolchain, the flags and the C source; Lean's C includes only the toolchain's lean.h).
+      # Shared with foafnaut-macos.yml, which compiles the same files with the same flags.
+      - name: Restore the C object cache
+        if: ${{ !inputs.cold }}
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Put the object cache in front of leanc
+        if: ${{ !inputs.cold }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/leanc-cache" "$HOME/leanc-shim"
+          rm -f "$HOME/leanc-cache/.hits" "$HOME/leanc-cache/.misses"; touch "$HOME/leanc-cache/.start"
+          cp builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"; chmod +x "$HOME/leanc-shim/leanc"
+          ( cd core/formal/lean4 && lean --version )   # elan installs core's toolchain
+          REAL=$(cd core/formal/lean4 && elan which leanc)
+          [ -x "$REAL" ]
+          { echo "LEANC_REAL=$REAL"; echo "LEANC_CACHE=$HOME/leanc-cache"
+            echo "LEANC_ID=$(tr -d ' \n' < core/formal/lean4/lean-toolchain) darwin-arm64"; } >> "$GITHUB_ENV"
+          echo "$HOME/leanc-shim" >> "$GITHUB_PATH"
       - name: Package, relocate and check the native demos
         run: bash builds/scripts/build-foafnaut.sh core "$RUNNER_TEMP/foafnaut-out"
+      - name: Save the C object cache
+        if: always() && !inputs.cold
+        shell: bash
+        run: |
+          echo "C objects: $(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null | tr -d ' ' || echo 0) from the cache, $(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null | tr -d ' ' || echo 0) compiled" | tee -a "$GITHUB_STEP_SUMMARY"
+          # Keep only the objects this build used.
+          find "$HOME/leanc-cache" -name '*.o' ! -newer "$HOME/leanc-cache/.start" -delete || true
+      - if: always() && !inputs.cold
+        uses: actions/cache/save@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+      # A sample of the native compiles again with the real leanc: each object must be the same bytes.
+      - name: Cache audit (native objects)
+        # Also after a failed test: the objects are built before test.sh runs.
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          L=core/labs/demos/foafnaut/.build/web-render
+          [ -s "$L/compile-commands.txt" ] || { echo "core has no compile-commands.txt: no audit"; exit 0; }
+          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "$OLDPWD/$L/compile-commands.txt" 8 "$RUNNER_TEMP/cache-audit-native.json" )
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cache-audit-native
+          path: ${{ runner.temp }}/cache-audit-native.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Check standalone native HTML architecture and dependencies
         run: |
           python3 - "$RUNNER_TEMP/foafnaut-out/stage/foafnaut/lean-html-scene-darwin-arm64" <<'PY'
@@ -823,7 +948,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [resolve, lean, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests, foafnaut]
+    needs: [resolve, lean, lean-macos, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests, foafnaut]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -844,3 +969,38 @@ jobs:
           # only its first part gated; now all of it does, on the Wasm engines.
           FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
         run: scripts/publish.sh
+
+  # Timing and cache record of this run (scripts/ci-metrics.py): a table in the run summary,
+  # an artifact, and a row per job on the branch ci-metrics (runs.csv, runs/<run_id>.json).
+  # `python3 scripts/ci-metrics.py trend` shows the last runs side by side.
+  metrics:
+    needs: [resolve, publish]
+    if: always() && needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write   # the ci-metrics branch
+      actions: write    # read job logs; delete superseded caches
+    steps:
+      - uses: actions/checkout@v4
+      - name: Timing and cache record
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/ci-metrics.py run --run-id "$GITHUB_RUN_ID" --out "$RUNNER_TEMP/m" --skip-job metrics
+          cat "$RUNNER_TEMP/m/summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics
+          path: ${{ runner.temp }}/m/
+          retention-days: 90
+      - name: Record on the branch ci-metrics
+        run: scripts/record-ci-metrics.sh "$RUNNER_TEMP/m/ci-metrics-$GITHUB_RUN_ID.json"
+      # Old entries of the .lake, ccache and leanc object cache families go (the newest two of
+      # each stay), so the 10 GB store does not evict the small compiler caches first. Speed only:
+      # every restore falls back to the newest entry and each tool checks what it restores.
+      - name: Drop superseded caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci-metrics.py prune --keep 2
