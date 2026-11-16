@@ -22,12 +22,25 @@ other commit runs the gates and publishes nothing. Jobs and their gates:
 
 | Job | Builds | Gates (a failure means no artifact, so no release) |
 |---|---|---|
-| `lean` (Linux, macOS arm64) | full `lake build`; `l4factoidal`, `l4w3c`, `l4wasm-cli` | every theorem and `#guard`, the HACL\* extern probe, the dispatch and CLI smoke scripts; Linux also the tail-recursion audit and `tests/dataflow/run.sh`. The Lean conformance scoreboard (Linux) is a measurement, not a gate |
+| `lean` (Linux), `lean-macos` (macOS arm64; two jobs so no Linux job waits for a macOS runner) | full `lake build`; `l4factoidal`, `l4w3c`, `l4wasm-cli` | every theorem and `#guard`, the HACL\* extern probe, the dispatch and CLI smoke scripts; Linux also the tail-recursion audit and `tests/dataflow/run.sh`. The Lean conformance scoreboard (Linux) is a measurement, not a gate |
 | `lean-wasm` (Linux) | `Wasm/build-wasm.sh` with Emscripten 6.0.8 | the build itself and its check that the wasm copies agree. It runs no tests: the npm tests run in `web-gates` |
 | `web-gates` (Linux) | nothing; installs the `lean-wasm` module into a checkout | `npm test` in `npm/factoidal` (Node 22), with no skipped test; the OWL package checks; the Touchstone LWS client lab |
 | `foafnaut-engines` (Linux, when present) | small Lean WASM engines with the shared runtime cache, including the RDF-driven graph when present | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests; packages a browser runtime only from these fresh tested engines |
 | `foafnaut` (macOS arm64) | three Deno-compiled graphics executables, Cocoa sidecar, launchers and SVG fixtures | requires the Lean gates and engines job; repeats portable tests, relocates the package, checks all compiled CPU engines and native library loading. No GPU/window or SVG visual pass is inferred |
 | `publish` | packs each complete set | a set whose jobs did not all pass is not published, and the run is red; the `web` set also needs `web-gates` |
+| `foafnaut-host-tests` (Linux) | nothing; core's `labs/demos/foafnaut/test.sh --skip-build` on the `foafnaut-engines` artifact | every check runs and all failures are listed; gates `foafnaut-web`. The first test result of a run |
+| `metrics` (Linux) | the run's timing and cache record (`scripts/ci-metrics.py`) | none: a table in the run summary, artifact `ci-metrics`, and a row per job on the branch `ci-metrics` |
+
+### Caches, cold builds, timing records
+
+Each cache, its key, why a hit is correct and how to read hits in the logs is in core's
+[`skills/foafnaut/ci-caching.md`](https://github.com/danbri/factoidal-core/blob/main/skills/foafnaut/ci-caching.md).
+In short: `.lake` (Lake rebuilds what changed), an Emscripten ccache in `foafnaut-engines`, and
+the leanc object cache (`release-tests/leanc-cache.sh`) in the macOS bundle job. After each
+build, `scripts/cache-audit.sh` compiles a random sample again with no cache and fails the job if
+an object differs; `tests/test_cache_keys.py` checks that each key changes with its inputs.
+Dispatch with `cold=true` for a build that restores no cache. The trend of the last runs:
+`python3 scripts/ci-metrics.py trend --n 10 --records <checkout of branch ci-metrics>`.
 
 ## Releases
 

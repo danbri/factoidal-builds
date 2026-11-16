@@ -1,4 +1,12 @@
 name: Build Factoidal from factoidal-core
+# The run list shows what each run builds (agents find their runs by it; mac-release.yml finds
+# the main lane's runs by it). Workflows that follow this one match its name above, not this.
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch'
+      && format('core {0}{1}', inputs.core_ref || 'main (Mac release lane)', inputs.macos && ' +macOS' || '')
+      || (github.event_name == 'schedule'
+          && (github.event.schedule == '41 2 * * *' && 'core main (nightly)' || 'core main (Mac release lane, hourly poll)')
+          || 'core main (Mac release lane, builds repo push)') }}
 
 # Builds one danbri/factoidal-core commit and publishes its artifacts as
 # releases of this repository, one per artifact set:
@@ -14,12 +22,18 @@ name: Build Factoidal from factoidal-core
 # toolchains, sha256 of every file). core's tools/fetch-builds.sh installs
 # them. A set is published only when every job that contributes to it
 # passed its gates; this repository's git history only gains the
-# latest/<set>.json pointer.
+# latest/<set>.json pointer. Two jobs publish: `publish` (linux-x86_64, web,
+# foafnaut-web) when the Linux jobs are done, `publish-macos` (darwin-arm64,
+# foafnaut-darwin-arm64) when the macOS jobs are done, so the web release
+# never waits for a macOS runner.
 #
 # Gates per job (a failing gate means no artifact upload, so no release):
 #   lean       full `lake build` (library, proofs, #guards, executables),
 #              HACL* extern probe, native + CLI smoke scripts, and on Linux
 #              the Lean conformance scoreboard when core carries it.
+#   js-fuel-mono  `lake build JSFuelMono`: fuel monotonicity of the BubblePopJS evaluator
+#              (core JS/FuelMonoAll.lean). Publishes nothing; a failure fails the run, and the
+#              run's conclusion is the merge verdict for a core PR.
 #   lean-wasm  Wasm/build-wasm.sh (Emscripten 6.0.8, cached work dir from
 #              the toolchain-cache branch) and the npm Lean-engine tests.
 #   foafnaut-host-tests  core's labs/demos/foafnaut/test.sh on the foafnaut-engines
@@ -41,12 +55,30 @@ on:
         description: 'Rebuild even when releases for this commit exist (runs the gates; an existing release is never replaced)'
         type: boolean
         default: false
+      cold:
+        description: 'Cold build: restore no .lake, ccache or leanc object cache (skills/foafnaut/ci-caching.md in core)'
+        type: boolean
+        default: false
+      macos:
+        description: 'Also run the macOS jobs (lean-macos, foafnaut bundle) for a commit not on core main. Merges are gated on the Linux jobs; core main commits and the nightly run always include macOS'
+        type: boolean
+        default: false
+      mac_runner:
+        description: 'Where macOS jobs run: auto (the owner''s Mac overnight when online, else macos-15), github, self-hosted'
+        type: choice
+        options: [auto, github, self-hosted]
+        default: auto
   schedule:
     # Poll core every hour; a commit that already has releases is skipped
     # (the resolve job ends the run in seconds). A push to core cannot start
     # this workflow without a cross-repository token, so the poll is how core
     # changes reach a build.
     - cron: '23 * * * *'
+    # Nightly (02:41 UTC): main's head with every job, macOS included, whether or not it is
+    # released; nightly-report opens or updates an issue when a job fails (owner decision
+    # 2026-11-16: macOS is not a merge gate; a nightly macOS failure is fixed or reverted
+    # the next morning). scripts/resolve-macos.sh names this cron.
+    - cron: '41 2 * * *'
   push:
     branches: [main]
     paths:
@@ -64,9 +96,20 @@ permissions:
 # push and a dispatch with an empty core_ref share the group of main, where a newer
 # pending run replacing an older one costs nothing: both build the newest main commit.
 # Builds of different refs may run at once: caches are content-keyed, and only main
-# commits publish releases (one per commit) and the latest/*.json pointers.
+# commits publish releases (one per commit) and the latest/*.json pointers. The nightly run
+# has a group of its own, so an hourly poll never replaces it.
+#
+# The Mac release lane (owner rule 2026-11-16: a Mac build of the newest main is always done or
+# building): the group build-factoidal-main runs the macOS jobs of main's head
+# (scripts/resolve-macos.sh). mac-release.yml dispatches into it (empty core_ref) whenever main's
+# head has no Mac release and no run of the group is waiting; a pending run resolves main's head
+# when it starts, so a newer main replaces the pending build and never cancels the running one.
+# A dispatch with macos=true (a PR's or branch's macOS check) goes to the shared group
+# build-factoidal-macos-adhoc, which foafnaut-macos.yml's branch builds use too: at most one
+# ad-hoc macOS build at a time, a newer request replacing a waiting one, so ad-hoc work holds at
+# most one of the account's five macOS slots (skills/ci-runner in core: the budget).
 concurrency:
-  group: build-factoidal-${{ github.event_name == 'workflow_dispatch' && inputs.core_ref || 'main' }}
+  group: build-factoidal-${{ github.event_name == 'workflow_dispatch' && (inputs.macos && 'macos-adhoc' || inputs.core_ref || 'main') || (github.event.schedule == '41 2 * * *' && 'nightly' || 'main') }}
   cancel-in-progress: false
 
 env:
@@ -82,18 +125,38 @@ jobs:
       proceed: ${{ steps.r.outputs.proceed }}
       foafnaut: ${{ steps.r.outputs.foafnaut }}
       foafnaut_web: ${{ steps.r.outputs.foafnaut_web }}
+      macos: ${{ steps.r.outputs.macos }}
+      nightly: ${{ steps.r.outputs.nightly }}
+      mac_runs_on: ${{ steps.mac.outputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
       - id: r
         env:
           GH_TOKEN: ${{ github.token }}
           INPUT_REF: ${{ inputs.core_ref }}
+          INPUT_MACOS: ${{ inputs.macos }}
+          SCHEDULE: ${{ github.event.schedule }}
           FORCE: ${{ inputs.force }}
           EVENT: ${{ github.event_name }}
           PUSH_BEFORE: ${{ github.event.before }}
           PUSH_AFTER: ${{ github.sha }}
         run: scripts/resolve-core.sh
+      # The macOS jobs prefer the owner's Mac (self-hosted, overnight) when it reports itself
+      # online with room; otherwise GitHub's macos-15. skills/ci-runner in core.
+      - id: mac
+        env:
+          MAC_RUNNER: ${{ vars.MAC_RUNNER }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          MODE: ${{ inputs.mac_runner }}
+          NEED_GIB: '12'
+          LEAD_H: '3'
+        run: python3 scripts/mac-runs-on.py
 
+  # The Lean build is two jobs with one step list (a YAML anchor), so that
+  # lean-wasm and web-gates wait only for the Linux job. With one matrix job they also waited
+  # for a macOS runner: lean-wasm started 85 min after dispatch in run 43709145133, 15 min
+  # after the Linux build had finished.
   lean:
     needs: resolve
     if: needs.resolve.outputs.proceed == 'true'
@@ -103,11 +166,9 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux-x86_64
-          - os: macos-15
-            platform: darwin-arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 330
-    steps:
+    steps: &lean-steps
       - uses: actions/checkout@v4
         with:
           path: builds
@@ -119,11 +180,10 @@ jobs:
           submodules: ${{ matrix.platform == 'linux-x86_64' && 'recursive' || 'false' }}
 
       - name: Install elan (toolchain from core's lean-toolchain)
-        run: |
-          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+        run: bash builds/scripts/install-elan.sh
 
       - name: Cache .lake
+        if: ${{ !inputs.cold }}
         uses: actions/cache@v4
         with:
           path: core/formal/lean4/.lake
@@ -145,7 +205,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          lake build 2>&1 | tee "$RUNNER_TEMP/lake-build.log"
+          # heavy-step.sh: on the owner's Mac, the disk floor and the Lean build lock; else as is.
+          bash ../../../builds/scripts/heavy-step.sh lake build 2>&1 | tee "$RUNNER_TEMP/lake-build.log"
 
       - name: Tail-recursion gate (danbri/factoidal issue 746)
         if: matrix.platform == 'linux-x86_64'
@@ -200,6 +261,24 @@ jobs:
             git -C ../.. submodule update --init --depth 1 third_party/testing/vc
           fi
           lake exe l4vc-probe
+
+      # core issue 551: leanjs linked Lean's elaborator (11 -> 111 MB) through a proof module in its
+      # import closure, and nothing failed. core's tools/binary-budget.py checks the imports of the
+      # shipped binaries and, on the built leanjs, Lean-library symbols and the size budget (+2 %).
+      - name: Shipped binaries link no Lean compiler code; size budget
+        if: matrix.platform == 'linux-x86_64'
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          if [ ! -f ../../tools/binary-budget.py ]; then
+            echo "core commit carries no tools/binary-budget.py"; exit 0
+          fi
+          python3 ../../tools/binary-budget.py imports .
+          bash ../../../builds/scripts/heavy-step.sh lake build leanjs
+          python3 ../../tools/binary-budget.py check leanjs=.lake/build/bin/leanjs
+          # leanjs is not a default target: its root's C (JS/Main.c, its own `main`) must not reach
+          # the .lake cache, or lean-wasm links it beside the other mains (duplicate main/run_main).
+          rm -f .lake/build/ir/L4Factoidal/JS/Main.c* .lake/build/bin/leanjs
 
       - name: Dispatch ABI and CLI smoke
         working-directory: core/formal/lean4
@@ -262,6 +341,84 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  # Not a merge gate (owner, 2026-11-16): runs for core main commits (the release path), the
+  # nightly run, and a dispatch with macos=true. On the owner's Mac overnight when it is up.
+  lean-macos:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.macos == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: darwin-arm64
+    runs-on: ${{ fromJSON(needs.resolve.outputs.mac_runs_on) }}
+    timeout-minutes: 330
+    steps: *lean-steps
+
+  # Fuel monotonicity of the BubblePopJS evaluator (core JS/FuelMonoAll.lean: IH_all over every
+  # fuel-taking function of the evaluator's mutual block and the built-in families; the theorems
+  # about faster tiers stand on it). `lake build` does not build it: the proof is a chain of
+  # generated modules checked one Lean process at a time (about 11 minutes on the Mac, under 2 GB
+  # each). A Linux merge gate beside the lean job, not after it: it takes the newest earlier
+  # .lake cache, Lake rebuilds the JS modules that changed, and the run's conclusion includes it.
+  # A change to a function of the block or to a built-in that breaks a step lemma fails here.
+  js-fuel-mono:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - name: Does this core commit have the proof target?
+        id: has
+        shell: bash
+        run: |
+          if grep -q '^lean_lib JSFuelMono' core/formal/lean4/lakefile.lean; then
+            echo "target=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "target=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::this core commit has no JSFuelMono target (before core PR 539): nothing to check"
+          fi
+      - name: Install elan (toolchain from core's lean-toolchain)
+        if: steps.has.outputs.target == 'true'
+        run: bash builds/scripts/install-elan.sh
+      - name: Restore .lake from the lean job's cache
+        if: ${{ steps.has.outputs.target == 'true' && !inputs.cold }}
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: lake build JSFuelMono (IH_all and the fuel-monotonicity theorems)
+        if: steps.has.outputs.target == 'true'
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          set -o pipefail
+          start=$(date +%s)
+          if lake build JSFuelMono 2>&1 | tee "$RUNNER_TEMP/fuel-mono.log"; then
+            echo "JSFuelMono: built in $(( $(date +%s) - start )) s" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          first=$(grep -E '^(error|✖)' "$RUNNER_TEMP/fuel-mono.log" | grep -m1 -oE 'L4Factoidal[./]JS[./][A-Za-z0-9_]*' || true)
+          msg="Fuel monotonicity of the BubblePopJS evaluator no longer checks (first failing module: ${first:-see the log})."
+          msg="$msg A function of the evaluator's mutual block or a built-in changed (formal/lean4/L4Factoidal/JS/Interp.lean)."
+          msg="$msg After adding or renaming a definition, regenerate the proof modules in core:"
+          msg="$msg python3 tools/fuelmono-natives.py formal/lean4/L4Factoidal/JS/Interp.lean formal/lean4/L4Factoidal/JS (built-ins);"
+          msg="$msg python3 tools/fuelmono-gen.py formal/lean4/L4Factoidal/JS/Interp.lean --split formal/lean4/L4Factoidal/JS tools/fuelmono-groups.txt (the block; a new function also needs a line in a group)."
+          msg="$msg Then lake build JSFuelMono. A step that still fails is a real loss of monotonicity (a handler that swallows a halt, a result at fuel 0 other than out of fuel) or needs a rule in JS/FuelMono.lean. See skills/theorem-pipeline in core."
+          echo "::error title=JSFuelMono::$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
   lean-wasm:
     needs: [resolve, lean]
     if: needs.resolve.outputs.proceed == 'true'
@@ -284,6 +441,7 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
       - name: Restore .lake from the lean job
+        if: ${{ !inputs.cold }}
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
@@ -362,6 +520,11 @@ jobs:
     if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      EM_COMPILER_WRAPPER: ccache
+      CCACHE_DIR: ${{ github.workspace }}/.ccache-emcc
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 600M
     steps:
       - uses: actions/checkout@v4
         with:
@@ -386,7 +549,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update && sudo apt-get install -y libuv1-dev
+          sudo apt-get update && sudo apt-get install -y libuv1-dev ccache
           if [ ! -x ~/emsdk/emsdk ]; then
             git clone --depth 1 https://github.com/emscripten-core/emsdk ~/emsdk
           fi
@@ -396,6 +559,7 @@ jobs:
       # the lean job, so it gets the newest earlier Linux cache, and Lake rebuilds what changed.
       - name: Restore .lake from the lean job's cache
         id: lake
+        if: ${{ !inputs.cold }}
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
@@ -419,10 +583,26 @@ jobs:
           else
             echo "No cache for $T; build-engines.sh will bootstrap only runtime/Init/Std"
           fi
+      # ccache under Emscripten (EM_COMPILER_WRAPPER) for the C compiles of build-engines.sh and
+      # build-web-render.sh. ccache keys each object on the compiler's bytes, its flags and the
+      # preprocessed source with every header, so a hit is the object the compile would make; the
+      # cache key below only picks which earlier store to start from (same Emscripten and Lean).
+      - name: Cold build, ccache off
+        if: ${{ inputs.cold }}
+        run: echo "CCACHE_DISABLE=1" >> "$GITHUB_ENV"
+      - name: Restore the Emscripten ccache
+        if: ${{ !inputs.cold }}
+        uses: actions/cache/restore@v4
+        with:
+          path: .ccache-emcc
+          key: ccache-emcc-6.0.8-${{ runner.os }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-emcc-6.0.8-${{ runner.os }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
       - name: Build and check the Foafnaut engines
         shell: bash
         run: |
           set -euo pipefail
+          ccache -z > /dev/null || true   # this run's ccache statistics only
           source ~/emsdk/emsdk_env.sh
           bash core/labs/demos/foafnaut/build-engines.sh --runtime-cache "$HOME/l4wasm-work"
           # test.sh runs in foafnaut-host-tests, on these engines and the HTML engine below,
@@ -448,6 +628,33 @@ jobs:
               core/labs/demos/foafnaut/.build/web-render/engines/web-render.mjs \
               "$RUNNER_TEMP/html-wasm-abi.json"
           fi
+      - name: ccache statistics
+        if: always()
+        run: ccache -s || true
+      # A sample of the compiles again with no cache: each object must be the same bytes.
+      - name: Cache audit (Wasm objects)
+        if: needs.resolve.outputs.foafnaut_web == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          L=core/labs/demos/foafnaut/.build/web-render
+          [ -s "$L/compile-commands.txt" ] || { echo "core has no compile-commands.txt: no audit"; exit 0; }
+          source ~/emsdk/emsdk_env.sh
+          export EM_CACHE="$PWD/$L/emscripten-cache"
+          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "$OLDPWD/$L/compile-commands.txt" 12 "$RUNNER_TEMP/cache-audit-wasm.json" )
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cache-audit-wasm
+          path: ${{ runner.temp }}/cache-audit-wasm.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Save the Emscripten ccache
+        if: always() && !inputs.cold
+        uses: actions/cache/save@v4
+        with:
+          path: .ccache-emcc
+          key: ccache-emcc-6.0.8-${{ runner.os }}-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
       - uses: actions/upload-artifact@v4
         with:
           name: foafnaut-engines
@@ -567,9 +774,9 @@ jobs:
       core_sha: ${{ needs.resolve.outputs.sha }}
 
   foafnaut:
-    needs: [resolve, lean, foafnaut-engines]
-    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
-    runs-on: macos-15
+    needs: [resolve, lean-macos, foafnaut-engines]
+    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true' && needs.resolve.outputs.macos == 'true'
+    runs-on: ${{ fromJSON(needs.resolve.outputs.mac_runs_on) }}
     timeout-minutes: 150  # 60 cancelled run 43620498679 at 60 min (2026-11-14) in "Package, relocate and check the native demos"; 30 was cancelled on 2026-11-08 (run 42520417546)
     steps:
       - uses: actions/checkout@v4
@@ -592,6 +799,7 @@ jobs:
       # (a need of this job) saved its .lake under this exact key.
       - name: Restore .lake from the lean job's cache
         id: lake
+        if: ${{ !inputs.cold }}
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
@@ -605,11 +813,63 @@ jobs:
         run: |
           find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null || true
       - name: Install pinned Lean for fresh native source preparation
+        run: bash builds/scripts/install-elan.sh
+      # The C objects of Lean's generated C, by content (release-tests/leanc-cache.sh: key is the
+      # toolchain, the flags and the C source; Lean's C includes only the toolchain's lean.h).
+      # Shared with foafnaut-macos.yml, which compiles the same files with the same flags.
+      - name: Restore the C object cache
+        if: ${{ !inputs.cold }}
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Put the object cache in front of leanc
+        if: ${{ !inputs.cold }}
+        shell: bash
         run: |
-          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          set -euo pipefail
+          mkdir -p "$HOME/leanc-cache" "$HOME/leanc-shim"
+          rm -f "$HOME/leanc-cache/.hits" "$HOME/leanc-cache/.misses"; touch "$HOME/leanc-cache/.start"
+          cp builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"; chmod +x "$HOME/leanc-shim/leanc"
+          ( cd core/formal/lean4 && lean --version )   # elan installs core's toolchain
+          REAL=$(cd core/formal/lean4 && elan which leanc)
+          [ -x "$REAL" ]
+          { echo "LEANC_REAL=$REAL"; echo "LEANC_CACHE=$HOME/leanc-cache"
+            echo "LEANC_ID=$(tr -d ' \n' < core/formal/lean4/lean-toolchain) darwin-arm64"; } >> "$GITHUB_ENV"
+          echo "$HOME/leanc-shim" >> "$GITHUB_PATH"
       - name: Package, relocate and check the native demos
-        run: bash builds/scripts/build-foafnaut.sh core "$RUNNER_TEMP/foafnaut-out"
+        run: bash builds/scripts/heavy-step.sh bash builds/scripts/build-foafnaut.sh core "$RUNNER_TEMP/foafnaut-out"
+      - name: Save the C object cache
+        if: always() && !inputs.cold
+        shell: bash
+        run: |
+          echo "C objects: $(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null | tr -d ' ' || echo 0) from the cache, $(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null | tr -d ' ' || echo 0) compiled" | tee -a "$GITHUB_STEP_SUMMARY"
+          # Keep only the objects this build used.
+          find "$HOME/leanc-cache" -name '*.o' ! -newer "$HOME/leanc-cache/.start" -delete || true
+      - if: always() && !inputs.cold
+        uses: actions/cache/save@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+      # A sample of the native compiles again with the real leanc: each object must be the same bytes.
+      - name: Cache audit (native objects)
+        # Also after a failed test: the objects are built before test.sh runs.
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          L=core/labs/demos/foafnaut/.build/web-render
+          [ -s "$L/compile-commands.txt" ] || { echo "core has no compile-commands.txt: no audit"; exit 0; }
+          ( cd core/formal/lean4 && bash ../../../builds/scripts/cache-audit.sh "$OLDPWD/$L/compile-commands.txt" 8 "$RUNNER_TEMP/cache-audit-native.json" )
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cache-audit-native
+          path: ${{ runner.temp }}/cache-audit-native.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Check standalone native HTML architecture and dependencies
         run: |
           python3 - "$RUNNER_TEMP/foafnaut-out/stage/foafnaut/lean-html-scene-darwin-arm64" <<'PY'
@@ -822,8 +1082,14 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  # Two publish jobs (2026-11-16): the Linux-built sets publish as soon as the Linux jobs that
+  # gate them are done, and the macOS sets when the macOS jobs are. Before, one job needed every
+  # job, so for main commits the web release, and with it the Hub, waited hours for a GitHub
+  # macOS runner while every Linux gate was green. Each set still publishes only when all the
+  # artifacts it needs exist (scripts/publish.sh), releases are never replaced, and only core
+  # main commits publish.
   publish:
-    needs: [resolve, lean, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests, foafnaut]
+    needs: [resolve, lean, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -831,16 +1097,92 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: art
-      - name: Assemble, pack and publish each complete set
+      - name: Assemble, pack and publish the Linux-built sets (linux-x86_64, web, foafnaut-web)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ needs.resolve.outputs.sha }}
           SHORT: ${{ needs.resolve.outputs.short }}
           REF: ${{ needs.resolve.outputs.ref }}
-          FOAFNAUT: ${{ needs.resolve.outputs.foafnaut }}
+          PUBLISH_SETS: linux-x86_64 web foafnaut-web
           # The engines' tests (test.sh, in foafnaut-host-tests) gate the web runtime. Until
           # 2026-11-15 test.sh ran inside foafnaut-engines before the HTML engine existed, so
           # only its first part gated; now all of it does, on the Wasm engines.
           FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
         run: scripts/publish.sh
+
+  publish-macos:
+    needs: [resolve, lean-macos, foafnaut]
+    if: always() && needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.macos == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Only the macOS artifacts (lean-darwin-arm64, foafnaut-darwin-arm64).
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+          pattern: '*-darwin-arm64'
+      - name: Assemble, pack and publish the macOS sets (darwin-arm64, foafnaut-darwin-arm64)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          REF: ${{ needs.resolve.outputs.ref }}
+          PUBLISH_SETS: darwin-arm64 foafnaut-darwin-arm64
+          FOAFNAUT: ${{ needs.resolve.outputs.foafnaut }}
+        run: scripts/publish.sh
+
+  # Timing and cache record of this run (scripts/ci-metrics.py): a table in the run summary,
+  # an artifact, and a row per job on the branch ci-metrics (runs.csv, runs/<run_id>.json).
+  # `python3 scripts/ci-metrics.py trend` shows the last runs side by side.
+  metrics:
+    needs: [resolve, publish, publish-macos]
+    if: always() && needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write   # the ci-metrics branch
+      actions: write    # read job logs; delete superseded caches
+    steps:
+      - uses: actions/checkout@v4
+      - name: Timing and cache record
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/ci-metrics.py run --run-id "$GITHUB_RUN_ID" --out "$RUNNER_TEMP/m" --skip-job metrics
+          cat "$RUNNER_TEMP/m/summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics
+          path: ${{ runner.temp }}/m/
+          retention-days: 90
+      - name: Record on the branch ci-metrics
+        run: scripts/record-ci-metrics.sh "$RUNNER_TEMP/m/ci-metrics-$GITHUB_RUN_ID.json"
+      # Old entries of the .lake, ccache and leanc object cache families go (the newest two of
+      # each stay), so the 10 GB store does not evict the small compiler caches first. Speed only:
+      # every restore falls back to the newest entry and each tool checks what it restores.
+      - name: Drop superseded caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci-metrics.py prune --keep 2
+
+  # The nightly run's report: an issue labelled "nightly" opened or updated on failure, closed
+  # when green, and a one-line summary for the coordination log (scripts/nightly-report.sh).
+  nightly-report:
+    needs: [resolve, publish, publish-macos]
+    if: always() && needs.resolve.outputs.nightly == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          PROCEED: ${{ needs.resolve.outputs.proceed }}
+        run: scripts/nightly-report.sh

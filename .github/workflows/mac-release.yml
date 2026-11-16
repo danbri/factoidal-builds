@@ -1,0 +1,73 @@
+name: Mac release of main
+
+# Owner rule 2026-11-16: for all tangible progress there is always a Mac build of core main done
+# or building. Every 15 minutes (and on request) this checks main's head against the newest Mac
+# release (build-<12 hex>-foafnaut-darwin-arm64, what `foafnaut --latest` installs) and, when
+# main is ahead and no run of build.yml's main lane is waiting or already building main's head,
+# dispatches build.yml with an empty core_ref into the concurrency group build-factoidal-main
+# (one running run, the newest pending one; a pending run resolves main's head when it starts).
+# Before a dispatch onto an idle lane it looks ahead for core PRs about to land and waits for
+# them, at most WAIT_CAP minutes and never twice in a row past the cap (scripts/darwin-status.py).
+# The wait runs here on Linux, before any macOS runner is claimed.
+#
+# Status: latest/darwin-status.json on this repository's main (newest main, newest Mac release,
+# how long main has been ahead, the lane's runs, the last decision); committed when it changes.
+# A warning when main has been ahead for more than ALERT_LAG_MIN; the owner's Mac (tick.sh of the
+# runner) copies that, and each look-ahead wait, into the coordination log.
+# Cost: one Linux job of about a minute (up to WAIT_CAP + 2 min when it waits).
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      wait_cap:
+        description: 'Look-ahead cap in minutes (default 30; 0: no wait)'
+        required: false
+        default: '30'
+
+permissions:
+  contents: write   # latest/darwin-status.json
+  actions: write    # dispatch build.yml
+
+# One poll at a time; a poll that is waiting for a landing PR is not cancelled by the next tick
+# (the tick waits as the newest pending one).
+concurrency:
+  group: mac-release-poll
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check main against the Mac release; look ahead; dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WAIT_CAP: ${{ inputs.wait_cap || '30' }}
+          NO_WAIT_LAG_MIN: '90'
+          ALERT_LAG_MIN: '120'
+        run: python3 scripts/darwin-status.py poll latest/darwin-status.json
+      - name: Record latest/darwin-status.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp latest/darwin-status.json "$RUNNER_TEMP/status.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          strip() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); d.pop("checked_at",None); d.pop("lag_min",None); print(json.dumps(d,sort_keys=True))' "$1" 2>/dev/null || echo none; }
+          for i in 1 2 3 4; do
+            git fetch -q origin main
+            git checkout -q -f -B status origin/main
+            git show origin/main:latest/darwin-status.json > "$RUNNER_TEMP/committed.json" 2>/dev/null || echo '{}' > "$RUNNER_TEMP/committed.json"
+            if [ "$(strip "$RUNNER_TEMP/committed.json")" = "$(strip "$RUNNER_TEMP/status.json")" ]; then
+              echo "no change"; exit 0
+            fi
+            cp "$RUNNER_TEMP/status.json" latest/darwin-status.json
+            git add latest/darwin-status.json
+            git commit -q -m "latest: darwin-status ($(python3 -c 'import json; d=json.load(open("latest/darwin-status.json")); print(("behind %d min" % d["lag_min"]) if d["behind"] else "at main")'))"
+            git push -q origin HEAD:main && exit 0
+            sleep $((i * 4))
+          done
+          echo "::error::could not push latest/darwin-status.json"; exit 1

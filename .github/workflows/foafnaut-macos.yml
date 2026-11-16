@@ -51,10 +51,12 @@ on:
 permissions:
   contents: read
 
-# Main: one build at a time, a waiting run is replaced by a newer one. A branch build has
-# the group of its ref, so main's builds and other refs do not replace it.
+# Main: one build at a time, a waiting run is replaced by a newer one. A branch build joins
+# the shared ad-hoc macOS group (also build.yml's macos=true dispatches): one ad-hoc macOS build
+# at a time in the repository, a newer request replacing a waiting one, so ad-hoc work never
+# takes more than one of the account's five macOS slots from main's release path.
 concurrency:
-  group: foafnaut-macos-${{ inputs.branch && inputs.core_ref || 'main' }}
+  group: ${{ inputs.branch && 'build-factoidal-macos-adhoc' || 'foafnaut-macos-main' }}
   cancel-in-progress: false
 
 env:
@@ -69,6 +71,7 @@ jobs:
       sha: ${{ steps.r.outputs.sha }}
       short: ${{ steps.r.outputs.short }}
       release: ${{ steps.r.outputs.release }}
+      mac_runs_on: ${{ steps.mac.outputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
       - id: r
@@ -84,12 +87,22 @@ jobs:
           if [ "${FORCE:-false}" = true ]; then ARGS+=(--force); fi
           if [ "${BRANCH:-false}" = true ]; then ARGS+=(--branch); fi
           python3 release-tests/release-tests.py macos-candidate ${ARGS[@]+"${ARGS[@]}"}
+      # The owner's Mac (self-hosted, overnight) when it reports itself online with room, else
+      # macos-15 (scripts/mac-runs-on.py; skills/ci-runner in core).
+      - id: mac
+        env:
+          MAC_RUNNER: ${{ vars.MAC_RUNNER }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          NEED_GIB: '10'
+          LEAD_H: '2'
+        run: python3 scripts/mac-runs-on.py
 
   build:
     name: libweb-render.dylib arm64
     needs: resolve
     if: needs.resolve.outputs.sha != ''
-    runs-on: macos-15
+    runs-on: ${{ fromJSON(needs.resolve.outputs.mac_runs_on) }}
     timeout-minutes: 120
     permissions:
       contents: write
@@ -106,8 +119,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          bash builds/scripts/install-elan.sh
           "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
       - name: Pins
         id: pins
@@ -146,10 +158,12 @@ jobs:
           mkdir -p "$HOME/leanc-cache" "$HOME/leanc-shim"
           rm -f "$HOME/leanc-cache/.hits" "$HOME/leanc-cache/.misses"; touch "$HOME/leanc-cache/.start"
           cp builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"; chmod +x "$HOME/leanc-shim/leanc"
-          export LEANC_REAL=$(ls "$HOME"/.elan/toolchains/*/bin/leanc | head -1) LEANC_CACHE="$HOME/leanc-cache"
+          # core's pinned toolchain, not the first one installed (the owner's Mac has several).
+          export LEANC_REAL=$(cd core/formal/lean4 && "$HOME/.elan/bin/elan" which leanc) LEANC_CACHE="$HOME/leanc-cache"
           export LEANC_ID="$(tr -d ' \n' < core/formal/lean4/lean-toolchain) darwin-arm64"
           T0=$(date +%s)
-          PATH="$HOME/leanc-shim:$PATH" bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
+          # heavy-step.sh: on the owner's Mac, the 4 GiB floor and the Lean build lock; else as is.
+          PATH="$HOME/leanc-shim:$PATH" bash builds/scripts/heavy-step.sh bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
           RC=$?
           HITS=$(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null | tr -d ' ' || echo 0); MISSES=$(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null | tr -d ' ' || echo 0)
           echo "misses=${MISSES:-0}" >> "$GITHUB_OUTPUT"
