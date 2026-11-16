@@ -23,6 +23,9 @@ name: Build Factoidal from factoidal-core
 #   lean       full `lake build` (library, proofs, #guards, executables),
 #              HACL* extern probe, native + CLI smoke scripts, and on Linux
 #              the Lean conformance scoreboard when core carries it.
+#   js-fuel-mono  `lake build JSFuelMono`: fuel monotonicity of the BubblePopJS evaluator
+#              (core JS/FuelMonoAll.lean). Publishes nothing; a failure fails the run, and the
+#              run's conclusion is the merge verdict for a core PR.
 #   lean-wasm  Wasm/build-wasm.sh (Emscripten 6.0.8, cached work dir from
 #              the toolchain-cache branch) and the npm Lean-engine tests.
 #   foafnaut-host-tests  core's labs/demos/foafnaut/test.sh on the foafnaut-engines
@@ -315,6 +318,70 @@ jobs:
     runs-on: ${{ fromJSON(needs.resolve.outputs.mac_runs_on) }}
     timeout-minutes: 330
     steps: *lean-steps
+
+  # Fuel monotonicity of the BubblePopJS evaluator (core JS/FuelMonoAll.lean: IH_all over every
+  # fuel-taking function of the evaluator's mutual block and the built-in families; the theorems
+  # about faster tiers stand on it). `lake build` does not build it: the proof is a chain of
+  # generated modules checked one Lean process at a time (about 11 minutes on the Mac, under 2 GB
+  # each). A Linux merge gate beside the lean job, not after it: it takes the newest earlier
+  # .lake cache, Lake rebuilds the JS modules that changed, and the run's conclusion includes it.
+  # A change to a function of the block or to a built-in that breaks a step lemma fails here.
+  js-fuel-mono:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+      - name: Does this core commit have the proof target?
+        id: has
+        shell: bash
+        run: |
+          if grep -q '^lean_lib JSFuelMono' core/formal/lean4/lakefile.lean; then
+            echo "target=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "target=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::this core commit has no JSFuelMono target (before core PR 539): nothing to check"
+          fi
+      - name: Install elan (toolchain from core's lean-toolchain)
+        if: steps.has.outputs.target == 'true'
+        run: bash builds/scripts/install-elan.sh
+      - name: Restore .lake from the lean job's cache
+        if: ${{ steps.has.outputs.target == 'true' && !inputs.cold }}
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: lake build JSFuelMono (IH_all and the fuel-monotonicity theorems)
+        if: steps.has.outputs.target == 'true'
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          set -o pipefail
+          start=$(date +%s)
+          if lake build JSFuelMono 2>&1 | tee "$RUNNER_TEMP/fuel-mono.log"; then
+            echo "JSFuelMono: built in $(( $(date +%s) - start )) s" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          first=$(grep -E '^(error|✖)' "$RUNNER_TEMP/fuel-mono.log" | grep -m1 -oE 'L4Factoidal[./]JS[./][A-Za-z0-9_]*' || true)
+          msg="Fuel monotonicity of the BubblePopJS evaluator no longer checks (first failing module: ${first:-see the log})."
+          msg="$msg A function of the evaluator's mutual block or a built-in changed (formal/lean4/L4Factoidal/JS/Interp.lean)."
+          msg="$msg After adding or renaming a definition, regenerate the proof modules in core:"
+          msg="$msg python3 tools/fuelmono-natives.py formal/lean4/L4Factoidal/JS/Interp.lean formal/lean4/L4Factoidal/JS (built-ins);"
+          msg="$msg python3 tools/fuelmono-gen.py formal/lean4/L4Factoidal/JS/Interp.lean --split formal/lean4/L4Factoidal/JS tools/fuelmono-groups.txt (the block; a new function also needs a line in a group)."
+          msg="$msg Then lake build JSFuelMono. A step that still fails is a real loss of monotonicity (a handler that swallows a halt, a result at fuel 0 other than out of fuel) or needs a rule in JS/FuelMono.lean. See skills/theorem-pipeline in core."
+          echo "::error title=JSFuelMono::$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
 
   lean-wasm:
     needs: [resolve, lean]
