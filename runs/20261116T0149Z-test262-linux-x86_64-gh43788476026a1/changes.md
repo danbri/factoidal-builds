@@ -1,0 +1,314 @@
+### Since 20261116T0130Z-test262-linux-x86_64-gh43786624254a1 (core 11ef3831b714)
+
+Files passed 46,305 -> 43,758 (-2,547; -4.7347 points) DROP
+
+Newly passing: 3. Newly failing: 2,550.
+
+Newly failing:
+
+- `test/annexB/built-ins/RegExp/prototype/Symbol.split/Symbol.match-getter-recompiles-source.js`: FAIL sloppy Test262Error: Expected SameValue(«""», «"a"») to be true
+- `test/annexB/built-ins/RegExp/prototype/Symbol.split/toint32-limit-recompiles-source.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/B.RegExp.prototype.compile.js`: FAIL sloppy Test262Error: compile should be an own property
+- `test/annexB/built-ins/RegExp/prototype/compile/duplicate-named-capturing-groups-syntax.js`: FAIL sloppy Test262Error: Duplicate named capturing groups in the same alternative do not parse Expected a SyntaxError but got a TypeError
+- `test/annexB/built-ins/RegExp/prototype/compile/flags-string-invalid.js`: FAIL sloppy Test262Error: invalid flags: igi Expected a SyntaxError but got a TypeError
+- `test/annexB/built-ins/RegExp/prototype/compile/flags-to-string-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/RegExp/prototype/compile/flags-to-string.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/flags-undefined.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/RegExp/prototype/compile/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-regexp-distinct.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-regexp-flags-defined.js`: FAIL sloppy Test262Error: Expected SameValue(«"undefined"», «"function"») to be true
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-regexp-immutable-lastindex.js`: FAIL sloppy Test262Error: [[OriginalSource]] internal slot Expected SameValue(«"/initial/"», «"/updated/gi"») to be true
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-regexp-props.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-regexp-same.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-string-invalid.js`: FAIL sloppy Test262Error: invalid pattern: ? Expected a SyntaxError but got a TypeError
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-string-u.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-string.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-to-string-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/RegExp/prototype/compile/this-not-object.js`: FAIL sloppy Test262Error: Expected SameValue(«"undefined"», «"function"») to be true
+- `test/annexB/built-ins/RegExp/prototype/compile/this-obj-not-regexp.js`: FAIL sloppy Test262Error: Expected SameValue(«"undefined"», «"function"») to be true
+- `test/annexB/built-ins/RegExp/prototype/flags/order-after-compile.js`: FAIL sloppy TypeError: compile is not a function
+- `test/annexB/built-ins/String/prototype/anchor/B.2.3.2.js`: FAIL sloppy TypeError: anchor is not a function
+- `test/annexB/built-ins/String/prototype/anchor/attr-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/anchor/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/anchor/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/anchor/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/anchor/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/big/B.2.3.3.js`: FAIL sloppy TypeError: big is not a function
+- `test/annexB/built-ins/String/prototype/big/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/big/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/big/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/big/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/blink/B.2.3.4.js`: FAIL sloppy TypeError: blink is not a function
+- `test/annexB/built-ins/String/prototype/blink/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/blink/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/blink/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/blink/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/bold/B.2.3.5.js`: FAIL sloppy TypeError: bold is not a function
+- `test/annexB/built-ins/String/prototype/bold/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/bold/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/bold/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/bold/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/fixed/B.2.3.6.js`: FAIL sloppy TypeError: fixed is not a function
+- `test/annexB/built-ins/String/prototype/fixed/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/fixed/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/fixed/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/fixed/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/fontcolor/B.2.3.7.js`: FAIL sloppy TypeError: fontcolor is not a function
+- `test/annexB/built-ins/String/prototype/fontcolor/attr-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/fontcolor/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/fontcolor/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/fontcolor/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/fontcolor/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/fontsize/B.2.3.8.js`: FAIL sloppy TypeError: fontsize is not a function
+- `test/annexB/built-ins/String/prototype/fontsize/attr-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/fontsize/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/fontsize/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/fontsize/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/fontsize/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/italics/B.2.3.9.js`: FAIL sloppy TypeError: italics is not a function
+- `test/annexB/built-ins/String/prototype/italics/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/italics/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/italics/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/italics/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/link/B.2.3.10.js`: FAIL sloppy TypeError: link is not a function
+- `test/annexB/built-ins/String/prototype/link/attr-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/link/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/link/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/link/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/link/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/small/B.2.3.11.js`: FAIL sloppy TypeError: small is not a function
+- `test/annexB/built-ins/String/prototype/small/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/small/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/small/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/small/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/strike/B.2.3.12.js`: FAIL sloppy TypeError: strike is not a function
+- `test/annexB/built-ins/String/prototype/strike/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/strike/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/strike/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/strike/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/sub/B.2.3.13.js`: FAIL sloppy TypeError: sub is not a function
+- `test/annexB/built-ins/String/prototype/sub/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/sub/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/sub/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/sub/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/built-ins/String/prototype/sup/B.2.3.14.js`: FAIL sloppy TypeError: sup is not a function
+- `test/annexB/built-ins/String/prototype/sup/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/sup/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/annexB/built-ins/String/prototype/sup/not-a-constructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/annexB/built-ins/String/prototype/sup/this-val-tostring-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/annexB/language/eval-code/direct/script-decl-lex-no-collision.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/block-decl-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/block-decl-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-else-decl-a-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-else-decl-a-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-else-decl-b-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-else-decl-b-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-else-stmt-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-else-stmt-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-no-else-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-decl-no-else-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-stmt-else-decl-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/if-stmt-else-decl-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/script-decl-lex-collision.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/annexB/language/global-code/switch-case-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/switch-case-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/switch-dflt-global-existing-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/annexB/language/global-code/switch-dflt-global-existing-non-enumerable-global-init.js`: FAIL sloppy TypeError: evalScript is not a function
+- `test/built-ins/AggregateError/proto-from-ctor-realm.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/from/proto-from-ctor-realm.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/length/define-own-prop-length-overflow-realm.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/of/proto-from-ctor-realm.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/proto-from-ctor-realm-one.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/proto-from-ctor-realm-two.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/proto-from-ctor-realm-zero.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/Symbol.unscopables/array-find-from-last.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Array/prototype/Symbol.unscopables/at.js`: FAIL sloppy TypeError: Cannot read properties of undefined (reading 'at')
+- `test/built-ins/Array/prototype/Symbol.unscopables/change-array-by-copy.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Array/prototype/Symbol.unscopables/prop-desc.js`: FAIL sloppy Test262Error: Symbol(Symbol.unscopables) should be an own property
+- `test/built-ins/Array/prototype/Symbol.unscopables/value.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Array/prototype/concat/15.4.4.4-5-c-i-1.js`: FAIL sloppy Test262Error: The result of evaluating (newArrayFromConcat[0] instanceof Number) is expected to be true
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_array-like-length-to-string-throws.js`: FAIL sloppy Test262Error: [].concat(objWithPoisonedLengthToString) throws a Test262Error exception Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_array-like-length-value-of-throws.js`: FAIL sloppy Test262Error: [].concat(objWithPoisonedLengthValueOf) throws a Test262Error exception Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_array-like-negative-length.js`: FAIL sloppy Test262Error: Actual [[object Object]] and expected [] should have the same contents. [].concat({"length": -4294967294, "1": "A", "3": "B", "5": "C"}) must retu
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_array-like-primitive-non-number-length.js`: FAIL sloppy Test262Error: Actual [[object Object]] and expected [] should have the same contents. [].concat({"1": "A", "3": "B", "5": "C"}) must return []
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_holey-sloppy-arguments.js`: FAIL sloppy Test262Error: Actual [1, undefined, 3, 1, undefined, 3] and expected [[object Arguments], [object Arguments]] should have the same contents. [1, void 0, 3, 1, v
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_large-typed-array.js`: FAIL sloppy Test262Error: Actual [160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,160,16
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_length-throws.js`: FAIL sloppy Test262Error: [].concat(spreadablePoisonedLengthGetter) throws a Test262Error exception Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_non-array.js`: FAIL sloppy Test262Error: Actual [4, 5, 6] and expected [[object Object], 4, 5, 6] should have the same contents. The value of result is expected to be [obj, 4, 5, 6]
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_sloppy-arguments-throws.js`: FAIL sloppy Test262Error: return [].concat(args, args) throws a Test262Error exception Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_sloppy-arguments-with-dupes.js`: FAIL sloppy Test262Error: Actual [[object Arguments], [object Arguments]] and expected [1, 2, 3, 1, 2, 3] should have the same contents. [].concat((function(a, a, a) {retur
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_sloppy-arguments.js`: FAIL sloppy Test262Error: Actual [[object Arguments], [object Arguments]] and expected [1, 2, 3, 1, 2, 3] should have the same contents. [].concat((function(a, b, c) {retur
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_small-typed-array.js`: FAIL sloppy Test262Error: Actual [1] and expected [1] should have the same contents. 
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-boolean-wrapper.js`: FAIL sloppy Test262Error: Actual [1, 2, 3] and expected [true] should have the same contents. [1, 2, 3] must return the same value returned by [].concat(bool)
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-function.js`: FAIL sloppy Test262Error: Actual [1, 2, 3] and expected [function () { [code] }] should have the same contents. [1, 2, 3] must return the same value returned by [].concat(f
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-getter-throws.js`: FAIL sloppy Test262Error: [].concat(spreadablePoisonedGetter) throws a Test262Error exception Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-number-wrapper.js`: FAIL sloppy Test262Error: Actual [1, 2, 3] and expected [1] should have the same contents. [1, 2, 3] must return the same value returned by [].concat(num)
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-reg-exp.js`: FAIL sloppy Test262Error: Actual [/abc/] and expected [1, 2, 3] should have the same contents. [].concat(/abc/) must return [1, 2, 3]
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-sparse-object.js`: FAIL sloppy Test262Error: Actual [undefined, undefined, undefined, undefined, undefined] and expected [[object Object]] should have the same contents. [void 0, void 0, void
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_spreadable-string-wrapper.js`: FAIL sloppy Test262Error: Actual [y, u, c, k, 􏀽, 􏒩] and expected [yuck💩] should have the same contents. ["y", "u", "c", "k", "uD83D", "uDCA9"] must return the same value re
+- `test/built-ins/Array/prototype/concat/Array.prototype.concat_strict-arguments.js`: FAIL sloppy Test262Error: Actual [[object Arguments], [object Arguments]] and expected [1, 2, 3, 1, 2, 3] should have the same contents. [].concat("(function(a, b, c) {"use
+- `test/built-ins/Array/prototype/concat/S15.4.4.4_A2_T1.js`: FAIL sloppy Test262Error: The value of arr[0] is expected to equal the value of x Expected SameValue(«[object Object]», «[object Object]») to be true
+- `test/built-ins/Array/prototype/concat/S15.4.4.4_A2_T2.js`: FAIL sloppy Test262Error: The value of arr[0] is expected to equal the value of x Expected SameValue(«undefined», «[object Object]») to be true
+- `test/built-ins/Array/prototype/concat/S15.4.4.4_A3_T1.js`: FAIL sloppy Test262Error: The value of arr[1] is expected to be 1 Expected SameValue(«undefined», «1») to be true
+- `test/built-ins/Array/prototype/concat/S15.4.4.4_A3_T2.js`: FAIL sloppy Test262Error: The value of b[2] is expected to be 2 Expected SameValue(«undefined», «2») to be true
+- `test/built-ins/Array/prototype/concat/S15.4.4.4_A3_T3.js`: FAIL sloppy Test262Error: The value of b[2] is expected to be 2 Expected SameValue(«undefined», «2») to be true
+- `test/built-ins/Array/prototype/concat/arg-length-exceeding-integer-limit.js`: FAIL sloppy Test262Error: [1].concat(spreadableLengthOutOfRange) throws a TypeError exception Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/arg-length-near-integer-limit.js`: FAIL sloppy Test262Error: [].concat(spreadableHasPoisonedIndex) throws a Test262Error exception Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/call-with-boolean.js`: FAIL sloppy Test262Error: The result of evaluating (Array.prototype.concat.call(true)[0] instanceof Boolean) is expected to be true Expected SameValue(«false», «true») to b
+- `test/built-ins/Array/prototype/concat/create-non-array.js`: FAIL sloppy Test262Error: The value of result.length is expected to be 1 Expected SameValue(«0», «1») to be true
+- `test/built-ins/Array/prototype/concat/create-proto-from-ctor-realm-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/concat/create-proto-from-ctor-realm-non-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/concat/is-concat-spreadable-get-err.js`: FAIL sloppy Test262Error: Array.prototype.concat.call(o) throws a Test262Error exception Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/is-concat-spreadable-get-order.js`: FAIL sloppy Test262Error: Actual [constructor] and expected [constructor, isConcatSpreadable] should have the same contents. The value of calls is expected to be ["construc
+- `test/built-ins/Array/prototype/concat/is-concat-spreadable-is-array-proxy-revoked.js`: FAIL sloppy Test262Error: [].concat(handle.proxy) throws a TypeError exception Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/is-concat-spreadable-proxy-revoked.js`: FAIL sloppy Test262Error: [].concat(handle.proxy) throws a TypeError exception Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/concat/is-concat-spreadable-proxy.js`: FAIL sloppy Test262Error: The value of [].concat(arrayProxy).length is expected to be 0 Expected SameValue(«1», «0») to be true
+- `test/built-ins/Array/prototype/concat/is-concat-spreadable-val-falsey.js`: FAIL sloppy Test262Error: The value of result.length is expected to be 1 Expected SameValue(«2», «1») to be true
+- `test/built-ins/Array/prototype/concat/is-concat-spreadable-val-truthy.js`: FAIL sloppy Test262Error: The value of result.length is expected to be 0 Expected SameValue(«1», «0») to be true
+- `test/built-ins/Array/prototype/every/15.4.4.16-1-10.js`: FAIL sloppy Test262Error: Array.prototype.every.call(Math, callbackfn) Expected SameValue(«true», «false») to be true
+- `test/built-ins/Array/prototype/every/15.4.4.16-1-13.js`: FAIL sloppy Test262Error: Array.prototype.every.call(JSON, callbackfn) Expected SameValue(«true», «false») to be true
+- `test/built-ins/Array/prototype/fill/call-with-boolean.js`: FAIL sloppy Test262Error: The result of `(Array.prototype.fill.call(true) instanceof Boolean)` is true Expected SameValue(«false», «true») to be true
+- `test/built-ins/Array/prototype/fill/length-near-integer-limit.js`: FAIL sloppy Test262Error: Expected SameValue(«undefined», «[object Object]») to be true
+- `test/built-ins/Array/prototype/fill/return-abrupt-from-setting-property-value.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/fill/return-abrupt-from-this-length-as-symbol.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/fill/return-abrupt-from-this-length.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/fill/return-abrupt-from-this.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/fill/typed-array-resize.js`: FAIL sloppy Test262Error: Actual [0, 0, 0, 0] and expected [0, 0] should have the same contents. 
+- `test/built-ins/Array/prototype/filter/15.4.4.20-1-10.js`: FAIL sloppy Test262Error: newArr[0] Expected SameValue(«undefined», «1») to be true
+- `test/built-ins/Array/prototype/filter/15.4.4.20-1-13.js`: FAIL sloppy Test262Error: newArr[0] Expected SameValue(«undefined», «1») to be true
+- `test/built-ins/Array/prototype/filter/create-proto-from-ctor-realm-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/filter/create-proto-from-ctor-realm-non-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/forEach/15.4.4.18-1-10.js`: FAIL sloppy Test262Error: result !== true
+- `test/built-ins/Array/prototype/forEach/15.4.4.18-1-13.js`: FAIL sloppy Test262Error: result !== true
+- `test/built-ins/Array/prototype/map/15.4.4.19-1-10.js`: FAIL sloppy Test262Error: testResult[0] Expected SameValue(«false», «true») to be true
+- `test/built-ins/Array/prototype/map/15.4.4.19-1-13.js`: FAIL sloppy Test262Error: testResult[0] Expected SameValue(«false», «true») to be true
+- `test/built-ins/Array/prototype/map/create-proto-from-ctor-realm-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/map/create-proto-from-ctor-realm-non-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A2_T1.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.pop = Array.prototype.pop; obj.pop(); obj.length === 0. Actual: undefined
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A2_T2.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.length = NaN; obj.pop = Array.prototype.pop; obj.pop(); obj.length === 0. Actual: NaN
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A2_T3.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.length = 2.5; obj.pop = Array.prototype.pop; obj.pop(); obj.length === 1. Actual: 2.5
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A2_T4.js`: FAIL sloppy Test262Error: The value of pop is expected to be -1 Expected SameValue(«undefined», «-1») to be true
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A3_T1.js`: FAIL sloppy Test262Error: #1: var obj = {}; obj.pop = Array.prototype.pop; obj[0] = "x"; obj[4294967295] = "y"; obj.length = 4294967296; obj.pop() === "y". Actual: undefine
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A3_T2.js`: FAIL sloppy Test262Error: #1: var obj = {}; obj.pop = Array.prototype.pop; obj[0] = "x"; obj[4294967296] = "y"; obj.length = 4294967297; obj.pop() === "y". Actual: undefine
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A3_T3.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.pop = Array.prototype.pop; obj[4294967294] = "x"; obj.length = -1; obj.pop(); obj.length === 0. Actual: -1
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A4_T1.js`: FAIL sloppy Test262Error: #1: Array.prototype[1] = 1; x = [0]; x.length = 2; x.pop() === 1. Actual: undefined
+- `test/built-ins/Array/prototype/pop/S15.4.4.6_A4_T2.js`: FAIL sloppy Test262Error: #3: Object.prototype[1] = -1; Object.prototype.length = 2; Object.prototype.pop = Array.prototype.pop; x = {0:0,1:1}; x.pop() === 1. Actual: undef
+- `test/built-ins/Array/prototype/pop/clamps-to-integer-limit.js`: FAIL sloppy Test262Error: Length is 2**53 - 1 Expected SameValue(«9007199254740991», «9007199254740990») to be true
+- `test/built-ins/Array/prototype/pop/length-near-integer-limit.js`: FAIL sloppy Test262Error: arrayLike['9007199254740990'] is returned from pop() Expected SameValue(«undefined», «"9007199254740990"») to be true
+- `test/built-ins/Array/prototype/pop/set-length-array-is-frozen.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/pop/set-length-zero-array-is-frozen.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/pop/throws-with-string-receiver.js`: FAIL sloppy Test262Error: Array.prototype.pop.call('') Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/push/S15.4.4.7_A2_T2.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/push/call-with-boolean.js`: FAIL sloppy TypeError: Cannot create property 'length' on a primitive
+- `test/built-ins/Array/prototype/push/clamps-to-integer-limit.js`: FAIL sloppy Test262Error: Length is 2**53 Expected SameValue(«9007199254740992», «9007199254740991») to be true
+- `test/built-ins/Array/prototype/push/throws-if-integer-limit-exceeded.js`: FAIL sloppy Test262Error: Length is 2**53 - 1 Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/reduce/15.4.4.21-1-10.js`: FAIL sloppy Test262Error: Array.prototype.reduce.call(Math, callbackfn, 1) !== true
+- `test/built-ins/Array/prototype/reduce/15.4.4.21-1-13.js`: FAIL sloppy Test262Error: Array.prototype.reduce.call(JSON, callbackfn, 1) !== true
+- `test/built-ins/Array/prototype/reduceRight/15.4.4.22-1-10.js`: FAIL sloppy Test262Error: Array.prototype.reduceRight.call(Math, callbackfn, 1) !== true
+- `test/built-ins/Array/prototype/reduceRight/15.4.4.22-1-13.js`: FAIL sloppy Test262Error: Array.prototype.reduceRight.call(JSON, callbackfn, 1) !== true
+- `test/built-ins/Array/prototype/reverse/S15.4.4.8_A2_T1.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.reverse = Array.prototype.reverse; obj.length = 10; obj[0] = true; obj[2] = Infinity; obj[4] = undefined; obj[5] = undefined
+- `test/built-ins/Array/prototype/reverse/S15.4.4.8_A2_T2.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.reverse = Array.prototype.reverse; obj.length = 10.5; obj[0] = true; obj[2] = Infinity; obj[4] = undefined; obj[5] = undefin
+- `test/built-ins/Array/prototype/reverse/S15.4.4.8_A2_T3.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.reverse = Array.prototype.reverse; obj.length = "10"; obj[0] = true; obj[2] = Infinity; obj[4] = undefined; obj[5] = undefin
+- `test/built-ins/Array/prototype/reverse/S15.4.4.8_A4_T1.js`: FAIL sloppy Test262Error: #1: Array.prototype[1] = 1; x = [0]; x.length = 2; x.reverse(); x[0] === 1. Actual: undefined
+- `test/built-ins/Array/prototype/reverse/S15.4.4.8_A4_T2.js`: FAIL sloppy Test262Error: #5: Object.prototype[1] = -1; Object.prototype.length = 2; Object.prototype.reverse = Array.prototype.reverse; x = {0:0,1:1}; x.reverse(); x[0] ==
+- `test/built-ins/Array/prototype/reverse/call-with-boolean.js`: FAIL sloppy Test262Error: The result of `(Array.prototype.reverse.call(true) instanceof Boolean)` is true Expected SameValue(«false», «true») to be true
+- `test/built-ins/Array/prototype/reverse/length-exceeding-integer-limit-with-object.js`: FAIL sloppy Test262Error: Expected a StopReverse to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/reverse/length-exceeding-integer-limit-with-proxy.js`: FAIL sloppy Test262Error: Array.prototype.reverse.call(proxy) throws a StopReverse exception Expected a StopReverse to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A2_T1.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.shift = Array.prototype.shift; obj.shift(); obj.length === 0. Actual: undefined
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A2_T2.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.length = NaN; obj.shift = Array.prototype.shift; obj.shift(); obj.length === 0. Actual: NaN
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A2_T3.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.length = 2.5; obj.shift = Array.prototype.shift; obj.shift(); obj.length === 1. Actual: 2.5
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A2_T4.js`: FAIL sloppy Test262Error: #1: var obj = {}; obj["0"] = 0; obj["3"] = 3; obj.length = 4; obj.shift = Array.prototype.shift; obj.shift() === 0. Actual: undefined
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A2_T5.js`: FAIL sloppy Test262Error: The value of shift is expected to be -1 Expected SameValue(«undefined», «-1») to be true
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A3_T3.js`: FAIL sloppy Test262Error: #2: var obj = {}; obj.shift = Array.prototype.shift; obj[0] = "x"; obj[1] = "y"; obj.length = -4294967294; obj.shift(); obj.length === 0. Actual: 
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A4_T1.js`: FAIL sloppy Test262Error: #2: Array.prototype[1] = 1; x = [0]; x.length = 2; x.shift(); x[0] === 1. Actual: undefined
+- `test/built-ins/Array/prototype/shift/S15.4.4.9_A4_T2.js`: FAIL sloppy Test262Error: #4: Object.prototype[1] = -1; Object.prototype.length = 2; Object.prototype.shift = Array.prototype.shift; x = {0:0,1:1}; x.shift() === 0. Actual:
+- `test/built-ins/Array/prototype/shift/set-length-array-is-frozen.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/shift/set-length-zero-array-is-frozen.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/shift/throws-when-this-value-length-is-writable-false.js`: FAIL sloppy Test262Error: Array.prototype.shift.call('') Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/slice/create-proto-from-ctor-realm-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/slice/create-proto-from-ctor-realm-non-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/some/15.4.4.17-1-10.js`: FAIL sloppy Test262Error: Array.prototype.some.call(Math, callbackfn) !== true
+- `test/built-ins/Array/prototype/some/15.4.4.17-1-13.js`: FAIL sloppy Test262Error: Array.prototype.some.call(JSON, callbackfn) !== true
+- `test/built-ins/Array/prototype/splice/create-proto-from-ctor-realm-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/splice/create-proto-from-ctor-realm-non-array.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/Array/prototype/unshift/S15.4.4.13_A2_T1.js`: FAIL sloppy Test262Error: #1: var obj = {}; obj.unshift = Array.prototype.unshift; obj.unshift(-1) === 1. Actual: undefined
+- `test/built-ins/Array/prototype/unshift/S15.4.4.13_A2_T2.js`: FAIL sloppy Test262Error: #1: var obj = {}; obj.length = NaN; obj.unshift = Array.prototype.unshift; obj.unshift(-1) === 1. Actual: undefined
+- `test/built-ins/Array/prototype/unshift/S15.4.4.13_A2_T3.js`: FAIL sloppy Test262Error: The value of unshift is expected to be 3 Expected SameValue(«undefined», «3») to be true
+- `test/built-ins/Array/prototype/unshift/S15.4.4.13_A3_T2.js`: FAIL sloppy Test262Error: #1: var obj = {}; obj.unshift = Array.prototype.unshift; obj[0] = ""; obj.length = -4294967295; obj.unshift("x", "y", "z") === 3. Actual: undefine
+- `test/built-ins/Array/prototype/unshift/S15.4.4.13_A4_T1.js`: FAIL sloppy Test262Error: #5: Object.prototype[0] = -1; Object.prototype.length = 1; Object.prototype.unshift = Array.prototype.unshift; x = {0:0}; x.unshift(0) === 2. Actu
+- `test/built-ins/Array/prototype/unshift/S15.4.4.13_A4_T2.js`: FAIL sloppy Test262Error: #3: Array.prototype[0] = 1; x = []; x.length = 1; x.unshift(0); x[1] === 1. Actual: undefined
+- `test/built-ins/Array/prototype/unshift/call-with-boolean.js`: FAIL sloppy Test262Error: Array.prototype.unshift.call(true) must return 0 Expected SameValue(«undefined», «0») to be true
+- `test/built-ins/Array/prototype/unshift/clamps-to-integer-limit.js`: FAIL sloppy Test262Error: Length is 2**53 Expected SameValue(«9007199254740992», «9007199254740991») to be true
+- `test/built-ins/Array/prototype/unshift/length-near-integer-limit.js`: FAIL sloppy Test262Error: Expected a StopUnshift to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/unshift/read-only-property.js`: FAIL sloppy Test262Error: Array.prototype.unshift throws TypeError when a property is read-only. Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/unshift/set-length-zero-array-is-frozen.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/unshift/throws-if-integer-limit-exceeded.js`: FAIL sloppy Test262Error: Length is 2**53 - 1 Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/Array/prototype/unshift/throws-with-string-receiver.js`: FAIL sloppy Test262Error: Array.prototype.unshift.call('') Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/ArrayBuffer/proto-from-ctor-realm.js`: FAIL sloppy TypeError: createRealm is not a function
+- `test/built-ins/AsyncDisposableStack/constructor.js`: FAIL sloppy Test262Error: typeof AsyncDisposableStack is function Expected SameValue(«"undefined"», «"function"») to be true
+- `test/built-ins/AsyncDisposableStack/instance-extensible.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/is-a-constructor.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/length.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/name.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/newtarget-prototype-is-not-object.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prop-desc.js`: FAIL sloppy Test262Error: AsyncDisposableStack should be an own property
+- `test/built-ins/AsyncDisposableStack/proto.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype-from-newtarget-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a ReferenceError
+- `test/built-ins/AsyncDisposableStack/prototype-from-newtarget-custom.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype-from-newtarget.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/Symbol.asyncDispose.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/Symbol.toStringTag.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/adds-value-onDisposeAsync.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/allows-any-value.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/length.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/name.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/not-a-constructor.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/prop-desc.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/puts-value-onDisposeAsync-on-top-of-stack.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/returns-value.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/this-does-not-have-internal-asyncdisposablestate-throws.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/this-not-object-throws.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/throws-if-disposed.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/adopt/throws-if-onDisposeAsync-not-callable.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/constructor.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/adds-onDisposeAsync.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/defer/length.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/name.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/not-a-constructor.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/prop-desc.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/puts-onDisposeAsync-on-top-of-stack.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/defer/returns-undefined.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/this-does-not-have-internal-asyncdisposablestate-throws.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/this-not-object-throws.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/throws-if-disposed.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/defer/throws-if-onDisposeAsync-not-callable.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/Symbol.asyncDispose-method-not-async.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/does-not-reinvoke-disposers-if-already-disposed.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/does-not-reinvoke-disposers-if-dispose-already-started.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/does-not-reject-if-already-disposed.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/explicit-await-for-null.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/explicit-await-for-undefined.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/explicit-await-skipped-when-empty.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/length.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/name.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/not-a-constructor.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/prop-desc.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/rejects-with-error-as-is-if-only-one-error-during-disposal.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/rejects-with-suppressederror-if-multiple-errors-during-disposal.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/resolves-to-undefined.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/returns-promise.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/sets-state-to-disposed.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/this-does-not-have-internal-asyncdisposablestate-rejects.js`: FAIL sloppy async: Test262:AsyncTestFailure:ReferenceError: AsyncDisposableStack is not defined 
+- `test/built-ins/AsyncDisposableStack/prototype/disposeAsync/this-not-object-rejects.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposed/does-not-have-asyncdisposablestate-internal-slot.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposed/getter.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposed/length.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposed/name.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+- `test/built-ins/AsyncDisposableStack/prototype/disposed/returns-false-when-not-disposed.js`: FAIL sloppy ReferenceError: AsyncDisposableStack is not defined
+
+Newly passing:
+
+- `test/language/module-code/source-phase-import/import-source.js`
+- `test/staging/sm/extensions/ArrayBuffer-slice-arguments-detaching.js`
+- `test/staging/sm/extensions/DataView-construct-arguments-detaching.js`
