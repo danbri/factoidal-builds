@@ -18,7 +18,7 @@ left out.
 
 Refresh: `deno run -A labs/demos/foafnaut/realpages/snapshot.ts --out third_party/realpages` in a
 core checkout writes `<site>/<id>-<YYYYMMDD>.zip`; the survey takes the newest of each page. Remove
-the old one when the new one is committed (size: keep this directory under 50 MB).
+the old one when the new one is committed (size: keep this directory under 200 MB; raised from 50 MB on 2026-11-16).
 
 | Snapshot | URL | Fetched | Licence | Responses | Size |
 |---|---|---|---|---|---|
