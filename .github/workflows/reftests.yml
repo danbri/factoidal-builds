@@ -195,6 +195,7 @@ jobs:
         if: always()
         with:
           name: reftest-shard-${{ matrix.suite }}-${{ matrix.shard }}
+          overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
           path: |
             ${{ runner.temp }}/out/results.json
             ${{ runner.temp }}/out/summary.md
@@ -203,6 +204,7 @@ jobs:
         if: always()
         with:
           name: reftest-failures-${{ matrix.suite }}-${{ matrix.shard }}
+          overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
           path: ${{ runner.temp }}/out/failures/
           retention-days: 5
           if-no-files-found: ignore
@@ -242,6 +244,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: reftest-score-${{ matrix.suite }}
+          overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
           path: ${{ runner.temp }}/score/
           retention-days: 30
       - name: Record

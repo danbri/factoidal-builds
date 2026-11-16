@@ -118,8 +118,8 @@ class RetryWorkflowTests(unittest.TestCase):
         text = (ROOT / '.github/workflows/release-tests-retry.yml').read_text()
         self.assertIn("run_attempt == 1", text)          # one retry, never a third attempt
         self.assertIn('"$failed" -eq "$total"', text)     # every shard failed: not retried
-        self.assertIn('"Release tests", "Test262"', text)
-        for wf in ('release-tests.yml', 'test262.yml'):   # a re-run uploads its artifacts again
+        self.assertIn('"Release tests", "Test262", "WPT reftests"', text)
+        for wf in ('release-tests.yml', 'test262.yml', 'reftests.yml'):   # a re-run uploads its artifacts again
             t = (ROOT / '.github/workflows' / wf).read_text()
             self.assertGreaterEqual(t.count('overwrite: true'), 2, wf)
 

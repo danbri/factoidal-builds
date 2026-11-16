@@ -2,7 +2,7 @@ name: Retry failed test shards
 
 # One bounded retry of a full run whose shards did not all give results.
 #
-# When a Release tests or Test262 run ends with some (not all) of its shard jobs failed,
+# When a Release tests, Test262 or WPT reftests run ends with some (not all) of its shard jobs failed,
 # re-run its failed jobs once: GitHub runs the failed shards again and then the jobs that
 # depend on them (merge, score, record), as attempt 2 of the same run. Both attempts are
 # recorded: attempt 1 as a partial run (valid=false, each missing shard with its reason),
@@ -16,7 +16,7 @@ name: Retry failed test shards
 
 on:
   workflow_run:
-    workflows: ["Release tests", "Test262"]
+    workflows: ["Release tests", "Test262", "WPT reftests"]
     types: [completed]
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           gh api "repos/$REPO/actions/runs/$RUN/attempts/1/jobs?per_page=100" --paginate \
-            -q '.jobs[] | select(.name | test("shard \\(?[0-9]+\\)?$")) | "\(.conclusion)\t\(.name)"' > jobs.tsv
+            -q '.jobs[] | select(.name | test("shard \\(?[0-9]+\\)?$|^[a-z]+ [0-9]+/[0-9]+$")) | "\(.conclusion)\t\(.name)"' > jobs.tsv
           total=$(wc -l < jobs.tsv | tr -d ' ')
           failed=$(grep -c -E '^(failure|cancelled|timed_out)' jobs.tsv || true)
           echo "run $RUN: $failed of $total shard jobs did not succeed"

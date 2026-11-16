@@ -216,8 +216,19 @@ def cmd_score(a):
     # the harness's failures (ERROR); CRASH and STALL are the engine's, listed in meta.json
     harness = st.get("ERROR", 0)
     reasons = []
+    # Each missing shard and why (no artifact, or an artifact without results.json): the
+    # run is then partial or none, never a score; its tests are not counted as failures.
+    have = {int(s["shard"][0]) for s in shards}
+    missing_reasons = {}
+    for k in sorted(set(range(want)) - have):
+        d = os.path.join(a.shards_dir, f"reftest-shard-{a.suite}-{k}")
+        missing_reasons[str(k)] = ("artifact without results.json: the shard stopped before writing them" if os.path.isdir(d)
+                                   else "no artifact: the job failed, was cancelled or its runner was lost")
+        print(f"::error title=Reftests {a.suite} shard {k} gave no results::{missing_reasons[str(k)]}", flush=True)
+    completeness = "complete" if len(got_idx) == want else ("partial" if shards else "none")
     if len(got_idx) != want:
-        reasons.append(f"{len(got_idx)} of {want} shards")
+        reasons.append(f"{completeness} run: {len(got_idx)} of {want} shards gave results; "
+                       + "; ".join(f"shard {k}: {w}" for k, w in missing_reasons.items()))
     if not total:
         reasons.append("no tests")
     if any(not t["status"] for t in tests):
@@ -303,6 +314,7 @@ def cmd_score(a):
             "incidents": [{"test": t["test"], "status": t["status"], "message": t.get("message")} for t in tests if t["status"] in ("CRASH", "STALL")],
             "shards": [{"shard": s["shard"], "tests": len(s["tests"]), "wallSeconds": s["wallSeconds"], "pagesDrawn": s["pagesDrawn"],
                         "engineSha256": s["engine"]["sha256"]} for s in shards],
+            "completeness": completeness, "shards_missing_reasons": missing_reasons,
             "plan": {k: v for k, v in plan.items() if k != "rivals"}}
     os.makedirs(a.out, exist_ok=True)
     json.dump(row, open(os.path.join(a.out, "row.json"), "w"), indent=1)
