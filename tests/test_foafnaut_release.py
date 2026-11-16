@@ -222,7 +222,7 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
 
     def test_svg_runtime_is_finalized_only_inside_main_release_set(self):
         from hashlib import sha256
-        files = ['svg_engine.mjs', 'gpu_transport.mjs', 'render_plan.mjs',
+        files = ['svg_engine.mjs', 'gpu_transport.mjs', 'render_plan.mjs', 'finite_floats.mjs',
                  'engines/svg-engine.mjs', 'engines/svg-engine.wasm',
                  'engines/render-plan.mjs', 'engines/render-plan.wasm']
         root = self.root / 'art/foafnaut-web/stage/docs/web/hub/svg-webgpu/runtime'
@@ -240,7 +240,7 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         html.mkdir(parents=True)
         html_rows = []
         for name in ['web-render.mjs','web-render.wasm','render-plan.mjs','render-plan.wasm',
-                     'gpu-transport.mjs','render-plan-host.mjs','source-witness.json']:
+                     'gpu-transport.mjs','render-plan-host.mjs','finite-floats.mjs','source-witness.json']:
             body = b'\0asm\x01\0\0\0x' if name.endswith('.wasm') else f'fixture {name}'.encode()
             (html / name).write_bytes(body)
             html_rows.append({'path':name,'bytes':len(body),'sha256':sha256(body).hexdigest()})
