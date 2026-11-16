@@ -14,7 +14,10 @@ name: Build Factoidal from factoidal-core
 # toolchains, sha256 of every file). core's tools/fetch-builds.sh installs
 # them. A set is published only when every job that contributes to it
 # passed its gates; this repository's git history only gains the
-# latest/<set>.json pointer.
+# latest/<set>.json pointer. Two jobs publish: `publish` (linux-x86_64, web,
+# foafnaut-web) when the Linux jobs are done, `publish-macos` (darwin-arm64,
+# foafnaut-darwin-arm64) when the macOS jobs are done, so the web release
+# never waits for a macOS runner.
 #
 # Gates per job (a failing gate means no artifact upload, so no release):
 #   lean       full `lake build` (library, proofs, #guards, executables),
@@ -976,8 +979,14 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  # Two publish jobs (2026-11-16): the Linux-built sets publish as soon as the Linux jobs that
+  # gate them are done, and the macOS sets when the macOS jobs are. Before, one job needed every
+  # job, so for main commits the web release, and with it the Hub, waited hours for a GitHub
+  # macOS runner while every Linux gate was green. Each set still publishes only when all the
+  # artifacts it needs exist (scripts/publish.sh), releases are never replaced, and only core
+  # main commits publish.
   publish:
-    needs: [resolve, lean, lean-macos, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests, foafnaut]
+    needs: [resolve, lean, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -985,25 +994,47 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: art
-      - name: Assemble, pack and publish each complete set
+      - name: Assemble, pack and publish the Linux-built sets (linux-x86_64, web, foafnaut-web)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ needs.resolve.outputs.sha }}
           SHORT: ${{ needs.resolve.outputs.short }}
           REF: ${{ needs.resolve.outputs.ref }}
-          FOAFNAUT: ${{ needs.resolve.outputs.foafnaut }}
+          PUBLISH_SETS: linux-x86_64 web foafnaut-web
           # The engines' tests (test.sh, in foafnaut-host-tests) gate the web runtime. Until
           # 2026-11-15 test.sh ran inside foafnaut-engines before the HTML engine existed, so
           # only its first part gated; now all of it does, on the Wasm engines.
           FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
         run: scripts/publish.sh
 
+  publish-macos:
+    needs: [resolve, lean-macos, foafnaut]
+    if: always() && needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.macos == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Only the macOS artifacts (lean-darwin-arm64, foafnaut-darwin-arm64).
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+          pattern: '*-darwin-arm64'
+      - name: Assemble, pack and publish the macOS sets (darwin-arm64, foafnaut-darwin-arm64)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          REF: ${{ needs.resolve.outputs.ref }}
+          PUBLISH_SETS: darwin-arm64 foafnaut-darwin-arm64
+          FOAFNAUT: ${{ needs.resolve.outputs.foafnaut }}
+        run: scripts/publish.sh
+
   # Timing and cache record of this run (scripts/ci-metrics.py): a table in the run summary,
   # an artifact, and a row per job on the branch ci-metrics (runs.csv, runs/<run_id>.json).
   # `python3 scripts/ci-metrics.py trend` shows the last runs side by side.
   metrics:
-    needs: [resolve, publish]
+    needs: [resolve, publish, publish-macos]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -1037,7 +1068,7 @@ jobs:
   # The nightly run's report: an issue labelled "nightly" opened or updated on failure, closed
   # when green, and a one-line summary for the coordination log (scripts/nightly-report.sh).
   nightly-report:
-    needs: [resolve, publish]
+    needs: [resolve, publish, publish-macos]
     if: always() && needs.resolve.outputs.nightly == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10

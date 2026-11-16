@@ -66,7 +66,11 @@ a = sys.argv[1:]
 with open(os.environ['TEST_LOG'], 'a') as f: f.write(json.dumps(a)+'\\n')
 if a[0] == 'api':
     if os.environ.get('TEST_API_FAIL') == '1': sys.exit(2)
-    if '/compare/' in a[1]: print(os.environ['TEST_STATUS'])
+    if '/compare/' in a[1]:
+        base = a[1].split('/compare/')[1].split('...')[0]
+        if base == os.environ['SHA'] and 'TEST_POINTER_STATUS' in os.environ:
+            print(os.environ['TEST_POINTER_STATUS'])
+        else: print(os.environ['TEST_STATUS'])
     else:
         choices = [
             ('TEST_FOAF', 'labs/demos/foafnaut/build-engines.sh'),
@@ -106,7 +110,11 @@ elif a[:2] != ['release','create']: sys.exit('Unexpected gh command: '+repr(a))
 import sys
 from pathlib import Path
 a = sys.argv[1:]
-if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
+import os, shutil
+if a[:2] == ['worktree','add']:
+    Path(a[-2]).mkdir(parents=True)
+    seed = os.environ.get('TEST_POINTER_SEED')
+    if seed: shutil.copytree(seed, Path(a[-2]) / 'latest')
 ''')
 
     def command(self, name, source):
@@ -280,6 +288,148 @@ if a[:2] == ['worktree','add']: Path(a[-2]).mkdir(parents=True)
         self.assertIn('foafnaut-web not published: the engine build record has no hygiene field',
                       result.stdout + result.stderr)
         self.assertFalse((self.root / 'release-out/foafnaut-web/build-info.json').exists())
+
+    # Split publishing (2026-11-16): build.yml's `publish` job publishes the Linux-built sets
+    # without waiting for macOS runners; `publish-macos` publishes the macOS sets later.
+    LINUX_SETS = 'linux-x86_64 web foafnaut-web'
+    MACOS_SETS = 'darwin-arm64 foafnaut-darwin-arm64'
+
+    def stage_set(self, artifact, toolchains):
+        stage = self.root / 'art' / artifact / 'stage' / 'bin'
+        stage.mkdir(parents=True)
+        (stage / 'tool').write_text(f'fixture {artifact}')
+        meta = self.root / 'art' / artifact / 'meta'
+        meta.mkdir()
+        (meta / toolchains).write_text('{"lean":"test"}')
+
+    def stage_linux_and_web(self):
+        self.stage_set('lean-linux-x86_64', 'toolchains-lean-linux-x86_64.json')
+        self.stage_set('lean-wasm', 'toolchains-lean-wasm.json')
+        (self.root / 'art/web-gates').mkdir(parents=True)
+
+    def created(self):
+        log = self.root / 'gh.jsonl'
+        rows = [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+        return [a[2] for a in rows if a[:2] == ['release', 'create']]
+
+    def test_linux_job_publishes_web_before_macos_artifacts_exist(self):
+        self.stage_linux_and_web()
+        result = self.run_script('publish.sh', FOAFNAUT='true', PUBLISH_SETS=self.LINUX_SETS)
+        # Green: the absent macOS artifacts are not this job's sets.
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.created(), [f'build-{SHA[:12]}-linux-x86_64', f'build-{SHA[:12]}-web'])
+        self.assertNotIn('darwin', result.stdout)
+        self.assertTrue((self.root / 'release-out/pointer-1/latest/web.json').exists())
+        self.assertFalse((self.root / 'release-out/pointer-1/latest/darwin-arm64.json').exists())
+
+    def test_linux_job_never_publishes_macos_sets(self):
+        self.stage_linux_and_web()
+        self.stage_set('lean-darwin-arm64', 'toolchains-lean-darwin-arm64.json')
+        self.stage_set('foafnaut-darwin-arm64', 'toolchains-foafnaut.json')
+        result = self.run_script('publish.sh', FOAFNAUT='true', PUBLISH_SETS=self.LINUX_SETS)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse([t for t in self.created() if 'darwin' in t])
+
+    def test_macos_job_publishes_only_macos_sets(self):
+        self.stage_linux_and_web()
+        self.stage_set('lean-darwin-arm64', 'toolchains-lean-darwin-arm64.json')
+        self.stage_set('foafnaut-darwin-arm64', 'toolchains-foafnaut.json')
+        result = self.run_script('publish.sh', FOAFNAUT='true', PUBLISH_SETS=self.MACOS_SETS)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.created(), [f'build-{SHA[:12]}-darwin-arm64',
+                                          f'build-{SHA[:12]}-foafnaut-darwin-arm64'])
+
+    def test_macos_job_red_when_its_gate_failed(self):
+        self.stage_set('foafnaut-darwin-arm64', 'toolchains-foafnaut.json')
+        result = self.run_script('publish.sh', FOAFNAUT='true', PUBLISH_SETS=self.MACOS_SETS)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('darwin-arm64 not published: missing artifacts', result.stdout)
+        self.assertEqual(self.created(), [f'build-{SHA[:12]}-foafnaut-darwin-arm64'])
+
+    def test_the_two_jobs_never_replace_a_release(self):
+        self.stage_linux_and_web()
+        result = self.run_script('publish.sh', FOAFNAUT='true', PUBLISH_SETS=self.LINUX_SETS,
+                                 TEST_EXISTING='all')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.created(), [])
+        self.assertIn('kept (already published): linux-x86_64 web', result.stdout)
+
+    def test_unknown_publish_set_is_an_error(self):
+        result = self.run_script('publish.sh', PUBLISH_SETS='web darwin')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('unknown set: darwin', result.stdout)
+        self.assertEqual(self.created(), [])
+
+    def seed_pointer(self, source_commit):
+        seed = self.root / 'seed'
+        seed.mkdir()
+        (seed / 'web.json').write_text(json.dumps({'set': 'web', 'source_commit': source_commit}))
+        return str(seed)
+
+    def test_pointer_never_moves_back_to_an_older_commit(self):
+        self.stage_linux_and_web()
+        newer = 'b' * 40
+        result = self.run_script('publish.sh', PUBLISH_SETS='web', TEST_POINTER_SEED=self.seed_pointer(newer),
+                                 TEST_POINTER_STATUS='ahead')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.created(), [f'build-{SHA[:12]}-web'])
+        self.assertIn('latest/web.json kept', result.stdout)
+        pointer = json.loads((self.root / 'release-out/pointer-1/latest/web.json').read_text())
+        self.assertEqual(pointer['source_commit'], newer)
+
+    def test_pointer_moves_forward(self):
+        self.stage_linux_and_web()
+        for status in ('behind', 'diverged'):
+            with self.subTest(status=status):
+                shutil.rmtree(self.root / 'release-out', ignore_errors=True)
+                shutil.rmtree(self.root / 'seed', ignore_errors=True)
+                result = self.run_script('publish.sh', PUBLISH_SETS='web',
+                                         TEST_POINTER_SEED=self.seed_pointer('c' * 40),
+                                         TEST_POINTER_STATUS=status)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                pointer = json.loads((self.root / 'release-out/pointer-1/latest/web.json').read_text())
+                self.assertEqual(pointer['source_commit'], SHA)
+
+
+class WorkflowSplitTests(unittest.TestCase):
+    """build.yml: the web release must not wait for a macOS job (text checks; no YAML parser)."""
+
+    def job(self, name):
+        text = (ROOT / '.github/workflows/build.yml').read_text()
+        start = text.index(f'\n  {name}:\n') + 1
+        rest = text[start + 3:]
+        import re
+        m = re.search(r'\n  [a-z][a-z0-9-]*:\n', rest)
+        return text[start:start + 3 + (m.start() if m else len(rest))]
+
+    def needs(self, name):
+        import re
+        line = re.search(r'^    needs: \[(.*)\]$', self.job(name), re.M).group(1)
+        return {n.strip() for n in line.split(',')}
+
+    def sets(self, name):
+        import re
+        return set(re.search(r'PUBLISH_SETS: (.*)$', self.job(name), re.M).group(1).split())
+
+    def test_web_publish_needs_no_macos_job(self):
+        self.assertEqual(self.needs('publish'), {'resolve', 'lean', 'lean-wasm', 'web-gates',
+                                                 'foafnaut-engines', 'foafnaut-host-tests'})
+        self.assertNotIn('runs-on: ${{ fromJSON', self.job('publish'))
+
+    def test_macos_publish_needs_the_macos_jobs(self):
+        self.assertEqual(self.needs('publish-macos'), {'resolve', 'lean-macos', 'foafnaut'})
+        self.assertIn("needs.resolve.outputs.macos == 'true'", self.job('publish-macos'))
+
+    def test_every_set_has_exactly_one_publish_job(self):
+        linux, mac = self.sets('publish'), self.sets('publish-macos')
+        self.assertFalse(linux & mac)
+        self.assertEqual(linux | mac, {'linux-x86_64', 'web', 'foafnaut-web',
+                                       'darwin-arm64', 'foafnaut-darwin-arm64'})
+        self.assertFalse([s for s in linux if 'darwin' in s])
+
+    def test_reports_wait_for_both_publish_jobs(self):
+        for job in ('metrics', 'nightly-report'):
+            self.assertTrue({'publish', 'publish-macos'} <= self.needs(job), job)
 
 
 if __name__ == '__main__':
