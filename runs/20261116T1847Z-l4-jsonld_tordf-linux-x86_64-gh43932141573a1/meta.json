@@ -1,0 +1,131 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261116T1847Z-l4-jsonld_tordf-linux-x86_64-gh43932141573a1",
+  "started_utc": "2026-11-16T18:50:11Z",
+  "finished_utc": "2026-11-16T18:50:23Z",
+  "trigger": "factoidal-release",
+  "suite": "l4-jsonld_tordf",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "0137191edfef988d7d4b8bd468ee303ebba9ffe8",
+  "commit_utc": "2026-11-16T16:01:06Z",
+  "snapshot_branch": "",
+  "release_tag": "build-0137191edfef-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 467,
+  "names_run": 467,
+  "passed": 467,
+  "denominator": 467,
+  "share_pct": "100.0000",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 0,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43932141573",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261116T1847Z-l4-jsonld_tordf-linux-x86_64-gh43932141573a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-16T18:47:02Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43932141573",
+  "trigger": "factoidal-release",
+  "core_commit": "0137191edfef988d7d4b8bd468ee303ebba9ffe8",
+  "core_short": "0137191edfef",
+  "on_main": true,
+  "commit_author_utc": "2026-11-16T16:01:06Z",
+  "commit_committer_utc": "2026-11-16T16:01:06Z",
+  "commit_subject": "Merge pull request #538 from danbri/wip/heap-design",
+  "release_sets": {
+   "darwin-arm64": {
+    "tag": "build-0137191edfef-darwin-arm64",
+    "published_at": "2026-11-16T18:40:53Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-0137191edfef-darwin-arm64"
+   },
+   "foafnaut-web": {
+    "tag": "build-0137191edfef-foafnaut-web",
+    "published_at": "2026-11-16T16:55:47Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-0137191edfef-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-0137191edfef-linux-x86_64",
+    "published_at": "2026-11-16T16:55:27Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-0137191edfef-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-0137191edfef-web",
+    "published_at": "2026-11-16T16:55:40Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-0137191edfef-web"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-16T18:47:05Z",
+  "candidate_why": "published by build run 43903744762",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": false,
+  "suites": true,
+  "platforms": [],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "command": [
+   "tools/lean-scoreboard.sh",
+   "--only",
+   "l4shacl-core10,l4shacl-sparql10,l4shacl-core12,l4shacl-sparql12,l4shacl-nodeexpr,l4shacl-rules,l4shex,l4shexc,l4rif,l4csvw-rdf,l4csvw-json,l4csvw-validate,l4xmlconf,l4xslt,l4schematron,l4mathml,l4jsonschema,l4jsonld-probe,l4jsonld-api,l4jsonld-frame,l4rml,l4vc-probe,l4rdf-semantics,l4owl-probe-species"
+  ],
+  "started_utc": "2026-11-16T18:50:11Z",
+  "exit": 1,
+  "seconds": 13,
+  "finished_utc": "2026-11-16T18:50:23Z"
+ },
+ "scoreboard_row": {
+  "spec_area": "JSON-LD toRdf",
+  "label": "",
+  "runner": "l4jsonld-probe",
+  "job": "l4jsonld-probe",
+  "status": "ok",
+  "pass": 467,
+  "fail": 0,
+  "other": 0,
+  "total": 467,
+  "parse": true,
+  "note": "",
+  "command": "formal/lean4/.lake/build/bin/l4jsonld-probe",
+  "log": "/home/runner/work/_temp/suite-out/semweb/logs/l4jsonld-probe.log",
+  "seconds": 0,
+  "exit_code": "0",
+  "raw_summary_line": "toRdf: 467 pass, 0 fail, 0 skip (out of 467)",
+  "detail": ""
+ },
+ "continues_fstar_suite": "jsonld_tordf",
+ "group": "lean-semweb",
+ "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
