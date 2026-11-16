@@ -78,7 +78,23 @@ def log(msg):
 
 def die(msg, code=1):
     log(f"FAILED: {msg}")
+    # A GitHub annotation, so the reason is on the run's page and not only in the step log.
+    if os.environ.get("GITHUB_ACTIONS"):
+        print(f"::error title=release-tests::{msg}".replace("\n", " "), flush=True)
     sys.exit(code)
+
+
+LOG_CAUSE = re.compile(r"^(error:|\w*Error\b|Traceback|panicked|Killed|Segmentation fault|Aborted|.*Module not found|.*Cannot find module|.*No such file)")
+
+
+def log_cause(path, limit=400):
+    """The first line of a log that says why a process failed (else its last line), or ''."""
+    try:
+        lines = [l.strip() for l in open(path, errors="replace") if l.strip()]
+    except OSError:
+        return ""
+    hit = next((l for l in lines if LOG_CAUSE.match(l)), lines[-1] if lines else "")
+    return hit[:limit]
 
 
 def now_utc():
@@ -724,7 +740,11 @@ def cmd_wpt_shard(a):
         for fn in ("part0.log", "wptserve.log"):
             if os.path.exists(os.path.join(check_dir, fn)):
                 shutil.copyfile(os.path.join(check_dir, fn), os.path.join(out, "start-check-" + fn))
-        finish(error=f"start check: no result for {first} (exit {rc})")
+        # Say why: the test process's own error (2026-11-16: a module the engine host imports
+        # was not in the sparse checkout, and every shard of two runs gave only "no result").
+        cause = next((c for c in (log_cause(os.path.join(check_dir, fn)) for fn in ("part0.log", "wptserve.log"))
+                      if c), "") or log_cause(os.path.join(out, "start-check.log"))
+        finish(error=f"start check: no result for {first} (exit {rc})" + (f": {cause}" if cause else ""), start_check_cause=cause)
         die(meta["error"])
     log(f"start check passed: {first}")
     results = os.path.join(work, "results")
@@ -848,6 +868,12 @@ def wpt_validity(m):
         r.append("WPT commit unknown")
     if m.get("shards_present") != m.get("shards"):
         r.append(f"shards missing: {m.get('shards_missing')}")
+        # Each missing shard with its reason, the same reason once for all shards that share it.
+        why = {}
+        for k in m.get("shards_missing") or []:
+            why.setdefault(re.sub(r"no result for \S+", "no result for its first test", (m.get("shards_missing_reasons") or {}).get(str(k), "reason unknown")), []).append(k)
+        for reason, ks in why.items():
+            r.append(f"shard{'s' if len(ks) > 1 else ''} {', '.join(map(str, ks))} missing: {reason}")
     if m.get("names_run") != m.get("names_total"):
         r.append(f"{(m.get('names_total') or 0) - (m.get('names_run') or 0)} of {m.get('names_total')} names not run")
     total = m.get("names_total") or 0
@@ -861,7 +887,8 @@ def wpt_validity(m):
         if s.get("stopped_at_limit"):
             r.append(f"shard {s['index']}: stopped at the time limit")
         for p in s.get("problems", []):
-            r.append(f"shard {s['index']}: {p}")
+            if s["index"] not in (m.get("shards_missing") or []):  # a missing shard's reason is above
+                r.append(f"shard {s['index']}: {p}")
     if not m.get("denominator"):
         r.append("no denominator")
     return r
@@ -1032,6 +1059,21 @@ def cmd_wpt_merge(a):
                 shard_dirs.append(os.path.join(d, "results"))
     present = sorted(m["index"] for m in metas if os.path.isdir(os.path.join(a.shards_dir, f"wpt-shard-{a.platform}-{m['index']}", "results")))
     missing = sorted(set(range(plan["shards"])) - set(present))
+    # Why each missing shard has no results: its own error, or what its artifact says.
+    missing_reasons = {}
+    for k in missing:
+        d = os.path.join(a.shards_dir, f"wpt-shard-{a.platform}-{k}")
+        sm = next((x for x in metas if x.get("index") == k), None)
+        if not os.path.isdir(d):
+            why = "no artifact: the job ended before uploading (cancelled, timed out, or its runner was lost)"
+        elif sm is None:
+            why = "artifact without shard-meta.json: the shard tool did not start or was killed"
+        elif sm.get("error"):
+            why = sm["error"]
+        else:
+            why = "shard-meta.json without results: " + (log_cause(os.path.join(d, "tool.log")) or "no error recorded")
+        missing_reasons[str(k)] = why
+        print(f"::error title=WPT {a.platform} shard {k} gave no results::{why}", flush=True)
     os.makedirs(a.out, exist_ok=True)
     run_id = run_id_of(plan, "wpt", a.platform)
     full_json = os.path.join(a.out, "wpt-full.json")
@@ -1064,7 +1106,7 @@ def cmd_wpt_merge(a):
         "kind": plan["kind"], "trigger": plan["trigger"], "factoidal_commit": plan["core_commit"], "release_tag": tag,
         "wpt_commit": inputs["wpt_commit"], "names_total": inputs["names"], "names_run": totals.get("namesRun", 0),
         "passed": passed, "denominator": den, "shards": plan["shards"], "shards_present": len(present), "shards_missing": missing,
-        "server_failures": server_failures, "shard_health": health,
+        "shards_missing_reasons": missing_reasons, "server_failures": server_failures, "shard_health": health,
         "server_failures_first_pass": sum((x.get("retry") or {}).get("names", 0) for x in metas),
     }
     reasons = wpt_validity(m)
@@ -1087,7 +1129,7 @@ def cmd_wpt_merge(a):
             "validity": {"valid": not reasons, "reasons": reasons, "rules": wpt_validity.__doc__,
                          "server_failure_limit": SERVER_FAILURE_MAX, "probe_failure_limit": PROBE_FAILURES_MAX},
             "server_failures_first_pass": m["server_failures_first_pass"],
-            "totals": totals, "shards": metas,
+            "shards_missing_reasons": missing_reasons, "totals": totals, "shards": metas,
             "directories": {k: {kk: v[kk] for kk in ("names", "run", "chrome", "passed", "reported", "share", "outcomes")} for k, v in dirs.items()}}
     # What changed since the previous valid full run: the summary goes into meta.json and
     # the job summary, the whole record (every test that changed) into changes.json.
