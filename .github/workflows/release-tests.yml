@@ -207,9 +207,12 @@ jobs:
           repository: ${{ env.CORE_REPO }}
           ref: ${{ needs.resolve.outputs.core_commit }}
           path: core
+          # docs/web/hub/foafnaut: the engine host imports Hub modules from there (host-trace.mjs
+          # since core 2fcec0287); without them no test runs (WPT runs of 2026-11-16 02:26Z, 04:50Z).
           sparse-checkout: |
             tests/browser-wpt
             labs/demos/foafnaut
+            docs/web/hub/foafnaut
       - uses: actions/download-artifact@v4
         with:
           name: plan
