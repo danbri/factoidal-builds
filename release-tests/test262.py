@@ -328,10 +328,15 @@ def cmd_score(a):
     info = json.load(open(a.files))
     files, proposals = info["files"], info["proposals"]
     excluded = read_excluded(a.excluded, proposals)
-    shard_infos, lines = [], []
+    shard_infos, lines, missing_reasons = [], [], {}
     for k in range(a.shards):
         d = os.path.join(a.shards_dir, f"test262-shard-{k}")
         if not os.path.exists(os.path.join(d, "results.txt")):
+            # Why: no artifact (the job failed or its runner was lost before the upload), or
+            # an artifact without results. Its files count as no result: the run is not valid.
+            missing_reasons[str(k)] = ("artifact without results.txt: the shard's runner stopped before writing them"
+                                       if os.path.isdir(d) else "no artifact: the job failed, was cancelled or its runner was lost")
+            print(f"::error title=Test262 shard {k} gave no results::{missing_reasons[str(k)]}", flush=True)
             continue
         shard_infos.append(json.load(open(os.path.join(d, "shard.json"))))
         lines += [l for l in open(os.path.join(d, "results.txt")).read().splitlines() if l.strip()]
@@ -362,7 +367,8 @@ def cmd_score(a):
     reasons = []
     missing_shards = a.shards - len(shard_infos)
     if missing_shards:
-        reasons.append(f"{missing_shards} of {a.shards} shards missing")
+        reasons.append(f"{'partial' if shard_infos else 'none'} run: {len(shard_infos)} of {a.shards} shards gave results; "
+                       + "; ".join(f"shard {k}: {w}" for k, w in missing_reasons.items()))
     if len(no_result) + len(harness_err) > HARNESS_ERROR_MAX * runs_total:
         reasons.append(f"{len(no_result)} runs with no result and {len(harness_err)} harness errors, over {HARNESS_ERROR_MAX:.1%} of {runs_total:,} runs")
     if total < a.min_files:
@@ -449,7 +455,8 @@ def cmd_score(a):
             "top_failures": [{"status": k[0], "why": k[1], "runs": v} for k, v in sorted(fails.items(), key=lambda kv: -kv[1])[:80]],
             "incidents": {"crash_or_stall": [f"{v[0]} {f} {m} {v[1]}" for (f, m), v in sorted(got.items()) if v[0] in ("CRASH", "STALL")][:1000]},
             "since_previous": since, "rivals": {"source": riv_info, "rows": riv_rows, "directories": rival_dirs},
-            "shards": shard_infos}
+            "completeness": "complete" if not missing_shards and not no_result else ("partial" if shard_infos else "none"),
+            "shards_missing_reasons": missing_reasons, "shards": shard_infos}
     os.makedirs(a.out, exist_ok=True)
     json.dump(row, open(os.path.join(a.out, "row.json"), "w"), indent=1)
     json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"), indent=1)

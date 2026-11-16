@@ -283,6 +283,7 @@ jobs:
         if: always()
         with:
           name: wpt-shard-${{ matrix.platform }}-${{ matrix.shard }}
+          overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
           path: ${{ runner.temp }}/out/
           retention-days: 30
 
@@ -328,6 +329,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: wpt-result
+          overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
           path: ${{ runner.temp }}/result/
           retention-days: 90
 
@@ -421,6 +423,7 @@ jobs:
         if: always()
         with:
           name: suite-${{ matrix.group }}
+          overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
           path: ${{ runner.temp }}/suite-out/
 
   suites-score:
@@ -455,6 +458,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: suite-result
+          overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
           path: ${{ runner.temp }}/suite-result/
 
   record:

@@ -87,6 +87,17 @@ def die(msg, code=1):
 LOG_CAUSE = re.compile(r"^(error:|\w*Error\b|Traceback|panicked|Killed|Segmentation fault|Aborted|.*Module not found|.*Cannot find module|.*No such file)")
 
 
+def log_excerpt(path, lines=40, limit=4000):
+    """The last lines of a log, for the record of a shard that failed (at most limit bytes)."""
+    try:
+        with open(path, "rb") as f:
+            f.seek(max(0, os.path.getsize(path) - 64000))
+            tail = f.read().decode(errors="replace").splitlines()[-lines:]
+    except OSError:
+        return ""
+    return "\n".join(tail)[-limit:]
+
+
 def log_cause(path, limit=400):
     """The first line of a log that says why a process failed (else its last line), or ''."""
     try:
@@ -580,6 +591,12 @@ def cmd_wpt_shard(a):
 
     def finish(**kv):
         meta.update(kv, finished_utc=now_utc(), wall_seconds=round(time.time() - t0))
+        # status: complete (every name has a result), partial (some), no-results (an error
+        # before any test ran). A shard's own record; the merge shows it per shard.
+        if "error" in meta:
+            meta.setdefault("status", "no-results")
+        elif "names_run" in meta:
+            meta["status"] = "complete" if meta["names_run"] >= meta["names"] else ("partial" if meta["names_run"] else "no-results")
         json.dump(meta, open(os.path.join(out, "shard-meta.json"), "w"), indent=1)
 
     core = os.path.abspath(a.core)
@@ -620,7 +637,7 @@ def cmd_wpt_shard(a):
                     tool_log, 3600, env=env, cwd=work)
     meta["tree_seconds"] = round(time.time() - t_tree)
     if rc != 0:
-        finish(error=f"WPT tree: exit {rc}")
+        finish(error=f"WPT tree: exit {rc}: {log_cause(tool_log)}", log_excerpt=log_excerpt(tool_log))
         die(meta["error"])
     busy = [p for p in WPT_PORTS if port_open(p)]
     if busy:
@@ -723,28 +740,47 @@ def cmd_wpt_shard(a):
             probes["streak_max"] = max(probes["streak_max"], probes["streak"])
 
     # Start check: one test, at most 6 minutes. A runner that can not start would
-    # otherwise be restarted until the time limit, with no result.
-    check_dir = os.path.join(work, "start-check")
-    os.makedirs(check_dir, exist_ok=True)
+    # otherwise be restarted until the time limit, with no result. Up to --start-tries
+    # tries, a fresh directory each: a passing retry rescues a passing shard from a
+    # transient start failure; a failure on every try is recorded with its cause and the
+    # log, and the shard has no results (never test failures: an infrastructure failure
+    # must not lower a score).
     first = next((n for n in mine if n.endswith(".html") and "?" not in n), mine[0]).lstrip("/")
-    with open(os.path.join(check_dir, "one.list"), "w") as f:
-        f.write("/" + first + "\n")
-    rc = run_logged([sys.executable, tool, "run", "--list", os.path.join(check_dir, "one.list"), "--dir", check_dir,
-                     "--wpt-root", wpt_root, "--native-engine", lib, "--jobs", "1", "--max-hours", "0.08"] + extra,
-                    os.path.join(out, "start-check.log"), 420, env=env, cwd=work)
-    for _ in range(40):
-        if not any(port_open(p) for p in WPT_PORTS):
+    tries = []
+    for attempt in range(max(1, a.start_tries)):
+        check_dir = os.path.join(work, f"start-check-{attempt}")
+        os.makedirs(check_dir, exist_ok=True)
+        with open(os.path.join(check_dir, "one.list"), "w") as f:
+            f.write("/" + first + "\n")
+        t_try = time.time()
+        rc = run_logged([sys.executable, tool, "run", "--list", os.path.join(check_dir, "one.list"), "--dir", check_dir,
+                         "--wpt-root", wpt_root, "--native-engine", lib, "--jobs", "1", "--max-hours", "0.08"] + extra,
+                        os.path.join(out, "start-check.log"), 420, env=env, cwd=work)
+        for _ in range(40):
+            if not any(port_open(p) for p in WPT_PORTS):
+                break
+            time.sleep(1)
+        ok = bool(read_results(check_dir))
+        entry = {"try": attempt + 1, "exit": rc, "seconds": round(time.time() - t_try), "result": ok}
+        if not ok:
+            for fn in ("part0.log", "wptserve.log"):
+                if os.path.exists(os.path.join(check_dir, fn)):
+                    shutil.copyfile(os.path.join(check_dir, fn), os.path.join(out, f"start-check-{attempt}-" + fn))
+            # Say why: the test process's own error (2026-11-16: a module the engine host imports
+            # was not in the sparse checkout, and every shard of two runs gave only "no result").
+            entry["cause"] = next((c for c in (log_cause(os.path.join(check_dir, fn)) for fn in ("part0.log", "wptserve.log"))
+                                   if c), "") or log_cause(os.path.join(out, "start-check.log"))
+            entry["log_excerpt"] = log_excerpt(os.path.join(check_dir, "part0.log")) or log_excerpt(os.path.join(out, "start-check.log"))
+        tries.append(entry)
+        meta["start_check"] = tries
+        if ok:
             break
-        time.sleep(1)
-    if not read_results(check_dir):
-        for fn in ("part0.log", "wptserve.log"):
-            if os.path.exists(os.path.join(check_dir, fn)):
-                shutil.copyfile(os.path.join(check_dir, fn), os.path.join(out, "start-check-" + fn))
-        # Say why: the test process's own error (2026-11-16: a module the engine host imports
-        # was not in the sparse checkout, and every shard of two runs gave only "no result").
-        cause = next((c for c in (log_cause(os.path.join(check_dir, fn)) for fn in ("part0.log", "wptserve.log"))
-                      if c), "") or log_cause(os.path.join(out, "start-check.log"))
-        finish(error=f"start check: no result for {first} (exit {rc})" + (f": {cause}" if cause else ""), start_check_cause=cause)
+        log(f"start check try {attempt + 1} of {a.start_tries}: no result for {first} (exit {rc}): {entry['cause']}")
+        time.sleep(10)
+    if not tries[-1]["result"]:
+        cause = tries[-1].get("cause", "")
+        finish(status="no-results", error=f"start check: no result for {first} after {len(tries)} tries (exit {rc})" + (f": {cause}" if cause else ""),
+               start_check_cause=cause, log_excerpt=tries[-1].get("log_excerpt", ""))
         die(meta["error"])
     log(f"start check passed: {first}")
     results = os.path.join(work, "results")
@@ -850,9 +886,35 @@ def cmd_wpt_shard(a):
     finish(tool_exit=rc, run_seconds=run_seconds, retry=retry, completion=completion, memory=memory, names_run=ran, outcomes=outcomes, server_failures=server_failures,
            wptserve={"probes_ok": probes["ok"], "probes_failed": probes["failed"], "failed_streak_max": probes["streak_max"],
                      "exited_during_run": "wptserve exited" in text, "stopped_at_limit": "stopped at --max-hours" in text},
-           jobs=a.jobs, max_minutes=a.max_minutes)
+           jobs=a.jobs, max_minutes=a.max_minutes, log_excerpt=log_excerpt(tool_log) if ran < len(mine) else "")
     log(f"shard {a.index}/{a.shards}: {ran} of {len(mine)} names in {run_seconds} s, server failures {server_failures}, "
         f"probes {probes['ok']} ok / {probes['failed']} failed, tool exit {rc}")
+
+
+def completeness(m):
+    """complete, partial (some names have results) or none."""
+    if not m.get("names_run"):
+        return "none"
+    return "complete" if m.get("names_run") == m.get("names_total") and m.get("shards_present") == m.get("shards") else "partial"
+
+
+def shard_rows(shards, names_total, metas, missing_reasons):
+    """One row per planned shard, present or not: what was planned, what ran, how it ended,
+    why, and the end of its log. Missing shards are rows too, with the reason."""
+    by = {x.get("index"): x for x in metas}
+    rows = []
+    for k in range(shards):
+        x = by.get(k, {})
+        planned = x.get("names", len(range(k, names_total, shards)) if names_total else None)
+        rows.append({
+            "index": k, "status": x.get("status") or ("missing" if str(k) in missing_reasons else "unknown"),
+            "names_planned": planned, "names_run": x.get("names_run", 0),
+            "tool_exit": x.get("tool_exit"), "started_utc": x.get("started_utc"), "finished_utc": x.get("finished_utc"),
+            "wall_seconds": x.get("wall_seconds"), "runner": {kk: (x.get("runner") or {}).get(kk) for kk in ("os", "machine", "cpus", "image_version")},
+            "start_check_tries": len(x.get("start_check") or []),
+            "cause": missing_reasons.get(str(k)) or x.get("error") or "",
+            "log_excerpt": x.get("log_excerpt", "")})
+    return rows
 
 
 def wpt_validity(m):
@@ -867,7 +929,8 @@ def wpt_validity(m):
     if not re.fullmatch(r"[0-9a-f]{40}", m.get("wpt_commit") or ""):
         r.append("WPT commit unknown")
     if m.get("shards_present") != m.get("shards"):
-        r.append(f"shards missing: {m.get('shards_missing')}")
+        r.append(f"{completeness(m)} run: {m.get('shards_present')} of {m.get('shards')} shards gave results, "
+                 f"{m.get('names_run') or 0} of {m.get('names_total')} names; shards missing: {m.get('shards_missing')}")
         # Each missing shard with its reason, the same reason once for all shards that share it.
         why = {}
         for k in m.get("shards_missing") or []:
@@ -1074,6 +1137,7 @@ def cmd_wpt_merge(a):
             why = "shard-meta.json without results: " + (log_cause(os.path.join(d, "tool.log")) or "no error recorded")
         missing_reasons[str(k)] = why
         print(f"::error title=WPT {a.platform} shard {k} gave no results::{why}", flush=True)
+    shard_table = shard_rows(plan["shards"], inputs["names"], metas, missing_reasons)
     os.makedirs(a.out, exist_ok=True)
     run_id = run_id_of(plan, "wpt", a.platform)
     full_json = os.path.join(a.out, "wpt-full.json")
@@ -1106,7 +1170,7 @@ def cmd_wpt_merge(a):
         "kind": plan["kind"], "trigger": plan["trigger"], "factoidal_commit": plan["core_commit"], "release_tag": tag,
         "wpt_commit": inputs["wpt_commit"], "names_total": inputs["names"], "names_run": totals.get("namesRun", 0),
         "passed": passed, "denominator": den, "shards": plan["shards"], "shards_present": len(present), "shards_missing": missing,
-        "shards_missing_reasons": missing_reasons, "server_failures": server_failures, "shard_health": health,
+        "shards_missing_reasons": missing_reasons, "server_failures": server_failures, "shard_table": shard_table, "shard_health": health,
         "server_failures_first_pass": sum((x.get("retry") or {}).get("names", 0) for x in metas),
     }
     reasons = wpt_validity(m)
@@ -1129,7 +1193,10 @@ def cmd_wpt_merge(a):
             "validity": {"valid": not reasons, "reasons": reasons, "rules": wpt_validity.__doc__,
                          "server_failure_limit": SERVER_FAILURE_MAX, "probe_failure_limit": PROBE_FAILURES_MAX},
             "server_failures_first_pass": m["server_failures_first_pass"],
-            "shards_missing_reasons": missing_reasons, "totals": totals, "shards": metas,
+            "shards_missing_reasons": missing_reasons, "shard_table": shard_table,
+            # completeness: complete (every shard, every name), partial (some results; the share
+            # counts the missing names as not passed, so it is not a score), none (no results).
+            "completeness": completeness(m), "totals": totals, "shards": metas,
             "directories": {k: {kk: v[kk] for kk in ("names", "run", "chrome", "passed", "reported", "share", "outcomes")} for k, v in dirs.items()}}
     # What changed since the previous valid full run: the summary goes into meta.json and
     # the job summary, the whole record (every test that changed) into changes.json.
@@ -1156,6 +1223,10 @@ def cmd_wpt_merge(a):
             f"{row['names_run']:,} of {row['names_total']:,} names; outcomes {totals.get('outcomes')}; server failures {server_failures}; "
             f"{len(present)} of {plan['shards']} shards; wall {wall} min. Run `{run_id}`.")
     summary(text)
+    bad = [x for x in shard_table if x["status"] != "complete"]
+    if bad:
+        summary(f"{meta['completeness'].capitalize()} run. Shards not complete:\n\n| shard | status | names run | planned | cause |\n|---|---|---|---|---|\n" +
+                "".join(f"| {x['index']} | {x['status']} | {x['names_run']} | {x['names_planned']} | {(x['cause'] or '').replace('|', '/')[:300]} |\n" for x in bad))
     if ch:
         summary(changes_markdown(ch))
 
@@ -2048,6 +2119,7 @@ def main():
     s.add_argument("--retry-max", type=int, default=15000, help="retry the server-failure names once when at most this many")
     s.add_argument("--retry-minutes", type=int, default=40)
     s.add_argument("--min-free-mb", type=int, default=1200, help="Linux: below this, kill the largest test process")
+    s.add_argument("--start-tries", type=int, default=3, help="tries of the one-test start check before the shard gives up")
     m = sub.add_parser("wpt-merge")
     for k in ("--plan", "--inputs", "--shards-dir", "--core", "--out"):
         m.add_argument(k, required=True)

@@ -1,0 +1,58 @@
+name: Retry failed test shards
+
+# One bounded retry of a full run whose shards did not all give results.
+#
+# When a Release tests or Test262 run ends with some (not all) of its shard jobs failed,
+# re-run its failed jobs once: GitHub runs the failed shards again and then the jobs that
+# depend on them (merge, score, record), as attempt 2 of the same run. Both attempts are
+# recorded: attempt 1 as a partial run (valid=false, each missing shard with its reason),
+# attempt 2 with its own run id (...a2), valid when complete. No third attempt.
+#
+# Not retried: a run where every shard failed. That is a setup fault that fails the same
+# way again (2026-11-16: a module missing from the sparse checkout failed all 12 shards);
+# a retry would spend 12 runners to learn nothing. Its record says why, shard by shard.
+# Infrastructure failures are never turned into test failures: a shard without results
+# makes the run partial, and a partial run is never a score.
+
+on:
+  workflow_run:
+    workflows: ["Release tests", "Test262"]
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  retry:
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Re-run the failed shards once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/actions/runs/$RUN/attempts/1/jobs?per_page=100" --paginate \
+            -q '.jobs[] | select(.name | test("shard \\(?[0-9]+\\)?$")) | "\(.conclusion)\t\(.name)"' > jobs.tsv
+          total=$(wc -l < jobs.tsv | tr -d ' ')
+          failed=$(grep -c -E '^(failure|cancelled|timed_out)' jobs.tsv || true)
+          echo "run $RUN: $failed of $total shard jobs did not succeed"
+          {
+            echo "### Shard retry for run [$RUN](https://github.com/$REPO/actions/runs/$RUN)"
+            echo
+            echo "$failed of $total shard jobs did not succeed."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$total" -eq 0 ] || [ "$failed" -eq 0 ]; then
+            echo "No failed shard jobs: a failure elsewhere, not retried." >> "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          if [ "$failed" -eq "$total" ]; then
+            echo "Every shard failed: a setup fault, not retried (the record gives each shard's reason)." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=Shard retry::run $RUN: every shard failed; not retried"
+            exit 0
+          fi
+          gh api -X POST "repos/$REPO/actions/runs/$RUN/rerun-failed-jobs"
+          echo "Re-ran the failed jobs (attempt 2): $(grep -E '^(failure|cancelled|timed_out)' jobs.tsv | cut -f2 | paste -sd ', ' -)" >> "$GITHUB_STEP_SUMMARY"
