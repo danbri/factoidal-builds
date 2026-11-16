@@ -1,0 +1,62 @@
+name: Mac runner check
+
+# A short job on the macOS runner that scripts/mac-runs-on.py chooses (the owner's Mac when
+# it is online overnight, else macos-15), to check the self-hosted runner and its rules
+# without a build: where the job ran, the hook's environment, disk, the Lean lock and elan.
+# skills/ci-runner in factoidal-core.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mac_runner:
+        description: 'auto (the Mac when online, else macos-15), github, self-hosted'
+        type: choice
+        options: [auto, github, self-hosted]
+        default: auto
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mac_runs_on: ${{ steps.mac.outputs.runs_on }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: mac
+        env:
+          MAC_RUNNER: ${{ vars.MAC_RUNNER }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          MODE: ${{ inputs.mac_runner }}
+          NEED_GIB: '4'
+          LEAD_H: '0.1'
+        run: python3 scripts/mac-runs-on.py
+
+  check:
+    needs: resolve
+    runs-on: ${{ fromJSON(needs.resolve.outputs.mac_runs_on) }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - name: Where this ran
+        shell: bash
+        run: |
+          {
+            echo "runner: ${RUNNER_NAME} (${RUNNER_ENVIRONMENT:-?}, ${RUNNER_OS}/${RUNNER_ARCH})"
+            echo "self-hosted Mac marker: ${FOAFNAUT_MAC_RUNNER:-no}; Lean lock: ${FOAFNAUT_LEANLOCK:-none}; floor: ${FOAFNAUT_MIN_FREE_GIB:-n/a} GiB"
+            echo "disk: $(df -h "$PWD" | awk 'NR==2{print $4 " free"}'); cores: $(sysctl -n hw.ncpu); memory: $(( $(sysctl -n hw.memsize) / 1073741824 )) GiB"
+            echo "workspace: $GITHUB_WORKSPACE"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: elan (the Mac's own on self-hosted)
+        run: bash builds/scripts/install-elan.sh
+      - name: heavy-step guard and Lean lock (a trivial command)
+        shell: bash
+        run: |
+          elan --version
+          bash builds/scripts/heavy-step.sh true
+          echo "heavy-step.sh passed" | tee -a "$GITHUB_STEP_SUMMARY"

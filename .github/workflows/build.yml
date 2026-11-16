@@ -45,12 +45,26 @@ on:
         description: 'Cold build: restore no .lake, ccache or leanc object cache (skills/foafnaut/ci-caching.md in core)'
         type: boolean
         default: false
+      macos:
+        description: 'Also run the macOS jobs (lean-macos, foafnaut bundle) for a commit not on core main. Merges are gated on the Linux jobs; core main commits and the nightly run always include macOS'
+        type: boolean
+        default: false
+      mac_runner:
+        description: 'Where macOS jobs run: auto (the owner''s Mac overnight when online, else macos-15), github, self-hosted'
+        type: choice
+        options: [auto, github, self-hosted]
+        default: auto
   schedule:
     # Poll core every hour; a commit that already has releases is skipped
     # (the resolve job ends the run in seconds). A push to core cannot start
     # this workflow without a cross-repository token, so the poll is how core
     # changes reach a build.
     - cron: '23 * * * *'
+    # Nightly (02:41 UTC): main's head with every job, macOS included, whether or not it is
+    # released; nightly-report opens or updates an issue when a job fails (owner decision
+    # 2026-11-16: macOS is not a merge gate; a nightly macOS failure is fixed or reverted
+    # the next morning). scripts/resolve-macos.sh names this cron.
+    - cron: '41 2 * * *'
   push:
     branches: [main]
     paths:
@@ -68,9 +82,10 @@ permissions:
 # push and a dispatch with an empty core_ref share the group of main, where a newer
 # pending run replacing an older one costs nothing: both build the newest main commit.
 # Builds of different refs may run at once: caches are content-keyed, and only main
-# commits publish releases (one per commit) and the latest/*.json pointers.
+# commits publish releases (one per commit) and the latest/*.json pointers. The nightly run
+# has a group of its own, so an hourly poll never replaces it.
 concurrency:
-  group: build-factoidal-${{ github.event_name == 'workflow_dispatch' && inputs.core_ref || 'main' }}
+  group: build-factoidal-${{ github.event_name == 'workflow_dispatch' && inputs.core_ref || (github.event.schedule == '41 2 * * *' && 'nightly' || 'main') }}
   cancel-in-progress: false
 
 env:
@@ -86,17 +101,33 @@ jobs:
       proceed: ${{ steps.r.outputs.proceed }}
       foafnaut: ${{ steps.r.outputs.foafnaut }}
       foafnaut_web: ${{ steps.r.outputs.foafnaut_web }}
+      macos: ${{ steps.r.outputs.macos }}
+      nightly: ${{ steps.r.outputs.nightly }}
+      mac_runs_on: ${{ steps.mac.outputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
       - id: r
         env:
           GH_TOKEN: ${{ github.token }}
           INPUT_REF: ${{ inputs.core_ref }}
+          INPUT_MACOS: ${{ inputs.macos }}
+          SCHEDULE: ${{ github.event.schedule }}
           FORCE: ${{ inputs.force }}
           EVENT: ${{ github.event_name }}
           PUSH_BEFORE: ${{ github.event.before }}
           PUSH_AFTER: ${{ github.sha }}
         run: scripts/resolve-core.sh
+      # The macOS jobs prefer the owner's Mac (self-hosted, overnight) when it reports itself
+      # online with room; otherwise GitHub's macos-15. skills/ci-runner in core.
+      - id: mac
+        env:
+          MAC_RUNNER: ${{ vars.MAC_RUNNER }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          MODE: ${{ inputs.mac_runner }}
+          NEED_GIB: '12'
+          LEAD_H: '3'
+        run: python3 scripts/mac-runs-on.py
 
   # The Lean build is two jobs with one step list (a YAML anchor), so that
   # lean-wasm and web-gates wait only for the Linux job. With one matrix job they also waited
@@ -125,9 +156,7 @@ jobs:
           submodules: ${{ matrix.platform == 'linux-x86_64' && 'recursive' || 'false' }}
 
       - name: Install elan (toolchain from core's lean-toolchain)
-        run: |
-          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+        run: bash builds/scripts/install-elan.sh
 
       - name: Cache .lake
         if: ${{ !inputs.cold }}
@@ -152,7 +181,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          lake build 2>&1 | tee "$RUNNER_TEMP/lake-build.log"
+          # heavy-step.sh: on the owner's Mac, the disk floor and the Lean build lock; else as is.
+          bash ../../../builds/scripts/heavy-step.sh lake build 2>&1 | tee "$RUNNER_TEMP/lake-build.log"
 
       - name: Tail-recursion gate (danbri/factoidal issue 746)
         if: matrix.platform == 'linux-x86_64'
@@ -269,16 +299,17 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
+  # Not a merge gate (owner, 2026-11-16): runs for core main commits (the release path), the
+  # nightly run, and a dispatch with macos=true. On the owner's Mac overnight when it is up.
   lean-macos:
     needs: resolve
-    if: needs.resolve.outputs.proceed == 'true'
+    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.macos == 'true'
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-15
-            platform: darwin-arm64
-    runs-on: ${{ matrix.os }}
+          - platform: darwin-arm64
+    runs-on: ${{ fromJSON(needs.resolve.outputs.mac_runs_on) }}
     timeout-minutes: 330
     steps: *lean-steps
 
@@ -638,8 +669,8 @@ jobs:
 
   foafnaut:
     needs: [resolve, lean-macos, foafnaut-engines]
-    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
-    runs-on: macos-15
+    if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true' && needs.resolve.outputs.macos == 'true'
+    runs-on: ${{ fromJSON(needs.resolve.outputs.mac_runs_on) }}
     timeout-minutes: 150  # 60 cancelled run 43620498679 at 60 min (2026-11-14) in "Package, relocate and check the native demos"; 30 was cancelled on 2026-11-08 (run 42520417546)
     steps:
       - uses: actions/checkout@v4
@@ -676,9 +707,7 @@ jobs:
         run: |
           find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null || true
       - name: Install pinned Lean for fresh native source preparation
-        run: |
-          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+        run: bash builds/scripts/install-elan.sh
       # The C objects of Lean's generated C, by content (release-tests/leanc-cache.sh: key is the
       # toolchain, the flags and the C source; Lean's C includes only the toolchain's lean.h).
       # Shared with foafnaut-macos.yml, which compiles the same files with the same flags.
@@ -705,7 +734,7 @@ jobs:
             echo "LEANC_ID=$(tr -d ' \n' < core/formal/lean4/lean-toolchain) darwin-arm64"; } >> "$GITHUB_ENV"
           echo "$HOME/leanc-shim" >> "$GITHUB_PATH"
       - name: Package, relocate and check the native demos
-        run: bash builds/scripts/build-foafnaut.sh core "$RUNNER_TEMP/foafnaut-out"
+        run: bash builds/scripts/heavy-step.sh bash builds/scripts/build-foafnaut.sh core "$RUNNER_TEMP/foafnaut-out"
       - name: Save the C object cache
         if: always() && !inputs.cold
         shell: bash
@@ -1004,3 +1033,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/ci-metrics.py prune --keep 2
+
+  # The nightly run's report: an issue labelled "nightly" opened or updated on failure, closed
+  # when green, and a one-line summary for the coordination log (scripts/nightly-report.sh).
+  nightly-report:
+    needs: [resolve, publish]
+    if: always() && needs.resolve.outputs.nightly == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          PROCEED: ${{ needs.resolve.outputs.proceed }}
+        run: scripts/nightly-report.sh

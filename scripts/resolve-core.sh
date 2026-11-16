@@ -7,7 +7,8 @@
 # Default ref: `main` if core has it, else `claude/core-split` (the branch
 # the 2026-10-09 split was pushed to; the owner renames it to main).
 # Outputs: ref, sha, short (12 hex), proceed, foafnaut (true|false),
-#   foafnaut_web (true|false; requires the page and Lean engine source).
+#   foafnaut_web (true|false; requires the page and Lean engine source),
+#   macos (true|false: run the macOS jobs; scripts/resolve-macos.sh), nightly (true|false).
 set -euo pipefail
 CORE_URL="https://github.com/${CORE_REPO:-danbri/factoidal-core}"
 REF="${INPUT_REF:-}"
@@ -104,13 +105,19 @@ if [ -n "$HAVE" ] && [ -n "$MISSING" ] && [ -n "$NEWEST" ]; then
   if [ "$AGE_H" -lt "${RETRY_HOURS:-24}" ]; then RETRY_DUE=false; fi
   echo "::warning::core $SHORT is partly built: has${HAVE}; missing${MISSING}; newest set release ${AGE_H} h old (retry after ${RETRY_HOURS:-24} h: due=$RETRY_DUE)"
 fi
+eval "$(SHA="$SHA" bash "$(dirname "$0")/resolve-macos.sh")"   # sets macos, nightly, on_main
 PROCEED=true
 case "$EVENT" in
   schedule) { [ "$EXISTS" = true ] || [ "$RETRY_DUE" = false ]; } && PROCEED=false ;;
   workflow_dispatch) [ "$EXISTS" = true ] && [ "${FORCE:-false}" != true ] && PROCEED=false ;;
   push) PROCEED=true ;;   # a change to this repository's build scripts
 esac
+# The nightly run builds main's head with every job, released or not: the macOS jobs are no
+# longer a merge gate, so this is where a macOS failure on main shows (nightly-report opens an issue).
+if [ "$nightly" = true ]; then PROCEED=true; fi
+echo "macOS jobs: $macos (core main compare: $on_main; nightly: $nightly)"
 echo "core $REF = $SHA (requested by requests/build.txt: $REQUESTED; all sets released: $EXISTS; missing:${MISSING:- none}) -> proceed=$PROCEED"
 {
   echo "ref=$REF"; echo "sha=$SHA"; echo "short=$SHORT"; echo "proceed=$PROCEED"; echo "foafnaut=$FOAFNAUT"; echo "foafnaut_web=$FOAFNAUT_WEB"
+  echo "macos=$macos"; echo "nightly=$nightly"
 } >> "$GITHUB_OUTPUT"
