@@ -59,8 +59,9 @@ jobs:
           strip() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); d.pop("checked_at",None); d.pop("lag_min",None); print(json.dumps(d,sort_keys=True))' "$1" 2>/dev/null || echo none; }
           for i in 1 2 3 4; do
             git fetch -q origin main
-            git checkout -q -B status origin/main
-            if [ "$(strip latest/darwin-status.json)" = "$(strip "$RUNNER_TEMP/status.json")" ]; then
+            git checkout -q -f -B status origin/main
+            git show origin/main:latest/darwin-status.json > "$RUNNER_TEMP/committed.json" 2>/dev/null || echo '{}' > "$RUNNER_TEMP/committed.json"
+            if [ "$(strip "$RUNNER_TEMP/committed.json")" = "$(strip "$RUNNER_TEMP/status.json")" ]; then
               echo "no change"; exit 0
             fi
             cp "$RUNNER_TEMP/status.json" latest/darwin-status.json
