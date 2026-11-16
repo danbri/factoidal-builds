@@ -255,6 +255,9 @@ jobs:
           python3 ../../tools/binary-budget.py imports .
           bash ../../../builds/scripts/heavy-step.sh lake build leanjs
           python3 ../../tools/binary-budget.py check leanjs=.lake/build/bin/leanjs
+          # leanjs is not a default target: its root's C (JS/Main.c, its own `main`) must not reach
+          # the .lake cache, or lean-wasm links it beside the other mains (duplicate main/run_main).
+          rm -f .lake/build/ir/L4Factoidal/JS/Main.c* .lake/build/bin/leanjs
 
       - name: Dispatch ABI and CLI smoke
         working-directory: core/formal/lean4
