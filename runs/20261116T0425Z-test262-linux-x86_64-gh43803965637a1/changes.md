@@ -1,0 +1,93 @@
+### Since 20261116T0257Z-test262-linux-x86_64-gh43795241382a1 (core 78f0256d1cd0)
+
+Files passed 46,389 -> 46,305 (-84; -0.1561 points)
+
+Newly passing: 0. Newly failing: 84.
+
+Newly failing:
+
+- `test/language/expressions/class/accessor-name-inst-computed-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/accessor-name-static-computed-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/cpn-class-expr-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/cpn-class-expr-fields-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/cpn-class-expr-fields-methods-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-block-labeled-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-do-while-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/top-level-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/object/accessor-name-computed-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/object/cpn-obj-lit-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/object/method-definition/computed-property-name-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/object/method-definition/generator-prop-name-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/object/method-definition/name-prop-name-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/module-code/early-new-target.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/invalid-private-names-call-expression-bad-reference.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/invalid-private-names-call-expression-this.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/invalid-private-names-member-expression-bad-reference.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/invalid-private-names-member-expression-this.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/private-identifiers-not-empty.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/privatename-not-valid-earlyerr-module-5.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/privatename-not-valid-earlyerr-module-6.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/privatename-not-valid-earlyerr-module-7.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/privatename-not-valid-earlyerr-module-8.js`: FAIL module expected SyntaxError at parse, got Test262: This statement should not be evaluated. at runtime
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-array-literal.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-func-expression.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-identifier.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-literal-number.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-literal-string.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-nested.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-new-expr.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-null.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-obj-literal.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-regexp.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-template-literal.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-class-decl-await-expr-this.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-array-literal.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-func-expression.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-identifier.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-literal-number.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-literal-string.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-nested.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-new-expr.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-null.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-obj-literal.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-regexp.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-template-literal.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-this.js`: FAIL module SyntaxError: yield in this position is not supported
+- `test/language/statements/class/accessor-name-inst-computed-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/statements/class/accessor-name-static-computed-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/statements/class/cpn-class-decl-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/statements/class/cpn-class-decl-fields-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/statements/class/cpn-class-decl-fields-methods-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/staging/sm/class/compPropNames.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/staging/sm/class/methDefnGen.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/staging/source-phase-imports/import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Promise should be rejected with SyntaxError Expected a SyntaxError to be thrown asynchronously but g
+
