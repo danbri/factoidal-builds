@@ -1328,15 +1328,39 @@ OWL_POPULATIONS = [
 NO_PROFILE_CHECKER = ("the probe of this core commit has no --profile-id mode (OWL 2 EL/QL/RL recogniser): "
                       "not run (official size recorded)")
 
-SUITE_GROUPS = sorted({s[1] for s in SUITES} | {SEMWEB_GROUP})
+# ---- lean-xml: the XML family beyond XML 1.0 and XSLT 1.0 on the built-in engine -----------------
+# The QT4 Community Group suites (XPath 4.0, XQuery 4.0, XSLT 4.0), the W3C XML Schema suite (XSD 1.1
+# Part 1), RELAX NG, XInclude and Canonical XML: core's lean-scoreboard jobs of the same names (core
+# PR 522). The QT4 runs take tens of minutes each, so they have a group of their own, in two lanes
+# that run at once (each lane one lean-scoreboard process with its own logs and JSON).
+XML_GROUP = "lean-xml"
+XML_EXES = ["l4qt4", "l4xslt4", "l4xsd11", "l4relaxng", "l4xinclude", "l4c14n"]
+XML_LANES = [["l4xslt4", "l4xsd11", "l4relaxng", "l4xinclude", "l4c14n"], ["l4qt4-xquery", "l4qt4-xpath"]]
+XML_SUBMODULES = ["xsd"]
+XML_JOB_TIMEOUT = 3000               # s, each runner
+XML_BUDGET = 6600                    # s, each lane
+XML_ROWS = [
+    ("l4-qt4-xpath", "l4qt4-xpath", None, None, ""),
+    ("l4-qt4-xquery", "l4qt4-xquery", None, None, ""),
+    ("l4-xslt4", "l4xslt4", None, None, ""),
+    ("l4-xsd11", "l4xsd11", None, None, ""),
+    ("l4-relaxng-spec", "l4relaxng", None, "spectest (RELAX NG Specification)", ""),
+    ("l4-relaxng-compact", "l4relaxng", None, "compacttest (Compact Syntax)", ""),
+    ("l4-xinclude", "l4xinclude", None, None, ""),
+    ("l4-c14n", "l4c14n", None, None, ""),
+]
+GROUP_EXES = {SEMWEB_GROUP: SEMWEB_EXES, XML_GROUP: XML_EXES}
+
+SUITE_GROUPS = sorted({s[1] for s in SUITES} | {SEMWEB_GROUP, XML_GROUP})
 
 
 def cmd_suite_groups(a):
     if a.exes:
-        print(" ".join(SEMWEB_EXES if a.exes == SEMWEB_GROUP else []))
+        print(" ".join(GROUP_EXES.get(a.exes, [])))
         return
     groups = {g: sorted({sub for s in SUITES if s[1] == g for sub in s[6]}) for g in SUITE_GROUPS}
     groups[SEMWEB_GROUP] = sorted(SEMWEB_SUBMODULES)
+    groups[XML_GROUP] = sorted(XML_SUBMODULES)
     print(json.dumps(groups) if a.json else "\n".join(f"{g}: {' '.join(v)}" for g, v in groups.items()))
 
 
@@ -1380,11 +1404,44 @@ def semweb_run(core, out):
     json.dump(status, open(os.path.join(sw, "status.json"), "w"), indent=1)
 
 
+def xml_run(core, out):
+    """The lean-xml group: core's scoreboard jobs of XML_LANES, the lanes at once. The runners must
+    already be built in core (formal/lean4/.lake/build/bin)."""
+    xd = os.path.join(out, "xml")
+    os.makedirs(xd, exist_ok=True)
+    procs, t0 = [], time.time()
+    for i, jobs in enumerate(XML_LANES):
+        cmd = ["bash", "tools/lean-scoreboard.sh", "--only", ",".join(jobs), "--timeout", str(XML_JOB_TIMEOUT),
+               "--json", os.path.join(xd, f"scoreboard-{i}.json"), "--logdir", os.path.join(xd, f"logs-{i}")]
+        f = open(os.path.join(xd, f"scoreboard-{i}.out"), "wb")
+        procs.append((cmd, f, {"command": cmd[1:], "started_utc": now_utc()},
+                      subprocess.Popen(cmd, cwd=core, stdout=f, stderr=subprocess.STDOUT)))
+    status, rows = {}, []
+    for i, (cmd, f, st, p) in enumerate(procs):
+        try:
+            st["exit"] = p.wait(timeout=max(1, XML_BUDGET - (time.time() - t0)))
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.wait()
+            st.update(exit=124, error=f"no end in {XML_BUDGET} s")
+        f.close()
+        st.update(seconds=round(time.time() - t0), finished_utc=now_utc())
+        status[f"lane-{i}"] = st
+        log(f"lean-xml lane {i} ({' '.join(XML_LANES[i])}): exit {st.get('exit')} in {st['seconds']} s")
+        jp = os.path.join(xd, f"scoreboard-{i}.json")
+        if os.path.exists(jp):
+            rows += json.load(open(jp)).get("rows", [])
+    json.dump({"rows": rows}, open(os.path.join(xd, "scoreboard.json"), "w"), indent=1)
+    json.dump(status, open(os.path.join(xd, "status.json"), "w"), indent=1)
+
+
 def cmd_suite_run(a):
     core, out = os.path.abspath(a.core), os.path.abspath(a.out)
     os.makedirs(os.path.join(out, "logs"), exist_ok=True)
     if a.group == SEMWEB_GROUP:
         return semweb_run(core, out)
+    if a.group == XML_GROUP:
+        return xml_run(core, out)
     bindir = os.path.join(os.path.abspath(a.bin), "bin", "linux-x86_64")
     status = {"group": a.group, "runner": runner_info(), "suites": {}}
     for key, group, logname, runner, args, budget, _ in SUITES:
@@ -1470,20 +1527,14 @@ def semweb_row(plan, suite, st, p, f, other, total, reasons):
     return run_id, row
 
 
-def semweb_score(plan, logs):
-    """Rows of the lean-semweb group: one per SEMWEB_ROWS entry (from core's scoreboard JSON)
-    and one per OWL 2 population. A missing group, job or row is a row with valid=false."""
-    sw = os.path.join(logs, "semweb")
-    status = json.load(open(os.path.join(sw, "status.json"))) if os.path.exists(os.path.join(sw, "status.json")) else {}
-    sb_path, pop_path = os.path.join(sw, "scoreboard.json"), os.path.join(sw, "owl", "populations.json")
-    sb = json.load(open(sb_path)) if os.path.exists(sb_path) else None
-    pops = json.load(open(pop_path)) if os.path.exists(pop_path) else None
+def scoreboard_rows(plan, group, table, sb, st):
+    """One row per entry of table (suite, scoreboard job, spec_area or None, label or None, F* suite)
+    from core's scoreboard JSON sb; a missing group, job or row is a row with valid=false."""
     rows, metas = [], {}
-    st = status.get("scoreboard")
-    for suite, job, area, label, fstar in SEMWEB_ROWS:
+    for suite, job, area, label, fstar in table:
         reasons, r = [], None
         if sb is None:
-            reasons.append("the lean-semweb group did not run" if not st else f"no scoreboard JSON (exit {st.get('exit')})")
+            reasons.append(f"the {group} group did not run" if not st else f"no scoreboard JSON (exit {st.get('exit')})")
         else:
             cand = [x for x in sb.get("rows", []) if x.get("job") == job and (area is None or x.get("spec_area") == area)
                     and (label is None or x.get("label") == label)]
@@ -1499,9 +1550,38 @@ def semweb_score(plan, logs):
         run_id, row = semweb_row(plan, suite, {**(st or {}), "seconds": (r or {}).get("seconds") or 0}, p, f, o, tot, reasons)
         rows.append(row)
         metas[run_id] = {"format": "factoidal-release-test-run-v1", "row": row, "plan": plan, "status": st,
-                         "scoreboard_row": r, "continues_fstar_suite": fstar, "group": SEMWEB_GROUP,
+                         "scoreboard_row": r, "continues_fstar_suite": fstar, "group": group,
                          "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
                          "validity": {"valid": not reasons, "reasons": reasons}}
+    return rows, metas
+
+
+def xml_score(plan, logs):
+    """Rows of the lean-xml group: one per XML_ROWS entry, from the lanes' scoreboard JSON. The group
+    runs on the daily 13:41 run and by hand only; when it did not run there are no rows."""
+    xd = os.path.join(logs, "xml")
+    if not os.path.isdir(xd):
+        return [], {}                  # the group did not run (resolve's xml=false): nothing to record
+    status = json.load(open(os.path.join(xd, "status.json"))) if os.path.exists(os.path.join(xd, "status.json")) else {}
+    sb_path = os.path.join(xd, "scoreboard.json")
+    sb = json.load(open(sb_path)) if os.path.exists(sb_path) else None
+    lanes = [status.get(f"lane-{i}") for i in range(len(XML_LANES))]
+    st = None
+    if any(lanes):
+        st = {"started_utc": min(x["started_utc"] for x in lanes if x), "finished_utc": max(x.get("finished_utc", "") for x in lanes if x),
+              "exit": max((x.get("exit") or 0) for x in lanes if x), "lanes": lanes}
+    return scoreboard_rows(plan, XML_GROUP, XML_ROWS, sb, st)
+
+
+def semweb_score(plan, logs):
+    """Rows of the lean-semweb group: one per SEMWEB_ROWS entry (from core's scoreboard JSON)
+    and one per OWL 2 population. A missing group, job or row is a row with valid=false."""
+    sw = os.path.join(logs, "semweb")
+    status = json.load(open(os.path.join(sw, "status.json"))) if os.path.exists(os.path.join(sw, "status.json")) else {}
+    sb_path, pop_path = os.path.join(sw, "scoreboard.json"), os.path.join(sw, "owl", "populations.json")
+    sb = json.load(open(sb_path)) if os.path.exists(sb_path) else None
+    pops = json.load(open(pop_path)) if os.path.exists(pop_path) else None
+    rows, metas = scoreboard_rows(plan, SEMWEB_GROUP, SEMWEB_ROWS, sb, status.get("scoreboard"))
     st = status.get("owl-populations")
     for key, suite, fstar in OWL_POPULATIONS:
         reasons, pp = [], (pops or {}).get("populations", {}).get(key)
@@ -1589,6 +1669,9 @@ def cmd_suite_score(a):
                          "parser": "l4w3c TOTAL line" if engine == "lean" else "formal/fstar/generate-report.sh latest.json totals." + key,
                          "validity": {"valid": not reasons, "reasons": reasons}}
     sr, sm = semweb_score(plan, a.logs)
+    rows += sr
+    metas.update(sm)
+    sr, sm = xml_score(plan, a.logs)
     rows += sr
     metas.update(sm)
     os.makedirs(a.out, exist_ok=True)

@@ -44,12 +44,15 @@ name: Release tests
 #   run for each main commit with a Linux engine (foafnaut-linux.yml builds one every 20
 #   min when main changes engine code) and one macOS run for each build.yml release (none
 #   when that commit already has a valid run at the same WPT commit on that platform).
-#   The other suites: two Linux jobs. lean-w3c runs l4w3c (SPARQL, RDF, RDFC) from the
+#   The other suites: three Linux jobs. lean-w3c runs l4w3c (SPARQL, RDF, RDFC) from the
 #   release. lean-semweb (since 2026-11-15, when the F* runners left the release) builds
 #   the built-in engine's other conformance runners from the release's core commit with
 #   build.yml's Lake cache (restore only) and runs SHACL, ShEx, JSON-LD, CSVW, RML, RIF,
 #   VC/DID, XML, XSLT, Schematron, MathML, JSON Schema and the OWL 2 test cases, the OWL
 #   ones as discrete populations (release-tests/owl-populations.py).
+#   lean-xml (since 2026-11-16; the daily 13:41 run and runs by hand only, about two hours)
+#   builds and runs the QT4 runners (XPath, XQuery and XSLT 4.0), XSD 1.1, RELAX NG, XInclude
+#   and Canonical XML in two lanes at once.
 
 on:
   workflow_run:
@@ -131,6 +134,7 @@ jobs:
       matrix: ${{ steps.r.outputs.matrix }}
       platforms: ${{ steps.r.outputs.platforms }}
       core_commit: ${{ steps.r.outputs.core_commit }}
+      xml: ${{ steps.r.outputs.xml }}
       wpt_commit: ${{ steps.r.outputs.wpt_commit }}
     steps:
       - uses: actions/checkout@v4
@@ -172,6 +176,9 @@ jobs:
           if [ "${IN_TRIGGER:-manual}" = factoidal-release ]; then ARGS+=(--trigger factoidal-release); fi
           if [ "$EVENT" = schedule ]; then ARGS+=(--wait-minutes 60); fi
           python3 release-tests/release-tests.py resolve "${ARGS[@]}"
+          # lean-xml (about two hours of one Linux job): the daily 13:41 run and runs by hand only.
+          if [ "$EVENT" = workflow_dispatch ] || { [ "$EVENT" = schedule ] && [ "$CRON" = '41 13 * * *' ]; }; then
+            echo "xml=true" >> "$GITHUB_OUTPUT"; else echo "xml=false" >> "$GITHUB_OUTPUT"; fi
       - name: WPT inputs (Chrome's summary and the full list)
         if: steps.r.outputs.wpt == 'true'
         run: python3 release-tests/release-tests.py wpt-inputs --wpt-commit "${{ steps.r.outputs.wpt_commit }}" --out "$RUNNER_TEMP/wpt-inputs"
@@ -363,26 +370,35 @@ jobs:
       fail-fast: false
       matrix:
         # Lean only since 2026-11-15 (automatic F* builds stopped; the F* runners left the release).
-        group: [lean-w3c, lean-semweb]
+        # lean-xml (2026-11-16): XPath, XQuery and XSLT 4.0, XSD 1.1, RELAX NG, XInclude, Canonical XML.
+        group: [lean-w3c, lean-semweb, lean-xml]
+    env:
+      # lean-xml runs only when resolve says so (xml); its job then does nothing and uploads nothing.
+      RUN_GROUP: ${{ matrix.group != 'lean-xml' || needs.resolve.outputs.xml == 'true' }}
     steps:
       - uses: actions/checkout@v4
+        if: env.RUN_GROUP == 'true'
         with:
           path: builds
       - uses: actions/checkout@v4
+        if: env.RUN_GROUP == 'true'
         with:
           repository: ${{ env.CORE_REPO }}
           ref: ${{ needs.resolve.outputs.core_commit }}
           path: core
       - name: Test data submodules
+        if: env.RUN_GROUP == 'true'
         run: |
           set -euo pipefail
           SUBS=$(python3 builds/release-tests/release-tests.py suite-groups --json | python3 -c 'import json,sys; print(" ".join("third_party/testing/"+s for s in json.load(sys.stdin)[sys.argv[1]]))' "${{ matrix.group }}")
           if [ -n "$SUBS" ]; then git -C core submodule update --init --depth 1 $SUBS; fi
       - uses: actions/download-artifact@v4
+        if: env.RUN_GROUP == 'true'
         with:
           name: plan
           path: ${{ runner.temp }}/plan
       - name: Release binaries (linux-x86_64)
+        if: env.RUN_GROUP == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -390,7 +406,7 @@ jobs:
           TAG=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["release_sets"]["linux-x86_64"]["tag"])' "$RUNNER_TEMP/plan/plan.json")
           python3 -c 'import importlib.util,sys; s=importlib.util.spec_from_file_location("rt","builds/release-tests/release-tests.py"); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); import json; print(json.dumps(m.fetch_set(sys.argv[1],"linux-x86_64",sys.argv[2])["build_info"]))' "$TAG" "$RUNNER_TEMP/rel"
       - name: Install elan and the pinned Lean
-        if: matrix.group == 'lean-semweb'
+        if: (matrix.group != 'lean-w3c') && env.RUN_GROUP == 'true'
         run: |
           set -euo pipefail
           curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
@@ -398,7 +414,7 @@ jobs:
           "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
       # build.yml's Lake cache of the newest Linux build (restore only: never saved from here).
       - name: Restore build.yml's Lake cache
-        if: matrix.group == 'lean-semweb'
+        if: (matrix.group != 'lean-w3c') && env.RUN_GROUP == 'true'
         uses: actions/cache/restore@v4
         with:
           path: core/formal/lean4/.lake
@@ -406,21 +422,22 @@ jobs:
           restore-keys: |
             lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
       - name: Build the conformance runners of the built-in engine
-        if: matrix.group == 'lean-semweb'
+        if: (matrix.group != 'lean-w3c') && env.RUN_GROUP == 'true'
         run: |
           set -euo pipefail
           find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -print -delete 2>/dev/null > /dev/null || true
-          EXES=$(python3 builds/release-tests/release-tests.py suite-groups --exes lean-semweb)
+          EXES=$(python3 builds/release-tests/release-tests.py suite-groups --exes "${{ matrix.group }}")
           cd core/formal/lean4
           T0=$(date +%s)
           lake build $EXES 2>&1 | tail -40
           echo "runners of core ${{ needs.resolve.outputs.core_commit }} built in $(( $(date +%s) - T0 )) s: $EXES" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run the group
+        if: env.RUN_GROUP == 'true'
         run: |
           python3 builds/release-tests/release-tests.py suite-run --group "${{ matrix.group }}" --core core \
             --bin "$RUNNER_TEMP/rel/linux-x86_64" --out "$RUNNER_TEMP/suite-out"
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: (always()) && env.RUN_GROUP == 'true'
         with:
           name: suite-${{ matrix.group }}
           overwrite: true  # a re-run of failed jobs (release-tests-retry.yml) uploads it again
