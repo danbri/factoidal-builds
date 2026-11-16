@@ -1,0 +1,131 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261116T0122Z-l4-schematron-linux-x86_64-gh43785915624a1",
+  "started_utc": "2026-11-16T01:24:22Z",
+  "finished_utc": "2026-11-16T01:24:34Z",
+  "trigger": "factoidal-release",
+  "suite": "l4-schematron",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "71f6b49aaea3eb0e44dc4d290b758e7304d9473c",
+  "commit_utc": "2026-11-15T21:39:45Z",
+  "snapshot_branch": "",
+  "release_tag": "build-71f6b49aaea3-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 8,
+  "names_run": 8,
+  "passed": 8,
+  "denominator": 8,
+  "share_pct": "100.0000",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 0,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43785915624",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261116T0122Z-l4-schematron-linux-x86_64-gh43785915624a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-16T01:22:52Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43785915624",
+  "trigger": "factoidal-release",
+  "core_commit": "71f6b49aaea3eb0e44dc4d290b758e7304d9473c",
+  "core_short": "71f6b49aaea3",
+  "on_main": true,
+  "commit_author_utc": "2026-11-15T21:39:22Z",
+  "commit_committer_utc": "2026-11-15T21:39:45Z",
+  "commit_subject": "BubblePopJS fuel monotonicity spike: 75 of 116 step lemmas proved by a generated walk (JS/FuelMonoSteps.lean); the state of the proof in JS/FuelMono.lean",
+  "release_sets": {
+   "darwin-arm64": {
+    "tag": "build-71f6b49aaea3-darwin-arm64",
+    "published_at": "2026-11-16T01:22:11Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-71f6b49aaea3-darwin-arm64"
+   },
+   "foafnaut-web": {
+    "tag": "build-71f6b49aaea3-foafnaut-web",
+    "published_at": "2026-11-16T01:22:38Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-71f6b49aaea3-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-71f6b49aaea3-linux-x86_64",
+    "published_at": "2026-11-16T01:21:58Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-71f6b49aaea3-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-71f6b49aaea3-web",
+    "published_at": "2026-11-16T01:22:29Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-71f6b49aaea3-web"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-16T01:22:54Z",
+  "candidate_why": "published by build run 43765406379",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": false,
+  "suites": true,
+  "platforms": [],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "command": [
+   "tools/lean-scoreboard.sh",
+   "--only",
+   "l4shacl-core10,l4shacl-sparql10,l4shacl-core12,l4shacl-sparql12,l4shacl-nodeexpr,l4shacl-rules,l4shex,l4shexc,l4rif,l4csvw-rdf,l4csvw-json,l4csvw-validate,l4xmlconf,l4xslt,l4schematron,l4mathml,l4jsonschema,l4jsonld-probe,l4jsonld-api,l4jsonld-frame,l4rml,l4vc-probe,l4rdf-semantics,l4owl-probe-species"
+  ],
+  "started_utc": "2026-11-16T01:24:22Z",
+  "exit": 1,
+  "seconds": 13,
+  "finished_utc": "2026-11-16T01:24:34Z"
+ },
+ "scoreboard_row": {
+  "spec_area": "Schematron",
+  "label": "",
+  "runner": "l4schematron",
+  "job": "l4schematron",
+  "status": "ok",
+  "pass": 8,
+  "fail": 0,
+  "other": 0,
+  "total": 8,
+  "parse": true,
+  "note": "other = undecided (0, expression outside the XPath subset) + unreadable (0)",
+  "command": "formal/lean4/.lake/build/bin/l4schematron",
+  "log": "/home/runner/work/_temp/suite-out/semweb/logs/l4schematron.log",
+  "seconds": 0,
+  "exit_code": "0",
+  "raw_summary_line": "schematron DECIDED: 8 pass, 0 fail (out of 8 decided)",
+  "detail": ""
+ },
+ "continues_fstar_suite": "schematron",
+ "group": "lean-semweb",
+ "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
