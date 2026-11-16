@@ -720,6 +720,8 @@ jobs:
           key: leanc-objects-v1-darwin-arm64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
       # A sample of the native compiles again with the real leanc: each object must be the same bytes.
       - name: Cache audit (native objects)
+        # Also after a failed test: the objects are built before test.sh runs.
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
