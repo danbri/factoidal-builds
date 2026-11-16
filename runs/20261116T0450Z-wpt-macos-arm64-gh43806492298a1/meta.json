@@ -1,0 +1,516 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261116T0450Z-wpt-macos-arm64-gh43806492298a1",
+  "started_utc": "2026-11-16T05:01:32Z",
+  "finished_utc": "2026-11-16T05:20:10Z",
+  "trigger": "factoidal-release",
+  "suite": "wpt",
+  "platform": "macos-arm64",
+  "engine": "bubblepopkit-native",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+  "commit_utc": "2026-11-16T02:25:30Z",
+  "snapshot_branch": "",
+  "release_tag": "build-1b2fc90d578e-foafnaut-darwin-arm64",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "names_total": 94695,
+  "names_run": 0,
+  "passed": 0,
+  "denominator": 2272125,
+  "share_pct": "0.0000",
+  "share_ex_encoding_pct": "0.0000",
+  "ok": 0,
+  "error": 0,
+  "timeout": 0,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": "",
+  "server_failures": 0,
+  "valid": "false",
+  "invalid_reason": "shards missing: [0, 1, 2, 3]; 94695 of 94695 names not run; shard 0: start check: no result for FileAPI/Blob-methods-from-detached-frame.html (exit 0); shard 1: start check: no result for FileAPI/BlobURL/cross-partition-navigation.https.html (exit 0); shard 2: start check: no result for FileAPI/BlobURL/cross-partition-self-fetch.https.html (exit 0); shard 3: start check: no result for FileAPI/BlobURL/cross-partition-worker-creation.https.html (exit 0)",
+  "kind": "full",
+  "shards": 4,
+  "wall_minutes": 2.9,
+  "repeat_of": "",
+  "runner": "macos-15 x4",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492298",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261116T0450Z-wpt-macos-arm64-gh43806492298a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-16T04:50:41Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492298",
+  "trigger": "factoidal-release",
+  "core_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+  "core_short": "1b2fc90d578e",
+  "on_main": true,
+  "commit_author_utc": "2026-11-16T02:25:30Z",
+  "commit_committer_utc": "2026-11-16T02:25:30Z",
+  "commit_subject": "Tail-recursion allow lines: deleteOrThrow (Proxy chain) and arrayGeneric (fuel-bounded [[Get]]/[[Set]] cycle) from #499",
+  "release_sets": {
+   "darwin-arm64": {
+    "tag": "build-1b2fc90d578e-darwin-arm64",
+    "published_at": "2026-11-16T04:49:11Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-darwin-arm64"
+   },
+   "foafnaut-darwin-arm64": {
+    "tag": "build-1b2fc90d578e-foafnaut-darwin-arm64",
+    "published_at": "2026-11-16T04:50:17Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-foafnaut-darwin-arm64"
+   },
+   "foafnaut-web": {
+    "tag": "build-1b2fc90d578e-foafnaut-web",
+    "published_at": "2026-11-16T04:50:28Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-1b2fc90d578e-linux-x86_64",
+    "published_at": "2026-11-16T04:48:58Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-1b2fc90d578e-web",
+    "published_at": "2026-11-16T04:49:29Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-web"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-16T04:50:45Z",
+  "candidate_why": "published by build run 43794888137",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": true,
+  "suites": true,
+  "platforms": [
+   "macos-arm64"
+  ],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "inputs": {
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "chrome_run": {
+   "id": 5373481064333312,
+   "browser_version": "157.0.8103.78",
+   "os_name": "linux",
+   "os_version": "22.04",
+   "time_start": "2026-11-15T01:12:05.118Z",
+   "results_url": "https://storage.googleapis.com/wptd/fa649586f35119af9032312ef21e300e41d1c3b6/chrome-157.0.8103.78-linux-22.04-720356c15a-summary_v2.json.gz"
+  },
+  "names": 94695,
+  "denominator": 2272125,
+  "denominator_encoding": 1152398,
+  "full_list_sha256": "39a9d212d6a8f18246ef248ba957b4ad988b6280f6abe5ceb1f0352b50ae503b",
+  "chrome_json_sha256": "4857f34bc45b262c51c7d2f5aa13ccc3230cfa29cd7a42d41ee2f51642f3cb7f"
+ },
+ "validity": {
+  "valid": false,
+  "reasons": [
+   "shards missing: [0, 1, 2, 3]",
+   "94695 of 94695 names not run",
+   "shard 0: start check: no result for FileAPI/Blob-methods-from-detached-frame.html (exit 0)",
+   "shard 1: start check: no result for FileAPI/BlobURL/cross-partition-navigation.https.html (exit 0)",
+   "shard 2: start check: no result for FileAPI/BlobURL/cross-partition-self-fetch.https.html (exit 0)",
+   "shard 3: start check: no result for FileAPI/BlobURL/cross-partition-worker-creation.https.html (exit 0)"
+  ],
+  "rules": "The rules for a full WPT run to count as a score. Returns the reasons it does not.",
+  "server_failure_limit": 0.005,
+  "probe_failure_limit": 3
+ },
+ "server_failures_first_pass": 0,
+ "totals": {},
+ "shards": [
+  {
+   "index": 0,
+   "shards": 4,
+   "names": 23674,
+   "started_utc": "2026-11-16T05:06:07Z",
+   "runner": {
+    "os": "Darwin",
+    "machine": "arm64",
+    "cpus": 3,
+    "python": "3.13.17",
+    "image_os": "macos15",
+    "image_version": "20261104.0514.1",
+    "runner_name": "GitHub Actions 1000069209",
+    "runner_environment": "github-hosted",
+    "os_version": "15.8.2",
+    "memory_bytes": 7516192768,
+    "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+    "node": "v22.23.4",
+    "git": "git version 2.56.0"
+   },
+   "platform": "macos-arm64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-darwin-arm64": {
+     "tag": "build-1b2fc90d578e-foafnaut-darwin-arm64",
+     "tarball_sha256": "25117fe9284293863921e83462158d70e7e7e7f7293f1a838993e8fcdb3ab545",
+     "files": 59,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:10Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-darwin-arm64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "clang": "Apple clang version 17.0.0 (clang-1700.0.13.5)",
+       "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+       "emscripten": "6.0.8",
+       "foafnaut_gpu_gate": "not run: CPU/packaging/native-load gates only",
+       "foafnaut_platform": "darwin-arm64",
+       "lean": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "f37e8c0407ad24d458d65f311c47294cfd5c1a5ee0c4df92fa76f69afb6141ef",
+   "tree_seconds": 84,
+   "error": "start check: no result for FileAPI/Blob-methods-from-detached-frame.html (exit 0)",
+   "finished_utc": "2026-11-16T05:09:02Z",
+   "wall_seconds": 176
+  },
+  {
+   "index": 1,
+   "shards": 4,
+   "names": 23674,
+   "started_utc": "2026-11-16T05:01:32Z",
+   "runner": {
+    "os": "Darwin",
+    "machine": "arm64",
+    "cpus": 3,
+    "python": "3.13.17",
+    "image_os": "macos15",
+    "image_version": "20261104.0514.1",
+    "runner_name": "GitHub Actions 1000069199",
+    "runner_environment": "github-hosted",
+    "os_version": "15.8.2",
+    "memory_bytes": 7516192768,
+    "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+    "node": "v22.23.4",
+    "git": "git version 2.56.0"
+   },
+   "platform": "macos-arm64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-darwin-arm64": {
+     "tag": "build-1b2fc90d578e-foafnaut-darwin-arm64",
+     "tarball_sha256": "25117fe9284293863921e83462158d70e7e7e7f7293f1a838993e8fcdb3ab545",
+     "files": 59,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:10Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-darwin-arm64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "clang": "Apple clang version 17.0.0 (clang-1700.0.13.5)",
+       "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+       "emscripten": "6.0.8",
+       "foafnaut_gpu_gate": "not run: CPU/packaging/native-load gates only",
+       "foafnaut_platform": "darwin-arm64",
+       "lean": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "f37e8c0407ad24d458d65f311c47294cfd5c1a5ee0c4df92fa76f69afb6141ef",
+   "tree_seconds": 84,
+   "error": "start check: no result for FileAPI/BlobURL/cross-partition-navigation.https.html (exit 0)",
+   "finished_utc": "2026-11-16T05:04:26Z",
+   "wall_seconds": 174
+  },
+  {
+   "index": 2,
+   "shards": 4,
+   "names": 23674,
+   "started_utc": "2026-11-16T05:17:26Z",
+   "runner": {
+    "os": "Darwin",
+    "machine": "arm64",
+    "cpus": 3,
+    "python": "3.13.17",
+    "image_os": "macos15",
+    "image_version": "20261104.0514.1",
+    "runner_name": "GitHub Actions 1000069225",
+    "runner_environment": "github-hosted",
+    "os_version": "15.8.2",
+    "memory_bytes": 7516192768,
+    "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+    "node": "v22.23.4",
+    "git": "git version 2.56.0"
+   },
+   "platform": "macos-arm64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-darwin-arm64": {
+     "tag": "build-1b2fc90d578e-foafnaut-darwin-arm64",
+     "tarball_sha256": "25117fe9284293863921e83462158d70e7e7e7f7293f1a838993e8fcdb3ab545",
+     "files": 59,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:10Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-darwin-arm64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "clang": "Apple clang version 17.0.0 (clang-1700.0.13.5)",
+       "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+       "emscripten": "6.0.8",
+       "foafnaut_gpu_gate": "not run: CPU/packaging/native-load gates only",
+       "foafnaut_platform": "darwin-arm64",
+       "lean": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "f37e8c0407ad24d458d65f311c47294cfd5c1a5ee0c4df92fa76f69afb6141ef",
+   "tree_seconds": 73,
+   "error": "start check: no result for FileAPI/BlobURL/cross-partition-self-fetch.https.html (exit 0)",
+   "finished_utc": "2026-11-16T05:20:10Z",
+   "wall_seconds": 164
+  },
+  {
+   "index": 3,
+   "shards": 4,
+   "names": 23673,
+   "started_utc": "2026-11-16T05:09:30Z",
+   "runner": {
+    "os": "Darwin",
+    "machine": "arm64",
+    "cpus": 3,
+    "python": "3.13.17",
+    "image_os": "macos15",
+    "image_version": "20261104.0514.1",
+    "runner_name": "GitHub Actions 1000069211",
+    "runner_environment": "github-hosted",
+    "os_version": "15.8.2",
+    "memory_bytes": 7516192768,
+    "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+    "node": "v22.23.4",
+    "git": "git version 2.56.0"
+   },
+   "platform": "macos-arm64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-darwin-arm64": {
+     "tag": "build-1b2fc90d578e-foafnaut-darwin-arm64",
+     "tarball_sha256": "25117fe9284293863921e83462158d70e7e7e7f7293f1a838993e8fcdb3ab545",
+     "files": 59,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:10Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-darwin-arm64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "clang": "Apple clang version 17.0.0 (clang-1700.0.13.5)",
+       "deno": "deno 2.9.4 (stable, release, aarch64-apple-darwin)",
+       "emscripten": "6.0.8",
+       "foafnaut_gpu_gate": "not run: CPU/packaging/native-load gates only",
+       "foafnaut_platform": "darwin-arm64",
+       "lean": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "f37e8c0407ad24d458d65f311c47294cfd5c1a5ee0c4df92fa76f69afb6141ef",
+   "tree_seconds": 53,
+   "error": "start check: no result for FileAPI/BlobURL/cross-partition-worker-creation.https.html (exit 0)",
+   "finished_utc": "2026-11-16T05:11:58Z",
+   "wall_seconds": 148
+  }
+ ],
+ "directories": {}
+}
