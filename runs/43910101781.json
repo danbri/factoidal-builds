@@ -1,0 +1,277 @@
+{
+ "format": "factoidal-ci-metrics-v1",
+ "run_id": 43910101781,
+ "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43910101781",
+ "event": "workflow_dispatch",
+ "builds_branch": "main",
+ "builds_sha": "6c05dca8c21fcf9cb569e6521e37a5374c2bc400",
+ "title": "Build Factoidal from factoidal-core",
+ "created_at": "2026-11-16T16:40:30Z",
+ "jobs": [
+  {
+   "name": "resolve",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 2.15,
+   "minutes": 0.27,
+   "start_after_dispatch_minutes": 2.18,
+   "end_after_dispatch_minutes": 2.45,
+   "longest_steps": [
+    {
+     "name": "Run scripts/resolve-core.sh",
+     "minutes": 0.15
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run python3 scripts/mac-runs-on.py",
+     "minutes": 0.0
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "foafnaut-engines",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 1.38,
+   "minutes": 39.9,
+   "start_after_dispatch_minutes": 3.83,
+   "end_after_dispatch_minutes": 43.73,
+   "longest_steps": [
+    {
+     "name": "Build and check the Lean HTML browser runtime",
+     "minutes": 30.45
+    },
+    {
+     "name": "Build and check the Foafnaut engines",
+     "minutes": 7.4
+    },
+    {
+     "name": "Build the WasmVM guest modules",
+     "minutes": 0.65
+    },
+    {
+     "name": "Restore .lake from the lean job's cache",
+     "minutes": 0.25
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "emsdk-6.0.8-Linux",
+     "result": "hit",
+     "bytes": 480270169,
+     "restored_key": "emsdk-6.0.8-Linux"
+    },
+    {
+     "action": "cache/restore",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-ca161f0b3cb72c7a7f663428a346e8a573e2b229c12647a68297e335984db267",
+     "result": "partial",
+     "bytes": 1101582610,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-550029698a5c5ef2b30effda61aa572b896af8a625b36b08de43f62002bcad7b"
+    },
+    {
+     "action": "cache/restore",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-43910101781",
+     "result": "partial",
+     "bytes": 32104382,
+     "restored_key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-43905614168"
+    },
+    {
+     "action": "cache/save",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-43910101781",
+     "result": "saved",
+     "bytes": null
+    }
+   ],
+   "ccache": {
+    "hits": 729,
+    "lookups": 745
+   },
+   "cache_audit": {
+    "checked": 12,
+    "compiles": 638,
+    "different": 0
+   }
+  },
+  {
+   "name": "lean (ubuntu-latest, linux-x86_64)",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.88,
+   "minutes": 20.22,
+   "start_after_dispatch_minutes": 3.33,
+   "end_after_dispatch_minutes": 23.55,
+   "longest_steps": [
+    {
+     "name": "Lean conformance scoreboard",
+     "minutes": 12.65
+    },
+    {
+     "name": "lake build (library, proofs,",
+     "minutes": 4.35
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.7
+    },
+    {
+     "name": "Dispatch ABI and CLI smoke",
+     "minutes": 0.65
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-ca161f0b3cb72c7a7f663428a346e8a573e2b229c12647a68297e335984db267",
+     "result": "partial",
+     "bytes": 1101582610,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-550029698a5c5ef2b30effda61aa572b896af8a625b36b08de43f62002bcad7b"
+    }
+   ]
+  },
+  {
+   "name": "lean-wasm",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 16.03,
+   "start_after_dispatch_minutes": 23.62,
+   "end_after_dispatch_minutes": 39.65,
+   "longest_steps": [
+    {
+     "name": "Build the Lean wasm module",
+     "minutes": 14.82
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.32
+    },
+    {
+     "name": "Restore .lake from the lean job",
+     "minutes": 0.3
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.15
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache/restore",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-ca161f0b3cb72c7a7f663428a346e8a573e2b229c12647a68297e335984db267",
+     "result": "hit",
+     "bytes": 1102926931,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-ca161f0b3cb72c7a7f663428a346e8a573e2b229c12647a68297e335984db267"
+    },
+    {
+     "action": "cache",
+     "key": "emsdk-6.0.8-Linux",
+     "result": "hit",
+     "bytes": 480270169,
+     "restored_key": "emsdk-6.0.8-Linux"
+    }
+   ]
+  },
+  {
+   "name": "web-gates",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 3.82,
+   "start_after_dispatch_minutes": 39.72,
+   "end_after_dispatch_minutes": 43.53,
+   "longest_steps": [
+    {
+     "name": "npm package suite",
+     "minutes": 1.93
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.73
+    },
+    {
+     "name": "LWS client, Touchstone client lab",
+     "minutes": 0.42
+    },
+    {
+     "name": "OWL artifact runner refusal and hard-timeout controls",
+     "minutes": 0.28
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "touchstone-m2-23eae9cb8137f7a7caa1cc97289e89d5a7b38ea95f8fd990147a36a868960cea",
+     "result": "hit",
+     "bytes": 60280853,
+     "restored_key": "touchstone-m2-23eae9cb8137f7a7caa1cc97289e89d5a7b38ea95f8fd990147a36a868960cea"
+    }
+   ]
+  },
+  {
+   "name": "foafnaut-host-tests / host-tests",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 3.45,
+   "start_after_dispatch_minutes": 43.78,
+   "end_after_dispatch_minutes": 47.23,
+   "longest_steps": [
+    {
+     "name": "test.sh on the engines (every check; all failures listed at the end)",
+     "minutes": 3.13
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.15
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.03
+    },
+    {
+     "name": "Run denoland/setup-deno@v2",
+     "minutes": 0.03
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "publish",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 0.15,
+   "start_after_dispatch_minutes": 47.28,
+   "end_after_dispatch_minutes": 47.43,
+   "longest_steps": [
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Assemble, pack and publish each complete set",
+     "minutes": 0.02
+    }
+   ],
+   "caches": []
+  }
+ ],
+ "wall_minutes": 47.43
+}
