@@ -1411,6 +1411,19 @@ def cmd_suite_run(a):
 L4_TOTAL = re.compile(r"^TOTAL: (\d+) pass, (\d+) fail(.*)$", re.M)
 
 
+# l4w3c's score line of each manifest it ran (one per sub-manifest of an umbrella manifest such as
+# sparql11/manifest-all.ttl), before the TOTAL line: "<label>: P pass, F fail, S skip, U unsupported
+# [, X expected-fail] (out of N)". Recorded in meta.json "parts", so the Hub can split SPARQL into
+# Query, Update, result formats, ... and RDF into its syntaxes (core tests/browser-wpt/specs-data.py).
+L4_PART = re.compile(r"^(?!TOTAL:)(\S[^\n]*?): (\d+) pass, (\d+) fail, (\d+) skip, (\d+) unsupported"
+                     r"(?:, (\d+) expected-fail)? \(out of (\d+)\)$", re.M)
+
+
+def parse_l4w3c_parts(text):
+    return [{"label": m[0], "pass": int(m[1]), "fail": int(m[2]), "skip": int(m[3]), "unsupported": int(m[4]),
+             "xfail": int(m[5] or 0), "total": int(m[6])} for m in L4_PART.findall(text)]
+
+
 def parse_l4w3c(text):
     m = L4_TOTAL.findall(text)
     if not m:
@@ -1540,8 +1553,11 @@ def cmd_suite_score(a):
     for key, group, logname, runner, args, budget, subs in SUITES:
         st = status.get(key)
         lp = os.path.join(od, logname)
+        parts = None
         if key.startswith("l4w3c:"):
-            t = parse_l4w3c(open(lp, errors="replace").read()) if os.path.exists(lp) else None
+            text = open(lp, errors="replace").read() if os.path.exists(lp) else ""
+            t = parse_l4w3c(text) if text else None
+            parts = parse_l4w3c_parts(text) if t else None
             engine = "lean"
         else:
             t = totals.get(key) if os.path.exists(lp) else None
@@ -1567,6 +1583,7 @@ def cmd_suite_score(a):
         })
         rows.append(row)
         metas[run_id] = {"format": "factoidal-release-test-run-v1", "row": row, "plan": plan, "status": st, "totals": t,
+                         **({"parts": parts} if parts else {}),
                          "command": [f"bin/linux-x86_64/{runner}"] + args, "submodules": subs,
                          "parser": "l4w3c TOTAL line" if engine == "lean" else "formal/fstar/generate-report.sh latest.json totals." + key,
                          "validity": {"valid": not reasons, "reasons": reasons}}

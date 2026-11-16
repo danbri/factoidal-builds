@@ -11,6 +11,12 @@ name: Conformance data
 # checked against core's docs/web/hub/conformance/data.schema.json. A commit is made only when
 # the data changed (generatedAt alone is not a change).
 #
+# The same job writes specs/ for the Hub's Data and documents page
+# (https://danbri.github.io/factoidal/web/hub/specs/): data.json (one normalised record per
+# semantic-web, XML and data-format suite id, with family headlines), history.json (every row
+# of those suites as a time series) and records.csv (the same rows, flat, for any CSV tool),
+# written by core's tests/browser-wpt/specs-data.py from runs.csv and spec-suites.json.
+#
 # Why a branch of this repository and not core: the data is regenerated many times a day, and
 # bot commits on core main would add noise there and race with merges. The Pages build
 # (danbri/factoidal deploy-pages.yml) copies the two files from this branch into the site.
@@ -59,7 +65,9 @@ jobs:
           sparse-checkout: |
             tests/browser-wpt
             tests/hub/conformance_schema.mjs
+            tests/hub/specs_schema.mjs
             docs/web/hub/conformance
+            docs/web/hub/specs
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
@@ -72,6 +80,16 @@ jobs:
           ls -la "$RUNNER_TEMP/out"
       - name: Check the data against the schema
         run: node core/tests/hub/conformance_schema.mjs "$RUNNER_TEMP/out"
+      - name: Data of the Data and documents page (specs/)
+        # The semantic-web, XML and other data-format suites, one normalised record per suite id
+        # (core tests/browser-wpt/specs-data.py with its mapping spec-suites.json; schema
+        # docs/web/hub/specs/data.schema.json). Skipped while the core ref has no generator.
+        run: |
+          set -euo pipefail
+          if [ ! -f core/tests/browser-wpt/specs-data.py ]; then echo "no specs-data.py in core; skipped"; exit 0; fi
+          python3 core/tests/browser-wpt/specs-data.py --out "$RUNNER_TEMP/specs"
+          node core/tests/hub/specs_schema.mjs "$RUNNER_TEMP/specs"
+          ls -la "$RUNNER_TEMP/specs"
       - name: Commit to hub-data when the data changed
         id: commit
         env:
@@ -105,17 +123,25 @@ jobs:
                 > "$RUNNER_TEMP/hub-data/README.md"
             fi
             mkdir -p "$RUNNER_TEMP/hub-data/conformance"
-            same=$(python3 - "$RUNNER_TEMP/out" "$RUNNER_TEMP/hub-data/conformance" <<'PY'
+            mkdir -p "$RUNNER_TEMP/hub-data/specs"
+            same=$(python3 - "$RUNNER_TEMP/out" "$RUNNER_TEMP/hub-data/conformance" "$RUNNER_TEMP/specs" "$RUNNER_TEMP/hub-data/specs" <<'PY'
           import json, os, sys
           def load(d, n):
               p = os.path.join(d, n)
               if not os.path.exists(p): return None
               v = json.load(open(p)); v.pop("generatedAt", None); return v
-          print("yes" if all(load(sys.argv[1], n) == load(sys.argv[2], n) for n in ("data.json", "history.json")) else "no")
+          same = all(load(sys.argv[1], n) == load(sys.argv[2], n) for n in ("data.json", "history.json"))
+          spec_new = os.path.join(sys.argv[3], "data.json")
+          if os.path.exists(spec_new):
+              same = same and all(load(sys.argv[3], n) == load(sys.argv[4], n) for n in ("data.json", "history.json"))
+          print("yes" if same else "no")
           PY
           )
             if [ "$same" = yes ]; then echo "The data is unchanged; nothing to commit."; echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
             cp "$RUNNER_TEMP/out/data.json" "$RUNNER_TEMP/out/history.json" "$RUNNER_TEMP/hub-data/conformance/"
+            if [ -f "$RUNNER_TEMP/specs/data.json" ]; then
+              cp "$RUNNER_TEMP/specs/data.json" "$RUNNER_TEMP/specs/history.json" "$RUNNER_TEMP/specs/records.csv" "$RUNNER_TEMP/hub-data/specs/"
+            fi
             git -C "$RUNNER_TEMP/hub-data" add -A
             git -C "$RUNNER_TEMP/hub-data" commit -q -m "Conformance data: $SUMMARY" -m "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} (${GITHUB_EVENT_NAME})"
             if git -C "$RUNNER_TEMP/hub-data" push -q origin hub-data; then
