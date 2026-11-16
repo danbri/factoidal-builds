@@ -51,10 +51,12 @@ on:
 permissions:
   contents: read
 
-# Main: one build at a time, a waiting run is replaced by a newer one. A branch build has
-# the group of its ref, so main's builds and other refs do not replace it.
+# Main: one build at a time, a waiting run is replaced by a newer one. A branch build joins
+# the shared ad-hoc macOS group (also build.yml's macos=true dispatches): one ad-hoc macOS build
+# at a time in the repository, a newer request replacing a waiting one, so ad-hoc work never
+# takes more than one of the account's five macOS slots from main's release path.
 concurrency:
-  group: foafnaut-macos-${{ inputs.branch && inputs.core_ref || 'main' }}
+  group: ${{ inputs.branch && 'build-factoidal-macos-adhoc' || 'foafnaut-macos-main' }}
   cancel-in-progress: false
 
 env:

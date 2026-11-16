@@ -60,14 +60,15 @@ class RunsOn(unittest.TestCase):
         self.assertEqual(self.pick(var="", mode="self-hosted"), m.SELF)
 
 
-def resolve_macos(event, sha_on_main, input_macos="", schedule=""):
+def resolve_macos(event, sha_on_main, input_macos="", schedule="", input_ref=None):
     """Run the macOS decision of resolve-core.sh with gh replaced by a stub."""
     with tempfile.TemporaryDirectory() as d:
         stub = pathlib.Path(d) / "gh"
         status = "identical" if sha_on_main else "diverged"
         stub.write_text(f"#!/bin/sh\necho {status}\n")
         stub.chmod(0o755)
-        env = dict(os.environ, PATH=f"{d}:{os.environ['PATH']}", EVENT=event, SHA="a" * 40,
+        ref = ("a" * 40 if event == "workflow_dispatch" else "") if input_ref is None else input_ref
+        env = dict(os.environ, PATH=f"{d}:{os.environ['PATH']}", EVENT=event, SHA="a" * 40, INPUT_REF=ref,
                    INPUT_MACOS=input_macos, SCHEDULE=schedule, CORE_REPO="danbri/factoidal-core")
         out = subprocess.run(["bash", str(ROOT / "scripts" / "resolve-macos.sh")], env=env,
                              capture_output=True, text=True, check=True).stdout
@@ -81,10 +82,17 @@ class MacosJobs(unittest.TestCase):
     def test_pr_head_dispatch_with_input_runs_macos(self):
         self.assertEqual(resolve_macos("workflow_dispatch", False, "true")["macos"], "true")
 
-    def test_main_commit_keeps_the_release_path(self):
-        self.assertEqual(resolve_macos("workflow_dispatch", True)["macos"], "true")
+    def test_main_lane_keeps_the_release_path(self):
+        # mac-release.yml dispatches with an empty core_ref: main's head, group build-factoidal-main
+        self.assertEqual(resolve_macos("workflow_dispatch", True, input_ref="")["macos"], "true")
+        self.assertEqual(resolve_macos("workflow_dispatch", True, input_ref="main")["macos"], "true")
         self.assertEqual(resolve_macos("schedule", True)["macos"], "true")
         self.assertEqual(resolve_macos("push", True)["macos"], "true")
+
+    def test_named_main_commit_is_linux_only(self):
+        # A merge check that names a main commit no longer queues macOS jobs of an older main.
+        self.assertEqual(resolve_macos("workflow_dispatch", True)["macos"], "false")
+        self.assertEqual(resolve_macos("workflow_dispatch", True, "true")["macos"], "true")
 
     def test_nightly(self):
         r = resolve_macos("schedule", True, schedule="41 2 * * *")

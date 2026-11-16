@@ -73,3 +73,41 @@ ADV_UNTIL=0
 [ -n "$PID" ] && [ "$WANT" = true ] && ADV_UNTIL=$END
 gh variable set MAC_RUNNER --repo "$REPO" --body "{\"seen\": $NOW, \"until\": $ADV_UNTIL, \"free_gib\": $FREE}" >/dev/null 2>>"$LOG" \
   || log "could not set MAC_RUNNER"
+
+# The Mac release lane (mac-release.yml writes latest/darwin-status.json): copy each dispatch
+# decision (with any look-ahead wait) and, at most hourly, a warning when the Mac release has
+# fallen more than ALERT_LAG_MIN (120) minutes behind core main into the coordination log.
+COORD_LOG=${COORD_LOG:-$HOME/working/foafnaut/fncg/coordination.log}
+if [ -f "$COORD_LOG" ]; then
+  gh api "repos/$REPO/contents/latest/darwin-status.json" -H 'Accept: application/vnd.github.raw' \
+    > "$CTL/darwin-status.json.new" 2>/dev/null && mv -f "$CTL/darwin-status.json.new" "$CTL/darwin-status.json"
+  python3 - "$CTL" "$COORD_LOG" "${ALERT_LAG_MIN:-120}" <<'PY' 2>>"$LOG" || log "darwin-status check failed"
+import json, os, sys, time
+ctl, coord, alert = sys.argv[1], sys.argv[2], int(sys.argv[3])
+try:
+    d = json.load(open(os.path.join(ctl, "darwin-status.json")))
+except (OSError, ValueError):
+    sys.exit(0)
+def seen(name, value):
+    p = os.path.join(ctl, name)
+    old = open(p).read() if os.path.exists(p) else ""
+    if old == value:
+        return True
+    open(p, "w").write(value)
+    return False
+now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+lines = []
+dec = d.get("last_decision") or {}
+if dec.get("action") == "dispatched" and not seen("darwin-decision", dec.get("at", "")):
+    lines.append(f"macalways-ci: Mac release lane: dispatched build.yml for core main {dec.get('head','')[:12]} ({dec.get('reason','')})")
+if d.get("behind") and d.get("lag_min", 0) > alert:
+    rel = (d.get("mac_release") or {}).get("tag", "none")
+    key = f"{d['main']['sha']} {int(time.time() // 3600)}"
+    if not seen("darwin-alert", key):
+        runs = ", ".join(f"{r['id']} {r['status']}" for r in d.get("lane_runs", [])) or "no lane run"
+        lines.append(f"macalways-ci: ALERT Mac release {rel} is {d['lag_min']} min behind core main {d['main']['sha'][:12]} (lane: {runs})")
+with open(coord, "a") as f:
+    for l in lines:
+        f.write(f"{now} {l}\n")
+PY
+fi
