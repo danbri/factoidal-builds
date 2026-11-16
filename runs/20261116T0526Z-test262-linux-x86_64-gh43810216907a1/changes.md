@@ -1,0 +1,309 @@
+### Since 20261116T0501Z-test262-linux-x86_64-gh43807413094a1 (core 26f1404a9441)
+
+Files passed 46,762 -> 46,305 (-457; -0.8495 points) DROP
+
+Newly passing: 0. Newly failing: 457.
+
+Newly failing:
+
+- `test/annexB/built-ins/RegExp/RegExp-decimal-escape-class-range.js`: FAIL sloppy parse: SyntaxError: Invalid regular expression: range out of order in character class at '.' (offset 525)
+- `test/annexB/built-ins/RegExp/named-groups/non-unicode-malformed.js`: FAIL sloppy parse: SyntaxError: Invalid regular expression: invalid capture group name at '.' (offset 402)
+- `test/annexB/built-ins/RegExp/prototype/compile/pattern-string-invalid-u.js`: FAIL sloppy Test262Error: invalid pattern: \2 Expected a SyntaxError to be thrown but no exception was thrown at all
+- `test/annexB/built-ins/String/prototype/anchor/prop-desc.js`: FAIL sloppy Test262Error: anchor descriptor should be writable
+- `test/annexB/built-ins/String/prototype/big/prop-desc.js`: FAIL sloppy Test262Error: big descriptor should be writable
+- `test/annexB/built-ins/String/prototype/blink/prop-desc.js`: FAIL sloppy Test262Error: blink descriptor should be writable
+- `test/annexB/built-ins/String/prototype/bold/prop-desc.js`: FAIL sloppy Test262Error: bold descriptor should be writable
+- `test/annexB/built-ins/String/prototype/fixed/prop-desc.js`: FAIL sloppy Test262Error: fixed descriptor should be writable
+- `test/annexB/built-ins/String/prototype/fontcolor/prop-desc.js`: FAIL sloppy Test262Error: fontcolor descriptor should be writable
+- `test/annexB/built-ins/String/prototype/fontsize/prop-desc.js`: FAIL sloppy Test262Error: fontsize descriptor should be writable
+- `test/annexB/built-ins/String/prototype/italics/prop-desc.js`: FAIL sloppy Test262Error: italics descriptor should be writable
+- `test/annexB/built-ins/String/prototype/link/prop-desc.js`: FAIL sloppy Test262Error: link descriptor should be writable
+- `test/annexB/built-ins/String/prototype/small/prop-desc.js`: FAIL sloppy Test262Error: small descriptor should be writable
+- `test/annexB/built-ins/String/prototype/strike/prop-desc.js`: FAIL sloppy Test262Error: strike descriptor should be writable
+- `test/annexB/built-ins/String/prototype/sub/prop-desc.js`: FAIL sloppy Test262Error: sub descriptor should be writable
+- `test/annexB/built-ins/String/prototype/substr/B.2.3.js`: FAIL sloppy Test262Error: substr descriptor should be writable
+- `test/annexB/built-ins/String/prototype/sup/prop-desc.js`: FAIL sloppy Test262Error: sup descriptor should be writable
+- `test/annexB/built-ins/String/prototype/trimLeft/prop-desc.js`: FAIL sloppy Test262Error: trimLeft descriptor should be writable
+- `test/annexB/built-ins/String/prototype/trimRight/prop-desc.js`: FAIL sloppy Test262Error: trimRight descriptor should be writable
+- `test/annexB/language/literals/regexp/identity-escape.js`: FAIL sloppy TypeError: Cannot read properties of null
+- `test/built-ins/Array/prototype/toLocaleString/S15.4.4.3_A1_T1.js`: FAIL sloppy Test262Error: #1: var n = 0; var obj = {toLocaleString: function() {n++}}; var arr = [undefined, obj, null, obj, obj]; arr.toLocaleString(); n === 3. Actual: 0
+- `test/built-ins/Array/prototype/toLocaleString/S15.4.4.3_A3_T1.js`: FAIL sloppy Test262Error: #1: var n = 0; var obj = {toLocaleString: function() {n++}}; Array.prototype[1] = obj; x = [obj]; x.length = 2; x.toLocaleString(); n === 2. Actua
+- `test/built-ins/Array/prototype/toLocaleString/invoke-element-tolocalestring.js`: FAIL sloppy Test262Error: Expected SameValue(«"[object Object]"», «"ok"») to be true
+- `test/built-ins/Array/prototype/toLocaleString/primitive_this_value.js`: FAIL strict Test262Error: Expected SameValue(«"true,false"», «"boolean,boolean"») to be true
+- `test/built-ins/Array/prototype/toLocaleString/primitive_this_value_getter.js`: FAIL strict Test262Error: Expected SameValue(«"true,false"», «"boolean,boolean"») to be true
+- `test/built-ins/Array/prototype/toLocaleString/prop-desc.js`: FAIL sloppy Test262Error: toLocaleString should be an own property
+- `test/built-ins/Array/prototype/toLocaleString/user-provided-tolocalestring-shrink.js`: FAIL sloppy Test262Error: Expected SameValue(«"0,0,0,0"», «"0,0,,"») to be true
+- `test/built-ins/Function/prototype/Symbol.hasInstance/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Function/prototype/Symbol.hasInstance/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Function/prototype/Symbol.hasInstance/prop-desc.js`: FAIL sloppy Test262Error: Expected SameValue(«"undefined"», «"function"») to be true
+- `test/built-ins/Function/prototype/Symbol.hasInstance/this-val-bound-target.js`: FAIL sloppy TypeError: expression is not a function
+- `test/built-ins/Function/prototype/Symbol.hasInstance/this-val-not-callable.js`: FAIL sloppy TypeError: Cannot read properties of undefined (reading 'call')
+- `test/built-ins/Function/prototype/Symbol.hasInstance/this-val-poisoned-prototype.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/built-ins/Function/prototype/Symbol.hasInstance/value-get-prototype-of-err.js`: FAIL sloppy Test262Error: Expected a Test262Error but got a TypeError
+- `test/built-ins/Function/prototype/Symbol.hasInstance/value-negative.js`: FAIL sloppy TypeError: expression is not a function
+- `test/built-ins/Function/prototype/Symbol.hasInstance/value-non-obj.js`: FAIL sloppy TypeError: expression is not a function
+- `test/built-ins/Function/prototype/Symbol.hasInstance/value-positive.js`: FAIL sloppy TypeError: expression is not a function
+- `test/built-ins/Function/prototype/bind/instance-length-default-value.js`: FAIL sloppy Test262Error: not own Expected SameValue(«41», «0») to be true
+- `test/built-ins/Function/prototype/bind/instance-length-tointeger.js`: FAIL sloppy Test262Error: Expected SameValue(«NaN», «0») to be true
+- `test/built-ins/Function/prototype/toString/AsyncFunction.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function anonymous() { [code] }" (async function anonymous(a, /* a */ b, c /* b */ // ) { /* c */ ; /* d */ //
+- `test/built-ins/Function/prototype/toString/AsyncGenerator.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function anonymous() { [code] }" (async function* anonymous(a, /* a */ b, c /* b */ // ) { /* c */ ; /* d */ /
+- `test/built-ins/Function/prototype/toString/Function.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function anonymous() { [code] }" (function anonymous(a, /* a */ b, c /* b */ // ) { /* c */ ; /* d */ // })
+- `test/built-ins/Function/prototype/toString/GeneratorFunction.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function anonymous() { [code] }" (function* anonymous(a, /* a */ b, c /* b */ // ) { /* c */ yield yield; /* d
+- `test/built-ins/Function/prototype/toString/arrow-function.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (( /* a */ a /* b */ , /* c */ b /* d */ ) /* e */ => /* f */ { /* g */ ; /* h */ })
+- `test/built-ins/Function/prototype/toString/async-arrow-function.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async /* a */ ( /* b */ a /* c */ , /* d */ b /* e */ ) /* f */ => /* g */ { /* h */ 
+- `test/built-ins/Function/prototype/toString/async-function-declaration.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function f() { [code] }" (async function /* a */ f /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ {
+- `test/built-ins/Function/prototype/toString/async-function-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function F() { [code] }" (async function /* a */ F /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ {
+- `test/built-ins/Function/prototype/toString/async-generator-declaration.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function f() { [code] }" (async /* a */ function /* b */ * /* c */ f /* d */ ( /* e */ x /* f */ , /* g */ y /
+- `test/built-ins/Function/prototype/toString/async-generator-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function F() { [code] }" (async /* a */ function /* b */ * /* c */ F /* d */ ( /* e */ x /* f */ , /* g */ y /
+- `test/built-ins/Function/prototype/toString/async-generator-method-class-expression-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async /* a */ * /* b */ f /* c */ ( /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/async-generator-method-class-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async /* a */ * /* b */ f /* c */ ( /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/async-generator-method-class-statement-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async /* a */ * /* b */ f /* c */ ( /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/async-generator-method-class-statement.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async /* a */ * /* b */ f /* c */ ( /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/async-generator-method-object.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async /* a */ * /* b */ f /* c */ ( /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/async-method-class-expression-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/async-method-class-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/async-method-class-statement-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/async-method-class-statement.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/async-method-object.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (async f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/built-in-function-object.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (%Temporal%.Duration)
+- `test/built-ins/Function/prototype/toString/class-declaration-complex-heritage.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (class /* a */ A /* b */ extends /* c */ class /* d */ B /* e */ { /* f */ } /* g */ {
+- `test/built-ins/Function/prototype/toString/class-declaration-explicit-ctor.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (class /* a */ A /* b */ extends /* c */ B /* d */ { /* e */ constructor /* f */ ( /* 
+- `test/built-ins/Function/prototype/toString/class-declaration-implicit-ctor.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (class /* a */ A /* b */ { /* c */ })
+- `test/built-ins/Function/prototype/toString/class-expression-explicit-ctor.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (class /* a */ A /* b */ extends /* c */ B /* d */ { /* e */ constructor /* f */ ( /* 
+- `test/built-ins/Function/prototype/toString/class-expression-implicit-ctor.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (class /* a */ A /* b */ { /* c */ })
+- `test/built-ins/Function/prototype/toString/function-declaration-non-simple-parameter-list.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function f() { [code] }" (function /* a */ f /* b */ ( /* c */ a /* d */ = /* e */ 0 /* f */ , /* g */ { /* h 
+- `test/built-ins/Function/prototype/toString/function-declaration.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function f() { [code] }" (function /* a */ f /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h 
+- `test/built-ins/Function/prototype/toString/function-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function F() { [code] }" (function /* a */ F /* b */ ( /* c */ x /* d */ , /* e */ y /* f */ ) /* g */ { /* h 
+- `test/built-ins/Function/prototype/toString/generator-function-declaration.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function g() { [code] }" (function /* a */ * /* b */ g /* c */ ( /* d */ x /* e */ , /* f */ y /* g */ ) /* h 
+- `test/built-ins/Function/prototype/toString/generator-function-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function F() { [code] }" (function /* a */ * /* b */ F /* c */ ( /* d */ x /* e */ , /* f */ y /* g */ ) /* h 
+- `test/built-ins/Function/prototype/toString/generator-method.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (* /* a */ f /* b */ ( /* c */ ) /* d */ { /* e */ })
+- `test/built-ins/Function/prototype/toString/getter-class-expression-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (get /* a */ f /* b */ ( /* c */ ) /* d */ { /* e */ })
+- `test/built-ins/Function/prototype/toString/getter-class-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (get /* a */ f /* b */ ( /* c */ ) /* d */ { /* e */ })
+- `test/built-ins/Function/prototype/toString/getter-class-statement-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (get /* a */ f /* b */ ( /* c */ ) /* d */ { /* e */ })
+- `test/built-ins/Function/prototype/toString/getter-class-statement.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (get /* a */ f /* b */ ( /* c */ ) /* d */ { /* e */ })
+- `test/built-ins/Function/prototype/toString/getter-object.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (get /* a */ f /* b */ ( /* c */ ) /* d */ { /* e */ })
+- `test/built-ins/Function/prototype/toString/line-terminator-normalisation-CR-LF.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function f() { [code] }" (function
+- `test/built-ins/Function/prototype/toString/line-terminator-normalisation-LF.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function f() { [code] }" (function // a f // b ( // c x // d , // e y // f ) // g { // h ; // i ; // j })
+- `test/built-ins/Function/prototype/toString/method-class-expression-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/method-class-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/method-class-statement-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/method-class-statement.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/method-object.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/private-method-class-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (#f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/private-method-class-statement.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (#f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/private-static-method-class-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (#f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/private-static-method-class-statement.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (#f /* a */ ( /* b */ ) /* c */ { /* d */ })
+- `test/built-ins/Function/prototype/toString/setter-class-expression-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (set /* a */ f /* b */ ( /* c */ a /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/setter-class-expression.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (set /* a */ f /* b */ ( /* c */ a /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/setter-class-statement-static.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (set /* a */ f /* b */ ( /* c */ a /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/setter-class-statement.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (set /* a */ f /* b */ ( /* c */ a /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/setter-object.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function () { [code] }" (set /* a */ f /* b */ ( /* c */ a /* d */ ) /* e */ { /* f */ })
+- `test/built-ins/Function/prototype/toString/unicode.js`: FAIL sloppy Test262Error: Conforms to NativeFunction Syntax: "function a() { [code] }" (function \u0061(\u{62}, \u0063) { \u0062 = \u{00063}; return b; })
+- `test/built-ins/JSON/stringify/replacer-array-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/replacer-array-empty.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"a\":1,\"b\":2}"», «"{}"») to be true
+- `test/built-ins/JSON/stringify/replacer-array-number-object.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"10\":1,\"toString\":2,\"valueOf\":3}"», «"{\"toString\":2}"») to be true
+- `test/built-ins/JSON/stringify/replacer-array-order.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"b\":1,\"a\":2,\"c\":3}"», «"{\"c\":3,\"b\":1,\"a\":2}"») to be true
+- `test/built-ins/JSON/stringify/replacer-array-proxy-revoked-realm.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/replacer-array-proxy-revoked.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/replacer-array-proxy.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"a\":1,\"b\":2}"», «"{\"b\":2}"») to be true
+- `test/built-ins/JSON/stringify/replacer-array-string-object.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"str\":1,\"toString\":2,\"valueOf\":3}"», «"{\"toString\":2}"») to be true
+- `test/built-ins/JSON/stringify/replacer-array-undefined.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"undefined\":1}"», «"{}"») to be true
+- `test/built-ins/JSON/stringify/replacer-function-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/replacer-function-arguments.js`: FAIL sloppy Test262Error: Actual argument [undefined] shouldn't be primitive. 
+- `test/built-ins/JSON/stringify/replacer-function-array-circular.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/replacer-function-object-circular.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/replacer-function-object-deleted-property.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"a\":1}"», «"{\"a\":1,\"b\":\"<replaced>\"}"») to be true
+- `test/built-ins/JSON/stringify/replacer-function-result-undefined.js`: FAIL sloppy Test262Error: Expected SameValue(«"1"», «undefined») to be true
+- `test/built-ins/JSON/stringify/replacer-function-result.js`: FAIL sloppy Test262Error: Expected SameValue(«"null"», «"{\"a1\":{\"b1\":[1,2],\"b2\":{\"c1\":true,\"c2\":false}},\"a2\":\"a2\"}"») to be true
+- `test/built-ins/JSON/stringify/replacer-function-tojson.js`: FAIL sloppy Test262Error: Expected SameValue(«"\"toJSON\""», «"\"toJSON|replacer\""») to be true
+- `test/built-ins/JSON/stringify/replacer-function-wrapper.js`: FAIL sloppy Test262Error: Expected SameValue(«"undefined"», «"object"») to be true
+- `test/built-ins/JSON/stringify/space-number-object.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/space-string-object.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/space-string.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"a1\":{\"b1\":[1,2,3,4],\"b2\":{\"c1\":1,\"c2\":2}},\"a2\":\"a2\"}"», «"{\n  \"a1\": {\n    \"b1\": [\n      1,\n      2,\n
+- `test/built-ins/JSON/stringify/value-array-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/JSON/stringify/value-array-circular.js`: FAIL sloppy Test262Error: Expected a TypeError but got a RangeError
+- `test/built-ins/JSON/stringify/value-array-proxy.js`: FAIL sloppy Test262Error: proxy for an array Expected SameValue(«"{}"», «"[0,1]"») to be true
+- `test/built-ins/JSON/stringify/value-bigint-order.js`: FAIL sloppy Test262Error: Expected SameValue(«0», «2») to be true
+- `test/built-ins/JSON/stringify/value-bigint-replacer.js`: FAIL sloppy TypeError: Do not know how to serialize a BigInt
+- `test/built-ins/JSON/stringify/value-bigint-tojson-receiver.js`: FAIL sloppy TypeError: Do not know how to serialize a BigInt
+- `test/built-ins/JSON/stringify/value-bigint-tojson.js`: FAIL sloppy TypeError: Do not know how to serialize a BigInt
+- `test/built-ins/JSON/stringify/value-boolean-object.js`: FAIL sloppy Test262Error: Expected SameValue(«"[1]"», «"[true]"») to be true
+- `test/built-ins/JSON/stringify/value-number-object.js`: FAIL sloppy Test262Error: Expected SameValue(«"[\"str\"]"», «"[2]"») to be true
+- `test/built-ins/JSON/stringify/value-object-circular.js`: FAIL sloppy Test262Error: Expected a TypeError but got a RangeError
+- `test/built-ins/JSON/stringify/value-object-proxy.js`: FAIL sloppy Test262Error: proxy for an object Expected SameValue(«"{}"», «"{\"a\":1,\"b\":1}"») to be true
+- `test/built-ins/JSON/stringify/value-string-object.js`: FAIL sloppy Test262Error: Expected SameValue(«"{\"key\":\"str\"}"», «"{\"key\":\"toString\"}"») to be true
+- `test/built-ins/JSON/stringify/value-tojson-arguments.js`: FAIL sloppy Test262Error: Expected SameValue(«undefined», «""») to be true
+- `test/built-ins/JSON/stringify/value-tojson-array-circular.js`: FAIL sloppy Test262Error: Expected a TypeError but got a RangeError
+- `test/built-ins/JSON/stringify/value-tojson-object-circular.js`: FAIL sloppy Test262Error: Expected a TypeError but got a RangeError
+- `test/built-ins/Object/defineProperty/15.2.3.6-4-621.js`: FAIL sloppy Test262Error: trim descriptor should be writable
+- `test/built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-51.js`: FAIL sloppy TypeError: Cannot read properties of undefined (reading 'value')
+- `test/built-ins/Promise/all/invoke-resolve-on-promises-every-iteration-of-custom.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/allSettled/invoke-resolve-on-promises-every-iteration-of-custom.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/any/invoke-resolve-on-promises-every-iteration-of-custom.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/any/invoke-resolve-on-values-every-iteration-of-custom.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/prototype/finally/rejected-observable-then-calls-PromiseResolve.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/prototype/finally/resolved-observable-then-calls-PromiseResolve.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/prototype/finally/species-constructor.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/prototype/finally/subclass-reject-count.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/prototype/finally/subclass-resolve-count.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/prototype/then/deferred-is-resolved-value.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/race/invoke-resolve-on-promises-every-iteration-of-custom.js`: FAIL sloppy async: 
+- `test/built-ins/Promise/try/ctx-ctor-for-error.js`: FAIL sloppy async: 
+- `test/built-ins/RegExp/named-groups/duplicate-names-replace.js`: FAIL sloppy Test262Error: Expected SameValue(«"[]a"», «"[b]a"») to be true
+- `test/built-ins/RegExp/named-groups/duplicate-names-replaceall.js`: FAIL sloppy Test262Error: Expected SameValue(«"[a][]x[a][]"», «"[a][b]x[a][b]"») to be true
+- `test/built-ins/RegExp/prototype/source/value-line-terminator.js`: FAIL sloppy SyntaxError: unterminated regular expression literal
+- `test/built-ins/RegExp/prototype/source/value-slash.js`: FAIL sloppy TypeError: Cannot read properties of undefined (reading 'test')
+- `test/built-ins/RegExp/unicode_restricted_identity_escape_u.js`: FAIL sloppy Test262Error: RegExp("\u{}", "u"):  Expected a SyntaxError to be thrown but no exception was thrown at all
+- `test/built-ins/RegExp/unicode_restricted_octal_escape.js`: FAIL sloppy Test262Error: RegExp("\1", "u"):  Expected a SyntaxError to be thrown but no exception was thrown at all
+- `test/built-ins/RegExp/unicode_restricted_quantifiable_assertion.js`: FAIL sloppy Test262Error: RegExp("(?=.)*", "u"):  Expected a SyntaxError to be thrown but no exception was thrown at all
+- `test/built-ins/String/prototype/Symbol.iterator/prop-desc.js`: FAIL sloppy Test262Error: Symbol(Symbol.iterator) descriptor should be writable
+- `test/built-ins/String/prototype/at/prop-desc.js`: FAIL sloppy Test262Error: at descriptor should be writable
+- `test/built-ins/String/prototype/codePointAt/codePointAt.js`: FAIL sloppy Test262Error: codePointAt descriptor should be writable
+- `test/built-ins/String/prototype/endsWith/endsWith.js`: FAIL sloppy Test262Error: endsWith descriptor should be writable
+- `test/built-ins/String/prototype/endsWith/return-abrupt-from-searchstring-regexp-test.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/String/prototype/endsWith/searchstring-is-regexp-throws.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/String/prototype/includes/includes.js`: FAIL sloppy Test262Error: includes descriptor should be writable
+- `test/built-ins/String/prototype/includes/return-abrupt-from-searchstring-regexp-test.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/String/prototype/includes/searchstring-is-regexp-throws.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/String/prototype/isWellFormed/prop-desc.js`: FAIL sloppy Test262Error: isWellFormed descriptor should be writable
+- `test/built-ins/String/prototype/matchAll/prop-desc.js`: FAIL sloppy Test262Error: matchAll descriptor should be writable
+- `test/built-ins/String/prototype/padEnd/function-property-descriptor.js`: FAIL sloppy Test262Error: padEnd descriptor should be writable
+- `test/built-ins/String/prototype/padStart/function-property-descriptor.js`: FAIL sloppy Test262Error: padStart descriptor should be writable
+- `test/built-ins/String/prototype/repeat/repeat.js`: FAIL sloppy Test262Error: repeat descriptor should be writable
+- `test/built-ins/String/prototype/replaceAll/replaceAll.js`: FAIL sloppy Test262Error: replaceAll descriptor should be writable
+- `test/built-ins/String/prototype/startsWith/return-abrupt-from-searchstring-regexp-test.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all
+- `test/built-ins/String/prototype/startsWith/searchstring-is-regexp-throws.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/String/prototype/startsWith/startsWith.js`: FAIL sloppy Test262Error: startsWith descriptor should be writable
+- `test/built-ins/String/prototype/toWellFormed/prop-desc.js`: FAIL sloppy Test262Error: toWellFormed descriptor should be writable
+- `test/built-ins/String/prototype/trimEnd/prop-desc.js`: FAIL sloppy Test262Error: trimEnd descriptor should be writable
+- `test/built-ins/String/prototype/trimStart/prop-desc.js`: FAIL sloppy Test262Error: trimStart descriptor should be writable
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/detached-buffer.js`: FAIL sloppy Test262Error: observable ToInteger(begin) (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-ctor-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-ctor-inherited.js`: FAIL sloppy Test262Error: called custom ctor get accessor once Expected SameValue(«0», «1») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-ctor-returns-throws.js`: FAIL sloppy Test262Error: 42 Expected a TypeError to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-ctor.js`: FAIL sloppy Test262Error: called custom ctor get accessor once Expected SameValue(«0», «1») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-species-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-species-custom-ctor-returns-another-instance.js`: FAIL sloppy Test262Error: returned another typedarray Expected SameValue(«», «1,0,1») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-species-custom-ctor-throws.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-species-custom-ctor.js`: FAIL sloppy Test262Error: ctor called once Expected SameValue(«0», «1») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-species-returns-throws.js`: FAIL sloppy Test262Error: 0 Expected a TypeError to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/BigInt/speciesctor-get-species.js`: FAIL sloppy Test262Error: Expected SameValue(«0», «1») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/byteoffset-with-detached-buffer.js`: FAIL sloppy Test262Error: Expected SameValue(«», «») to be true (Testing with Float64Array and makeArrayBuffer.)
+- `test/built-ins/TypedArray/prototype/subarray/coerced-begin-end-shrink.js`: FAIL sloppy Test262Error: Expected a RangeError to be thrown but no exception was thrown at all
+- `test/built-ins/TypedArray/prototype/subarray/detached-buffer.js`: FAIL sloppy Test262Error: observable ToInteger(begin) (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-ctor-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-ctor-inherited.js`: FAIL sloppy Test262Error: called custom ctor get accessor once Expected SameValue(«0», «1») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-ctor-returns-throws.js`: FAIL sloppy Test262Error: 42 Expected a TypeError to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-ctor.js`: FAIL sloppy Test262Error: called custom ctor get accessor once Expected SameValue(«0», «1») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-species-abrupt.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-species-custom-ctor-returns-another-instance.js`: FAIL sloppy Test262Error: returned another typedarray Expected SameValue(«», «1,0,1») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-species-custom-ctor-throws.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-species-custom-ctor.js`: FAIL sloppy Test262Error: ctor called once Expected SameValue(«0», «1») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-species-returns-throws.js`: FAIL sloppy Test262Error: 0 Expected a TypeError to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/subarray/speciesctor-get-species.js`: FAIL sloppy Test262Error: Expected SameValue(«0», «1») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/calls-tolocalestring-from-each-value.js`: FAIL sloppy Test262Error: returns expected value Expected SameValue(«"42,0"», «"hacks1,hacks2"») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/calls-tostring-from-each-value.js`: FAIL sloppy Test262Error: returns expected value Expected SameValue(«"42,0"», «"hacks1,hacks2"») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/calls-valueof-from-each-value.js`: FAIL sloppy Test262Error: returns expected value Expected SameValue(«"42,0"», «"hacks1,hacks2"») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/detached-buffer.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/get-length-uses-internal-arraylength.js`: FAIL sloppy Test262Error: ignores length properties Expected SameValue(«1», «0») to be true (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/return-abrupt-from-firstelement-tolocalestring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/return-abrupt-from-firstelement-tostring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/return-abrupt-from-firstelement-valueof.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/return-abrupt-from-nextelement-tolocalestring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/return-abrupt-from-nextelement-tostring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/return-abrupt-from-nextelement-valueof.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/BigInt/return-abrupt-from-this-out-of-bounds.js`: FAIL sloppy Test262Error: Expected a TypeError but got a Test262Error (Testing with BigInt64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/calls-tolocalestring-from-each-value.js`: FAIL sloppy Test262Error: returns expected value Expected SameValue(«"42,0"», «"hacks1,hacks2"») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/calls-tostring-from-each-value.js`: FAIL sloppy Test262Error: returns expected value Expected SameValue(«"42,0"», «"hacks1,hacks2"») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/calls-valueof-from-each-value.js`: FAIL sloppy Test262Error: returns expected value Expected SameValue(«"42,0"», «"hacks1,hacks2"») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/detached-buffer.js`: FAIL sloppy Test262Error: Expected a TypeError to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/get-length-uses-internal-arraylength.js`: FAIL sloppy Test262Error: ignores length properties Expected SameValue(«1», «0») to be true (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/prop-desc.js`: FAIL sloppy Test262Error: toLocaleString should be an own property
+- `test/built-ins/TypedArray/prototype/toLocaleString/return-abrupt-from-firstelement-tolocalestring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/return-abrupt-from-firstelement-tostring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/return-abrupt-from-firstelement-valueof.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/return-abrupt-from-nextelement-tolocalestring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/return-abrupt-from-nextelement-tostring.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/return-abrupt-from-nextelement-valueof.js`: FAIL sloppy Test262Error: Expected a Test262Error to be thrown but no exception was thrown at all (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/return-abrupt-from-this-out-of-bounds.js`: FAIL sloppy Test262Error: Expected a TypeError but got a Test262Error (Testing with Float64Array and makePassthrough.)
+- `test/built-ins/TypedArray/prototype/toLocaleString/this-is-not-object.js`: FAIL sloppy Test262Error: this is 42 Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/TypedArray/prototype/toLocaleString/this-is-not-typedarray-instance.js`: FAIL sloppy Test262Error: this is an Object Expected a TypeError to be thrown but no exception was thrown at all
+- `test/built-ins/TypedArray/prototype/toLocaleString/user-provided-tolocalestring-shrink.js`: FAIL sloppy Test262Error: Expected SameValue(«"0,0,0,0"», «"0,0,,"») to be true
+- `test/built-ins/Uint8Array/fromBase64/alphabet.js`: FAIL sloppy TypeError: fromBase64 is not a function
+- `test/built-ins/Uint8Array/fromBase64/descriptor.js`: FAIL sloppy Test262Error: fromBase64 should be an own property
+- `test/built-ins/Uint8Array/fromBase64/ignores-receiver.js`: FAIL sloppy TypeError: fromBase64 is not a function
+- `test/built-ins/Uint8Array/fromBase64/illegal-characters.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/fromBase64/last-chunk-handling.js`: FAIL sloppy TypeError: fromBase64 is not a function
+- `test/built-ins/Uint8Array/fromBase64/last-chunk-invalid.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/fromBase64/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/fromBase64/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/fromBase64/nonconstructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/built-ins/Uint8Array/fromBase64/option-coercion.js`: FAIL sloppy TypeError: fromBase64 is not a function
+- `test/built-ins/Uint8Array/fromBase64/results.js`: FAIL sloppy TypeError: fromBase64 is not a function
+- `test/built-ins/Uint8Array/fromBase64/whitespace.js`: FAIL sloppy TypeError: fromBase64 is not a function
+- `test/built-ins/Uint8Array/fromHex/descriptor.js`: FAIL sloppy Test262Error: fromHex should be an own property
+- `test/built-ins/Uint8Array/fromHex/ignores-receiver.js`: FAIL sloppy TypeError: fromHex is not a function
+- `test/built-ins/Uint8Array/fromHex/illegal-characters.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/fromHex/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/fromHex/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/fromHex/nonconstructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/built-ins/Uint8Array/fromHex/odd-length-input.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/fromHex/results.js`: FAIL sloppy TypeError: fromHex is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/alphabet.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/descriptor.js`: FAIL sloppy Test262Error: setFromBase64 should be an own property
+- `test/built-ins/Uint8Array/prototype/setFromBase64/detached-buffer.js`: FAIL sloppy Test262Error: Expected SameValue(«0», «1») to be true
+- `test/built-ins/Uint8Array/prototype/setFromBase64/illegal-characters.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/prototype/setFromBase64/last-chunk-handling.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/setFromBase64/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/setFromBase64/nonconstructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/built-ins/Uint8Array/prototype/setFromBase64/option-coercion.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/results.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/subarray.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/target-size.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/trailing-garbage-empty.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/trailing-garbage.js`: FAIL sloppy Test262Error: "#" is rejected with lastChunkHandling="loose" Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/prototype/setFromBase64/whitespace.js`: FAIL sloppy TypeError: setFromBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/setFromBase64/writes-up-to-error.js`: FAIL sloppy Test262Error: illegal character in second chunk Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/prototype/setFromHex/descriptor.js`: FAIL sloppy Test262Error: setFromHex should be an own property
+- `test/built-ins/Uint8Array/prototype/setFromHex/illegal-characters.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/prototype/setFromHex/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/setFromHex/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/setFromHex/nonconstructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/built-ins/Uint8Array/prototype/setFromHex/results.js`: FAIL sloppy TypeError: setFromHex is not a function
+- `test/built-ins/Uint8Array/prototype/setFromHex/subarray.js`: FAIL sloppy TypeError: setFromHex is not a function
+- `test/built-ins/Uint8Array/prototype/setFromHex/target-size.js`: FAIL sloppy TypeError: setFromHex is not a function
+- `test/built-ins/Uint8Array/prototype/setFromHex/throws-when-string-length-is-odd.js`: FAIL sloppy Test262Error: Uint8Array has length 0 Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/prototype/setFromHex/writes-up-to-error.js`: FAIL sloppy Test262Error: Expected a SyntaxError but got a TypeError
+- `test/built-ins/Uint8Array/prototype/toBase64/alphabet.js`: FAIL sloppy TypeError: toBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/toBase64/descriptor.js`: FAIL sloppy Test262Error: toBase64 should be an own property
+- `test/built-ins/Uint8Array/prototype/toBase64/detached-buffer.js`: FAIL sloppy Test262Error: Expected SameValue(«0», «1») to be true
+- `test/built-ins/Uint8Array/prototype/toBase64/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/toBase64/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/toBase64/nonconstructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/built-ins/Uint8Array/prototype/toBase64/omit-padding.js`: FAIL sloppy TypeError: toBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/toBase64/option-coercion.js`: FAIL sloppy TypeError: toBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/toBase64/results.js`: FAIL sloppy TypeError: toBase64 is not a function
+- `test/built-ins/Uint8Array/prototype/toHex/descriptor.js`: FAIL sloppy Test262Error: toHex should be an own property
+- `test/built-ins/Uint8Array/prototype/toHex/length.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/toHex/name.js`: FAIL sloppy TypeError: Cannot convert undefined or null to object
+- `test/built-ins/Uint8Array/prototype/toHex/nonconstructor.js`: FAIL sloppy Test262Error: isConstructor invoked with a non-function value
+- `test/built-ins/Uint8Array/prototype/toHex/results.js`: FAIL sloppy TypeError: toHex is not a function
+- `test/language/expressions/class/accessor-name-inst-computed-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/accessor-name-static-computed-yield-expr.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/cpn-class-expr-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/cpn-class-expr-fields-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/class/cpn-class-expr-fields-methods-computed-property-name-from-yield-expression.js`: FAIL sloppy SyntaxError: yield in this position is not supported
+- `test/language/expressions/delete/11.4.1-4.a-6.js`: FAIL sloppy Test262Error: d Expected SameValue(«false», «true») to be true
+- `test/language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+- `test/language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-source-text-module.js`: FAIL sloppy async: Test262:AsyncTestFailure:Test262Error: Test262Error: Expected SameValue(«"TypeError"», «"SyntaxError"») to be true 
+
