@@ -6,7 +6,15 @@
 # uploads its artifact as its last step, after all its gates, so a missing
 # artifact means a failed gate (or a cancelled job) and the set is skipped.
 #
-# Env: SHA, SHORT, REF, FOAFNAUT, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID.
+# build.yml calls this twice for one run, once per publish job (2026-11-16): `publish` with
+# PUBLISH_SETS="linux-x86_64 web foafnaut-web" as soon as the Linux jobs are done, and
+# `publish-macos` with PUBLISH_SETS="darwin-arm64 foafnaut-darwin-arm64" when the macOS jobs
+# are done. Before, one job waited for every job, so the web release (and the Hub) waited
+# hours for a macOS runner while every Linux gate was green. Each set still needs only its
+# own artifacts, so the split changes when a set publishes, never whether.
+#
+# Env: SHA, SHORT, REF, FOAFNAUT, FOAFNAUT_WEB, PUBLISH_SETS (space-separated subset of the
+# sets below; empty = all), GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID.
 # Layout read: art/<artifact>/{stage,stage-native,stage-web,meta}/...
 set -euo pipefail
 
@@ -56,6 +64,17 @@ KEPT=()
 SETS="linux-x86_64 darwin-arm64 web"
 if [ "${FOAFNAUT:-false}" = true ]; then SETS="$SETS foafnaut-darwin-arm64"; fi
 if [ "${FOAFNAUT_WEB:-false}" = true ]; then SETS="$SETS foafnaut-web"; fi
+if [ -n "${PUBLISH_SETS:-}" ]; then
+  for s in $PUBLISH_SETS; do
+    [ -n "${NEEDS[$s]+x}" ] || { echo "::error::PUBLISH_SETS names an unknown set: $s"; exit 1; }
+  done
+  KEEP=""
+  for SET in $SETS; do
+    case " $PUBLISH_SETS " in *" $SET "*) KEEP="$KEEP $SET" ;; esac
+  done
+  SETS="${KEEP# }"
+  echo "this job publishes: ${SETS:-none} (PUBLISH_SETS: $PUBLISH_SETS)"
+fi
 for SET in $SETS; do
   MISSING=""
   for d in ${NEEDS[$SET]} ${REQUIRES[$SET]}; do
@@ -159,10 +178,24 @@ if [ ${#PUBLISHED[@]} -gt 0 ]; then
     git fetch -q origin main
     git worktree add -q --detach "$PTR" origin/main
     mkdir -p "$PTR/latest"
-    for s in "${PUBLISHED[@]}"; do cp "$OUT/latest-$s.json" "$PTR/latest/$s.json"; done
-    git -C "$PTR" add latest/*.json
+    # The two publish jobs of a run, and runs of different commits, finish in any order, so a
+    # pointer moves only forward: it is not written when it already names a newer main commit
+    # (one that has this commit as an ancestor). Any other answer (older, diverged, unknown)
+    # writes it, as before.
+    WROTE=()
+    for s in "${PUBLISHED[@]}"; do
+      CUR=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("source_commit",""))' "$PTR/latest/$s.json" 2>/dev/null || true)
+      if [[ "$CUR" =~ ^[0-9a-f]{40}$ ]] && [ "$CUR" != "$SHA" ] \
+         && [ "$(gh api "repos/$CORE/compare/$SHA...$CUR" -q .status 2>/dev/null || echo unknown)" = ahead ]; then
+        echo "::notice::latest/$s.json kept: it names ${CUR:0:12}, newer than $SHORT"
+        continue
+      fi
+      cp "$OUT/latest-$s.json" "$PTR/latest/$s.json"
+      WROTE+=("$s")
+    done
+    git -C "$PTR" add latest/
     if git -C "$PTR" diff --cached --quiet; then PUSHED=true; break; fi
-    git -C "$PTR" commit -q -m "latest: ${PUBLISHED[*]} -> factoidal-core $SHORT"
+    git -C "$PTR" commit -q -m "latest: ${WROTE[*]} -> factoidal-core $SHORT"
     if git -C "$PTR" push -q origin HEAD:main; then PUSHED=true; break; fi
     sleep $((i * 4))
   done
