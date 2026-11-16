@@ -241,6 +241,21 @@ jobs:
           fi
           lake exe l4vc-probe
 
+      # core issue 551: leanjs linked Lean's elaborator (11 -> 111 MB) through a proof module in its
+      # import closure, and nothing failed. core's tools/binary-budget.py checks the imports of the
+      # shipped binaries and, on the built leanjs, Lean-library symbols and the size budget (+2 %).
+      - name: Shipped binaries link no Lean compiler code; size budget
+        if: matrix.platform == 'linux-x86_64'
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          if [ ! -f ../../tools/binary-budget.py ]; then
+            echo "core commit carries no tools/binary-budget.py"; exit 0
+          fi
+          python3 ../../tools/binary-budget.py imports .
+          bash ../../../builds/scripts/heavy-step.sh lake build leanjs
+          python3 ../../tools/binary-budget.py check leanjs=.lake/build/bin/leanjs
+
       - name: Dispatch ABI and CLI smoke
         working-directory: core/formal/lean4
         run: |
