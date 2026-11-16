@@ -1309,9 +1309,9 @@ SEMWEB_ROWS = [
     ("l4-owl2-species-dl", "l4owl-probe-species", None, "species, cases annotated DL", "owl_syntax_dl_species"),
     ("l4-owl2-species-full-only", "l4owl-probe-species", None, "species, cases annotated FULL only", ""),
 ]
-# OWL 2 populations (owl-populations.py keys) -> suite. EL/QL/RL profile identification has no
-# built-in recogniser: recorded with valid=false and that reason, so the population and its
-# official size show and nothing reads it as a score.
+# OWL 2 populations (owl-populations.py keys) -> suite. EL/QL/RL profile identification is the
+# probe's --profile-id mode; a core commit whose probe lacks it is recorded with valid=false and
+# that reason, so the population and its official size show and nothing reads it as a score.
 OWL_POPULATIONS = [
     ("PositiveEntailmentTest/direct", "l4-owl2-positive-entailment-direct", ""),
     ("NegativeEntailmentTest/direct", "l4-owl2-negative-entailment-direct", ""),
@@ -1325,7 +1325,8 @@ OWL_POPULATIONS = [
     ("ProfileIdentificationTest/QL", "l4-owl2-profile-ql", ""),
     ("ProfileIdentificationTest/RL", "l4-owl2-profile-rl", ""),
 ]
-NO_PROFILE_CHECKER = "no built-in OWL 2 EL/QL/RL profile recogniser: not run (official size recorded)"
+NO_PROFILE_CHECKER = ("the probe of this core commit has no --profile-id mode (OWL 2 EL/QL/RL recogniser): "
+                      "not run (official size recorded)")
 
 SUITE_GROUPS = sorted({s[1] for s in SUITES} | {SEMWEB_GROUP})
 
@@ -1495,7 +1496,7 @@ def semweb_score(plan, logs):
             reasons.append("the lean-semweb group did not run" if not st else f"no populations.json (exit {st.get('exit')})")
         elif pp is None:
             reasons.append(f"population {key} not in populations.json")
-        elif key.startswith("ProfileIdentificationTest/"):
+        elif key.startswith("ProfileIdentificationTest/") and not pp.get("measured"):
             reasons.append(NO_PROFILE_CHECKER)
         elif not pp.get("measured"):
             reasons.append("the probe printed no line for this population"
@@ -1503,7 +1504,7 @@ def semweb_score(plan, logs):
         elif pp.get("reported") != pp.get("total"):
             reasons.append(f"the probe reported {pp.get('reported')} units, the official count is {pp.get('total')}")
         pp = pp or {}
-        sem = key.split("/")[1]
+        sem = "profile" if key.startswith("ProfileIdentificationTest/") else key.split("/")[1]
         pst = dict(st or {}, seconds=((pops or {}).get("status", {}).get(sem) or {}).get("seconds", (st or {}).get("seconds")))
         run_id, row = semweb_row(plan, suite, pst, pp.get("pass", 0), pp.get("fail", 0), pp.get("other", 0),
                                  pp.get("total", 0), reasons)

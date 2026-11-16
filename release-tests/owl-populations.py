@@ -13,8 +13,11 @@ W3C Document Licence). A population is one kind of question the corpus asks:
                      annotated with both semantics) counts once in each population.
   profile            ProfileIdentificationTest, one population per profile EL, QL, RL: every
                      such case asks whether its ontology is in the profile (yes when
-                     test:profile names it). The built-in engine has no EL/QL/RL recogniser,
-                     so these are listed with their official size and none run.
+                     test:profile names it). The probe's `--profile-id` mode gives the verdict
+                     (the OWL 2 DL species check, then the profile's grammar over the axioms
+                     read back from the RDF graph); "undecided" (a graph the reader cannot
+                     place) is counted as other. A probe without the mode prints no line, and
+                     the population is then listed with its official size and none run.
   species            test:species DL / FULL (OWL 2 DL syntax membership): core's
                      lean-scoreboard l4owl-probe-species job, recorded by release-tests.
 
@@ -26,8 +29,9 @@ engine runs; "run" is the units the engine decided (pass + fail), so the share r
 
 `run` writes DIR/owl2-{direct,rdfbased}-{approved,proposed,extracredit,nostatus}.rdf (the
 catalog's test cases with that semantics and status, every other element kept byte for
-byte), runs the probe once per semantics (`--dl` for DIRECT, `--rdf-based` for RDF-BASED,
-two processes at once), and writes DIR/populations.json: per population the official
+byte) and DIR/owl2-all-{status}.rdf (every case of that status), runs the probe once per
+semantics (`--dl` for DIRECT, `--rdf-based` for RDF-BASED, two processes at once) and then
+once with `--profile-id` over the owl2-all files, and writes DIR/populations.json: per population the official
 count, pass, fail, other, run, and the same split by status.
 """
 import argparse, collections, json, os, re, subprocess, sys, time
@@ -122,10 +126,21 @@ def split(path, work):
             if n != len(keep):
                 sys.exit(f"{name}: {n} cases written, {len(keep)} wanted")
             files[(sk, tk)] = (name, n)
+    for tk, tv in STATUSES.items():
+        keep = {i for i, c in enumerate(meta) if c["status"] == tv}
+        it = iter(range(len(blocks)))
+        body = CASE_RE.sub(lambda m, it=it: m.group(0) if next(it) in keep else "", text)
+        name = f"owl2-all-{tk}.rdf"
+        with open(os.path.join(work, name), "w", encoding="utf-8") as f:
+            f.write(body)
+        files[("all", tk)] = (name, len(keep))
     return files
 
 
 LINE = re.compile(r"^(owl2-(direct|rdfbased)-([a-z]+)\.rdf) (\w+Test)(?: \[rdf-based\])?: (.*)\(out of (\d+)\)\s*$")
+
+
+PROFILE_LINE = re.compile(r"^(owl2-all-([a-z]+)\.rdf) ProfileIdentificationTest (EL|QL|RL): (.*)\(out of (\d+)\)\s*$")
 
 
 def parse_counts(text):
@@ -152,12 +167,31 @@ def run(a):
             p.wait()
             rc, err = 124, f"no end in {a.timeout} s"
         status[sk] = {"command": cmd, "exit": rc, "error": err, "seconds": round(time.time() - ts)}
+    # Profile identification: one more run of the probe, after the two semantics runs.
+    names = [files[("all", tk)][0] for tk in STATUSES if files[("all", tk)][1]]
+    cmd = [a.probe, "--profile-id", "--dir", a.work] + names
+    logs["profile"] = os.path.join(a.work, "owl2-profile.log")
+    ts = time.time()
+    try:
+        rc = subprocess.run(cmd, stdout=open(logs["profile"], "wb"), stderr=subprocess.STDOUT,
+                            timeout=max(1, a.timeout - (time.time() - t0))).returncode
+        err = None
+    except subprocess.TimeoutExpired:
+        rc, err = 124, f"no end in {a.timeout} s"
+    status["profile"] = {"command": cmd, "exit": rc, "error": err, "seconds": round(time.time() - ts)}
     pops = {k: dict(v, pass_=0, fail=0, other=0, measured=False, status_counts={}) for k, v in off["populations"].items()}
     seen = collections.defaultdict(dict)
     for sk, lp in logs.items():
         for line in open(lp, errors="replace"):
+            m = PROFILE_LINE.match(line.rstrip("\n")) if sk == "profile" else None
+            if m:
+                _, st, prof, rest, out_of = m.groups()
+                c = parse_counts(rest)
+                seen[("ProfileIdentificationTest", prof)][st] = {
+                    "pass": c.get("pass", 0), "fail": c.get("fail", 0), "total": int(out_of), "counts": c}
+                continue
             m = LINE.match(line.rstrip("\n"))
-            if not m:
+            if not m or sk == "profile":
                 continue
             _, sem, st, ty, rest, out_of = m.groups()
             c = parse_counts(rest)
@@ -168,7 +202,7 @@ def run(a):
         if key not in pops:
             continue
         p = pops[key]
-        p["measured"] = not status[sem]["error"]
+        p["measured"] = not status["profile" if ty == "ProfileIdentificationTest" else sem]["error"]
         p["pass_"] = sum(v["pass"] for v in by.values())
         p["fail"] = sum(v["fail"] for v in by.values())
         p["reported"] = sum(v["total"] for v in by.values())
@@ -180,13 +214,16 @@ def run(a):
     res = {"format": "owl2-populations-v1", "source": off["source"], "cases": off["cases"],
            "cases_by_status": off["cases_by_status"], "no_semantics": off["no_semantics"],
            "regimes": {"direct": "--dl: RL closure, class-expression materialisation and the tableau refuter",
-                       "rdfbased": "--rdf-based: RL closure and the proved RDF-Based rules"},
+                       "rdfbased": "--rdf-based: RL closure and the proved RDF-Based rules",
+                       "profile": "--profile-id: the OWL 2 DL species check, then the EL, QL or RL grammar "
+                                  "(OWL 2 Profiles sections 2.2, 3.2, 4.2) over the axioms read back from the "
+                                  "RDF graph"},
            "refute_ms": a.refute_ms, "status": status, "populations": pops}
     json.dump(res, open(os.path.join(a.work, "populations.json"), "w"), indent=1)
     for k, p in sorted(pops.items()):
         print(f"{k}: {p['pass']} pass, {p['fail']} fail, {p['other']} other, of {p['total']} "
               f"({'measured' if p['measured'] else 'not run'})")
-    return 0 if all(not s["error"] and s["exit"] in (0, 1) for s in status.values()) else 1
+    return 0 if all(not s["error"] and s["exit"] in (0, 1) for k, s in status.items() if k != "profile") else 1
 
 
 def main():
