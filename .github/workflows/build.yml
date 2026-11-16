@@ -1,4 +1,12 @@
 name: Build Factoidal from factoidal-core
+# The run list shows what each run builds (agents find their runs by it; mac-release.yml finds
+# the main lane's runs by it). Workflows that follow this one match its name above, not this.
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch'
+      && format('core {0}{1}', inputs.core_ref || 'main (Mac release lane)', inputs.macos && ' +macOS' || '')
+      || (github.event_name == 'schedule'
+          && (github.event.schedule == '41 2 * * *' && 'core main (nightly)' || 'core main (Mac release lane, hourly poll)')
+          || 'core main (Mac release lane, builds repo push)') }}
 
 # Builds one danbri/factoidal-core commit and publishes its artifacts as
 # releases of this repository, one per artifact set:
@@ -90,8 +98,18 @@ permissions:
 # Builds of different refs may run at once: caches are content-keyed, and only main
 # commits publish releases (one per commit) and the latest/*.json pointers. The nightly run
 # has a group of its own, so an hourly poll never replaces it.
+#
+# The Mac release lane (owner rule 2026-11-16: a Mac build of the newest main is always done or
+# building): the group build-factoidal-main runs the macOS jobs of main's head
+# (scripts/resolve-macos.sh). mac-release.yml dispatches into it (empty core_ref) whenever main's
+# head has no Mac release and no run of the group is waiting; a pending run resolves main's head
+# when it starts, so a newer main replaces the pending build and never cancels the running one.
+# A dispatch with macos=true (a PR's or branch's macOS check) goes to the shared group
+# build-factoidal-macos-adhoc, which foafnaut-macos.yml's branch builds use too: at most one
+# ad-hoc macOS build at a time, a newer request replacing a waiting one, so ad-hoc work holds at
+# most one of the account's five macOS slots (skills/ci-runner in core: the budget).
 concurrency:
-  group: build-factoidal-${{ github.event_name == 'workflow_dispatch' && inputs.core_ref || (github.event.schedule == '41 2 * * *' && 'nightly' || 'main') }}
+  group: build-factoidal-${{ github.event_name == 'workflow_dispatch' && (inputs.macos && 'macos-adhoc' || inputs.core_ref || 'main') || (github.event.schedule == '41 2 * * *' && 'nightly' || 'main') }}
   cancel-in-progress: false
 
 env:

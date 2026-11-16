@@ -26,4 +26,4 @@ jobs:
           for script in scripts/resolve-core.sh scripts/publish.sh scripts/build-foafnaut.sh scripts/wpt-score-history.sh scripts/cache-audit.sh scripts/record-ci-metrics.sh release-tests/leanc-cache.sh; do
             bash -n "$script"
           done
-          python3 -m py_compile scripts/wpt-score-job.py scripts/ci-metrics.py
+          python3 -m py_compile scripts/wpt-score-job.py scripts/ci-metrics.py scripts/darwin-status.py
