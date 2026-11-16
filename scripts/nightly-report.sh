@@ -5,7 +5,8 @@
 # written to be pasted into the coordination log. Owner decision 2026-11-16: macOS jobs are
 # not a merge gate, and a nightly macOS failure is fixed or reverted the next morning.
 # Also notes the newest scheduled foafnaut-macos.yml run on main.
-# Env: GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID, GITHUB_SERVER_URL, SHORT, PROCEED.
+# Env: GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID, GITHUB_SERVER_URL, SHORT, PROCEED;
+# NIGHTLY_DRY_RUN=1 prints the issue action instead of taking it.
 set -euo pipefail
 R=$GITHUB_REPOSITORY
 URL="$GITHUB_SERVER_URL/$R/actions/runs/$GITHUB_RUN_ID"
@@ -25,6 +26,7 @@ LINE="$NOW nightly: core main ${SHORT:-?} build.yml $STATE${FAILED:+: $FAILED} (
 echo "$LINE"
 { echo "### Nightly"; echo; echo "$LINE"; echo; echo "macOS jobs ran on: ${MACOS_RUNS_ON:-none}"; } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
+if [ "${NIGHTLY_DRY_RUN:-}" = 1 ]; then echo "dry run: state $STATE; would $( [ "$STATE" = FAIL ] && echo 'open or comment on' || echo 'close if open') the nightly issue"; exit 0; fi
 gh label create nightly --repo "$R" --color b60205 \
   --description "Nightly build of core main (macOS included) failed" 2>/dev/null || true
 OPEN=$(gh issue list --repo "$R" --label nightly --state open --json number -q '.[0].number' 2>/dev/null || true)
