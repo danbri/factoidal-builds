@@ -1,0 +1,208 @@
+{
+ "format": "factoidal-ci-metrics-v1",
+ "run_id": 43879378683,
+ "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43879378683",
+ "event": "workflow_dispatch",
+ "builds_branch": "wip/ci-gate",
+ "builds_sha": "cca1f0fad6eeaf4071f068be258dff57f5f84161",
+ "title": "Build Factoidal from factoidal-core",
+ "created_at": "2026-11-16T13:48:42Z",
+ "jobs": [
+  {
+   "name": "resolve",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.7,
+   "minutes": 0.4,
+   "start_after_dispatch_minutes": 0.73,
+   "end_after_dispatch_minutes": 1.13,
+   "longest_steps": [
+    {
+     "name": "Run scripts/resolve-core.sh",
+     "minutes": 0.2
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.1
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.05
+    },
+    {
+     "name": "Run python3 scripts/mac-runs-on.py",
+     "minutes": 0.0
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "lean (ubuntu-latest, linux-x86_64)",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 16.63,
+   "start_after_dispatch_minutes": 1.18,
+   "end_after_dispatch_minutes": 17.82,
+   "longest_steps": [
+    {
+     "name": "Lean conformance scoreboard",
+     "minutes": 6.87
+    },
+    {
+     "name": "lake build (library, proofs,",
+     "minutes": 6.65
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.7
+    },
+    {
+     "name": "Dispatch ABI and CLI smoke",
+     "minutes": 0.67
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-a7802fab5ca768c12181cf9d38727b5b76558a8e6e72d6141e33f7de77ba02d4",
+     "result": "partial",
+     "bytes": 1100216237,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-e30329e7aad7ea1736f57896f7527b3126cbf5005f04fe2f324ad6ef57ad534d"
+    }
+   ]
+  },
+  {
+   "name": "foafnaut-engines",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 16.75,
+   "start_after_dispatch_minutes": 1.18,
+   "end_after_dispatch_minutes": 17.93,
+   "longest_steps": [
+    {
+     "name": "Build and check the Lean HTML browser runtime",
+     "minutes": 9.35
+    },
+    {
+     "name": "Build and check the Foafnaut engines",
+     "minutes": 5.8
+    },
+    {
+     "name": "Install Emscripten 6.0.8 and libuv headers",
+     "minutes": 0.45
+    },
+    {
+     "name": "Restore .lake from the lean job's cache",
+     "minutes": 0.43
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "emsdk-6.0.8-Linux",
+     "result": "hit",
+     "bytes": 480270169,
+     "restored_key": "emsdk-6.0.8-Linux"
+    },
+    {
+     "action": "cache/restore",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-a7802fab5ca768c12181cf9d38727b5b76558a8e6e72d6141e33f7de77ba02d4",
+     "result": "partial",
+     "bytes": 1100216237,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-e30329e7aad7ea1736f57896f7527b3126cbf5005f04fe2f324ad6ef57ad534d"
+    },
+    {
+     "action": "cache/restore",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-43879378683",
+     "result": "miss",
+     "bytes": null
+    },
+    {
+     "action": "cache/save",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-43879378683",
+     "result": "saved",
+     "bytes": null
+    }
+   ],
+   "ccache": {
+    "hits": 0,
+    "lookups": 93
+   }
+  },
+  {
+   "name": "lean-wasm",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.0,
+   "minutes": -0.02,
+   "start_after_dispatch_minutes": 17.83,
+   "end_after_dispatch_minutes": 17.82,
+   "longest_steps": [],
+   "log_error": "GET repos/danbri/factoidal-builds/actions/jobs/133351137755/logs: HTTP 404"
+  },
+  {
+   "name": "web-gates",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.0,
+   "minutes": -0.02,
+   "start_after_dispatch_minutes": 17.83,
+   "end_after_dispatch_minutes": 17.82,
+   "longest_steps": [],
+   "log_error": "GET repos/danbri/factoidal-builds/actions/jobs/133351138691/logs: HTTP 404"
+  },
+  {
+   "name": "publish",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 0.12,
+   "start_after_dispatch_minutes": 17.98,
+   "end_after_dispatch_minutes": 18.1,
+   "longest_steps": [
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.02
+    },
+    {
+     "name": "Assemble, pack and publish each complete set",
+     "minutes": 0.02
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "foafnaut",
+   "conclusion": "cancelled",
+   "runner": "macos-15",
+   "queue_minutes": 0.0,
+   "minutes": 0.0,
+   "start_after_dispatch_minutes": 17.95,
+   "end_after_dispatch_minutes": 17.95,
+   "longest_steps": [],
+   "log_error": "GET repos/danbri/factoidal-builds/actions/jobs/133351210737/logs: HTTP 404"
+  },
+  {
+   "name": "nightly-report",
+   "conclusion": "cancelled",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.0,
+   "minutes": 0.0,
+   "start_after_dispatch_minutes": 18.1,
+   "end_after_dispatch_minutes": 18.1,
+   "longest_steps": [],
+   "log_error": "GET repos/danbri/factoidal-builds/actions/jobs/133351299099/logs: HTTP 404"
+  }
+ ],
+ "wall_minutes": 18.1
+}
