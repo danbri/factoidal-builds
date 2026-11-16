@@ -1,0 +1,1397 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261116T0523Z-wpt-linux-x86_64-gh43809886470a1",
+  "started_utc": "2026-11-16T05:23:56Z",
+  "finished_utc": "2026-11-16T05:26:20Z",
+  "trigger": "factoidal-release",
+  "suite": "wpt",
+  "platform": "linux-x86_64",
+  "engine": "bubblepopkit-native",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+  "commit_utc": "2026-11-16T02:25:30Z",
+  "snapshot_branch": "",
+  "release_tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "names_total": 94695,
+  "names_run": 0,
+  "passed": 0,
+  "denominator": 2272125,
+  "share_pct": "0.0000",
+  "share_ex_encoding_pct": "0.0000",
+  "ok": 0,
+  "error": 0,
+  "timeout": 0,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": "",
+  "server_failures": 0,
+  "valid": "false",
+  "invalid_reason": "shards missing: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; 94695 of 94695 names not run; shard 0: start check: no result for FileAPI/Blob-methods-from-detached-frame.html (exit 0); shard 1: start check: no result for FileAPI/BlobURL/cross-partition-navigation.https.html (exit 0); shard 2: start check: no result for FileAPI/BlobURL/cross-partition-self-fetch.https.html (exit 0); shard 3: start check: no result for FileAPI/BlobURL/cross-partition-worker-creation.https.html (exit 0); shard 4: start check: no result for FileAPI/BlobURL/cross-partition.https.html (exit 0); shard 5: start check: no result for FileAPI/BlobURL/opaque-origin.html (exit 0); shard 6: start check: no result for FileAPI/FileReader/progress_event_bubbles_cancelable.html (exit 0); shard 7: start check: no result for FileAPI/FileReader/workers.html (exit 0); shard 8: start check: no result for FileAPI/FileReaderSync.worker.html (exit 0); shard 9: start check: no result for FileAPI/blob/Blob-array-buffer-data-isolation.html (exit 0); shard 10: start check: no result for FileAPI/blob/Blob-array-buffer.any.html (exit 0); shard 11: start check: no result for FileAPI/blob/Blob-array-buffer.any.worker.html (exit 0)",
+  "kind": "full",
+  "shards": 12,
+  "wall_minutes": 2.2,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x12",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43809886470",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261116T0523Z-wpt-linux-x86_64-gh43809886470a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-16T05:23:20Z",
+  "event": "workflow_dispatch",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43809886470",
+  "trigger": "factoidal-release",
+  "core_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+  "core_short": "1b2fc90d578e",
+  "on_main": true,
+  "commit_author_utc": "2026-11-16T02:25:30Z",
+  "commit_committer_utc": "2026-11-16T02:25:30Z",
+  "commit_subject": "Tail-recursion allow lines: deleteOrThrow (Proxy chain) and arrayGeneric (fuel-bounded [[Get]]/[[Set]] cycle) from #499",
+  "release_sets": {
+   "darwin-arm64": {
+    "tag": "build-1b2fc90d578e-darwin-arm64",
+    "published_at": "2026-11-16T04:49:11Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-darwin-arm64"
+   },
+   "foafnaut-darwin-arm64": {
+    "tag": "build-1b2fc90d578e-foafnaut-darwin-arm64",
+    "published_at": "2026-11-16T04:50:17Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-foafnaut-darwin-arm64"
+   },
+   "foafnaut-linux-x86_64": {
+    "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+    "published_at": "2026-11-16T05:23:10Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-foafnaut-linux-x86_64"
+   },
+   "foafnaut-web": {
+    "tag": "build-1b2fc90d578e-foafnaut-web",
+    "published_at": "2026-11-16T04:50:28Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-1b2fc90d578e-linux-x86_64",
+    "published_at": "2026-11-16T04:48:58Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-1b2fc90d578e-web",
+    "published_at": "2026-11-16T04:49:29Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1b2fc90d578e-web"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-16T05:23:24Z",
+  "candidate_why": "named by the dispatch (build-1b2fc90d578e)",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": true,
+  "suites": false,
+  "platforms": [
+   "linux-x86_64"
+  ],
+  "shards_by_platform": {
+   "linux-x86_64": 12
+  },
+  "shards": 12
+ },
+ "inputs": {
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "chrome_run": {
+   "id": 5373481064333312,
+   "browser_version": "157.0.8103.78",
+   "os_name": "linux",
+   "os_version": "22.04",
+   "time_start": "2026-11-15T01:12:05.118Z",
+   "results_url": "https://storage.googleapis.com/wptd/fa649586f35119af9032312ef21e300e41d1c3b6/chrome-157.0.8103.78-linux-22.04-720356c15a-summary_v2.json.gz"
+  },
+  "names": 94695,
+  "denominator": 2272125,
+  "denominator_encoding": 1152398,
+  "full_list_sha256": "39a9d212d6a8f18246ef248ba957b4ad988b6280f6abe5ceb1f0352b50ae503b",
+  "chrome_json_sha256": "4857f34bc45b262c51c7d2f5aa13ccc3230cfa29cd7a42d41ee2f51642f3cb7f"
+ },
+ "validity": {
+  "valid": false,
+  "reasons": [
+   "shards missing: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]",
+   "94695 of 94695 names not run",
+   "shard 0: start check: no result for FileAPI/Blob-methods-from-detached-frame.html (exit 0)",
+   "shard 1: start check: no result for FileAPI/BlobURL/cross-partition-navigation.https.html (exit 0)",
+   "shard 2: start check: no result for FileAPI/BlobURL/cross-partition-self-fetch.https.html (exit 0)",
+   "shard 3: start check: no result for FileAPI/BlobURL/cross-partition-worker-creation.https.html (exit 0)",
+   "shard 4: start check: no result for FileAPI/BlobURL/cross-partition.https.html (exit 0)",
+   "shard 5: start check: no result for FileAPI/BlobURL/opaque-origin.html (exit 0)",
+   "shard 6: start check: no result for FileAPI/FileReader/progress_event_bubbles_cancelable.html (exit 0)",
+   "shard 7: start check: no result for FileAPI/FileReader/workers.html (exit 0)",
+   "shard 8: start check: no result for FileAPI/FileReaderSync.worker.html (exit 0)",
+   "shard 9: start check: no result for FileAPI/blob/Blob-array-buffer-data-isolation.html (exit 0)",
+   "shard 10: start check: no result for FileAPI/blob/Blob-array-buffer.any.html (exit 0)",
+   "shard 11: start check: no result for FileAPI/blob/Blob-array-buffer.any.worker.html (exit 0)"
+  ],
+  "rules": "The rules for a full WPT run to count as a score. Returns the reasons it does not.",
+  "server_failure_limit": 0.005,
+  "probe_failure_limit": 3
+ },
+ "server_failures_first_pass": 0,
+ "totals": {},
+ "shards": [
+  {
+   "index": 0,
+   "shards": 12,
+   "names": 7892,
+   "started_utc": "2026-11-16T05:24:02Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 36,
+   "error": "start check: no result for FileAPI/Blob-methods-from-detached-frame.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:05Z",
+   "wall_seconds": 122
+  },
+  {
+   "index": 1,
+   "shards": 12,
+   "names": 7892,
+   "started_utc": "2026-11-16T05:24:04Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.82.6",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1016-aws",
+    "memory_bytes": 16463409152,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.3",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 30,
+   "error": "start check: no result for FileAPI/BlobURL/cross-partition-navigation.https.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:01Z",
+   "wall_seconds": 116
+  },
+  {
+   "index": 2,
+   "shards": 12,
+   "names": 7892,
+   "started_utc": "2026-11-16T05:23:56Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 48,
+   "error": "start check: no result for FileAPI/BlobURL/cross-partition-self-fetch.https.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:11Z",
+   "wall_seconds": 135
+  },
+  {
+   "index": 3,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:01Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 26,
+   "error": "start check: no result for FileAPI/BlobURL/cross-partition-worker-creation.https.html (exit 0)",
+   "finished_utc": "2026-11-16T05:25:53Z",
+   "wall_seconds": 112
+  },
+  {
+   "index": 4,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:06Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759435264,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 46,
+   "error": "start check: no result for FileAPI/BlobURL/cross-partition.https.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:18Z",
+   "wall_seconds": 132
+  },
+  {
+   "index": 5,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:04Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 36,
+   "error": "start check: no result for FileAPI/BlobURL/opaque-origin.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:06Z",
+   "wall_seconds": 122
+  },
+  {
+   "index": 6,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:06Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 48,
+   "error": "start check: no result for FileAPI/FileReader/progress_event_bubbles_cancelable.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:20Z",
+   "wall_seconds": 134
+  },
+  {
+   "index": 7,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:02Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 36,
+   "error": "start check: no result for FileAPI/FileReader/workers.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:05Z",
+   "wall_seconds": 123
+  },
+  {
+   "index": 8,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:01Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 36,
+   "error": "start check: no result for FileAPI/FileReaderSync.worker.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:04Z",
+   "wall_seconds": 123
+  },
+  {
+   "index": 9,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:23:57Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16758403072,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 36,
+   "error": "start check: no result for FileAPI/blob/Blob-array-buffer-data-isolation.html (exit 0)",
+   "finished_utc": "2026-11-16T05:25:59Z",
+   "wall_seconds": 122
+  },
+  {
+   "index": 10,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:03Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.82.6",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1016-aws",
+    "memory_bytes": 16463405056,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.3",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 28,
+   "error": "start check: no result for FileAPI/blob/Blob-array-buffer.any.html (exit 0)",
+   "finished_utc": "2026-11-16T05:25:58Z",
+   "wall_seconds": 115
+  },
+  {
+   "index": 11,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T05:24:03Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16758403072,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-1b2fc90d578e-foafnaut-linux-x86_64",
+     "tarball_sha256": "579453c511924955fae718121d64bd3d24985d28d820546945a76d655887853e",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T05:22:14Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43806492327",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-1b2fc90d578e-foafnaut-web",
+     "tarball_sha256": "7fba192d6092d0a6d010f9517333eb70596e505c224513c5ebd1d84fdda8b818",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T04:50:25Z",
+      "hygiene": {
+       "commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 561,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 53,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43794888137",
+      "set": "foafnaut-web",
+      "source_commit": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_ref": "1b2fc90d578e50b6a77142fcd4c766d42fab35b3",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "da70f3857b33c64947d0a50de8b9ac24ccc31f8808b790cc3331a234435125c5",
+   "tree_seconds": 38,
+   "error": "start check: no result for FileAPI/blob/Blob-array-buffer.any.worker.html (exit 0)",
+   "finished_utc": "2026-11-16T05:26:06Z",
+   "wall_seconds": 124
+  }
+ ],
+ "directories": {}
+}
