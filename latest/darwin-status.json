@@ -1,18 +1,40 @@
 {
- "behind": false,
- "behind_since": null,
- "checked_at": "2026-11-17T06:12:20Z",
- "lag_min": 0,
- "lane_runs": [],
+ "behind": true,
+ "behind_since": "2026-11-17T06:25:44Z",
+ "checked_at": "2026-11-17T07:03:24Z",
+ "lag_min": 37,
+ "lane_runs": [
+  {
+   "created_at": "2026-11-17T07:03:04Z",
+   "id": 44035711794,
+   "mac_jobs": {},
+   "sha": "",
+   "status": "pending",
+   "url": "https://github.com/danbri/factoidal-builds/actions/runs/44035711794"
+  },
+  {
+   "created_at": "2026-11-17T06:31:59Z",
+   "id": 44031904120,
+   "mac_jobs": {},
+   "sha": "",
+   "status": "in_progress",
+   "url": "https://github.com/danbri/factoidal-builds/actions/runs/44031904120"
+  }
+ ],
  "last_decision": {
   "action": "dispatched",
-  "at": "2026-11-17T04:36:03Z",
-  "behind_since": "2026-11-16T23:42:34Z",
-  "capped": false,
-  "head": "fbd899f3978b7727a63f7b2a1fe6add9aac98e69",
-  "reason": "a main-lane run builds an older main; queue the newest behind it",
-  "waited_for": [],
-  "waited_min": 0
+  "at": "2026-11-17T06:32:03Z",
+  "behind_since": "2026-11-17T06:25:44Z",
+  "capped": true,
+  "head": "33992d9e718d52d19580a383dfd86cd9c9e910b8",
+  "reason": "waited 31 min for #577, #571, #573, #586 (cap reached)",
+  "waited_for": [
+   577,
+   571,
+   573,
+   586
+  ],
+  "waited_min": 31
  },
  "last_failure": null,
  "mac_release": {
@@ -23,8 +45,8 @@
   "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-fbd899f3978b-foafnaut-darwin-arm64"
  },
  "main": {
-  "committed_at": "2026-11-17T02:29:22Z",
-  "sha": "fbd899f3978b7727a63f7b2a1fe6add9aac98e69"
+  "committed_at": "2026-11-17T06:28:44Z",
+  "sha": "33992d9e718d52d19580a383dfd86cd9c9e910b8"
  },
  "schema": "darwin-status/1"
 }
