@@ -67,9 +67,16 @@ jobs:
           case "$FROM_TITLE" in
             'core main (Mac release lane'*) echo "a main-lane build ended: poll"; echo "skip=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
           esac
+          # Polls that ran their check (not ones that were throttled themselves, nor cancelled
+          # pending ones): only completed runs count, as this group runs one poll at a time.
           since=$(date -u -d "-${THROTTLE_MIN} min" +%FT%TZ)
-          recent=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/mac-release.yml/runs?per_page=20" \
-            --jq "[.workflow_runs[] | select(.id != $GITHUB_RUN_ID and .conclusion != \"cancelled\" and .created_at >= \"$since\")] | length")
+          recent=0
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/mac-release.yml/runs?per_page=30" \
+              --jq ".workflow_runs[] | select(.id != $GITHUB_RUN_ID and .status == \"completed\" and .conclusion != \"cancelled\" and .created_at >= \"$since\") | .id"); do
+            ran=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/jobs" \
+              --jq '[.jobs[].steps[]? | select(.name | startswith("Check main")) | select(.conclusion != "skipped")] | length')
+            [ "$ran" -gt 0 ] && { recent=$((recent + 1)); echo "poll $id ran its check"; }
+          done
           if [ "$recent" -gt 0 ]; then
             echo "skip: $recent poll(s) since $since"; echo "skip=true" >> "$GITHUB_OUTPUT"
           else
