@@ -1,0 +1,5319 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261116T2327Z-wpt-linux-x86_64-gh43979360585a1",
+  "started_utc": "2026-11-16T23:27:37Z",
+  "finished_utc": "2026-11-17T00:12:23Z",
+  "trigger": "factoidal-release",
+  "suite": "wpt",
+  "platform": "linux-x86_64",
+  "engine": "bubblepopkit-native",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+  "commit_utc": "2026-11-16T22:52:43Z",
+  "snapshot_branch": "",
+  "release_tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "names_total": 94695,
+  "names_run": 92715,
+  "passed": 2079874,
+  "denominator": 2272125,
+  "share_pct": "91.5387",
+  "share_ex_encoding_pct": "82.8656",
+  "ok": 84504,
+  "error": 1763,
+  "timeout": 4592,
+  "skip": 1751,
+  "crash": 31,
+  "stall": 20,
+  "no_result": 52,
+  "other": 2,
+  "failed": "",
+  "server_failures": 1,
+  "valid": "false",
+  "invalid_reason": "1980 of 94695 names not run",
+  "kind": "full",
+  "shards": 12,
+  "wall_minutes": 44.7,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x12",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43979360585",
+  "result_url": "https://github.com/danbri/factoidal-builds/releases/download/test-results/20261116T2327Z-wpt-linux-x86_64-gh43979360585a1.wpt-full.json.gz",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261116T2327Z-wpt-linux-x86_64-gh43979360585a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-16T23:27:03Z",
+  "event": "workflow_dispatch",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43979360585",
+  "trigger": "factoidal-release",
+  "core_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+  "core_short": "bc4261b99ff9",
+  "on_main": true,
+  "commit_author_utc": "2026-11-16T22:52:43Z",
+  "commit_committer_utc": "2026-11-16T22:52:43Z",
+  "commit_subject": "Merge pull request #554 from danbri/wip/sizefix",
+  "release_sets": {
+   "foafnaut-linux-x86_64": {
+    "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+    "published_at": "2026-11-16T23:26:54Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-bc4261b99ff9-foafnaut-linux-x86_64"
+   },
+   "foafnaut-web": {
+    "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+    "published_at": "2026-11-16T22:25:08Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-c2fa4b5cd9bb-foafnaut-web",
+    "note": "of core c2fa4b5cd9bb, not of this commit: the Wasm module is loaded, not used, by a native run"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-16T23:27:07Z",
+  "candidate_why": "named by the dispatch (build-bc4261b99ff9)",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": true,
+  "suites": false,
+  "platforms": [
+   "linux-x86_64"
+  ],
+  "shards_by_platform": {
+   "linux-x86_64": 12
+  },
+  "shards": 12
+ },
+ "inputs": {
+  "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+  "chrome_run": {
+   "id": 5373481064333312,
+   "browser_version": "157.0.8103.78",
+   "os_name": "linux",
+   "os_version": "22.04",
+   "time_start": "2026-11-15T01:12:05.118Z",
+   "results_url": "https://storage.googleapis.com/wptd/fa649586f35119af9032312ef21e300e41d1c3b6/chrome-157.0.8103.78-linux-22.04-720356c15a-summary_v2.json.gz"
+  },
+  "names": 94695,
+  "denominator": 2272125,
+  "denominator_encoding": 1152398,
+  "full_list_sha256": "39a9d212d6a8f18246ef248ba957b4ad988b6280f6abe5ceb1f0352b50ae503b",
+  "chrome_json_sha256": "4857f34bc45b262c51c7d2f5aa13ccc3230cfa29cd7a42d41ee2f51642f3cb7f"
+ },
+ "validity": {
+  "valid": false,
+  "reasons": [
+   "1980 of 94695 names not run"
+  ],
+  "rules": "The rules for a full WPT run to count as a score. Returns the reasons it does not.",
+  "server_failure_limit": 0.005,
+  "probe_failure_limit": 3
+ },
+ "server_failures_first_pass": 1,
+ "shards_missing_reasons": {},
+ "shard_table": [
+  {
+   "index": 0,
+   "status": "complete",
+   "names_planned": 7892,
+   "names_run": 7892,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:37Z",
+   "finished_utc": "2026-11-17T00:08:39Z",
+   "wall_seconds": 2462,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 1,
+   "status": "complete",
+   "names_planned": 7892,
+   "names_run": 7892,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:39Z",
+   "finished_utc": "2026-11-17T00:04:02Z",
+   "wall_seconds": 2184,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 2,
+   "status": "complete",
+   "names_planned": 7892,
+   "names_run": 7892,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "finished_utc": "2026-11-16T23:57:32Z",
+   "wall_seconds": 1789,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.82.6"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 3,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "finished_utc": "2026-11-17T00:04:12Z",
+   "wall_seconds": 2190,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 4,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "finished_utc": "2026-11-17T00:08:57Z",
+   "wall_seconds": 2475,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 5,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "finished_utc": "2026-11-17T00:02:50Z",
+   "wall_seconds": 2108,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 6,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "finished_utc": "2026-11-17T00:04:43Z",
+   "wall_seconds": 2221,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 7,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:51Z",
+   "finished_utc": "2026-11-16T23:57:02Z",
+   "wall_seconds": 1751,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.82.6"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 8,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:39Z",
+   "finished_utc": "2026-11-17T00:04:42Z",
+   "wall_seconds": 2223,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 9,
+   "status": "partial",
+   "names_planned": 7891,
+   "names_run": 5911,
+   "tool_exit": 1,
+   "started_utc": "2026-11-16T23:27:45Z",
+   "finished_utc": "2026-11-16T23:57:18Z",
+   "wall_seconds": 1774,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": "23:48:02 2303/7891 done\n23:48:22 2431/7891 done\n23:48:43 2560/7891 done\n23:49:03 2726/7891 done\n23:49:23 2891/7891 done\n23:49:43 3026/7891 done\n23:50:03 3249/7891 done\n23:50:23 3460/7891 done\n23:50:43 3639/7891 done\n23:51:04 3757/7891 done\n23:51:24 3971/7891 done\n23:51:44 4184/7891 done\n23:52:04 4394/7891 done\n23:52:24 4605/7891 done\n23:52:44 4762/7891 done\nTraceback (most recent call last):\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 605, in <module>\n    main()\n    ~~~~^^\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 601, in main\n    {\"sample\": cmd_sample, \"sparse\": cmd_sparse, \"tree\": cmd_tree, \"serve\": cmd_serve, \"run\": cmd_run, \"score\": cmd_score}[a.cmd](a)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 207, in cmd_run\n    total = sum(len(done_in(os.path.join(a.dir, f\"part{i}.jsonl\"))) for i in range(a.jobs))\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 207, in <genexpr>\n    total = sum(len(done_in(os.path.join(a.dir, f\"part{i}.jsonl\"))) for i in range(a.jobs))\n                    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 152, in done_in\n    return {json.loads(l)[\"file\"] for l in open(jsonl) if l.strip()}\n            ~~~~~~~~~~^^^\n  File \"/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/json/__init__.py\", line 352, in loads\n    return _default_decoder.decode(s)\n           ~~~~~~~~~~~~~~~~~~~~~~~^^^\n  File \"/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/json/decoder.py\", line 345, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/json/decoder.py\", line 361, in raw_decode\n    obj, end = self.scan_once(s, idx)\n               ~~~~~~~~~~~~~~^^^^^^^^\njson.decoder.JSONDecodeError: Expecting ',' delimiter: line 1 column 134 (char 133)"
+  },
+  {
+   "index": 10,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:43Z",
+   "finished_utc": "2026-11-16T23:56:31Z",
+   "wall_seconds": 1728,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.82.6"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  },
+  {
+   "index": 11,
+   "status": "complete",
+   "names_planned": 7891,
+   "names_run": 7891,
+   "tool_exit": 0,
+   "started_utc": "2026-11-16T23:27:40Z",
+   "finished_utc": "2026-11-17T00:12:23Z",
+   "wall_seconds": 2683,
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "image_version": "20261111.196.1"
+   },
+   "start_check_tries": 1,
+   "cause": "",
+   "log_excerpt": ""
+  }
+ ],
+ "completeness": "partial",
+ "totals": {
+  "namesInChrome": 94695,
+  "namesRun": 92715,
+  "namesMissing": 1980,
+  "passed": 2079874,
+  "passedUncapped": 2080662,
+  "reported": 2215483,
+  "share": 0.9153871375914617,
+  "outcomes": {
+   "CRASH": 31,
+   "ERROR": 1763,
+   "NO_RESULT": 52,
+   "OK": 84504,
+   "PRECONDITION_FAILED": 1,
+   "SKIP engine": 5,
+   "SKIP other": 1746,
+   "STALL": 20,
+   "TIMEOUT": 4592,
+   "undefined": 1
+  }
+ },
+ "shards": [
+  {
+   "index": 0,
+   "shards": 12,
+   "names": 7892,
+   "started_utc": "2026-11-16T23:27:37Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 44,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2391,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 7423,
+    "kills": [],
+    "last_log": 1794874078.7254753,
+    "min_disk_free_mb": 85285
+   },
+   "names_run": 7892,
+   "outcomes": {
+    "OK": 7217,
+    "TIMEOUT": 366,
+    "ERROR": 153,
+    "SKIP": 148,
+    "NO_RESULT": 4,
+    "STALL": 2,
+    "undefined": 1,
+    "CRASH": 1
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 238,
+    "probes_failed": 1,
+    "failed_streak_max": 1,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:08:39Z",
+   "wall_seconds": 2462,
+   "status": "complete"
+  },
+  {
+   "index": 1,
+   "shards": 12,
+   "names": 7892,
+   "started_utc": "2026-11-16T23:27:39Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759431168,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 44,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 64,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2049,
+   "retry": {
+    "names": 1,
+    "seconds": 24,
+    "tool_exit": 0,
+    "results": 1,
+    "still_failing": 1
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 10961,
+    "kills": [],
+    "last_log": 1794873828.329795,
+    "min_disk_free_mb": 85285
+   },
+   "names_run": 7892,
+   "outcomes": {
+    "TIMEOUT": 387,
+    "OK": 7204,
+    "ERROR": 151,
+    "SKIP": 146,
+    "CRASH": 2,
+    "STALL": 2
+   },
+   "server_failures": 1,
+   "wptserve": {
+    "probes_ok": 206,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:04:02Z",
+   "wall_seconds": 2184,
+   "status": "complete"
+  },
+  {
+   "index": 2,
+   "shards": 12,
+   "names": 7892,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.82.6",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1016-aws",
+    "memory_bytes": 16463405056,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.3",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 28,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 64,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 1695,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 11347,
+    "kills": [],
+    "last_log": 1794873447.5312333,
+    "min_disk_free_mb": 88759
+   },
+   "names_run": 7892,
+   "outcomes": {
+    "TIMEOUT": 386,
+    "OK": 7182,
+    "ERROR": 164,
+    "SKIP": 150,
+    "NO_RESULT": 4,
+    "STALL": 2,
+    "CRASH": 4
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 169,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-16T23:57:32Z",
+   "wall_seconds": 1789,
+   "status": "complete"
+  },
+  {
+   "index": 3,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 28,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 64,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2095,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 9990,
+    "kills": [],
+    "last_log": 1794873807.9847608,
+    "min_disk_free_mb": 85298
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "TIMEOUT": 369,
+    "OK": 7222,
+    "ERROR": 143,
+    "SKIP": 147,
+    "NO_RESULT": 7,
+    "STALL": 2,
+    "CRASH": 1
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 209,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:04:12Z",
+   "wall_seconds": 2190,
+   "status": "complete"
+  },
+  {
+   "index": 4,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16758403072,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 30,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 64,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2379,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 7083,
+    "kills": [],
+    "last_log": 1794874108.6894665,
+    "min_disk_free_mb": 85298
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "TIMEOUT": 380,
+    "OK": 7215,
+    "ERROR": 139,
+    "NO_RESULT": 6,
+    "SKIP": 146,
+    "CRASH": 2,
+    "STALL": 3
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 237,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:08:57Z",
+   "wall_seconds": 2475,
+   "status": "complete"
+  },
+  {
+   "index": 5,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759431168,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 26,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2055,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 9958,
+    "kills": [],
+    "last_log": 1794873766.0894449,
+    "min_disk_free_mb": 85298
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "TIMEOUT": 407,
+    "OK": 7181,
+    "ERROR": 146,
+    "NO_RESULT": 2,
+    "SKIP": 152,
+    "CRASH": 3
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 205,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:02:50Z",
+   "wall_seconds": 2108,
+   "status": "complete"
+  },
+  {
+   "index": 6,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:42Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 46,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2147,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 10427,
+    "kills": [],
+    "last_log": 1794873846.6128607,
+    "min_disk_free_mb": 85276
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "OK": 7180,
+    "ERROR": 152,
+    "TIMEOUT": 394,
+    "STALL": 1,
+    "NO_RESULT": 5,
+    "SKIP": 154,
+    "CRASH": 5
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 214,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:04:43Z",
+   "wall_seconds": 2221,
+   "status": "complete"
+  },
+  {
+   "index": 7,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:51Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.82.6",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1016-aws",
+    "memory_bytes": 16463405056,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.3",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 30,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 1695,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 8338,
+    "kills": [],
+    "last_log": 1794873417.9355588,
+    "min_disk_free_mb": 88772
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "TIMEOUT": 421,
+    "OK": 7162,
+    "ERROR": 147,
+    "STALL": 1,
+    "NO_RESULT": 6,
+    "SKIP": 152,
+    "CRASH": 2
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 169,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-16T23:57:02Z",
+   "wall_seconds": 1751,
+   "status": "complete"
+  },
+  {
+   "index": 8,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:39Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 48,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2147,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 9073,
+    "kills": [],
+    "last_log": 1794873845.4056256,
+    "min_disk_free_mb": 85300
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "ERROR": 160,
+    "OK": 7173,
+    "TIMEOUT": 398,
+    "STALL": 1,
+    "NO_RESULT": 5,
+    "SKIP": 152,
+    "CRASH": 2
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 214,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:04:42Z",
+   "wall_seconds": 2223,
+   "status": "complete"
+  },
+  {
+   "index": 9,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:45Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 26,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 1,
+   "run_seconds": 1469,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [
+    {
+     "pass": 0,
+     "missing": 2904,
+     "ended_on": [
+      "html/cross-origin-opener-policy/popup-with-structured-header.https.html",
+      "third_party/test262/test/language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-defer-specifier-tostring-abrupt-rejects.test262.html",
+      "third_party/test262/test/staging/sm/Date/dst-offset-caching-1-of-8.test262.html"
+     ],
+     "run": 2901,
+     "tool_exit": 1,
+     "results": 0
+    },
+    {
+     "pass": 1,
+     "missing": 2572,
+     "ended_on": [],
+     "run": 2572,
+     "tool_exit": 1,
+     "results": 0
+    },
+    {
+     "pass": 2,
+     "missing": 2345,
+     "ended_on": [],
+     "run": 2345,
+     "tool_exit": 1,
+     "results": 0
+    },
+    {
+     "pass": 3,
+     "missing": 2127,
+     "ended_on": [],
+     "run": 2127,
+     "tool_exit": 1,
+     "results": 0
+    },
+    {
+     "pass": 4,
+     "missing": 2066,
+     "ended_on": [],
+     "run": 2066,
+     "tool_exit": 1,
+     "results": 0
+    },
+    {
+     "pass": 5,
+     "missing": 2031,
+     "ended_on": [],
+     "run": 2031,
+     "tool_exit": 1,
+     "results": 0
+    }
+   ],
+   "memory": {
+    "min_available_mb": 9401,
+    "kills": [],
+    "last_log": 1794873167.7088633,
+    "min_disk_free_mb": 85304
+   },
+   "names_run": 5911,
+   "outcomes": {
+    "OK": 5344,
+    "TIMEOUT": 332,
+    "STALL": 2,
+    "ERROR": 121,
+    "NO_RESULT": 4,
+    "SKIP": 102,
+    "CRASH": 6
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 146,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "23:48:02 2303/7891 done\n23:48:22 2431/7891 done\n23:48:43 2560/7891 done\n23:49:03 2726/7891 done\n23:49:23 2891/7891 done\n23:49:43 3026/7891 done\n23:50:03 3249/7891 done\n23:50:23 3460/7891 done\n23:50:43 3639/7891 done\n23:51:04 3757/7891 done\n23:51:24 3971/7891 done\n23:51:44 4184/7891 done\n23:52:04 4394/7891 done\n23:52:24 4605/7891 done\n23:52:44 4762/7891 done\nTraceback (most recent call last):\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 605, in <module>\n    main()\n    ~~~~^^\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 601, in main\n    {\"sample\": cmd_sample, \"sparse\": cmd_sparse, \"tree\": cmd_tree, \"serve\": cmd_serve, \"run\": cmd_run, \"score\": cmd_score}[a.cmd](a)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 207, in cmd_run\n    total = sum(len(done_in(os.path.join(a.dir, f\"part{i}.jsonl\"))) for i in range(a.jobs))\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 207, in <genexpr>\n    total = sum(len(done_in(os.path.join(a.dir, f\"part{i}.jsonl\"))) for i in range(a.jobs))\n                    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/factoidal-builds/factoidal-builds/core/tests/browser-wpt/wpt-score.py\", line 152, in done_in\n    return {json.loads(l)[\"file\"] for l in open(jsonl) if l.strip()}\n            ~~~~~~~~~~^^^\n  File \"/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/json/__init__.py\", line 352, in loads\n    return _default_decoder.decode(s)\n           ~~~~~~~~~~~~~~~~~~~~~~~^^^\n  File \"/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/json/decoder.py\", line 345, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/json/decoder.py\", line 361, in raw_decode\n    obj, end = self.scan_once(s, idx)\n               ~~~~~~~~~~~~~~^^^^^^^^\njson.decoder.JSONDecodeError: Expecting ',' delimiter: line 1 column 134 (char 133)",
+   "finished_utc": "2026-11-16T23:57:18Z",
+   "wall_seconds": 1774,
+   "status": "partial"
+  },
+  {
+   "index": 10,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:43Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.82.6",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1016-aws",
+    "memory_bytes": 16463409152,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.3",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 28,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 1673,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 6881,
+    "kills": [],
+    "last_log": 1794873349.1223788,
+    "min_disk_free_mb": 88778
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "OK": 7198,
+    "TIMEOUT": 395,
+    "ERROR": 142,
+    "NO_RESULT": 4,
+    "SKIP": 150,
+    "CRASH": 1,
+    "STALL": 1
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 167,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-16T23:56:31Z",
+   "wall_seconds": 1728,
+   "status": "complete"
+  },
+  {
+   "index": 11,
+   "shards": 12,
+   "names": 7891,
+   "started_utc": "2026-11-16T23:27:40Z",
+   "runner": {
+    "os": "Linux",
+    "machine": "x86_64",
+    "cpus": 4,
+    "python": "3.13.18",
+    "image_os": "ubuntu26",
+    "image_version": "20261111.196.1",
+    "runner_name": null,
+    "runner_environment": null,
+    "os_version": "7.0.0-1019-azure",
+    "memory_bytes": 16759439360,
+    "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+    "node": "v24.22.2",
+    "git": "git version 2.56.1"
+   },
+   "platform": "linux-x86_64",
+   "script_engine": "bubblepop",
+   "wpt_commit": "fa649586f35119af9032312ef21e300e41d1c3b6",
+   "tool_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+   "tool_sha256": "9d6c59955acf413fa4d68743e42e6803eb8f95d8a0ebd19ecae1c242a9a94110",
+   "release_sets": {
+    "foafnaut-linux-x86_64": {
+     "tag": "build-bc4261b99ff9-foafnaut-linux-x86_64",
+     "tarball_sha256": "a9696d082d9e674f612bca06524f925b0b64eaf4e814f326324335492575ada6",
+     "files": 6,
+     "build_info": {
+      "built_at": "2026-11-16T23:25:59Z",
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43974217518",
+      "set": "foafnaut-linux-x86_64",
+      "source_commit": "bc4261b99ff92a584f89adc734179a676c9181b6",
+      "source_ref": "main",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "lean": "leanprover/lean4:v4.33.1",
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "platform": "linux-x86_64",
+       "note": "built by foafnaut-linux.yml after build.yml; gates: the WPT start check below"
+      },
+      "library": {
+       "self_contained": true,
+       "needed": [
+        "ld-linux-x86-64.so.2",
+        "libc.so.6",
+        "libdl.so.2",
+        "libm.so.6",
+        "libpthread.so.0",
+        "librt.so.1"
+       ]
+      }
+     }
+    },
+    "foafnaut-web": {
+     "tag": "build-c2fa4b5cd9bb-foafnaut-web",
+     "tarball_sha256": "8216e1af1012c8a5b9b7d6cc1da4f027f223a9e37a33c50813fd04182c97660c",
+     "files": 21,
+     "build_info": {
+      "built_at": "2026-11-16T22:25:05Z",
+      "hygiene": {
+       "commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+       "counts": {
+        "formal": {
+         "extern": 27,
+         "implemented_by": 0,
+         "modules": 564,
+         "opaque": 1,
+         "partial_def": 153,
+         "unsafe": 0
+        },
+        "lab": {
+         "extern": 0,
+         "implemented_by": 3,
+         "modules": 54,
+         "opaque": 5,
+         "partial_def": 1,
+         "unsafe": 3
+        }
+       },
+       "module": "labs/demos/foafnaut/LabHygiene.lean",
+       "theorem": "lab_ratchet"
+      },
+      "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/43878182710",
+      "set": "foafnaut-web",
+      "source_commit": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_ref": "c2fa4b5cd9bb6d4f3ab36b5bf0394d5a58ea0229",
+      "source_repo": "danbri/factoidal-core",
+      "toolchains": {
+       "deno": "deno 2.9.4 (stable, release, x86_64-unknown-linux-gnu)",
+       "emscripten": "6.0.8",
+       "lean_build": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)"
+      }
+     }
+    }
+   },
+   "engine_sha256": "837620f468292cf55b4e5752ba165238d5b6a0ee7d72204777d3472e026d4d8f",
+   "tree_seconds": 28,
+   "start_check": [
+    {
+     "try": 1,
+     "exit": 0,
+     "seconds": 24,
+     "result": true
+    }
+   ],
+   "tool_exit": 0,
+   "run_seconds": 2629,
+   "retry": {
+    "names": 0,
+    "seconds": 0
+   },
+   "completion": [],
+   "memory": {
+    "min_available_mb": 8046,
+    "kills": [],
+    "last_log": 1794874330.6241276,
+    "min_disk_free_mb": 85300
+   },
+   "names_run": 7891,
+   "outcomes": {
+    "OK": 7226,
+    "ERROR": 145,
+    "TIMEOUT": 357,
+    "NO_RESULT": 5,
+    "SKIP": 152,
+    "STALL": 3,
+    "PRECONDITION_FAILED": 1,
+    "CRASH": 2
+   },
+   "server_failures": 0,
+   "wptserve": {
+    "probes_ok": 260,
+    "probes_failed": 0,
+    "failed_streak_max": 0,
+    "exited_during_run": false,
+    "stopped_at_limit": false
+   },
+   "jobs": 3,
+   "max_minutes": 170,
+   "log_excerpt": "",
+   "finished_utc": "2026-11-17T00:12:23Z",
+   "wall_seconds": 2683,
+   "status": "complete"
+  }
+ ],
+ "directories": {
+  "FileAPI": {
+   "names": 113,
+   "run": 113,
+   "chrome": 1645,
+   "passed": 1205,
+   "reported": 1568,
+   "share": 0.732523,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 99,
+    "TIMEOUT": 11
+   }
+  },
+  "IndexedDB": {
+   "names": 820,
+   "run": 820,
+   "chrome": 5853,
+   "passed": 5504,
+   "reported": 5703,
+   "share": 0.940372,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 21,
+    "OK": 755,
+    "STALL": 3,
+    "TIMEOUT": 40
+   }
+  },
+  "WebCryptoAPI": {
+   "names": 336,
+   "run": 336,
+   "chrome": 70798,
+   "passed": 51874,
+   "reported": 69472,
+   "share": 0.732704,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 328,
+    "TIMEOUT": 6
+   }
+  },
+  "accelerometer": {
+   "names": 12,
+   "run": 12,
+   "chrome": 153,
+   "passed": 8,
+   "reported": 153,
+   "share": 0.052288,
+   "outcomes": {
+    "OK": 12
+   }
+  },
+  "accessibility": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 1,
+   "reported": 1,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "accname": {
+   "names": 21,
+   "run": 21,
+   "chrome": 509,
+   "passed": 423,
+   "reported": 509,
+   "share": 0.831041,
+   "outcomes": {
+    "OK": 21
+   }
+  },
+  "acid": {
+   "names": 1,
+   "run": 1,
+   "chrome": 100,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "TIMEOUT": 1
+   }
+  },
+  "ai": {
+   "names": 194,
+   "run": 194,
+   "chrome": 541,
+   "passed": 1,
+   "reported": 385,
+   "share": 0.001848,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 160,
+    "TIMEOUT": 32
+   }
+  },
+  "ambient-light": {
+   "names": 10,
+   "run": 10,
+   "chrome": 50,
+   "passed": 4,
+   "reported": 50,
+   "share": 0.08,
+   "outcomes": {
+    "OK": 10
+   }
+  },
+  "animation-worklet": {
+   "names": 17,
+   "run": 17,
+   "chrome": 64,
+   "passed": 18,
+   "reported": 63,
+   "share": 0.28125,
+   "outcomes": {
+    "OK": 16,
+    "TIMEOUT": 1
+   }
+  },
+  "apng": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "aria": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "SKIP other": 2
+   }
+  },
+  "audio-output": {
+   "names": 10,
+   "run": 10,
+   "chrome": 45,
+   "passed": 17,
+   "reported": 37,
+   "share": 0.377778,
+   "outcomes": {
+    "OK": 8,
+    "TIMEOUT": 2
+   }
+  },
+  "audio-session": {
+   "names": 3,
+   "run": 3,
+   "chrome": 40,
+   "passed": 14,
+   "reported": 40,
+   "share": 0.35,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "autoplay-policy-detection": {
+   "names": 3,
+   "run": 3,
+   "chrome": 22,
+   "passed": 14,
+   "reported": 20,
+   "share": 0.636364,
+   "outcomes": {
+    "OK": 2,
+    "TIMEOUT": 1
+   }
+  },
+  "background-fetch": {
+   "names": 16,
+   "run": 16,
+   "chrome": 257,
+   "passed": 34,
+   "reported": 257,
+   "share": 0.132296,
+   "outcomes": {
+    "OK": 16
+   }
+  },
+  "background-sync": {
+   "names": 2,
+   "run": 2,
+   "chrome": 34,
+   "passed": 16,
+   "reported": 34,
+   "share": 0.470588,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "badging": {
+   "names": 8,
+   "run": 8,
+   "chrome": 67,
+   "passed": 34,
+   "reported": 63,
+   "share": 0.507463,
+   "outcomes": {
+    "OK": 7,
+    "TIMEOUT": 1
+   }
+  },
+  "battery-status": {
+   "names": 17,
+   "run": 17,
+   "chrome": 65,
+   "passed": 12,
+   "reported": 58,
+   "share": 0.184615,
+   "outcomes": {
+    "OK": 11,
+    "TIMEOUT": 6
+   }
+  },
+  "beacon": {
+   "names": 17,
+   "run": 17,
+   "chrome": 102,
+   "passed": 87,
+   "reported": 92,
+   "share": 0.852941,
+   "outcomes": {
+    "OK": 12,
+    "TIMEOUT": 5
+   }
+  },
+  "bluetooth": {
+   "names": 7,
+   "run": 7,
+   "chrome": 229,
+   "passed": 24,
+   "reported": 229,
+   "share": 0.104803,
+   "outcomes": {
+    "OK": 7
+   }
+  },
+  "captured-mouse-events": {
+   "names": 4,
+   "run": 4,
+   "chrome": 26,
+   "passed": 2,
+   "reported": 26,
+   "share": 0.076923,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "clear-site-data": {
+   "names": 15,
+   "run": 15,
+   "chrome": 59,
+   "passed": 2,
+   "reported": 10,
+   "share": 0.033898,
+   "outcomes": {
+    "OK": 6,
+    "TIMEOUT": 9
+   }
+  },
+  "client-hints": {
+   "names": 128,
+   "run": 128,
+   "chrome": 205,
+   "passed": 58,
+   "reported": 169,
+   "share": 0.282927,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 102,
+    "TIMEOUT": 24
+   }
+  },
+  "clipboard-apis": {
+   "names": 62,
+   "run": 62,
+   "chrome": 253,
+   "passed": 28,
+   "reported": 211,
+   "share": 0.110672,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 50,
+    "TIMEOUT": 11
+   }
+  },
+  "close-watcher": {
+   "names": 68,
+   "run": 68,
+   "chrome": 98,
+   "passed": 0,
+   "reported": 95,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 65,
+    "TIMEOUT": 3
+   }
+  },
+  "compat": {
+   "names": 14,
+   "run": 14,
+   "chrome": 143,
+   "passed": 102,
+   "reported": 143,
+   "share": 0.713287,
+   "outcomes": {
+    "OK": 14
+   }
+  },
+  "compression": {
+   "names": 78,
+   "run": 78,
+   "chrome": 1316,
+   "passed": 944,
+   "reported": 1300,
+   "share": 0.717325,
+   "outcomes": {
+    "OK": 74,
+    "STALL": 4
+   }
+  },
+  "compute-pressure": {
+   "names": 45,
+   "run": 45,
+   "chrome": 187,
+   "passed": 9,
+   "reported": 155,
+   "share": 0.048128,
+   "outcomes": {
+    "OK": 26,
+    "TIMEOUT": 19
+   }
+  },
+  "connection-allowlist": {
+   "names": 90,
+   "run": 90,
+   "chrome": 365,
+   "passed": 89,
+   "reported": 244,
+   "share": 0.243836,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 68,
+    "TIMEOUT": 20
+   }
+  },
+  "console": {
+   "names": 19,
+   "run": 19,
+   "chrome": 107,
+   "passed": 28,
+   "reported": 105,
+   "share": 0.261682,
+   "outcomes": {
+    "OK": 17,
+    "TIMEOUT": 2
+   }
+  },
+  "contacts": {
+   "names": 1,
+   "run": 1,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "container-timing": {
+   "names": 49,
+   "run": 49,
+   "chrome": 52,
+   "passed": 0,
+   "reported": 52,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 49
+   }
+  },
+  "content-dpr": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "content-index": {
+   "names": 5,
+   "run": 5,
+   "chrome": 105,
+   "passed": 31,
+   "reported": 105,
+   "share": 0.295238,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "content-security-policy": {
+   "names": 948,
+   "run": 948,
+   "chrome": 4544,
+   "passed": 2503,
+   "reported": 3731,
+   "share": 0.550836,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 112,
+    "NO_RESULT": 15,
+    "OK": 630,
+    "STALL": 1,
+    "TIMEOUT": 189
+   }
+  },
+  "contenteditable": {
+   "names": 2,
+   "run": 2,
+   "chrome": 6,
+   "passed": 6,
+   "reported": 6,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "cookies": {
+   "names": 88,
+   "run": 88,
+   "chrome": 1293,
+   "passed": 662,
+   "reported": 705,
+   "share": 0.511988,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 42,
+    "TIMEOUT": 38
+   }
+  },
+  "cookiestore": {
+   "names": 76,
+   "run": 76,
+   "chrome": 636,
+   "passed": 503,
+   "reported": 618,
+   "share": 0.790881,
+   "outcomes": {
+    "OK": 70,
+    "TIMEOUT": 6
+   }
+  },
+  "core-aam": {
+   "names": 183,
+   "run": 183,
+   "chrome": 205,
+   "passed": 7,
+   "reported": 8,
+   "share": 0.034146,
+   "outcomes": {
+    "OK": 1,
+    "SKIP other": 182
+   }
+  },
+  "cors": {
+   "names": 27,
+   "run": 27,
+   "chrome": 463,
+   "passed": 352,
+   "reported": 416,
+   "share": 0.760259,
+   "outcomes": {
+    "OK": 24,
+    "TIMEOUT": 3
+   }
+  },
+  "cpu-performance": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "credential-management": {
+   "names": 16,
+   "run": 16,
+   "chrome": 161,
+   "passed": 32,
+   "reported": 139,
+   "share": 0.198758,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 11,
+    "TIMEOUT": 3
+   }
+  },
+  "css": {
+   "names": 8242,
+   "run": 8242,
+   "chrome": 198406,
+   "passed": 159977,
+   "reported": 197176,
+   "share": 0.806311,
+   "outcomes": {
+    "ERROR": 71,
+    "NO_RESULT": 2,
+    "OK": 7929,
+    "SKIP other": 2,
+    "STALL": 1,
+    "TIMEOUT": 237
+   }
+  },
+  "custom-elements": {
+   "names": 205,
+   "run": 205,
+   "chrome": 4822,
+   "passed": 3820,
+   "reported": 4628,
+   "share": 0.792202,
+   "outcomes": {
+    "ERROR": 14,
+    "OK": 188,
+    "TIMEOUT": 3
+   }
+  },
+  "delegated-ink": {
+   "names": 5,
+   "run": 5,
+   "chrome": 14,
+   "passed": 0,
+   "reported": 13,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 4
+   }
+  },
+  "density-size-correction": {
+   "names": 2,
+   "run": 2,
+   "chrome": 6,
+   "passed": 5,
+   "reported": 6,
+   "share": 0.833333,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "deprecation-reporting": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 4,
+   "reported": 4,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "device-bound-session-credentials": {
+   "names": 32,
+   "run": 32,
+   "chrome": 70,
+   "passed": 1,
+   "reported": 15,
+   "share": 0.014286,
+   "outcomes": {
+    "OK": 6,
+    "TIMEOUT": 26
+   }
+  },
+  "device-memory": {
+   "names": 4,
+   "run": 4,
+   "chrome": 40,
+   "passed": 34,
+   "reported": 40,
+   "share": 0.85,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "device-posture": {
+   "names": 5,
+   "run": 5,
+   "chrome": 31,
+   "passed": 14,
+   "reported": 31,
+   "share": 0.451613,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 1
+   }
+  },
+  "digital-credentials": {
+   "names": 28,
+   "run": 28,
+   "chrome": 152,
+   "passed": 3,
+   "reported": 76,
+   "share": 0.019737,
+   "outcomes": {
+    "OK": 19,
+    "TIMEOUT": 9
+   }
+  },
+  "direct-sockets": {
+   "names": 4,
+   "run": 4,
+   "chrome": 6,
+   "passed": 0,
+   "reported": 6,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "document-picture-in-picture": {
+   "names": 22,
+   "run": 22,
+   "chrome": 40,
+   "passed": 1,
+   "reported": 40,
+   "share": 0.025,
+   "outcomes": {
+    "OK": 22
+   }
+  },
+  "document-policy": {
+   "names": 10,
+   "run": 10,
+   "chrome": 19,
+   "passed": 0,
+   "reported": 5,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 4,
+    "TIMEOUT": 5
+   }
+  },
+  "dom": {
+   "names": 808,
+   "run": 808,
+   "chrome": 66464,
+   "passed": 63900,
+   "reported": 66371,
+   "share": 0.961423,
+   "outcomes": {
+    "CRASH": 2,
+    "ERROR": 12,
+    "NO_RESULT": 1,
+    "OK": 763,
+    "TIMEOUT": 30
+   }
+  },
+  "domparsing": {
+   "names": 96,
+   "run": 96,
+   "chrome": 3731,
+   "passed": 2435,
+   "reported": 3546,
+   "share": 0.65264,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 86,
+    "TIMEOUT": 4
+   }
+  },
+  "domxpath": {
+   "names": 35,
+   "run": 35,
+   "chrome": 1171,
+   "passed": 1164,
+   "reported": 1171,
+   "share": 0.994022,
+   "outcomes": {
+    "OK": 35
+   }
+  },
+  "dpub-aam": {
+   "names": 1,
+   "run": 1,
+   "chrome": 39,
+   "passed": 0,
+   "reported": 39,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "ecmascript": {
+   "names": 2,
+   "run": 2,
+   "chrome": 21,
+   "passed": 17,
+   "reported": 21,
+   "share": 0.809524,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "editing": {
+   "names": 733,
+   "run": 733,
+   "chrome": 117163,
+   "passed": 112354,
+   "reported": 116074,
+   "share": 0.958955,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 701,
+    "TIMEOUT": 27
+   }
+  },
+  "element-timing": {
+   "names": 53,
+   "run": 53,
+   "chrome": 56,
+   "passed": 3,
+   "reported": 56,
+   "share": 0.053571,
+   "outcomes": {
+    "OK": 53
+   }
+  },
+  "encoding": {
+   "names": 1343,
+   "run": 1343,
+   "chrome": 1152398,
+   "passed": 1152005,
+   "reported": 1152344,
+   "share": 0.999659,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 1332,
+    "TIMEOUT": 6
+   }
+  },
+  "encoding-detection": {
+   "names": 75,
+   "run": 75,
+   "chrome": 75,
+   "passed": 17,
+   "reported": 44,
+   "share": 0.226667,
+   "outcomes": {
+    "OK": 44,
+    "TIMEOUT": 31
+   }
+  },
+  "encrypted-media": {
+   "names": 100,
+   "run": 100,
+   "chrome": 359,
+   "passed": 25,
+   "reported": 226,
+   "share": 0.069638,
+   "outcomes": {
+    "ERROR": 54,
+    "OK": 43,
+    "TIMEOUT": 3
+   }
+  },
+  "entries-api": {
+   "names": 6,
+   "run": 6,
+   "chrome": 100,
+   "passed": 18,
+   "reported": 100,
+   "share": 0.18,
+   "outcomes": {
+    "OK": 6
+   }
+  },
+  "event-timing": {
+   "names": 76,
+   "run": 76,
+   "chrome": 183,
+   "passed": 52,
+   "reported": 183,
+   "share": 0.284153,
+   "outcomes": {
+    "OK": 76
+   }
+  },
+  "eventsource": {
+   "names": 109,
+   "run": 109,
+   "chrome": 157,
+   "passed": 132,
+   "reported": 137,
+   "share": 0.840764,
+   "outcomes": {
+    "OK": 97,
+    "TIMEOUT": 12
+   }
+  },
+  "eyedropper": {
+   "names": 2,
+   "run": 2,
+   "chrome": 11,
+   "passed": 4,
+   "reported": 11,
+   "share": 0.363636,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 1
+   }
+  },
+  "fedcm": {
+   "names": 81,
+   "run": 81,
+   "chrome": 179,
+   "passed": 1,
+   "reported": 169,
+   "share": 0.005587,
+   "outcomes": {
+    "OK": 79,
+    "TIMEOUT": 2
+   }
+  },
+  "fenced-frame": {
+   "names": 9,
+   "run": 9,
+   "chrome": 19,
+   "passed": 5,
+   "reported": 18,
+   "share": 0.263158,
+   "outcomes": {
+    "OK": 8,
+    "TIMEOUT": 1
+   }
+  },
+  "fetch": {
+   "names": 947,
+   "run": 947,
+   "chrome": 13288,
+   "passed": 8821,
+   "reported": 11542,
+   "share": 0.663832,
+   "outcomes": {
+    "ERROR": 31,
+    "NO_RESULT": 2,
+    "OK": 781,
+    "PRECONDITION_FAILED": 1,
+    "SKIP other": 12,
+    "STALL": 1,
+    "TIMEOUT": 119
+   }
+  },
+  "file-system-access": {
+   "names": 10,
+   "run": 10,
+   "chrome": 163,
+   "passed": 129,
+   "reported": 159,
+   "share": 0.791411,
+   "outcomes": {
+    "OK": 9,
+    "TIMEOUT": 1
+   }
+  },
+  "focus": {
+   "names": 39,
+   "run": 39,
+   "chrome": 55,
+   "passed": 5,
+   "reported": 9,
+   "share": 0.090909,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 7,
+    "TIMEOUT": 31
+   }
+  },
+  "font-access": {
+   "names": 12,
+   "run": 12,
+   "chrome": 38,
+   "passed": 3,
+   "reported": 32,
+   "share": 0.078947,
+   "outcomes": {
+    "OK": 7,
+    "TIMEOUT": 5
+   }
+  },
+  "forced-colors-mode": {
+   "names": 15,
+   "run": 15,
+   "chrome": 41,
+   "passed": 20,
+   "reported": 41,
+   "share": 0.487805,
+   "outcomes": {
+    "OK": 15
+   }
+  },
+  "fs": {
+   "names": 102,
+   "run": 102,
+   "chrome": 1121,
+   "passed": 995,
+   "reported": 1090,
+   "share": 0.8876,
+   "outcomes": {
+    "OK": 92,
+    "TIMEOUT": 10
+   }
+  },
+  "fullscreen": {
+   "names": 90,
+   "run": 90,
+   "chrome": 248,
+   "passed": 114,
+   "reported": 225,
+   "share": 0.459677,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 73,
+    "TIMEOUT": 11
+   }
+  },
+  "gamepad": {
+   "names": 6,
+   "run": 6,
+   "chrome": 92,
+   "passed": 34,
+   "reported": 88,
+   "share": 0.369565,
+   "outcomes": {
+    "OK": 4,
+    "TIMEOUT": 2
+   }
+  },
+  "generic-sensor": {
+   "names": 3,
+   "run": 3,
+   "chrome": 46,
+   "passed": 2,
+   "reported": 46,
+   "share": 0.043478,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "geolocation": {
+   "names": 24,
+   "run": 24,
+   "chrome": 134,
+   "passed": 27,
+   "reported": 132,
+   "share": 0.201493,
+   "outcomes": {
+    "ERROR": 17,
+    "OK": 6,
+    "TIMEOUT": 1
+   }
+  },
+  "geolocation-sensor": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 1,
+   "reported": 1,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "gpc": {
+   "names": 5,
+   "run": 5,
+   "chrome": 77,
+   "passed": 68,
+   "reported": 77,
+   "share": 0.883117,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "graphics-aria": {
+   "names": 1,
+   "run": 1,
+   "chrome": 3,
+   "passed": 0,
+   "reported": 3,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "gyroscope": {
+   "names": 10,
+   "run": 10,
+   "chrome": 55,
+   "passed": 4,
+   "reported": 55,
+   "share": 0.072727,
+   "outcomes": {
+    "OK": 10
+   }
+  },
+  "hr-time": {
+   "names": 19,
+   "run": 19,
+   "chrome": 160,
+   "passed": 66,
+   "reported": 156,
+   "share": 0.4125,
+   "outcomes": {
+    "OK": 16,
+    "TIMEOUT": 3
+   }
+  },
+  "hsts": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 1,
+   "reported": 1,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "html": {
+   "names": 9124,
+   "run": 9051,
+   "chrome": 159474,
+   "passed": 134059,
+   "reported": 149319,
+   "share": 0.840632,
+   "outcomes": {
+    "CRASH": 6,
+    "ERROR": 247,
+    "NO_RESULT": 8,
+    "OK": 7511,
+    "STALL": 2,
+    "TIMEOUT": 1277
+   }
+  },
+  "html-aam": {
+   "names": 38,
+   "run": 38,
+   "chrome": 891,
+   "passed": 810,
+   "reported": 889,
+   "share": 0.909091,
+   "outcomes": {
+    "OK": 36,
+    "SKIP other": 2
+   }
+  },
+  "html-media-capture": {
+   "names": 2,
+   "run": 2,
+   "chrome": 22,
+   "passed": 14,
+   "reported": 22,
+   "share": 0.636364,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "https-upgrades": {
+   "names": 6,
+   "run": 5,
+   "chrome": 6,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "TIMEOUT": 5
+   }
+  },
+  "idle-detection": {
+   "names": 12,
+   "run": 12,
+   "chrome": 93,
+   "passed": 1,
+   "reported": 63,
+   "share": 0.010753,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 4
+   }
+  },
+  "imagebitmap-renderingcontext": {
+   "names": 14,
+   "run": 14,
+   "chrome": 20,
+   "passed": 1,
+   "reported": 19,
+   "share": 0.05,
+   "outcomes": {
+    "OK": 13,
+    "TIMEOUT": 1
+   }
+  },
+  "import-maps": {
+   "names": 59,
+   "run": 57,
+   "chrome": 396,
+   "passed": 16,
+   "reported": 72,
+   "share": 0.040404,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 35,
+    "TIMEOUT": 19
+   }
+  },
+  "inert": {
+   "names": 29,
+   "run": 28,
+   "chrome": 113,
+   "passed": 29,
+   "reported": 101,
+   "share": 0.256637,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 24,
+    "TIMEOUT": 3
+   }
+  },
+  "infrastructure": {
+   "names": 144,
+   "run": 140,
+   "chrome": 286,
+   "passed": 110,
+   "reported": 220,
+   "share": 0.384615,
+   "outcomes": {
+    "ERROR": 15,
+    "OK": 100,
+    "SKIP other": 6,
+    "TIMEOUT": 19
+   }
+  },
+  "input-device-capabilities": {
+   "names": 1,
+   "run": 1,
+   "chrome": 22,
+   "passed": 9,
+   "reported": 22,
+   "share": 0.409091,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "input-events": {
+   "names": 34,
+   "run": 33,
+   "chrome": 3366,
+   "passed": 2548,
+   "reported": 3355,
+   "share": 0.756982,
+   "outcomes": {
+    "OK": 29,
+    "TIMEOUT": 4
+   }
+  },
+  "installedapp": {
+   "names": 2,
+   "run": 2,
+   "chrome": 18,
+   "passed": 14,
+   "reported": 18,
+   "share": 0.777778,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "intersection-observer": {
+   "names": 154,
+   "run": 150,
+   "chrome": 440,
+   "passed": 208,
+   "reported": 338,
+   "share": 0.472727,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 131,
+    "TIMEOUT": 14
+   }
+  },
+  "intervention-reporting": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 4,
+   "reported": 4,
+   "share": 1.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "is-input-pending": {
+   "names": 12,
+   "run": 12,
+   "chrome": 41,
+   "passed": 13,
+   "reported": 41,
+   "share": 0.317073,
+   "outcomes": {
+    "OK": 12
+   }
+  },
+  "jpegxl": {
+   "names": 12,
+   "run": 11,
+   "chrome": 17,
+   "passed": 0,
+   "reported": 13,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 8,
+    "TIMEOUT": 3
+   }
+  },
+  "js": {
+   "names": 35,
+   "run": 34,
+   "chrome": 160,
+   "passed": 71,
+   "reported": 147,
+   "share": 0.44375,
+   "outcomes": {
+    "OK": 34
+   }
+  },
+  "js-self-profiling": {
+   "names": 26,
+   "run": 26,
+   "chrome": 46,
+   "passed": 2,
+   "reported": 43,
+   "share": 0.043478,
+   "outcomes": {
+    "OK": 23,
+    "TIMEOUT": 3
+   }
+  },
+  "keyboard-lock": {
+   "names": 7,
+   "run": 6,
+   "chrome": 38,
+   "passed": 14,
+   "reported": 36,
+   "share": 0.368421,
+   "outcomes": {
+    "OK": 5,
+    "TIMEOUT": 1
+   }
+  },
+  "keyboard-map": {
+   "names": 8,
+   "run": 8,
+   "chrome": 27,
+   "passed": 4,
+   "reported": 23,
+   "share": 0.148148,
+   "outcomes": {
+    "OK": 4,
+    "TIMEOUT": 4
+   }
+  },
+  "largest-contentful-paint": {
+   "names": 75,
+   "run": 73,
+   "chrome": 124,
+   "passed": 6,
+   "reported": 98,
+   "share": 0.048387,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 67,
+    "TIMEOUT": 2
+   }
+  },
+  "layout-instability": {
+   "names": 83,
+   "run": 81,
+   "chrome": 118,
+   "passed": 1,
+   "reported": 115,
+   "share": 0.008475,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 79,
+    "TIMEOUT": 1
+   }
+  },
+  "loading": {
+   "names": 53,
+   "run": 51,
+   "chrome": 57,
+   "passed": 0,
+   "reported": 7,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 7,
+    "SKIP other": 44
+   }
+  },
+  "long-animation-frame": {
+   "names": 45,
+   "run": 44,
+   "chrome": 158,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 41,
+    "OK": 1,
+    "TIMEOUT": 2
+   }
+  },
+  "longtask-timing": {
+   "names": 21,
+   "run": 20,
+   "chrome": 77,
+   "passed": 1,
+   "reported": 53,
+   "share": 0.012987,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 18
+   }
+  },
+  "magnetometer": {
+   "names": 10,
+   "run": 10,
+   "chrome": 113,
+   "passed": 6,
+   "reported": 113,
+   "share": 0.053097,
+   "outcomes": {
+    "OK": 10
+   }
+  },
+  "managed": {
+   "names": 2,
+   "run": 2,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "mathml": {
+   "names": 218,
+   "run": 212,
+   "chrome": 4321,
+   "passed": 1089,
+   "reported": 4092,
+   "share": 0.252025,
+   "outcomes": {
+    "ERROR": 13,
+    "OK": 178,
+    "TIMEOUT": 21
+   }
+  },
+  "mathml-aam": {
+   "names": 2,
+   "run": 2,
+   "chrome": 64,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "SKIP other": 2
+   }
+  },
+  "measure-memory": {
+   "names": 16,
+   "run": 16,
+   "chrome": 20,
+   "passed": 4,
+   "reported": 20,
+   "share": 0.2,
+   "outcomes": {
+    "OK": 16
+   }
+  },
+  "media-capabilities": {
+   "names": 12,
+   "run": 11,
+   "chrome": 351,
+   "passed": 44,
+   "reported": 284,
+   "share": 0.125356,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 9
+   }
+  },
+  "media-playback-quality": {
+   "names": 1,
+   "run": 1,
+   "chrome": 30,
+   "passed": 11,
+   "reported": 30,
+   "share": 0.366667,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "media-source": {
+   "names": 94,
+   "run": 92,
+   "chrome": 764,
+   "passed": 24,
+   "reported": 624,
+   "share": 0.031414,
+   "outcomes": {
+    "ERROR": 7,
+    "OK": 85
+   }
+  },
+  "mediacapture-extensions": {
+   "names": 13,
+   "run": 12,
+   "chrome": 118,
+   "passed": 0,
+   "reported": 114,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 7,
+    "OK": 5
+   }
+  },
+  "mediacapture-fromelement": {
+   "names": 12,
+   "run": 12,
+   "chrome": 69,
+   "passed": 23,
+   "reported": 62,
+   "share": 0.333333,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 11
+   }
+  },
+  "mediacapture-handle": {
+   "names": 1,
+   "run": 1,
+   "chrome": 5,
+   "passed": 0,
+   "reported": 5,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "mediacapture-image": {
+   "names": 23,
+   "run": 22,
+   "chrome": 164,
+   "passed": 53,
+   "reported": 163,
+   "share": 0.323171,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 14
+   }
+  },
+  "mediacapture-insertable-streams": {
+   "names": 20,
+   "run": 20,
+   "chrome": 94,
+   "passed": 5,
+   "reported": 94,
+   "share": 0.053191,
+   "outcomes": {
+    "OK": 20
+   }
+  },
+  "mediacapture-record": {
+   "names": 120,
+   "run": 116,
+   "chrome": 732,
+   "passed": 2,
+   "reported": 422,
+   "share": 0.002732,
+   "outcomes": {
+    "ERROR": 25,
+    "OK": 91
+   }
+  },
+  "mediacapture-region": {
+   "names": 1,
+   "run": 1,
+   "chrome": 6,
+   "passed": 0,
+   "reported": 6,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "mediacapture-streams": {
+   "names": 59,
+   "run": 58,
+   "chrome": 497,
+   "passed": 25,
+   "reported": 364,
+   "share": 0.050302,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 56,
+    "TIMEOUT": 1
+   }
+  },
+  "mediasession": {
+   "names": 9,
+   "run": 8,
+   "chrome": 130,
+   "passed": 15,
+   "reported": 118,
+   "share": 0.115385,
+   "outcomes": {
+    "OK": 8
+   }
+  },
+  "merchant-validation": {
+   "names": 4,
+   "run": 4,
+   "chrome": 17,
+   "passed": 1,
+   "reported": 17,
+   "share": 0.058824,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "mimesniff": {
+   "names": 7,
+   "run": 7,
+   "chrome": 3886,
+   "passed": 2623,
+   "reported": 3885,
+   "share": 0.674987,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 5
+   }
+  },
+  "mixed-content": {
+   "names": 388,
+   "run": 377,
+   "chrome": 2281,
+   "passed": 1253,
+   "reported": 1573,
+   "share": 0.54932,
+   "outcomes": {
+    "OK": 185,
+    "STALL": 1,
+    "TIMEOUT": 191
+   }
+  },
+  "mst-content-hint": {
+   "names": 4,
+   "run": 4,
+   "chrome": 23,
+   "passed": 5,
+   "reported": 23,
+   "share": 0.217391,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "nav-tracking-mitigations": {
+   "names": 2,
+   "run": 2,
+   "chrome": 2,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "TIMEOUT": 2
+   }
+  },
+  "navigation-api": {
+   "names": 519,
+   "run": 505,
+   "chrome": 609,
+   "passed": 1,
+   "reported": 522,
+   "share": 0.001642,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 451,
+    "TIMEOUT": 50
+   }
+  },
+  "navigation-timing": {
+   "names": 60,
+   "run": 58,
+   "chrome": 465,
+   "passed": 35,
+   "reported": 256,
+   "share": 0.075269,
+   "outcomes": {
+    "ERROR": 11,
+    "NO_RESULT": 1,
+    "OK": 31,
+    "TIMEOUT": 15
+   }
+  },
+  "netinfo": {
+   "names": 3,
+   "run": 3,
+   "chrome": 84,
+   "passed": 34,
+   "reported": 84,
+   "share": 0.404762,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "network-error-logging": {
+   "names": 12,
+   "run": 12,
+   "chrome": 12,
+   "passed": 0,
+   "reported": 12,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 12
+   }
+  },
+  "notifications": {
+   "names": 29,
+   "run": 28,
+   "chrome": 370,
+   "passed": 28,
+   "reported": 345,
+   "share": 0.075676,
+   "outcomes": {
+    "ERROR": 17,
+    "OK": 11
+   }
+  },
+  "old-tests": {
+   "names": 15,
+   "run": 14,
+   "chrome": 39,
+   "passed": 8,
+   "reported": 13,
+   "share": 0.205128,
+   "outcomes": {
+    "OK": 13,
+    "TIMEOUT": 1
+   }
+  },
+  "orientation-event": {
+   "names": 27,
+   "run": 27,
+   "chrome": 139,
+   "passed": 64,
+   "reported": 132,
+   "share": 0.460432,
+   "outcomes": {
+    "ERROR": 19,
+    "OK": 8
+   }
+  },
+  "orientation-sensor": {
+   "names": 16,
+   "run": 15,
+   "chrome": 109,
+   "passed": 5,
+   "reported": 87,
+   "share": 0.045872,
+   "outcomes": {
+    "OK": 15
+   }
+  },
+  "page-lifecycle": {
+   "names": 5,
+   "run": 5,
+   "chrome": 23,
+   "passed": 13,
+   "reported": 20,
+   "share": 0.565217,
+   "outcomes": {
+    "OK": 2,
+    "TIMEOUT": 3
+   }
+  },
+  "page-visibility": {
+   "names": 11,
+   "run": 11,
+   "chrome": 41,
+   "passed": 27,
+   "reported": 31,
+   "share": 0.658537,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 5,
+    "TIMEOUT": 4
+   }
+  },
+  "paint-timing": {
+   "names": 59,
+   "run": 57,
+   "chrome": 77,
+   "passed": 4,
+   "reported": 69,
+   "share": 0.051948,
+   "outcomes": {
+    "OK": 51,
+    "TIMEOUT": 6
+   }
+  },
+  "payment-method-basic-card": {
+   "names": 2,
+   "run": 2,
+   "chrome": 4,
+   "passed": 0,
+   "reported": 4,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "payment-method-manifest": {
+   "names": 11,
+   "run": 11,
+   "chrome": 50,
+   "passed": 0,
+   "reported": 50,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 11
+   }
+  },
+  "payment-request": {
+   "names": 32,
+   "run": 31,
+   "chrome": 217,
+   "passed": 6,
+   "reported": 210,
+   "share": 0.02765,
+   "outcomes": {
+    "OK": 30,
+    "TIMEOUT": 1
+   }
+  },
+  "performance-timeline": {
+   "names": 76,
+   "run": 74,
+   "chrome": 352,
+   "passed": 40,
+   "reported": 326,
+   "share": 0.113636,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 51,
+    "TIMEOUT": 22
+   }
+  },
+  "periodic-background-sync": {
+   "names": 3,
+   "run": 3,
+   "chrome": 68,
+   "passed": 20,
+   "reported": 68,
+   "share": 0.294118,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "permissions": {
+   "names": 19,
+   "run": 19,
+   "chrome": 212,
+   "passed": 114,
+   "reported": 203,
+   "share": 0.537736,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 15,
+    "TIMEOUT": 3
+   }
+  },
+  "permissions-policy": {
+   "names": 123,
+   "run": 119,
+   "chrome": 638,
+   "passed": 40,
+   "reported": 553,
+   "share": 0.062696,
+   "outcomes": {
+    "ERROR": 29,
+    "OK": 54,
+    "TIMEOUT": 36
+   }
+  },
+  "permissions-request": {
+   "names": 2,
+   "run": 2,
+   "chrome": 14,
+   "passed": 8,
+   "reported": 14,
+   "share": 0.571429,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "permissions-revoke": {
+   "names": 2,
+   "run": 2,
+   "chrome": 14,
+   "passed": 8,
+   "reported": 14,
+   "share": 0.571429,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "picture-in-picture": {
+   "names": 18,
+   "run": 17,
+   "chrome": 109,
+   "passed": 26,
+   "reported": 101,
+   "share": 0.238532,
+   "outcomes": {
+    "OK": 15,
+    "TIMEOUT": 2
+   }
+  },
+  "png": {
+   "names": 4,
+   "run": 4,
+   "chrome": 4,
+   "passed": 1,
+   "reported": 1,
+   "share": 0.25,
+   "outcomes": {
+    "OK": 1,
+    "TIMEOUT": 3
+   }
+  },
+  "pointerevents": {
+   "names": 262,
+   "run": 255,
+   "chrome": 2749,
+   "passed": 1579,
+   "reported": 1901,
+   "share": 0.574391,
+   "outcomes": {
+    "ERROR": 13,
+    "OK": 166,
+    "STALL": 3,
+    "TIMEOUT": 73
+   }
+  },
+  "pointerlock": {
+   "names": 20,
+   "run": 19,
+   "chrome": 72,
+   "passed": 37,
+   "reported": 68,
+   "share": 0.513889,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 13,
+    "TIMEOUT": 1
+   }
+  },
+  "preload": {
+   "names": 88,
+   "run": 86,
+   "chrome": 956,
+   "passed": 242,
+   "reported": 446,
+   "share": 0.253138,
+   "outcomes": {
+    "ERROR": 8,
+    "NO_RESULT": 1,
+    "OK": 51,
+    "TIMEOUT": 26
+   }
+  },
+  "presentation-api": {
+   "names": 13,
+   "run": 12,
+   "chrome": 115,
+   "passed": 16,
+   "reported": 114,
+   "share": 0.13913,
+   "outcomes": {
+    "OK": 12
+   }
+  },
+  "private-click-measurement": {
+   "names": 1,
+   "run": 1,
+   "chrome": 17,
+   "passed": 15,
+   "reported": 17,
+   "share": 0.882353,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "proximity": {
+   "names": 2,
+   "run": 2,
+   "chrome": 17,
+   "passed": 3,
+   "reported": 17,
+   "share": 0.176471,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "push-api": {
+   "names": 18,
+   "run": 18,
+   "chrome": 290,
+   "passed": 71,
+   "reported": 290,
+   "share": 0.244828,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 10
+   }
+  },
+  "quirks": {
+   "names": 18,
+   "run": 17,
+   "chrome": 6984,
+   "passed": 6612,
+   "reported": 6935,
+   "share": 0.946735,
+   "outcomes": {
+    "OK": 16,
+    "TIMEOUT": 1
+   }
+  },
+  "referrer-policy": {
+   "names": 1482,
+   "run": 1441,
+   "chrome": 8815,
+   "passed": 4943,
+   "reported": 6608,
+   "share": 0.560749,
+   "outcomes": {
+    "ERROR": 1,
+    "NO_RESULT": 3,
+    "OK": 827,
+    "TIMEOUT": 610
+   }
+  },
+  "remote-playback": {
+   "names": 9,
+   "run": 9,
+   "chrome": 47,
+   "passed": 12,
+   "reported": 47,
+   "share": 0.255319,
+   "outcomes": {
+    "OK": 9
+   }
+  },
+  "reporting": {
+   "names": 34,
+   "run": 33,
+   "chrome": 112,
+   "passed": 44,
+   "reported": 96,
+   "share": 0.392857,
+   "outcomes": {
+    "ERROR": 1,
+    "NO_RESULT": 2,
+    "OK": 26,
+    "TIMEOUT": 4
+   }
+  },
+  "requestidlecallback": {
+   "names": 21,
+   "run": 20,
+   "chrome": 59,
+   "passed": 10,
+   "reported": 56,
+   "share": 0.169492,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 15,
+    "TIMEOUT": 2
+   }
+  },
+  "resize-observer": {
+   "names": 35,
+   "run": 34,
+   "chrome": 131,
+   "passed": 80,
+   "reported": 106,
+   "share": 0.610687,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 29,
+    "TIMEOUT": 3
+   }
+  },
+  "resource-timing": {
+   "names": 171,
+   "run": 167,
+   "chrome": 1207,
+   "passed": 19,
+   "reported": 685,
+   "share": 0.015742,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 17,
+    "OK": 117,
+    "SKIP other": 1,
+    "STALL": 3,
+    "TIMEOUT": 28
+   }
+  },
+  "sanitizer-api": {
+   "names": 50,
+   "run": 48,
+   "chrome": 3816,
+   "passed": 2598,
+   "reported": 3215,
+   "share": 0.680818,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 39,
+    "TIMEOUT": 7
+   }
+  },
+  "savedata": {
+   "names": 2,
+   "run": 2,
+   "chrome": 10,
+   "passed": 6,
+   "reported": 10,
+   "share": 0.6,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "scheduler": {
+   "names": 118,
+   "run": 115,
+   "chrome": 343,
+   "passed": 2,
+   "reported": 223,
+   "share": 0.005831,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 106,
+    "TIMEOUT": 3
+   }
+  },
+  "screen-capture": {
+   "names": 15,
+   "run": 15,
+   "chrome": 189,
+   "passed": 14,
+   "reported": 170,
+   "share": 0.074074,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 9,
+    "TIMEOUT": 5
+   }
+  },
+  "screen-details": {
+   "names": 3,
+   "run": 2,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 4,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "screen-orientation": {
+   "names": 15,
+   "run": 15,
+   "chrome": 64,
+   "passed": 5,
+   "reported": 46,
+   "share": 0.078125,
+   "outcomes": {
+    "ERROR": 11,
+    "OK": 3,
+    "TIMEOUT": 1
+   }
+  },
+  "screen-wake-lock": {
+   "names": 18,
+   "run": 18,
+   "chrome": 73,
+   "passed": 14,
+   "reported": 63,
+   "share": 0.191781,
+   "outcomes": {
+    "OK": 13,
+    "TIMEOUT": 5
+   }
+  },
+  "scroll-animations": {
+   "names": 231,
+   "run": 224,
+   "chrome": 2167,
+   "passed": 902,
+   "reported": 2081,
+   "share": 0.416244,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 208,
+    "TIMEOUT": 11
+   }
+  },
+  "scroll-performance-timing": {
+   "names": 1,
+   "run": 1,
+   "chrome": 2,
+   "passed": 0,
+   "reported": 2,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "scroll-to-text-fragment": {
+   "names": 38,
+   "run": 37,
+   "chrome": 206,
+   "passed": 12,
+   "reported": 50,
+   "share": 0.058252,
+   "outcomes": {
+    "OK": 11,
+    "TIMEOUT": 26
+   }
+  },
+  "secure-contexts": {
+   "names": 12,
+   "run": 12,
+   "chrome": 84,
+   "passed": 14,
+   "reported": 20,
+   "share": 0.166667,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 1,
+    "TIMEOUT": 10
+   }
+  },
+  "secure-payment-confirmation": {
+   "names": 20,
+   "run": 19,
+   "chrome": 71,
+   "passed": 3,
+   "reported": 61,
+   "share": 0.042254,
+   "outcomes": {
+    "OK": 18,
+    "TIMEOUT": 1
+   }
+  },
+  "selection": {
+   "names": 172,
+   "run": 167,
+   "chrome": 34516,
+   "passed": 31592,
+   "reported": 32100,
+   "share": 0.915286,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 162,
+    "TIMEOUT": 2
+   }
+  },
+  "serial": {
+   "names": 9,
+   "run": 9,
+   "chrome": 139,
+   "passed": 42,
+   "reported": 132,
+   "share": 0.302158,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 3,
+    "TIMEOUT": 3
+   }
+  },
+  "server-timing": {
+   "names": 10,
+   "run": 10,
+   "chrome": 540,
+   "passed": 15,
+   "reported": 118,
+   "share": 0.027778,
+   "outcomes": {
+    "ERROR": 4,
+    "OK": 5,
+    "TIMEOUT": 1
+   }
+  },
+  "service-workers": {
+   "names": 331,
+   "run": 322,
+   "chrome": 3262,
+   "passed": 1384,
+   "reported": 2223,
+   "share": 0.42428,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 231,
+    "SKIP other": 1,
+    "TIMEOUT": 85
+   }
+  },
+  "shadow-dom": {
+   "names": 317,
+   "run": 308,
+   "chrome": 14720,
+   "passed": 14114,
+   "reported": 15191,
+   "share": 0.958832,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 4,
+    "OK": 288,
+    "STALL": 1,
+    "TIMEOUT": 14
+   }
+  },
+  "shape-detection": {
+   "names": 25,
+   "run": 24,
+   "chrome": 247,
+   "passed": 8,
+   "reported": 238,
+   "share": 0.032389,
+   "outcomes": {
+    "ERROR": 10,
+    "OK": 13,
+    "TIMEOUT": 1
+   }
+  },
+  "signed-exchange": {
+   "names": 60,
+   "run": 58,
+   "chrome": 94,
+   "passed": 3,
+   "reported": 38,
+   "share": 0.031915,
+   "outcomes": {
+    "OK": 32,
+    "TIMEOUT": 26
+   }
+  },
+  "soft-navigation-heuristics": {
+   "names": 95,
+   "run": 93,
+   "chrome": 126,
+   "passed": 0,
+   "reported": 112,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 9,
+    "OK": 80,
+    "TIMEOUT": 4
+   }
+  },
+  "speculation-rules": {
+   "names": 476,
+   "run": 463,
+   "chrome": 644,
+   "passed": 0,
+   "reported": 23,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 451,
+    "OK": 5,
+    "SKIP other": 3,
+    "TIMEOUT": 4
+   }
+  },
+  "speech-api": {
+   "names": 18,
+   "run": 17,
+   "chrome": 319,
+   "passed": 25,
+   "reported": 315,
+   "share": 0.07837,
+   "outcomes": {
+    "OK": 16,
+    "TIMEOUT": 1
+   }
+  },
+  "storage": {
+   "names": 56,
+   "run": 54,
+   "chrome": 482,
+   "passed": 451,
+   "reported": 471,
+   "share": 0.935685,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 49,
+    "TIMEOUT": 4
+   }
+  },
+  "storage-access-api": {
+   "names": 42,
+   "run": 41,
+   "chrome": 140,
+   "passed": 8,
+   "reported": 40,
+   "share": 0.057143,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 5,
+    "TIMEOUT": 35
+   }
+  },
+  "streams": {
+   "names": 307,
+   "run": 299,
+   "chrome": 5796,
+   "passed": 5501,
+   "reported": 5683,
+   "share": 0.949103,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 295,
+    "TIMEOUT": 3
+   }
+  },
+  "subapps": {
+   "names": 8,
+   "run": 8,
+   "chrome": 51,
+   "passed": 11,
+   "reported": 43,
+   "share": 0.215686,
+   "outcomes": {
+    "ERROR": 5,
+    "OK": 3
+   }
+  },
+  "subresource-integrity": {
+   "names": 38,
+   "run": 37,
+   "chrome": 491,
+   "passed": 184,
+   "reported": 391,
+   "share": 0.374745,
+   "outcomes": {
+    "OK": 29,
+    "TIMEOUT": 8
+   }
+  },
+  "svg": {
+   "names": 795,
+   "run": 773,
+   "chrome": 15390,
+   "passed": 12277,
+   "reported": 15140,
+   "share": 0.797726,
+   "outcomes": {
+    "CRASH": 1,
+    "ERROR": 21,
+    "NO_RESULT": 1,
+    "OK": 710,
+    "TIMEOUT": 40
+   }
+  },
+  "svg-aam": {
+   "names": 7,
+   "run": 6,
+   "chrome": 54,
+   "passed": 23,
+   "reported": 45,
+   "share": 0.425926,
+   "outcomes": {
+    "OK": 6
+   }
+  },
+  "third_party": {
+   "names": 53833,
+   "run": 52338,
+   "chrome": 53833,
+   "passed": 44432,
+   "reported": 51414,
+   "share": 0.825367,
+   "outcomes": {
+    "CRASH": 8,
+    "ERROR": 15,
+    "NO_RESULT": 16,
+    "OK": 51383,
+    "SKIP other": 822,
+    "TIMEOUT": 93,
+    "undefined": 1
+   }
+  },
+  "timing-entrytypes-registry": {
+   "names": 3,
+   "run": 3,
+   "chrome": 12,
+   "passed": 0,
+   "reported": 3,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "touch-events": {
+   "names": 14,
+   "run": 13,
+   "chrome": 992,
+   "passed": 953,
+   "reported": 985,
+   "share": 0.960685,
+   "outcomes": {
+    "OK": 13
+   }
+  },
+  "trust-tokens": {
+   "names": 3,
+   "run": 3,
+   "chrome": 15,
+   "passed": 6,
+   "reported": 14,
+   "share": 0.4,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 2
+   }
+  },
+  "trusted-types": {
+   "names": 247,
+   "run": 241,
+   "chrome": 3754,
+   "passed": 2706,
+   "reported": 3260,
+   "share": 0.720831,
+   "outcomes": {
+    "ERROR": 56,
+    "OK": 94,
+    "TIMEOUT": 91
+   }
+  },
+  "ua-client-hints": {
+   "names": 4,
+   "run": 3,
+   "chrome": 94,
+   "passed": 17,
+   "reported": 55,
+   "share": 0.180851,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "uievents": {
+   "names": 74,
+   "run": 72,
+   "chrome": 491,
+   "passed": 401,
+   "reported": 460,
+   "share": 0.816701,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 59,
+    "TIMEOUT": 5
+   }
+  },
+  "upgrade-insecure-requests": {
+   "names": 194,
+   "run": 189,
+   "chrome": 982,
+   "passed": 212,
+   "reported": 617,
+   "share": 0.215886,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 121,
+    "TIMEOUT": 67
+   }
+  },
+  "url": {
+   "names": 79,
+   "run": 77,
+   "chrome": 12437,
+   "passed": 12298,
+   "reported": 12345,
+   "share": 0.988824,
+   "outcomes": {
+    "OK": 75,
+    "TIMEOUT": 2
+   }
+  },
+  "urlpattern": {
+   "names": 30,
+   "run": 29,
+   "chrome": 3266,
+   "passed": 2992,
+   "reported": 3264,
+   "share": 0.916105,
+   "outcomes": {
+    "OK": 29
+   }
+  },
+  "user-timing": {
+   "names": 61,
+   "run": 59,
+   "chrome": 862,
+   "passed": 440,
+   "reported": 612,
+   "share": 0.510441,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 51
+   }
+  },
+  "vibration": {
+   "names": 4,
+   "run": 4,
+   "chrome": 26,
+   "passed": 13,
+   "reported": 25,
+   "share": 0.5,
+   "outcomes": {
+    "OK": 3,
+    "TIMEOUT": 1
+   }
+  },
+  "video-rvfc": {
+   "names": 8,
+   "run": 8,
+   "chrome": 37,
+   "passed": 12,
+   "reported": 33,
+   "share": 0.324324,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 7
+   }
+  },
+  "viewport": {
+   "names": 1,
+   "run": 1,
+   "chrome": 1,
+   "passed": 0,
+   "reported": 1,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "viewport-segments": {
+   "names": 3,
+   "run": 3,
+   "chrome": 3,
+   "passed": 0,
+   "reported": 3,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 3
+   }
+  },
+  "virtual-keyboard": {
+   "names": 3,
+   "run": 3,
+   "chrome": 43,
+   "passed": 15,
+   "reported": 43,
+   "share": 0.348837,
+   "outcomes": {
+    "OK": 3
+   }
+  },
+  "visual-viewport": {
+   "names": 21,
+   "run": 20,
+   "chrome": 37,
+   "passed": 0,
+   "reported": 23,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 12,
+    "OK": 7,
+    "TIMEOUT": 1
+   }
+  },
+  "wai-aria": {
+   "names": 35,
+   "run": 34,
+   "chrome": 588,
+   "passed": 538,
+   "reported": 582,
+   "share": 0.914966,
+   "outcomes": {
+    "OK": 34
+   }
+  },
+  "wasm": {
+   "names": 524,
+   "run": 510,
+   "chrome": 192191,
+   "passed": 185748,
+   "reported": 188956,
+   "share": 0.966476,
+   "outcomes": {
+    "CRASH": 10,
+    "ERROR": 6,
+    "OK": 482,
+    "TIMEOUT": 12
+   }
+  },
+  "web-animations": {
+   "names": 144,
+   "run": 140,
+   "chrome": 4256,
+   "passed": 3521,
+   "reported": 3906,
+   "share": 0.827303,
+   "outcomes": {
+    "OK": 136,
+    "TIMEOUT": 4
+   }
+  },
+  "web-based-payment-handler": {
+   "names": 13,
+   "run": 12,
+   "chrome": 145,
+   "passed": 50,
+   "reported": 128,
+   "share": 0.344828,
+   "outcomes": {
+    "OK": 10,
+    "TIMEOUT": 2
+   }
+  },
+  "web-bundle": {
+   "names": 26,
+   "run": 26,
+   "chrome": 83,
+   "passed": 0,
+   "reported": 2,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 25,
+    "OK": 1
+   }
+  },
+  "web-extensions": {
+   "names": 6,
+   "run": 5,
+   "chrome": 44,
+   "passed": 0,
+   "reported": 0,
+   "share": 0.0,
+   "outcomes": {
+    "SKIP engine": 5
+   }
+  },
+  "web-install": {
+   "names": 5,
+   "run": 5,
+   "chrome": 19,
+   "passed": 1,
+   "reported": 17,
+   "share": 0.052632,
+   "outcomes": {
+    "OK": 4,
+    "TIMEOUT": 1
+   }
+  },
+  "web-locks": {
+   "names": 86,
+   "run": 84,
+   "chrome": 517,
+   "passed": 445,
+   "reported": 469,
+   "share": 0.860735,
+   "outcomes": {
+    "OK": 64,
+    "TIMEOUT": 20
+   }
+  },
+  "web-monetization": {
+   "names": 1,
+   "run": 1,
+   "chrome": 5,
+   "passed": 0,
+   "reported": 5,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "web-nfc": {
+   "names": 11,
+   "run": 10,
+   "chrome": 173,
+   "passed": 3,
+   "reported": 171,
+   "share": 0.017341,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 7
+   }
+  },
+  "web-otp": {
+   "names": 1,
+   "run": 1,
+   "chrome": 13,
+   "passed": 6,
+   "reported": 13,
+   "share": 0.461538,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "web-share": {
+   "names": 15,
+   "run": 15,
+   "chrome": 68,
+   "passed": 16,
+   "reported": 67,
+   "share": 0.235294,
+   "outcomes": {
+    "OK": 14,
+    "TIMEOUT": 1
+   }
+  },
+  "webaudio": {
+   "names": 348,
+   "run": 338,
+   "chrome": 5865,
+   "passed": 693,
+   "reported": 2792,
+   "share": 0.118159,
+   "outcomes": {
+    "ERROR": 34,
+    "OK": 289,
+    "TIMEOUT": 15
+   }
+  },
+  "webauthn": {
+   "names": 55,
+   "run": 54,
+   "chrome": 437,
+   "passed": 69,
+   "reported": 199,
+   "share": 0.157895,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 25,
+    "TIMEOUT": 27
+   }
+  },
+  "webcodecs": {
+   "names": 314,
+   "run": 305,
+   "chrome": 3922,
+   "passed": 2536,
+   "reported": 3776,
+   "share": 0.646609,
+   "outcomes": {
+    "ERROR": 14,
+    "OK": 278,
+    "TIMEOUT": 13
+   }
+  },
+  "webdriver": {
+   "names": 686,
+   "run": 667,
+   "chrome": 10462,
+   "passed": 12,
+   "reported": 14,
+   "share": 0.001147,
+   "outcomes": {
+    "OK": 1,
+    "SKIP other": 666
+   }
+  },
+  "webgl": {
+   "names": 23,
+   "run": 22,
+   "chrome": 4279,
+   "passed": 4255,
+   "reported": 4276,
+   "share": 0.994391,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 20
+   }
+  },
+  "webhid": {
+   "names": 6,
+   "run": 6,
+   "chrome": 162,
+   "passed": 42,
+   "reported": 158,
+   "share": 0.259259,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 3,
+    "TIMEOUT": 1
+   }
+  },
+  "webidl": {
+   "names": 63,
+   "run": 62,
+   "chrome": 838,
+   "passed": 639,
+   "reported": 824,
+   "share": 0.76253,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 60
+   }
+  },
+  "webmcp": {
+   "names": 80,
+   "run": 77,
+   "chrome": 243,
+   "passed": 14,
+   "reported": 224,
+   "share": 0.057613,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 71,
+    "TIMEOUT": 3
+   }
+  },
+  "webmessaging": {
+   "names": 163,
+   "run": 159,
+   "chrome": 304,
+   "passed": 149,
+   "reported": 267,
+   "share": 0.490132,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 136,
+    "TIMEOUT": 15
+   }
+  },
+  "webmidi": {
+   "names": 1,
+   "run": 1,
+   "chrome": 89,
+   "passed": 12,
+   "reported": 89,
+   "share": 0.134831,
+   "outcomes": {
+    "OK": 1
+   }
+  },
+  "webnn": {
+   "names": 610,
+   "run": 593,
+   "chrome": 13986,
+   "passed": 13638,
+   "reported": 13800,
+   "share": 0.975118,
+   "outcomes": {
+    "OK": 588,
+    "TIMEOUT": 5
+   }
+  },
+  "webrtc": {
+   "names": 264,
+   "run": 256,
+   "chrome": 2414,
+   "passed": 13,
+   "reported": 1872,
+   "share": 0.005385,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 248,
+    "TIMEOUT": 7
+   }
+  },
+  "webrtc-encoded-transform": {
+   "names": 42,
+   "run": 41,
+   "chrome": 296,
+   "passed": 23,
+   "reported": 286,
+   "share": 0.077703,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 39,
+    "TIMEOUT": 1
+   }
+  },
+  "webrtc-extensions": {
+   "names": 12,
+   "run": 11,
+   "chrome": 101,
+   "passed": 0,
+   "reported": 86,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 10,
+    "TIMEOUT": 1
+   }
+  },
+  "webrtc-ice": {
+   "names": 1,
+   "run": 1,
+   "chrome": 31,
+   "passed": 0,
+   "reported": 20,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 1
+   }
+  },
+  "webrtc-identity": {
+   "names": 4,
+   "run": 4,
+   "chrome": 68,
+   "passed": 21,
+   "reported": 68,
+   "share": 0.308824,
+   "outcomes": {
+    "OK": 4
+   }
+  },
+  "webrtc-priority": {
+   "names": 2,
+   "run": 2,
+   "chrome": 9,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 2
+   }
+  },
+  "webrtc-stats": {
+   "names": 11,
+   "run": 11,
+   "chrome": 338,
+   "passed": 2,
+   "reported": 56,
+   "share": 0.005917,
+   "outcomes": {
+    "OK": 11
+   }
+  },
+  "webrtc-svc": {
+   "names": 5,
+   "run": 5,
+   "chrome": 67,
+   "passed": 0,
+   "reported": 67,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "websockets": {
+   "names": 799,
+   "run": 777,
+   "chrome": 2389,
+   "passed": 1255,
+   "reported": 2321,
+   "share": 0.525324,
+   "outcomes": {
+    "OK": 534,
+    "TIMEOUT": 243
+   }
+  },
+  "webstorage": {
+   "names": 54,
+   "run": 53,
+   "chrome": 1291,
+   "passed": 1248,
+   "reported": 1268,
+   "share": 0.966692,
+   "outcomes": {
+    "ERROR": 1,
+    "OK": 31,
+    "TIMEOUT": 21
+   }
+  },
+  "webtransport": {
+   "names": 142,
+   "run": 138,
+   "chrome": 1418,
+   "passed": 12,
+   "reported": 730,
+   "share": 0.008463,
+   "outcomes": {
+    "ERROR": 59,
+    "OK": 47,
+    "TIMEOUT": 32
+   }
+  },
+  "webusb": {
+   "names": 49,
+   "run": 47,
+   "chrome": 845,
+   "passed": 76,
+   "reported": 827,
+   "share": 0.089941,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 40,
+    "TIMEOUT": 4
+   }
+  },
+  "webvtt": {
+   "names": 75,
+   "run": 73,
+   "chrome": 251,
+   "passed": 8,
+   "reported": 113,
+   "share": 0.031873,
+   "outcomes": {
+    "ERROR": 3,
+    "OK": 23,
+    "TIMEOUT": 47
+   }
+  },
+  "webxr": {
+   "names": 181,
+   "run": 176,
+   "chrome": 1344,
+   "passed": 135,
+   "reported": 1269,
+   "share": 0.100446,
+   "outcomes": {
+    "ERROR": 9,
+    "OK": 167
+   }
+  },
+  "window-management": {
+   "names": 5,
+   "run": 5,
+   "chrome": 12,
+   "passed": 0,
+   "reported": 9,
+   "share": 0.0,
+   "outcomes": {
+    "OK": 5
+   }
+  },
+  "workers": {
+   "names": 337,
+   "run": 328,
+   "chrome": 1598,
+   "passed": 699,
+   "reported": 1000,
+   "share": 0.437422,
+   "outcomes": {
+    "ERROR": 8,
+    "OK": 276,
+    "TIMEOUT": 44
+   }
+  },
+  "worklets": {
+   "names": 22,
+   "run": 21,
+   "chrome": 286,
+   "passed": 0,
+   "reported": 88,
+   "share": 0.0,
+   "outcomes": {
+    "ERROR": 2,
+    "OK": 9,
+    "TIMEOUT": 10
+   }
+  },
+  "x-frame-options": {
+   "names": 6,
+   "run": 6,
+   "chrome": 157,
+   "passed": 69,
+   "reported": 120,
+   "share": 0.43949,
+   "outcomes": {
+    "TIMEOUT": 6
+   }
+  },
+  "xhr": {
+   "names": 442,
+   "run": 430,
+   "chrome": 2344,
+   "passed": 1777,
+   "reported": 2169,
+   "share": 0.758106,
+   "outcomes": {
+    "ERROR": 6,
+    "OK": 406,
+    "SKIP other": 1,
+    "TIMEOUT": 17
+   }
+  },
+  "xml": {
+   "names": 11,
+   "run": 10,
+   "chrome": 242,
+   "passed": 232,
+   "reported": 236,
+   "share": 0.958678,
+   "outcomes": {
+    "OK": 9,
+    "TIMEOUT": 1
+   }
+  }
+ }
+}
