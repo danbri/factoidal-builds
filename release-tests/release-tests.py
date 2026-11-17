@@ -1337,9 +1337,9 @@ XML_GROUP = "lean-xml"
 XML_EXES = ["l4qt4", "l4xslt4", "l4xsd11", "l4relaxng", "l4xinclude", "l4c14n"]
 # Three lanes (the Linux runner has four CPUs; each lane runs one test set at a time): the XQuery
 # run reads all fourteen qt4tests families, so it has a lane of its own.
-XML_LANES = [["l4xslt4", "l4relaxng", "l4xinclude", "l4c14n"], ["l4qt4-xquery"], ["l4qt4-xpath", "l4xsd11"]]
+XML_LANES = [["l4xslt4", "l4xslt4-xalan", "l4relaxng", "l4xinclude", "l4c14n"], ["l4qt4-xquery"], ["l4qt4-xpath", "l4xsd11"]]
 # w3c: lean-scoreboard.sh refuses to run without third_party/testing/w3c/sparql (its fixtures check).
-XML_SUBMODULES = ["w3c", "xsd"]
+XML_SUBMODULES = ["w3c", "xsd", "xslt1-xalan/xalan-test-src"]
 XML_JOB_TIMEOUT = 4800               # s, each runner
 XML_BUDGET = 8400                    # s, each lane
 # The QT4 jobs also have one row per family or test directory (label "family F"): each is the
@@ -1352,6 +1352,9 @@ XML_ROWS = [
 ] + [(f"l4-qt4-xquery-{f}", "l4qt4-xquery", None, f"family {f}", "") for f in QT4_FAMILIES] + [
     ("l4-xslt4", "l4xslt4", None, "", ""),
     ("l4-xslt4-strm", "l4xslt4", None, "family strm", ""),
+    # The Apache Xalan XSLT 1.0 corpus, by both engines (core job l4xslt4-xalan).
+    ("l4-xslt10-xalan", "l4xslt4-xalan", None, "XSLT 1.0 engine", ""),
+    ("l4-xslt4-xalan", "l4xslt4-xalan", None, "XSLT 4.0 engine", ""),
     ("l4-xsd11", "l4xsd11", None, None, ""),
     ("l4-relaxng-spec", "l4relaxng", None, "spectest (RELAX NG Specification)", ""),
     ("l4-relaxng-compact", "l4relaxng", None, "compacttest (Compact Syntax)", ""),
