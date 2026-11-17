@@ -1413,6 +1413,18 @@ def semweb_run(core, out):
     json.dump(status, open(os.path.join(sw, "status.json"), "w"), indent=1)
 
 
+def raise_stack():
+    """The QT4 runners recurse deeply on large test documents: measured on macOS with a 64 MB stack
+    (ulimit -s 65520). Linux starts processes with 8 MB, so the lanes get the hard limit (the
+    runners' child processes inherit it)."""
+    import resource
+    _, hard = resource.getrlimit(resource.RLIMIT_STACK)
+    try:
+        resource.setrlimit(resource.RLIMIT_STACK, (hard, hard))
+    except (ValueError, OSError):
+        pass
+
+
 def xml_run(core, out):
     """The lean-xml group: core's scoreboard jobs of XML_LANES, the lanes at once. The runners must
     already be built in core (formal/lean4/.lake/build/bin)."""
@@ -1424,7 +1436,7 @@ def xml_run(core, out):
                "--json", os.path.join(xd, f"scoreboard-{i}.json"), "--logdir", os.path.join(xd, f"logs-{i}")]
         f = open(os.path.join(xd, f"scoreboard-{i}.out"), "wb")
         procs.append((cmd, f, {"command": cmd[1:], "started_utc": now_utc()},
-                      subprocess.Popen(cmd, cwd=core, stdout=f, stderr=subprocess.STDOUT)))
+                      subprocess.Popen(cmd, cwd=core, stdout=f, stderr=subprocess.STDOUT, preexec_fn=raise_stack)))
     status, rows = {}, []
     for i, (cmd, f, st, p) in enumerate(procs):
         try:
