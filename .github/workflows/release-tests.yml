@@ -52,7 +52,7 @@ name: Release tests
 #   ones as discrete populations (release-tests/owl-populations.py).
 #   lean-xml (since 2026-11-16; the daily 13:41 run and runs by hand only, about two hours)
 #   builds and runs the QT4 runners (XPath, XQuery and XSLT 4.0), XSD 1.1, RELAX NG, XInclude
-#   and Canonical XML in two lanes at once.
+#   and Canonical XML in three lanes at once.
 
 on:
   workflow_run:
@@ -365,7 +365,8 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.suites == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 170
+    # lean-xml: up to 140 min of runs (XML_BUDGET) after building its runners.
+    timeout-minutes: 200
     strategy:
       fail-fast: false
       matrix:

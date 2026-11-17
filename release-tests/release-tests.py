@@ -1331,18 +1331,27 @@ NO_PROFILE_CHECKER = ("the probe of this core commit has no --profile-id mode (O
 # ---- lean-xml: the XML family beyond XML 1.0 and XSLT 1.0 on the built-in engine -----------------
 # The QT4 Community Group suites (XPath 4.0, XQuery 4.0, XSLT 4.0), the W3C XML Schema suite (XSD 1.1
 # Part 1), RELAX NG, XInclude and Canonical XML: core's lean-scoreboard jobs of the same names (core
-# PR 522). The QT4 runs take tens of minutes each, so they have a group of their own, in two lanes
+# PR 522). The QT4 runs take tens of minutes each, so they have a group of their own, in lanes
 # that run at once (each lane one lean-scoreboard process with its own logs and JSON).
 XML_GROUP = "lean-xml"
 XML_EXES = ["l4qt4", "l4xslt4", "l4xsd11", "l4relaxng", "l4xinclude", "l4c14n"]
-XML_LANES = [["l4xslt4", "l4xsd11", "l4relaxng", "l4xinclude", "l4c14n"], ["l4qt4-xquery", "l4qt4-xpath"]]
-XML_SUBMODULES = ["xsd"]
-XML_JOB_TIMEOUT = 3000               # s, each runner
-XML_BUDGET = 6600                    # s, each lane
+# Three lanes (the Linux runner has four CPUs; each lane runs one test set at a time): the XQuery
+# run reads all fourteen qt4tests families, so it has a lane of its own.
+XML_LANES = [["l4xslt4", "l4relaxng", "l4xinclude", "l4c14n"], ["l4qt4-xquery"], ["l4qt4-xpath", "l4xsd11"]]
+# w3c: lean-scoreboard.sh refuses to run without third_party/testing/w3c/sparql (its fixtures check).
+XML_SUBMODULES = ["w3c", "xsd"]
+XML_JOB_TIMEOUT = 4800               # s, each runner
+XML_BUDGET = 8400                    # s, each lane
+# The QT4 jobs also have one row per family or test directory (label "family F"): each is the
+# population of one specification (F&O, Serialization, Update, Full Text, EXPath, ...), a part of
+# its run's total. The total rows have the empty label.
+QT4_FAMILIES = ["prod", "op", "fn", "map", "array", "math", "app", "misc", "ser", "upd", "ft", "bin", "file", "xs"]
 XML_ROWS = [
-    ("l4-qt4-xpath", "l4qt4-xpath", None, None, ""),
-    ("l4-qt4-xquery", "l4qt4-xquery", None, None, ""),
-    ("l4-xslt4", "l4xslt4", None, None, ""),
+    ("l4-qt4-xpath", "l4qt4-xpath", None, "", ""),
+    ("l4-qt4-xquery", "l4qt4-xquery", None, "", ""),
+] + [(f"l4-qt4-xquery-{f}", "l4qt4-xquery", None, f"family {f}", "") for f in QT4_FAMILIES] + [
+    ("l4-xslt4", "l4xslt4", None, "", ""),
+    ("l4-xslt4-strm", "l4xslt4", None, "family strm", ""),
     ("l4-xsd11", "l4xsd11", None, None, ""),
     ("l4-relaxng-spec", "l4relaxng", None, "spectest (RELAX NG Specification)", ""),
     ("l4-relaxng-compact", "l4relaxng", None, "compacttest (Compact Syntax)", ""),
