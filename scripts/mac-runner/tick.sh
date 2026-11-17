@@ -74,20 +74,49 @@ ADV_UNTIL=0
 gh variable set MAC_RUNNER --repo "$REPO" --body "{\"seen\": $NOW, \"until\": $ADV_UNTIL, \"free_gib\": $FREE}" >/dev/null 2>>"$LOG" \
   || log "could not set MAC_RUNNER"
 
-# The Mac release lane (mac-release.yml writes latest/darwin-status.json): copy each dispatch
-# decision (with any look-ahead wait) and, at most hourly, a warning when the Mac release has
-# fallen more than ALERT_LAG_MIN (120) minutes behind core main into the coordination log.
+# The Mac release lane (mac-release.yml writes latest/darwin-status.json).
+# 1. Fallback trigger: GitHub drops most scheduled events in danbri/factoidal-builds, so when no
+#    poll of mac-release.yml has been made for POLL_LATE_MIN (20) minutes and none is waiting or
+#    running, dispatch one (a Linux job of about a minute; no Mac time). All day, not only in the
+#    runner's window.
+# 2. Into the coordination log: each dispatch decision of the lane (with any look-ahead wait)
+#    and, at most hourly, an alert when the Mac release has fallen more than ALERT_LAG_MIN (120)
+#    minutes behind core main. The lag is computed fresh from the GitHub API
+#    (ctl/darwin-status.py status, at most every FRESH_MIN (10) minutes), not read from the
+#    committed JSON, which is only as new as the last poll that ran.
+LAST_POLL=$(gh api "repos/$REPO/actions/workflows/mac-release.yml/runs?per_page=10" \
+  --jq '[.workflow_runs[] | select(.conclusion != "cancelled")] | (map(select(.status != "completed")) | length | tostring) + " " + (.[0].created_at // "")' 2>>"$LOG")
+if [ -n "$LAST_POLL" ]; then
+  ACTIVE=${LAST_POLL%% *}; LAST_AT=${LAST_POLL#* }
+  AGE=$(python3 -c 'import sys,datetime as d; t=sys.argv[1]; print(int((d.datetime.now(d.timezone.utc)-d.datetime.strptime(t,"%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=d.timezone.utc)).total_seconds()//60) if t else 9999)' "$LAST_AT")
+  if [ "$ACTIVE" = 0 ] && [ "$AGE" -ge "${POLL_LATE_MIN:-20}" ]; then
+    if gh workflow run mac-release.yml --repo "$REPO" >/dev/null 2>>"$LOG"; then
+      log "dispatched mac-release.yml (last poll ${AGE} min ago)"
+    else
+      log "could not dispatch mac-release.yml"
+    fi
+  fi
+fi
 COORD_LOG=${COORD_LOG:-$HOME/working/foafnaut/fncg/coordination.log}
 if [ -f "$COORD_LOG" ]; then
   gh api "repos/$REPO/contents/latest/darwin-status.json" -H 'Accept: application/vnd.github.raw' \
     > "$CTL/darwin-status.json.new" 2>/dev/null && mv -f "$CTL/darwin-status.json.new" "$CTL/darwin-status.json"
+  if [ -f "$CTL/darwin-status.py" ] && { [ ! -f "$CTL/darwin-status.fresh.json" ] \
+       || [ -n "$(find "$CTL/darwin-status.fresh.json" -mmin +"${FRESH_MIN:-10}" 2>/dev/null)" ]; }; then
+    BUILDS_REPO=$REPO python3 "$CTL/darwin-status.py" status > "$CTL/darwin-status.fresh.json.new" 2>>"$LOG" \
+      && mv -f "$CTL/darwin-status.fresh.json.new" "$CTL/darwin-status.fresh.json" \
+      || { rm -f "$CTL/darwin-status.fresh.json.new"; log "fresh darwin status failed"; }
+  fi
   python3 - "$CTL" "$COORD_LOG" "${ALERT_LAG_MIN:-120}" <<'PY' 2>>"$LOG" || log "darwin-status check failed"
-import json, os, sys, time
+import datetime as dt, json, os, sys, time
 ctl, coord, alert = sys.argv[1], sys.argv[2], int(sys.argv[3])
-try:
-    d = json.load(open(os.path.join(ctl, "darwin-status.json")))
-except (OSError, ValueError):
-    sys.exit(0)
+def load(name):
+    try:
+        return json.load(open(os.path.join(ctl, name)))
+    except (OSError, ValueError):
+        return None
+def ts(s):
+    return dt.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt.timezone.utc).timestamp()
 def seen(name, value):
     p = os.path.join(ctl, name)
     old = open(p).read() if os.path.exists(p) else ""
@@ -95,17 +124,29 @@ def seen(name, value):
         return True
     open(p, "w").write(value)
     return False
+committed = load("darwin-status.json") or {}
+fresh = load("darwin-status.fresh.json")
 now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 lines = []
-dec = d.get("last_decision") or {}
+dec = committed.get("last_decision") or {}
 if dec.get("action") == "dispatched" and not seen("darwin-decision", dec.get("at", "")):
     lines.append(f"macalways-ci: Mac release lane: dispatched build.yml for core main {dec.get('head','')[:12]} ({dec.get('reason','')})")
-if d.get("behind") and d.get("lag_min", 0) > alert:
-    rel = (d.get("mac_release") or {}).get("tag", "none")
-    key = f"{d['main']['sha']} {int(time.time() // 3600)}"
-    if not seen("darwin-alert", key):
-        runs = ", ".join(f"{r['id']} {r['status']}" for r in d.get("lane_runs", [])) or "no lane run"
-        lines.append(f"macalways-ci: ALERT Mac release {rel} is {d['lag_min']} min behind core main {d['main']['sha'][:12]} (lane: {runs})")
+# The alert: from the fresh status when it is under 30 minutes old, else from the committed JSON
+# with the lag recomputed from behind_since (and the status's age stated), never a stored lag_min.
+d, src = None, ""
+if fresh and fresh.get("checked_at") and time.time() - ts(fresh["checked_at"]) < 1800:
+    d = fresh
+elif committed.get("main"):
+    d, src = committed, f"; status JSON of {committed.get('checked_at', '?')}, no fresh read"
+if d and d.get("behind"):
+    lag = int((time.time() - ts(d["behind_since"])) // 60) if d.get("behind_since") else d.get("lag_min", 0)
+    if lag > alert:
+        rel = (d.get("mac_release") or {}).get("tag", "none")
+        key = f"{d['main']['sha']} {int(time.time() // 3600)}"
+        if not seen("darwin-alert", key):
+            runs = ", ".join(f"{r['id']} {r['status']}" for r in d.get("lane_runs", [])) or "no lane run"
+            lines.append(f"macalways-ci: ALERT Mac release {rel} is {lag} min behind core main {d['main']['sha'][:12]} "
+                         f"(behind since {d.get('behind_since')}; lane: {runs}{src})")
 with open(coord, "a") as f:
     for l in lines:
         f.write(f"{now} {l}\n")
