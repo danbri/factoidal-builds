@@ -38,12 +38,14 @@ class XmlRows(unittest.TestCase):
 
     def test_totals_and_families(self):
         sb = [row("l4qt4-xquery", "", 90, 5, 5), row("l4qt4-xquery", "family fn", 40, 2, 3),
-              row("l4qt4-xquery", "family xs", 10, 0, 1), row("l4xslt4", "", 50, 4, 6), row("l4xslt4", "family strm", 7, 1, 2)]
+              row("l4qt4-xquery", "family xs", 10, 0, 1), row("l4xslt4", "", 50, 4, 6), row("l4xslt4", "family strm", 7, 1, 2),
+              row("l4xslt4-xalan", "XSLT 1.0 engine", 1211, 475, 0), row("l4xslt4-xalan", "XSLT 4.0 engine", 1519, 167, 0)]
         got = self.score(sb)
         self.assertEqual(len(got), len(RT.XML_ROWS))
         self.assertEqual((got["l4-qt4-xquery"]["passed"], got["l4-qt4-xquery"]["denominator"], got["l4-qt4-xquery"]["valid"]), (90, 100, "true"))
         self.assertEqual((got["l4-qt4-xquery-fn"]["passed"], got["l4-qt4-xquery-fn"]["denominator"]), (40, 45))
         self.assertEqual((got["l4-xslt4"]["passed"], got["l4-xslt4-strm"]["passed"]), (50, 7))
+        self.assertEqual((got["l4-xslt10-xalan"]["passed"], got["l4-xslt4-xalan"]["denominator"]), (1211, 1686))
         # A family the run did not report is an invalid row with its reason, never a score.
         self.assertEqual(got["l4-qt4-xquery-upd"]["valid"], "false")
         self.assertIn("0 rows match", got["l4-qt4-xquery-upd"]["invalid_reason"])
