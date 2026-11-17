@@ -38,6 +38,7 @@ if [ ! -x ./config.sh ]; then
   echo "installed actions/runner $VER (sha256 $SHA verified)"
 fi
 cp "$HERE"/tick.sh "$HERE"/runner.sh "$HERE"/job-started.sh "$HERE"/job-completed.sh ctl/
+cp "$HERE"/../darwin-status.py ctl/   # tick.sh: fresh Mac release lag for the coordination-log alert
 chmod +x ctl/*.sh
 
 if [ ! -f .runner ]; then

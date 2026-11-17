@@ -16,9 +16,22 @@ name: Mac release of main
 # runner) copies that, and each look-ahead wait, into the coordination log.
 # Cost: one Linux job of about a minute (up to WAIT_CAP + 2 min when it waits).
 
+# Triggers. GitHub drops most scheduled events in this repository (2026-11-16: build.yml's
+# hourly poll fired 3 times in 24 h, conformance-data 3 of 8, foafnaut-linux 3 of 72; this
+# poll's 15-minute cron did not fire once in its first 4 hours), so the schedule is one of three:
+#   - workflow_run: the end of a run of a workflow that ends often (a build, a branch check, the
+#     Linux engine, release tests). Throttled: such a poll ends at once when another poll was
+#     made in the last THROTTLE_MIN minutes, unless a main-lane build ended (its release changes
+#     the status);
+#   - the owner's Mac (scripts/mac-runner/tick.sh, every 5 minutes, all day) dispatches this
+#     workflow when no poll has been made for 20 minutes;
+#   - the schedule, when GitHub sends it.
 on:
   schedule:
     - cron: '7,22,37,52 * * * *'
+  workflow_run:
+    workflows: ['Build Factoidal from factoidal-core', 'Branch WPT check', 'Foafnaut Linux engine', 'Release tests']
+    types: [completed]
   workflow_dispatch:
     inputs:
       wait_cap:
@@ -41,8 +54,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      - name: Throttle polls started by other workflows' runs
+        id: throttle
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FROM_TITLE: ${{ github.event.workflow_run.display_title }}
+          THROTTLE_MIN: '10'
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$FROM_TITLE" in
+            'core main (Mac release lane'*) echo "a main-lane build ended: poll"; echo "skip=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+          esac
+          since=$(date -u -d "-${THROTTLE_MIN} min" +%FT%TZ)
+          recent=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/mac-release.yml/runs?per_page=20" \
+            --jq "[.workflow_runs[] | select(.id != $GITHUB_RUN_ID and .conclusion != \"cancelled\" and .created_at >= \"$since\")] | length")
+          if [ "$recent" -gt 0 ]; then
+            echo "skip: $recent poll(s) since $since"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.throttle.outputs.skip != 'true'
       - name: Check main against the Mac release; look ahead; dispatch
+        if: steps.throttle.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           WAIT_CAP: ${{ inputs.wait_cap || '30' }}
@@ -50,6 +86,7 @@ jobs:
           ALERT_LAG_MIN: '120'
         run: python3 scripts/darwin-status.py poll latest/darwin-status.json
       - name: Record latest/darwin-status.json
+        if: steps.throttle.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
