@@ -8,6 +8,7 @@
 # the 2026-10-09 split was pushed to; the owner renames it to main).
 # Outputs: ref, sha, short (12 hex), proceed, foafnaut (true|false),
 #   foafnaut_web (true|false; requires the page and Lean engine source),
+#   foafnaut_linux_browser (true|false; requires the bundle builder and window check),
 #   macos (true|false: run the macOS jobs; scripts/resolve-macos.sh), nightly (true|false).
 set -euo pipefail
 CORE_URL="https://github.com/${CORE_REPO:-danbri/factoidal-core}"
@@ -58,6 +59,16 @@ SETS="linux-x86_64 darwin-arm64 web"
 FOAFNAUT=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
   "$SHA" labs/demos/foafnaut/build-engines.sh)
 if [ "$FOAFNAUT" = true ]; then SETS="$SETS foafnaut-darwin-arm64"; fi
+FOAFNAUT_LINUX_BROWSER=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+  "$SHA" labs/demos/foafnaut/build-linux-browser.sh)
+if [ "$FOAFNAUT_LINUX_BROWSER" = true ]; then
+  LINUX_BROWSER_CHECK=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
+    "$SHA" labs/demos/foafnaut/check-linux-browser.py)
+  if [ "$FOAFNAUT" != true ] || [ "$LINUX_BROWSER_CHECK" != true ]; then
+    echo "::error::Linux browser builder exists without the Foafnaut engine builder or window check"; exit 1
+  fi
+  SETS="$SETS foafnaut-browser-linux-x86_64"
+fi
 SVG_STROKE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
   "$SHA" labs/demos/foafnaut/SVGStroke.lean)
 SVG_PAGE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
@@ -68,15 +79,15 @@ fi
 HTML_PAGE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
   "$SHA" docs/web/hub/html-webgpu/index.njk)
 FOAFNAUT_WEB="$SVG_PAGE"
-if [ "$HTML_PAGE" = true ]; then
+if [ "$HTML_PAGE" = true ] || [ "$FOAFNAUT_LINUX_BROWSER" = true ]; then
   HTML_ENGINE=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
     "$SHA" labs/demos/foafnaut/WebRender.lean)
   HTML_BUILD=$(python3 "$(dirname "$0")/core-has-path.py" "${CORE_REPO:-danbri/factoidal-core}" \
     "$SHA" labs/demos/foafnaut/build-web-render.sh)
   if [ "$HTML_ENGINE" != true ] || [ "$HTML_BUILD" != true ]; then
-    echo "::error::HTML browser page exists without the Lean engine or build entry point"; exit 1
+    echo "::error::HTML browser sources exist without the Lean engine or build entry point"; exit 1
   fi
-  FOAFNAUT_WEB=true
+  if [ "$HTML_PAGE" = true ]; then FOAFNAUT_WEB=true; fi
 fi
 if [ "$FOAFNAUT_WEB" = true ] && [ "$FOAFNAUT" != true ]; then
   echo "::error::Browser sources exist without the foafnaut engine build entry point"; exit 1
@@ -119,5 +130,6 @@ echo "macOS jobs: $macos (core main compare: $on_main; nightly: $nightly)"
 echo "core $REF = $SHA (requested by requests/build.txt: $REQUESTED; all sets released: $EXISTS; missing:${MISSING:- none}) -> proceed=$PROCEED"
 {
   echo "ref=$REF"; echo "sha=$SHA"; echo "short=$SHORT"; echo "proceed=$PROCEED"; echo "foafnaut=$FOAFNAUT"; echo "foafnaut_web=$FOAFNAUT_WEB"
+  echo "foafnaut_linux_browser=$FOAFNAUT_LINUX_BROWSER"
   echo "macos=$macos"; echo "nightly=$nightly"
 } >> "$GITHUB_OUTPUT"

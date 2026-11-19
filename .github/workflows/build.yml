@@ -16,16 +16,16 @@ run-name: >-
 #   build-<12 hex>-web            npm/ + docs/       Lean wasm
 #   (Lean only since 2026-11-15: no F* build, test or release product runs here.)
 #   build-<12 hex>-foafnaut-darwin-arm64  experimental native graphics demos
+#   build-<12 hex>-foafnaut-browser-linux-x86_64  native Linux browser
 #   build-<12 hex>-foafnaut-web   experimental SVG WebGPU runtime
 #
 # Each release carries <set>.tar.gz and build-info.json (source commit,
 # toolchains, sha256 of every file). core's tools/fetch-builds.sh installs
 # them. A set is published only when every job that contributes to it
 # passed its gates; this repository's git history only gains the
-# latest/<set>.json pointer. Two jobs publish: `publish` (linux-x86_64, web,
-# foafnaut-web) when the Linux jobs are done, `publish-macos` (darwin-arm64,
-# foafnaut-darwin-arm64) when the macOS jobs are done, so the web release
-# never waits for a macOS runner.
+# latest/<set>.json pointer. The Linux CLI and web sets, the Linux browser,
+# and the macOS sets publish in separate jobs so other releases can proceed
+# during the browser smoke test or a wait for a macOS runner.
 #
 # Gates per job (a failing gate means no artifact upload, so no release):
 #   lean       full `lake build` (library, proofs, #guards, executables),
@@ -125,6 +125,7 @@ jobs:
       proceed: ${{ steps.r.outputs.proceed }}
       foafnaut: ${{ steps.r.outputs.foafnaut }}
       foafnaut_web: ${{ steps.r.outputs.foafnaut_web }}
+      foafnaut_linux_browser: ${{ steps.r.outputs.foafnaut_linux_browser }}
       macos: ${{ steps.r.outputs.macos }}
       nightly: ${{ steps.r.outputs.nightly }}
       mac_runs_on: ${{ steps.mac.outputs.runs_on }}
@@ -612,15 +613,17 @@ jobs:
       # Older core revisions lack the shared stroke producer required by this
       # packager. Keep their existing native build path usable.
       - uses: actions/setup-node@v4
-        if: needs.resolve.outputs.foafnaut_web == 'true'
+        if: needs.resolve.outputs.foafnaut_web == 'true' || needs.resolve.outputs.foafnaut_linux_browser == 'true'
         with:
           node-version: '22'
       - name: Build and check the Lean HTML browser runtime
-        if: needs.resolve.outputs.foafnaut_web == 'true'
+        if: needs.resolve.outputs.foafnaut_web == 'true' || needs.resolve.outputs.foafnaut_linux_browser == 'true'
+        env:
+          LINUX_BROWSER: ${{ needs.resolve.outputs.foafnaut_linux_browser }}
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f core/docs/web/hub/html-webgpu/index.njk ]; then
+          if [ -f core/docs/web/hub/html-webgpu/index.njk ] || [ "$LINUX_BROWSER" = true ]; then
             source ~/emsdk/emsdk_env.sh
             export FACTOIDAL_WASM_RUNTIME_CACHE="$HOME/l4wasm-work"
             bash core/labs/demos/foafnaut/build-web-render.sh --wasm
@@ -633,7 +636,7 @@ jobs:
         run: ccache -s || true
       # A sample of the compiles again with no cache: each object must be the same bytes.
       - name: Cache audit (Wasm objects)
-        if: needs.resolve.outputs.foafnaut_web == 'true'
+        if: needs.resolve.outputs.foafnaut_web == 'true' || needs.resolve.outputs.foafnaut_linux_browser == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -772,6 +775,141 @@ jobs:
     uses: ./.github/workflows/foafnaut-host-tests.yml
     with:
       core_sha: ${{ needs.resolve.outputs.sha }}
+
+  foafnaut-browser-linux:
+    needs: [resolve, foafnaut-engines]
+    if: needs.resolve.outputs.foafnaut_linux_browser == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    outputs:
+      archive_url: ${{ steps.archive.outputs.artifact-url }}
+    env:
+      SET: foafnaut-browser-linux-x86_64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+          # The browser version record uses git describe when tags are present.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          name: foafnaut-engines
+          path: core/labs/demos/foafnaut/.build
+      - name: Install native window build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libsdl2-dev
+      - name: Build and archive the Linux browser
+        shell: bash
+        env:
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+          CORE_REF: ${{ needs.resolve.outputs.ref }}
+        run: |
+          set -euo pipefail
+          [ "$(uname -m)" = x86_64 ]
+          stage="$RUNNER_TEMP/package"
+          bash core/labs/demos/foafnaut/build-linux-browser.sh "$stage/foafnaut-linux-x86_64"
+          python3 - core/labs/demos/foafnaut/.build/tool-versions.txt "$RUNNER_TEMP/toolchains.json" <<'PY'
+          import json, pathlib, subprocess, sys
+          def first_line(*command):
+              return subprocess.check_output(command, text=True).splitlines()[0]
+          lines = pathlib.Path(sys.argv[1]).read_text().splitlines()
+          versions = {'lean': lines[0], 'emscripten': lines[1], 'deno': first_line('deno', '--version'),
+                      'cc': first_line('cc', '--version'), 'sdl2': first_line('pkg-config', '--modversion', 'sdl2')}
+          pathlib.Path(sys.argv[2]).write_text(json.dumps(versions))
+          PY
+          python3 builds/scripts/make-release.py "$stage" "$SET" "$CORE_SHA" "$CORE_REF" \
+            "$RUNNER_TEMP/$SET" "$RUNNER_TEMP/toolchains.json"
+      - uses: actions/upload-artifact@v4
+        id: archive
+        with:
+          name: ${{ env.SET }}-candidate
+          path: ${{ runner.temp }}/${{ env.SET }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+          overwrite: true
+
+  foafnaut-browser-linux-check:
+    needs: [resolve, foafnaut-browser-linux]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      SET: foafnaut-browser-linux-x86_64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+          sparse-checkout: labs/demos/foafnaut/check-linux-browser.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SET }}-candidate
+          path: ${{ runner.temp }}/${{ env.SET }}
+      - name: Install runtime libraries and X11 test tools
+        run: |
+          sudo apt-get update && sudo apt-get install -y libsdl2-2.0-0 libvulkan1 \
+            mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+      - name: Check the relocated browser with Xvfb and Mesa software Vulkan
+        shell: bash
+        env:
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+          ARCHIVE_URL: ${{ needs.foafnaut-browser-linux.outputs.archive_url }}
+        run: |
+          set -euo pipefail
+          archive="$SET.tar.gz"
+          candidate="$RUNNER_TEMP/$SET"
+          evidence="$RUNNER_TEMP/linux-browser-evidence"
+          verified="$RUNNER_TEMP/$SET-checked"
+          relocated="$(mktemp -d "$RUNNER_TEMP/relocated-browser.XXXXXX")"
+          mkdir -p "$evidence" "$verified"
+          expected=$(jq -er --arg sha "$CORE_SHA" --arg set "$SET" --arg archive "$archive" \
+            'select(.source_commit == $sha and .set == $set) | .artifacts[$archive].sha256' "$candidate/build-info.json")
+          ( cd "$candidate" && printf '%s  %s\n' "$expected" "$archive" | sha256sum --check )
+          tar -xzf "$candidate/$archive" -C "$relocated"
+          browser="$relocated/foafnaut-linux-x86_64/foafnaut"
+          test -x "$browser"
+          driver=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -n "$driver"
+          export PATH=/usr/bin:/bin SDL_VIDEODRIVER=x11 DENO_WEBGPU_BACKEND=vulkan
+          export VK_DRIVER_FILES="$driver" XDG_RUNTIME_DIR="$(mktemp -d)"
+          cd "$relocated"
+          xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 \
+            "$GITHUB_WORKSPACE/core/labs/demos/foafnaut/check-linux-browser.py" "$browser" "$evidence"
+          jq -e --arg sha "$CORE_SHA" --arg digest "$expected" \
+            'select(.format == "foafnaut-linux-window-smoke-v1" and .status == "pass" and .sourceCommit == $sha) | .archive_sha256 = $digest' \
+            "$evidence/window-smoke.json" > "$verified/window-smoke.json"
+          printf 'Linux browser GUI smoke passed on Xvfb using Mesa software Vulkan. [Download the checked archive](%s).\n' "$ARCHIVE_URL" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foafnaut-browser-linux-evidence
+          path: ${{ runner.temp }}/linux-browser-evidence/
+          if-no-files-found: ignore
+          retention-days: 7
+          overwrite: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SET }}-checked
+          path: ${{ runner.temp }}/${{ env.SET }}-checked/window-smoke.json
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
 
   foafnaut:
     needs: [resolve, lean-macos, foafnaut-engines]
@@ -1082,12 +1220,8 @@ jobs:
           path: ${{ runner.temp }}/out/
           retention-days: 7
 
-  # Two publish jobs (2026-11-16): the Linux-built sets publish as soon as the Linux jobs that
-  # gate them are done, and the macOS sets when the macOS jobs are. Before, one job needed every
-  # job, so for main commits the web release, and with it the Hub, waited hours for a GitHub
-  # macOS runner while every Linux gate was green. Each set still publishes only when all the
-  # artifacts it needs exist (scripts/publish.sh), releases are never replaced, and only core
-  # main commits publish.
+  # Each set publishes after its own gates. This job can publish CLI and web sets while the
+  # Linux browser or macOS apps are still being verified (scripts/publish.sh).
   publish:
     needs: [resolve, lean, lean-wasm, web-gates, foafnaut-engines, foafnaut-host-tests]
     if: always() && needs.resolve.outputs.proceed == 'true'
@@ -1097,6 +1231,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: art
+          pattern: '{lean-linux-x86_64,lean-wasm,web-gates,foafnaut-web}'
       - name: Assemble, pack and publish the Linux-built sets (linux-x86_64, web, foafnaut-web)
         shell: bash
         env:
@@ -1109,6 +1244,25 @@ jobs:
           # 2026-11-15 test.sh ran inside foafnaut-engines before the HTML engine existed, so
           # only its first part gated; now all of it does, on the Wasm engines.
           FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
+        run: scripts/publish.sh
+
+  publish-linux-browser:
+    needs: [resolve, lean, foafnaut-host-tests, foafnaut-browser-linux-check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+          pattern: 'foafnaut-browser-linux-x86_64-*'
+      - name: Publish the checked Linux browser archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+          SHORT: ${{ needs.resolve.outputs.short }}
+          REF: ${{ needs.resolve.outputs.ref }}
+          PUBLISH_SETS: foafnaut-browser-linux-x86_64
+          FOAFNAUT_LINUX_BROWSER: ${{ needs.resolve.outputs.foafnaut_linux_browser }}
         run: scripts/publish.sh
 
   publish-macos:
@@ -1137,7 +1291,7 @@ jobs:
   # an artifact, and a row per job on the branch ci-metrics (runs.csv, runs/<run_id>.json).
   # `python3 scripts/ci-metrics.py trend` shows the last runs side by side.
   metrics:
-    needs: [resolve, publish, publish-macos]
+    needs: [resolve, publish, publish-linux-browser, publish-macos]
     if: always() && needs.resolve.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -1171,7 +1325,7 @@ jobs:
   # The nightly run's report: an issue labelled "nightly" opened or updated on failure, closed
   # when green, and a one-line summary for the coordination log (scripts/nightly-report.sh).
   nightly-report:
-    needs: [resolve, publish, publish-macos]
+    needs: [resolve, publish, publish-linux-browser, publish-macos]
     if: always() && needs.resolve.outputs.nightly == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10

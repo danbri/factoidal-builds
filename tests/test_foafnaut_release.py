@@ -74,6 +74,8 @@ if a[0] == 'api':
     else:
         choices = [
             ('TEST_FOAF', 'labs/demos/foafnaut/build-engines.sh'),
+            ('TEST_BROWSER_BUILD', 'labs/demos/foafnaut/build-linux-browser.sh'),
+            ('TEST_BROWSER_CHECK', 'labs/demos/foafnaut/check-linux-browser.py'),
             ('TEST_SVG_STROKE', 'labs/demos/foafnaut/SVGStroke.lean'),
             ('TEST_SVG_PAGE', 'docs/web/hub/svg-webgpu/index.njk'),
             ('TEST_HTML_PAGE', 'docs/web/hub/html-webgpu/index.njk'),
@@ -101,6 +103,8 @@ if a[0] == 'api':
         print(json.dumps({'tree':list(children.values())}))
 elif a[:2] == ['release','view']:
     if os.environ.get('TEST_EXISTING') == 'all': print('2020-01-01T00:00:00Z')
+    elif os.environ.get('TEST_EXISTING') == 'pre-browser' and not a[2].endswith('foafnaut-browser-linux-x86_64'):
+        print('2020-01-01T00:00:00Z')
     elif os.environ.get('TEST_EXISTING') == 'legacy' and not a[2].endswith(('foafnaut-darwin-arm64','foafnaut-web')):
         print('2020-01-01T00:00:00Z')
     else: sys.exit(1)
@@ -132,6 +136,7 @@ if a[:2] == ['worktree','add']:
         self.assertIn('proceed=false', (self.root / 'outputs').read_text())
         self.assertIn('foafnaut=false', (self.root / 'outputs').read_text())
         self.assertIn('foafnaut_web=false', (self.root / 'outputs').read_text())
+        self.assertIn('foafnaut_linux_browser=false', (self.root / 'outputs').read_text())
 
     def test_resolver_retries_missing_demo_set(self):
         result = self.run_script('resolve-core.sh', TEST_EXISTING='legacy',
@@ -159,7 +164,32 @@ if a[:2] == ['worktree','add']:
                 result = self.run_script('resolve-core.sh', TEST_HTML_PAGE='true',
                     TEST_HTML_ENGINE=engine, TEST_HTML_BUILD=builder)
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn('HTML browser page exists without', result.stdout)
+                self.assertIn('HTML browser sources exist without', result.stdout)
+
+    def linux_browser_sources(self, **overrides):
+        return {'TEST_BROWSER_BUILD': 'true', 'TEST_BROWSER_CHECK': 'true',
+                'TEST_HTML_ENGINE': 'true', 'TEST_HTML_BUILD': 'true', **overrides}
+
+    def test_resolver_requires_browser_release_even_when_other_sets_exist(self):
+        result = self.run_script('resolve-core.sh', **self.linux_browser_sources(TEST_EXISTING='pre-browser'))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('foafnaut_linux_browser=true', (self.root / 'outputs').read_text())
+        self.assertIn('foafnaut_web=false', (self.root / 'outputs').read_text())
+        self.assertIn('proceed=true', (self.root / 'outputs').read_text())
+        self.assertIn('missing: foafnaut-browser-linux-x86_64', result.stdout)
+
+    def test_resolver_rejects_browser_builder_without_its_dependencies(self):
+        for missing in ('TEST_BROWSER_CHECK', 'TEST_FOAF', 'TEST_HTML_BUILD'):
+            with self.subTest(missing=missing):
+                result = self.run_script('resolve-core.sh', **self.linux_browser_sources(**{missing: 'false'}))
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse((self.root / 'outputs').exists())
+
+    def test_resolver_skips_complete_browser_sets(self):
+        result = self.run_script('resolve-core.sh', **self.linux_browser_sources(TEST_EXISTING='all'))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('foafnaut_linux_browser=true', (self.root / 'outputs').read_text())
+        self.assertIn('proceed=false', (self.root / 'outputs').read_text())
 
     def test_resolver_skips_complete_sets(self):
         result = self.run_script('resolve-core.sh', TEST_EXISTING='all')
@@ -293,6 +323,69 @@ if a[:2] == ['worktree','add']:
     # without waiting for macOS runners; `publish-macos` publishes the macOS sets later.
     LINUX_SETS = 'linux-x86_64 web foafnaut-web'
     MACOS_SETS = 'darwin-arm64 foafnaut-darwin-arm64'
+    BROWSER_SET = 'foafnaut-browser-linux-x86_64'
+
+    def stage_linux_browser(self):
+        stage = self.root / 'stage'
+        browser = stage / 'foafnaut-linux-x86_64' / 'foafnaut'
+        browser.parent.mkdir(parents=True)
+        browser.write_bytes(b'\x7fELF' + b'compiled fixture')
+        candidate = self.root / 'art' / f'{self.BROWSER_SET}-candidate'
+        subprocess.run(['python3', 'scripts/make-release.py', str(stage), self.BROWSER_SET, SHA, 'main',
+                        str(candidate)], cwd=self.root, env=self.env, check=True, capture_output=True)
+        return browser, candidate / f'{self.BROWSER_SET}.tar.gz'
+
+    def stage_window_smoke(self, browser, archive, **overrides):
+        evidence = self.root / 'art' / f'{self.BROWSER_SET}-checked' / 'window-smoke.json'
+        evidence.parent.mkdir(parents=True, exist_ok=True)
+        report = {'format': 'foafnaut-linux-window-smoke-v1', 'status': 'pass', 'sourceCommit': SHA,
+                  'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
+                  'executableSha256': hashlib.sha256(browser.read_bytes()).hexdigest(), **overrides}
+        evidence.write_text(json.dumps(report))
+        return evidence
+
+    def publish_browser(self, **environment):
+        return self.run_script('publish.sh', FOAFNAUT_LINUX_BROWSER='true', PUBLISH_SETS=self.BROWSER_SET,
+                               **environment)
+
+    def test_linux_browser_publishes_exact_archive_that_passed_window_smoke(self):
+        browser, archive = self.stage_linux_browser()
+        evidence = self.stage_window_smoke(browser, archive)
+        result = self.publish_browser()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        out = self.root / 'release-out' / self.BROWSER_SET
+        self.assertEqual((out / archive.name).read_bytes(), archive.read_bytes())
+        self.assertEqual((out / evidence.name).read_bytes(), evidence.read_bytes())
+        self.assertEqual(self.created(), [f'build-{SHA[:12]}-{self.BROWSER_SET}'])
+        self.assertTrue((self.root / 'release-out/pointer-1/latest' / f'{self.BROWSER_SET}.json').exists())
+
+    def test_linux_browser_candidate_without_window_evidence_is_withheld(self):
+        self.stage_linux_browser()
+        result = self.publish_browser()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f'{self.BROWSER_SET} not published: missing artifacts', result.stdout)
+        self.assertEqual(self.created(), [])
+
+    def test_linux_browser_smoke_must_match_archive(self):
+        browser, archive = self.stage_linux_browser()
+        for mismatch in ({'status': 'fail'}, {'sourceCommit': 'b' * 40}, {'archive_sha256': '0' * 64},
+                         {'executableSha256': '0' * 64}):
+            with self.subTest(mismatch=mismatch):
+                self.stage_window_smoke(browser, archive, **mismatch)
+                result = self.publish_browser()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('invalid window smoke evidence', result.stdout)
+                self.assertEqual(self.created(), [])
+
+    def test_linux_browser_remains_main_only_and_immutable(self):
+        self.stage_window_smoke(*self.stage_linux_browser())
+        branch = self.publish_browser(TEST_STATUS='ahead')
+        repeat = self.publish_browser(TEST_EXISTING='all')
+        self.assertEqual(branch.returncode, 0, branch.stderr)
+        self.assertEqual(repeat.returncode, 0, repeat.stderr)
+        self.assertIn('nothing published', branch.stdout)
+        self.assertIn(f'kept (already published): {self.BROWSER_SET}', repeat.stdout)
+        self.assertEqual(self.created(), [])
 
     def stage_set(self, artifact, toolchains):
         stage = self.root / 'art' / artifact / 'stage' / 'bin'
@@ -421,15 +514,23 @@ class WorkflowSplitTests(unittest.TestCase):
         self.assertIn("needs.resolve.outputs.macos == 'true'", self.job('publish-macos'))
 
     def test_every_set_has_exactly_one_publish_job(self):
-        linux, mac = self.sets('publish'), self.sets('publish-macos')
+        linux, mac, browser = (self.sets(job) for job in ('publish', 'publish-macos', 'publish-linux-browser'))
         self.assertFalse(linux & mac)
-        self.assertEqual(linux | mac, {'linux-x86_64', 'web', 'foafnaut-web',
-                                       'darwin-arm64', 'foafnaut-darwin-arm64'})
+        self.assertFalse((linux | mac) & browser)
+        self.assertEqual(linux | mac | browser, {'linux-x86_64', 'web', 'foafnaut-web',
+                                                 'darwin-arm64', 'foafnaut-darwin-arm64',
+                                                 ReleaseTests.BROWSER_SET})
         self.assertFalse([s for s in linux if 'darwin' in s])
 
-    def test_reports_wait_for_both_publish_jobs(self):
+    def test_linux_browser_publishes_after_a_separate_window_check_and_linux_gates(self):
+        self.assertEqual(self.needs('foafnaut-browser-linux'), {'resolve', 'foafnaut-engines'})
+        self.assertEqual(self.needs('foafnaut-browser-linux-check'), {'resolve', 'foafnaut-browser-linux'})
+        self.assertEqual(self.needs('publish-linux-browser'), {'resolve', 'lean', 'foafnaut-host-tests',
+                                                               'foafnaut-browser-linux-check'})
+
+    def test_reports_wait_for_all_publish_jobs(self):
         for job in ('metrics', 'nightly-report'):
-            self.assertTrue({'publish', 'publish-macos'} <= self.needs(job), job)
+            self.assertTrue({'publish', 'publish-macos', 'publish-linux-browser'} <= self.needs(job), job)
 
 
 if __name__ == '__main__':

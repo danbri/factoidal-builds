@@ -14,8 +14,8 @@ and generated releases; application source stays in factoidal-core.
 branch `main`, else `claude/core-split`) on manual dispatch, on a push here
 that changes `requests/build.txt` (that commit; see `requests/README.md`) or
 the build scripts, and on an hourly schedule. A commit counts as
-built only when all required sets have a release (the three core sets,
-plus Foafnaut when that commit contains the lab); a scheduled run retries a
+built only when all required sets have a release (the three core sets and
+the Foafnaut sets supported by that commit); a scheduled run retries a
 partly built commit at most once in 24 hours (`scripts/resolve-core.sh`).
 Releases are published only for commits on core `main`; a build of any
 other commit runs the gates and publishes nothing. Jobs and their gates:
@@ -26,8 +26,9 @@ other commit runs the gates and publishes nothing. Jobs and their gates:
 | `lean-wasm` (Linux) | `Wasm/build-wasm.sh` with Emscripten 6.0.8 | the build itself and its check that the wasm copies agree. It runs no tests: the npm tests run in `web-gates` |
 | `web-gates` (Linux) | nothing; installs the `lean-wasm` module into a checkout | `npm test` in `npm/factoidal` (Node 22), with no skipped test; the OWL package checks; the Touchstone LWS client lab |
 | `foafnaut-engines` (Linux, when present) | small Lean WASM engines with the shared runtime cache, including the RDF-driven graph when present | portable engine tests, C coordinate tests, pinned SVG fixture integrity and runner tests; packages a browser runtime only from these fresh tested engines |
+| `foafnaut-browser-linux` and `foafnaut-browser-linux-check` (Ubuntu 24.04 x86_64, when present) | downloadable Foafnaut browser executable, SDL window library and embedded Lean WASM engines | separate runner verifies and extracts the actual archive, launches it in Xvfb with Mesa software Vulkan, and checks rendered HTML, pointer and keyboard navigation, live HTTPS, resize and close |
 | `foafnaut` (macOS arm64) | three Deno-compiled graphics executables, Cocoa sidecar, launchers and SVG fixtures | requires the Lean gates and engines job; repeats portable tests, relocates the package, checks all compiled CPU engines and native library loading. No GPU/window or SVG visual pass is inferred |
-| `publish` | packs each complete set | a set whose jobs did not all pass is not published, and the run is red; the `web` set also needs `web-gates` |
+| `publish`, `publish-linux-browser`, `publish-macos` | publish each independently gated set | `web` needs `web-gates`; the Linux browser needs the Linux Lean gates, Foafnaut host tests and the window check for the exact archive |
 | `foafnaut-host-tests` (Linux) | nothing; core's `labs/demos/foafnaut/test.sh --skip-build` on the `foafnaut-engines` artifact | every check runs and all failures are listed; gates `foafnaut-web`. The first test result of a run |
 | `metrics` (Linux) | the run's timing and cache record (`scripts/ci-metrics.py`) | none: a table in the run summary, artifact `ci-metrics`, and a row per job on the branch `ci-metrics` |
 
@@ -51,6 +52,7 @@ One release per (core commit, set), tagged `build-<12 hex core commit>-<set>`:
 | `linux-x86_64`, `darwin-arm64` | `bin/<platform>/`: the Lean CLI `l4factoidal`, `l4w3c`, `l4wasm-cli` |
 | `web` | the Lean wasm module (`docs/web/hub/assets/l4/`, `npm/factoidal/l4-assets/`, `npm/factoidal-lean/`) and the Lean scoreboard (`lean-scoreboard.json`, `.txt`) |
 | `foafnaut-darwin-arm64` (when present) | `foafnaut/`: native UI (springs, layout, vectors, and the RDF-driven FOAFNaut browser when present), Lean-generated still renderer, SVG subset renderer, Cocoa sidecar, `.command` launchers, sample SVGs and source/toolchain provenance |
+| `foafnaut-browser-linux-x86_64` (when present) | `foafnaut-linux-x86_64/`: the windowed HTML browser, Linux SDL library, runtime instructions and source/toolchain provenance |
 | `foafnaut-web` (when the SVG hub page and `SVGStroke.lean` are present) | `docs/web/hub/svg-webgpu/runtime/`: Lean-generated SVG and render-plan WASM plus minimal JS host adapters |
 
 Each release carries `<set>.tar.gz` (deterministic: sorted, mtime 0) and
@@ -69,14 +71,27 @@ The UI executable requires its adjacent `libnative-window.dylib` and a macOS
 desktop session. Launchers change into their own directory for relative
 file permissions. The current UI compiles with FFI permission granted at the
 owner's request, so the native surface does not prompt on every launch.
-Binaries are currently unsigned, macOS ARM64 only.
+The macOS demo binaries are unsigned and target ARM64.
+
+The Linux browser release tag is `build-<12 hex>-foafnaut-browser-linux-x86_64`
+and `latest/foafnaut-browser-linux-x86_64.json` points to the newest published
+commit. Extract `foafnaut-browser-linux-x86_64.tar.gz`, then run
+`./foafnaut-linux-x86_64/foafnaut` from a Linux desktop session. The bundled
+README lists system libraries. Deno and the Lean WASM engines are embedded.
+`window-smoke.json` records the result and SHA-256 of the checked archive.
+The GUI evidence comes from Ubuntu 24.04 x86_64 using an X11 display and Mesa
+software Vulkan. For a branch build, use the download link in the passing
+`foafnaut-browser-linux-check` job summary. That run also has the
+`foafnaut-browser-linux-evidence` artifact with screenshots and the browser log.
 
 Foafnaut is built automatically for each resolved core commit containing
 `labs/demos/foafnaut/build-engines.sh`, through the same dispatch/request/poll
 process as the core sets. It gets tag `build-<12 hex>-foafnaut-darwin-arm64`
 and `latest/foafnaut-darwin-arm64.json`. An API failure checking source
 availability fails the resolver; it does not silently skip the demo gates.
-Old core commits keep their three-set requirement. A failed demo job withholds
+The Linux browser joins the required sets when the core commit contains
+`labs/demos/foafnaut/build-linux-browser.sh`. The resolver also requires the
+matching window check and engine build sources. A failed demo job withholds
 that set and marks the run red; passing core sets can still publish. Only core
 main commits publish; PR builds remain validation only.
 
