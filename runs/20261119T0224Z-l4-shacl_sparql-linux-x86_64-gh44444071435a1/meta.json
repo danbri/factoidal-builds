@@ -1,0 +1,131 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261119T0224Z-l4-shacl_sparql-linux-x86_64-gh44444071435a1",
+  "started_utc": "2026-11-19T02:26:14Z",
+  "finished_utc": "2026-11-19T02:26:27Z",
+  "trigger": "factoidal-release",
+  "suite": "l4-shacl_sparql",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "1ba2ef92803c30d92b7243c02d7f32ad74e32b57",
+  "commit_utc": "2026-11-19T01:45:07Z",
+  "snapshot_branch": "",
+  "release_tag": "build-1ba2ef92803c-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 22,
+  "names_run": 22,
+  "passed": 22,
+  "denominator": 22,
+  "share_pct": "100.0000",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 0,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/44444071435",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261119T0224Z-l4-shacl_sparql-linux-x86_64-gh44444071435a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-19T02:24:29Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/44444071435",
+  "trigger": "factoidal-release",
+  "core_commit": "1ba2ef92803c30d92b7243c02d7f32ad74e32b57",
+  "core_short": "1ba2ef92803c",
+  "on_main": true,
+  "commit_author_utc": "2026-11-19T01:45:07Z",
+  "commit_committer_utc": "2026-11-19T01:45:07Z",
+  "commit_subject": "Merge pull request #617 from danbri/wip/linux-browser-build",
+  "release_sets": {
+   "foafnaut-browser-linux-x86_64": {
+    "tag": "build-1ba2ef92803c-foafnaut-browser-linux-x86_64",
+    "published_at": "2026-11-19T02:23:55Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1ba2ef92803c-foafnaut-browser-linux-x86_64"
+   },
+   "foafnaut-web": {
+    "tag": "build-1ba2ef92803c-foafnaut-web",
+    "published_at": "2026-11-19T02:21:11Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1ba2ef92803c-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-1ba2ef92803c-linux-x86_64",
+    "published_at": "2026-11-19T02:20:51Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1ba2ef92803c-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-1ba2ef92803c-web",
+    "published_at": "2026-11-19T02:21:04Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-1ba2ef92803c-web"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-19T02:24:32Z",
+  "candidate_why": "published by build run 44439382552",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "71b58bb1916c14a3b0be82e369d89c8bcf9001e2",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": false,
+  "suites": true,
+  "platforms": [],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "command": [
+   "tools/lean-scoreboard.sh",
+   "--only",
+   "l4shacl-core10,l4shacl-sparql10,l4shacl-core12,l4shacl-sparql12,l4shacl-nodeexpr,l4shacl-rules,l4shex,l4shexc,l4rif,l4csvw-rdf,l4csvw-json,l4csvw-validate,l4xmlconf,l4xslt,l4schematron,l4mathml,l4jsonschema,l4jsonld-probe,l4jsonld-api,l4jsonld-frame,l4rml,l4vc-probe,l4rdf-semantics,l4owl-probe-species"
+  ],
+  "started_utc": "2026-11-19T02:26:14Z",
+  "exit": 1,
+  "seconds": 13,
+  "finished_utc": "2026-11-19T02:26:27Z"
+ },
+ "scoreboard_row": {
+  "spec_area": "SHACL-SPARQL (1.0 suite)",
+  "label": "",
+  "runner": "l4shacl",
+  "job": "l4shacl-sparql10",
+  "status": "ok",
+  "pass": 22,
+  "fail": 0,
+  "other": 0,
+  "total": 22,
+  "parse": true,
+  "note": "",
+  "command": "formal/lean4/.lake/build/bin/l4shacl third_party/testing/shacl/data-shapes-test-suite/tests/sparql/manifest.ttl",
+  "log": "/home/runner/work/_temp/suite-out/semweb/logs/l4shacl-sparql10.log",
+  "seconds": 0,
+  "exit_code": "0",
+  "raw_summary_line": "shacl-sparql TOTAL: 22 pass, 0 fail, 0 skip, 0 unsupported (out of 22)",
+  "detail": ""
+ },
+ "continues_fstar_suite": "shacl_sparql",
+ "group": "lean-semweb",
+ "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
