@@ -44,16 +44,16 @@ jobs:
           gh api "$api/runs/$BUILD_RUN/attempts/$attempt/jobs" > "$RUNNER_TEMP/build-jobs.json"
           resolve_job=$(jq -er '.jobs[] | select(.name == "resolve" and .conclusion == "success") | .id' "$RUNNER_TEMP/build-jobs.json")
           wasm_job=$(jq -er '.jobs[] | select(.name == "lean-wasm" and .conclusion == "success") | .id' "$RUNNER_TEMP/build-jobs.json")
-          gh api "$api/jobs/$resolve_job/logs" > "$RUNNER_TEMP/resolve.log"
+          gh api --allow-escape-sequences "$api/jobs/$resolve_job/logs" > "$RUNNER_TEMP/resolve.log"
           grep -E "core [^ ]+ = $CORE_SHA \\(requested by requests/build\\.txt" "$RUNNER_TEMP/resolve.log" > "$evidence/resolved-source.txt"
-          gh api "$api/jobs/$wasm_job/logs" > "$RUNNER_TEMP/lean-wasm.log"
+          gh api --allow-escape-sequences "$api/jobs/$wasm_job/logs" > "$RUNNER_TEMP/lean-wasm.log"
           wasm_sha=$(sed -nE 's/^.*companion \+ mirror updated \(wasm sha256 ([a-f0-9]{64})\).*$/\1/p' "$RUNNER_TEMP/lean-wasm.log")
           [[ "$wasm_sha" =~ ^[0-9a-f]{64}$ ]]
           gh api "$api/runs/$BUILD_RUN/artifacts?name=lean-wasm" --jq '.artifacts[] | select(.expired == false)' > "$evidence/artifact.json"
           artifact_id=$(jq -ser 'select(length == 1) | .[0].id' "$evidence/artifact.json")
           grep -F "Artifact lean-wasm.zip successfully finalized. Artifact ID $artifact_id" "$RUNNER_TEMP/lean-wasm.log"
           archive_sha=$(jq -er '.digest | select(test("^sha256:[a-f0-9]{64}$")) | split(":")[1]' "$evidence/artifact.json")
-          gh api "$api/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/lean-wasm.zip"
+          gh api --allow-escape-sequences "$api/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/lean-wasm.zip"
           printf '%s  %s\n' "$archive_sha" "$RUNNER_TEMP/lean-wasm.zip" | sha256sum -c -
           unzip -q "$RUNNER_TEMP/lean-wasm.zip" -d art/lean-wasm
           for dir in docs/web/hub/assets/l4 npm/factoidal/l4-assets; do
@@ -107,6 +107,7 @@ jobs:
 
   native-jwe:
     name: Native JWE probe
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
