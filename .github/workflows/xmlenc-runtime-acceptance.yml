@@ -55,10 +55,10 @@ jobs:
           archive_sha=$(jq -er '.digest | select(test("^sha256:[a-f0-9]{64}$")) | split(":")[1]' "$evidence/artifact.json")
           gh api --allow-escape-sequences "$api/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/lean-wasm.zip"
           printf '%s  %s\n' "$archive_sha" "$RUNNER_TEMP/lean-wasm.zip" | sha256sum -c -
-          unzip -q "$RUNNER_TEMP/lean-wasm.zip" -d art/lean-wasm
+          unzip -q "$RUNNER_TEMP/lean-wasm.zip" -d "$RUNNER_TEMP/lean-wasm"
           for dir in docs/web/hub/assets/l4 npm/factoidal/l4-assets; do
-            printf '%s  %s\n' "$wasm_sha" "art/lean-wasm/stage/$dir/l4factoidal.wasm"
-            test -s "art/lean-wasm/stage/$dir/l4factoidal.mjs"
+            printf '%s  %s\n' "$wasm_sha" "$RUNNER_TEMP/lean-wasm/stage/$dir/l4factoidal.wasm"
+            test -s "$RUNNER_TEMP/lean-wasm/stage/$dir/l4factoidal.mjs"
           done > "$evidence/full-wasm.sha256"
           sha256sum -c "$evidence/full-wasm.sha256"
           printf 'Core source %s\nBuild run %s attempt %s\nResolve job %s\nWasm job %s\nArtifact %s SHA-256 %s\nFull Wasm SHA-256 %s\n' \
@@ -75,7 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C core rev-parse HEAD)" = "$CORE_SHA"
-          (cd art/lean-wasm/stage && tar -cf - .) | (cd core && tar -xpf -)
+          (cd "$RUNNER_TEMP/lean-wasm/stage" && tar -cf - .) | (cd core && tar -xpf -)
 
       - uses: actions/setup-node@v4
         with:
