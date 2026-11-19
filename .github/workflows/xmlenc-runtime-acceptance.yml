@@ -1,0 +1,155 @@
+name: XML Encryption and JWE runtime acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_sha:
+        description: Exact factoidal-core commit used in the build
+        required: true
+        type: string
+      build_run:
+        description: Build workflow run ID containing the full lean-wasm artifact
+        required: true
+        type: string
+  push:
+    branches: [wip/xmlenc-runtime-acceptance]
+    paths: [.github/workflows/xmlenc-runtime-acceptance.yml]
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  CORE_SHA: ${{ inputs.core_sha || '7d4794f49f5d85f6755cde79afa7e52e30c62af0' }}
+  BUILD_RUN: ${{ inputs.build_run || '44475549658' }}
+
+jobs:
+  wasm:
+    name: XML Encryption and JWE on full Wasm
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Verify build provenance and download the full Wasm artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$CORE_SHA" =~ ^[0-9a-f]{40}$ && "$BUILD_RUN" =~ ^[0-9]+$ ]]
+          evidence="$RUNNER_TEMP/xmlenc-wasm-evidence"
+          mkdir "$evidence"
+          api="repos/$GITHUB_REPOSITORY/actions"
+          gh api "$api/runs/$BUILD_RUN" > "$RUNNER_TEMP/build-run.json"
+          jq -e '.path == ".github/workflows/build.yml"' "$RUNNER_TEMP/build-run.json"
+          attempt=$(jq -er '.run_attempt' "$RUNNER_TEMP/build-run.json")
+          gh api "$api/runs/$BUILD_RUN/attempts/$attempt/jobs" > "$RUNNER_TEMP/build-jobs.json"
+          resolve_job=$(jq -er '.jobs[] | select(.name == "resolve" and .conclusion == "success") | .id' "$RUNNER_TEMP/build-jobs.json")
+          wasm_job=$(jq -er '.jobs[] | select(.name == "lean-wasm" and .conclusion == "success") | .id' "$RUNNER_TEMP/build-jobs.json")
+          gh api "$api/jobs/$resolve_job/logs" > "$RUNNER_TEMP/resolve.log"
+          grep -E "core [^ ]+ = $CORE_SHA \\(requested by requests/build\\.txt" "$RUNNER_TEMP/resolve.log" > "$evidence/resolved-source.txt"
+          gh api "$api/jobs/$wasm_job/logs" > "$RUNNER_TEMP/lean-wasm.log"
+          wasm_sha=$(sed -nE 's/^.*companion \+ mirror updated \(wasm sha256 ([a-f0-9]{64})\).*$/\1/p' "$RUNNER_TEMP/lean-wasm.log")
+          [[ "$wasm_sha" =~ ^[0-9a-f]{64}$ ]]
+          gh api "$api/runs/$BUILD_RUN/artifacts?name=lean-wasm" --jq '.artifacts[] | select(.expired == false)' > "$evidence/artifact.json"
+          artifact_id=$(jq -ser 'select(length == 1) | .[0].id' "$evidence/artifact.json")
+          grep -F "Artifact lean-wasm.zip successfully finalized. Artifact ID $artifact_id" "$RUNNER_TEMP/lean-wasm.log"
+          archive_sha=$(jq -er '.digest | select(test("^sha256:[a-f0-9]{64}$")) | split(":")[1]' "$evidence/artifact.json")
+          gh api "$api/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/lean-wasm.zip"
+          printf '%s  %s\n' "$archive_sha" "$RUNNER_TEMP/lean-wasm.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/lean-wasm.zip" -d art/lean-wasm
+          for dir in docs/web/hub/assets/l4 npm/factoidal/l4-assets; do
+            printf '%s  %s\n' "$wasm_sha" "art/lean-wasm/stage/$dir/l4factoidal.wasm"
+            test -s "art/lean-wasm/stage/$dir/l4factoidal.mjs"
+          done > "$evidence/full-wasm.sha256"
+          sha256sum -c "$evidence/full-wasm.sha256"
+          printf 'Core source %s\nBuild run %s attempt %s\nResolve job %s\nWasm job %s\nArtifact %s SHA-256 %s\nFull Wasm SHA-256 %s\n' \
+            "$CORE_SHA" "$BUILD_RUN" "$attempt" "$resolve_job" "$wasm_job" "$artifact_id" "$archive_sha" "$wasm_sha" | tee "$evidence/provenance.txt"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE_SHA }}
+          path: core
+          persist-credentials: false
+
+      - name: Install the Lean engine's web products into the checkout
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE_SHA"
+          (cd art/lean-wasm/stage && tar -cf - .) | (cd core && tar -xpf -)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run XML Encryption and JWE suites
+        working-directory: core
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/xmlenc-wasm-evidence"
+          node --version | tee "$evidence/node.txt"
+          xml_exit=0
+          jwe_exit=0
+          node --test --test-reporter=tap tests/xmlenc/wasm.mjs 2>&1 | tee "$evidence/xmlenc.tap" || xml_exit=$?
+          node tests/jose/jwe-wasm.mjs 2>&1 | tee "$evidence/jwe.log" || jwe_exit=$?
+          printf 'XML Encryption exit %s\nJWE exit %s\n' "$xml_exit" "$jwe_exit" | tee "$evidence/exits.txt"
+          grep -Eq '^# pass [1-9][0-9]*$' "$evidence/xmlenc.tap"
+          grep -Fx '# skipped 0' "$evidence/xmlenc.tap"
+          grep -Eq '^TOTAL: [1-9][0-9]* pass, 0 fail ' "$evidence/jwe.log"
+          test "$xml_exit" -eq 0 && test "$jwe_exit" -eq 0
+
+      - name: Preserve runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xmlenc-wasm-evidence
+          path: ${{ runner.temp }}/xmlenc-wasm-evidence/
+          retention-days: 30
+
+  native-jwe:
+    name: Native JWE probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LEAN_STACK_SIZE_KB: '16384'
+      LEAN_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE_SHA }}
+          path: core
+          persist-credentials: false
+
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          use-github-cache: false
+          use-mathlib-cache: false
+          lake-package-directory: core/formal/lean4
+
+      - name: Build and run l4jwe-probe for 20 rounds
+        working-directory: core/formal/lean4
+        run: |
+          set -euo pipefail
+          ulimit -v 4194304
+          evidence="$RUNNER_TEMP/xmlenc-native-jwe-evidence"
+          mkdir "$evidence"
+          test "$(git rev-parse HEAD)" = "$CORE_SHA"
+          { git rev-parse HEAD; cat lean-toolchain; uname -sm; } | tee "$evidence/source.txt"
+          probe_exit=0
+          timeout --kill-after=10s 18m lake exe l4jwe-probe 20 2>&1 | tee "$evidence/jwe-native.log" || probe_exit=$?
+          printf 'Native JWE exit %s\n' "$probe_exit" | tee "$evidence/exits.txt"
+          test "$probe_exit" -eq 0
+          grep -Fx 'native AES-GCM available: true' "$evidence/jwe-native.log"
+          grep -Eq '^TOTAL: [1-9][0-9]* pass, 0 fail' "$evidence/jwe-native.log"
+
+      - name: Preserve native JWE evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xmlenc-native-jwe-evidence
+          path: ${{ runner.temp }}/xmlenc-native-jwe-evidence/
+          retention-days: 30
