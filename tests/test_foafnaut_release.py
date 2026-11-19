@@ -327,7 +327,8 @@ if a[:2] == ['worktree','add']:
 
     def stage_linux_browser(self):
         stage = self.root / 'stage'
-        browser = stage / 'foafnaut-linux-x86_64' / 'foafnaut'
+        arch = self.BROWSER_SET.removeprefix('foafnaut-browser-linux-')
+        browser = stage / f'foafnaut-linux-{arch}' / 'foafnaut'
         browser.parent.mkdir(parents=True)
         browser.write_bytes(b'\x7fELF' + b'compiled fixture')
         candidate = self.root / 'art' / f'{self.BROWSER_SET}-candidate'
@@ -386,6 +387,24 @@ if a[:2] == ['worktree','add']:
         self.assertIn('nothing published', branch.stdout)
         self.assertIn(f'kept (already published): {self.BROWSER_SET}', repeat.stdout)
         self.assertEqual(self.created(), [])
+
+    def test_arm64_browser_publishes_only_its_checked_wasm_worker_archive(self):
+        self.BROWSER_SET = 'foafnaut-browser-linux-arm64'
+        browser, archive = self.stage_linux_browser()
+        env = {'FOAFNAUT_LINUX_BROWSER_ARM64': 'true', 'PUBLISH_SETS': self.BROWSER_SET}
+        for evidence in ({}, {'runnerMachine': 'x86_64', 'worker': 'wasm'},
+                         {'runnerMachine': 'aarch64', 'worker': 'native'}):
+            with self.subTest(evidence=evidence):
+                self.stage_window_smoke(browser, archive, **evidence)
+                result = self.run_script('publish.sh', **env)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(self.created(), [])
+        self.stage_window_smoke(browser, archive, runnerMachine='aarch64', worker='wasm')
+        result = self.run_script('publish.sh', **env)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.created(), [f'build-{SHA[:12]}-{self.BROWSER_SET}'])
+        self.assertEqual((self.root / 'release-out' / self.BROWSER_SET / archive.name).read_bytes(),
+                         archive.read_bytes())
 
     def stage_set(self, artifact, toolchains):
         stage = self.root / 'art' / artifact / 'stage' / 'bin'

@@ -53,6 +53,7 @@ One release per (core commit, set), tagged `build-<12 hex core commit>-<set>`:
 | `web` | the Lean wasm module (`docs/web/hub/assets/l4/`, `npm/factoidal/l4-assets/`, `npm/factoidal-lean/`) and the Lean scoreboard (`lean-scoreboard.json`, `.txt`) |
 | `foafnaut-darwin-arm64` (when present) | `foafnaut/`: native UI (springs, layout, vectors, and the RDF-driven FOAFNaut browser when present), Lean-generated still renderer, SVG subset renderer, Cocoa sidecar, `.command` launchers, sample SVGs and source/toolchain provenance |
 | `foafnaut-browser-linux-x86_64` (when present) | `foafnaut-linux-x86_64/`: the windowed HTML browser, Linux SDL library, runtime instructions and source/toolchain provenance |
+| `foafnaut-browser-linux-arm64` (on request) | `foafnaut-linux-arm64/` contains the AArch64 desktop browser, SDL window library and portable document worker |
 | `foafnaut-web` (when the SVG hub page and `SVGStroke.lean` are present) | `docs/web/hub/svg-webgpu/runtime/`: Lean-generated SVG and render-plan WASM plus minimal JS host adapters |
 
 Each release carries `<set>.tar.gz` (deterministic: sorted, mtime 0) and
@@ -83,6 +84,16 @@ The GUI evidence comes from Ubuntu 24.04 x86_64 using an X11 display and Mesa
 software Vulkan. For a branch build, use the download link in the passing
 `foafnaut-browser-linux-check` job summary. That run also has the
 `foafnaut-browser-linux-evidence` artifact with screenshots and the browser log.
+
+The **Foafnaut Linux ARM64 desktop browser** workflow builds the same core revision and portable
+engines as a published x86_64 desktop browser. Supply its full core SHA, or leave it empty for the
+latest published x86_64 browser. The original `foafnaut-engines` Actions artifact has a seven-day
+retention period. A pull request can pin its test to a published desktop release by putting
+`Desktop source: <full lowercase core SHA>` on a line of its description.
+The workflow checks the engine bytes against the published x86_64 release,
+compiles the browser on Ubuntu ARM64 and launches the extracted archive on a second ARM64 runner.
+A manual run on main publishes the exact archive that passed the X11 window test. The separate
+`foafnaut-linux-arm64` release contains the headless engine library. [ARM64 desktop launch instructions](docs/linux-arm64-browser.md)
 
 Foafnaut is built automatically for each resolved core commit containing
 `labs/demos/foafnaut/build-engines.sh`, through the same dispatch/request/poll
