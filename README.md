@@ -95,6 +95,11 @@ compiles the browser on Ubuntu ARM64 and launches the extracted archive on a sec
 A manual run on main publishes the exact archive that passed the X11 window test. The separate
 `foafnaut-linux-arm64` release contains the headless engine library. [ARM64 desktop launch instructions](docs/linux-arm64-browser.md)
 
+The ARM64 browser archive for core `7d4794f49f5d` is 60,225,931 bytes. Its SHA-256 is
+`353cd1219cd8a5baf369aea9323412dada694b4cc2d8f885f1ff4f02dd1d1809`. The native X11 release test
+verified the first page 66.067 seconds after launch and the clicked page 0.595 seconds later.
+[Download the ARM64 browser](https://github.com/danbri/factoidal-builds/releases/download/build-7d4794f49f5d-foafnaut-browser-linux-arm64/foafnaut-browser-linux-arm64.tar.gz) · [Build provenance](https://github.com/danbri/factoidal-builds/releases/download/build-7d4794f49f5d-foafnaut-browser-linux-arm64/build-info.json) · [Window test receipt](https://github.com/danbri/factoidal-builds/releases/download/build-7d4794f49f5d-foafnaut-browser-linux-arm64/window-smoke.json)
+
 Foafnaut is built automatically for each resolved core commit containing
 `labs/demos/foafnaut/build-engines.sh`, through the same dispatch/request/poll
 process as the core sets. It gets tag `build-<12 hex>-foafnaut-darwin-arm64`
