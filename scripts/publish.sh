@@ -39,6 +39,7 @@ declare -A NEEDS=(
   [foafnaut-darwin-arm64]="foafnaut-darwin-arm64/stage"
   [foafnaut-web]="foafnaut-web/stage"
   [foafnaut-browser-linux-x86_64]="foafnaut-browser-linux-x86_64-candidate"
+  [foafnaut-browser-linux-arm64]="foafnaut-browser-linux-arm64-candidate"
 )
 # Artifacts that must exist (a gate job passed) but carry no content.
 declare -A REQUIRES=(
@@ -48,6 +49,7 @@ declare -A REQUIRES=(
   [foafnaut-darwin-arm64]=""
   [foafnaut-web]=""
   [foafnaut-browser-linux-x86_64]="foafnaut-browser-linux-x86_64-checked"
+  [foafnaut-browser-linux-arm64]="foafnaut-browser-linux-arm64-checked"
 )
 declare -A TOOLS=(
   [linux-x86_64]="lean-linux-x86_64/meta/toolchains-lean-linux-x86_64.json"
@@ -64,6 +66,7 @@ SETS="linux-x86_64 darwin-arm64 web"
 if [ "${FOAFNAUT:-false}" = true ]; then SETS="$SETS foafnaut-darwin-arm64"; fi
 if [ "${FOAFNAUT_WEB:-false}" = true ]; then SETS="$SETS foafnaut-web"; fi
 if [ "${FOAFNAUT_LINUX_BROWSER:-false}" = true ]; then SETS="$SETS foafnaut-browser-linux-x86_64"; fi
+if [ "${FOAFNAUT_LINUX_BROWSER_ARM64:-false}" = true ]; then SETS="$SETS foafnaut-browser-linux-arm64"; fi
 if [ -n "${PUBLISH_SETS:-}" ]; then
   for s in $PUBLISH_SETS; do
     [ -n "${NEEDS[$s]+x}" ] || { echo "::error::PUBLISH_SETS names an unknown set: $s"; exit 1; }
@@ -106,7 +109,7 @@ for SET in $SETS; do
     continue
   fi
   RUN_URL="${GITHUB_SERVER_URL:-https://github.com}/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-  if [ "$SET" = foafnaut-browser-linux-x86_64 ]; then
+  if [[ "$SET" = foafnaut-browser-linux-* ]]; then
     CANDIDATE="$ART/${NEEDS[$SET]}"
     CHECKED="$ART/${REQUIRES[$SET]}/window-smoke.json"
     if ! python3 - "$CANDIDATE" "$CHECKED" "$SET" "$SHA" "$RUN_URL" <<'PY'
@@ -120,11 +123,13 @@ smoke = json.loads(checked.read_text())
 with (candidate / archive).open('rb') as stream:
     sha256 = hashlib.file_digest(stream, 'sha256').hexdigest()
 files = build['artifacts'][archive]
+arch = release_set.removeprefix('foafnaut-browser-linux-')
 if (build['source_commit'] != commit or build['set'] != release_set or build['run_url'] != run_url
         or smoke['format'] != 'foafnaut-linux-window-smoke-v1' or smoke['status'] != 'pass'
         or smoke['sourceCommit'] != commit or smoke['archive_sha256'] != sha256
         or files['sha256'] != sha256
-        or smoke['executableSha256'] != files['files']['foafnaut-linux-x86_64/foafnaut']['sha256']):
+        or smoke['executableSha256'] != files['files'][f'foafnaut-linux-{arch}/foafnaut']['sha256']
+        or (arch == 'arm64' and (smoke.get('runnerMachine') != 'aarch64' or smoke.get('worker') != 'wasm'))):
     sys.exit('Window smoke evidence does not match the browser archive and source commit')
 PY
     then
@@ -173,8 +178,9 @@ PY
   if [ "$SET" = foafnaut-web ]; then
     INSTALL="Experimental SVG and Lean HTML/CSS WebGPU browser runtimes. Install with tools/fetch-builds.sh --set foafnaut-web in factoidal-core. The page and fixtures are core source; this set carries only the same-run Lean/WASM runtime. Its evidence records source/build identity and tests, not SVG conformance or GPU correctness."
   fi
-  if [ "$SET" = foafnaut-browser-linux-x86_64 ]; then
-    INSTALL="Linux x86_64 browser built and tested on Ubuntu 24.04. Extract the archive and run foafnaut-linux-x86_64/foafnaut. The executable includes Deno and Lean WASM. See the bundled README for desktop dependencies. The extracted archive passed the native X11 window smoke on Xvfb using Mesa software Vulkan."
+  if [[ "$SET" = foafnaut-browser-linux-* ]]; then
+    ARCH=${SET#foafnaut-browser-linux-}
+    INSTALL="Linux $ARCH browser built and tested on Ubuntu 24.04. Extract the archive and run foafnaut-linux-$ARCH/foafnaut. The executable includes Deno and Lean WASM. See the bundled README for desktop dependencies. The extracted archive passed the native X11 window smoke on Xvfb using Mesa software Vulkan."
     EXTRA+=("$OUT/$SET/window-smoke.json")
   fi
   # Native sets link GNU MP statically: its licence and source pointer go with them.

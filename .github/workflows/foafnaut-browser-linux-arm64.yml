@@ -1,0 +1,211 @@
+name: Foafnaut Linux ARM64 desktop browser
+
+on:
+  workflow_dispatch:
+    inputs:
+      core_sha:
+        description: 'Full core commit of a released x86_64 desktop browser (empty uses its latest release)'
+        required: false
+        type: string
+  pull_request:
+    paths:
+      - '.github/workflows/foafnaut-browser-linux-arm64.yml'
+      - 'scripts/verify-arm64-browser-inputs.py'
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  CORE_REPO: danbri/factoidal-core
+  SET: foafnaut-browser-linux-arm64
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 25
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+      short: ${{ steps.source.outputs.short }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+      - name: Identify the engine build of the published desktop browser
+        id: source
+        env:
+          CORE_SHA: ${{ inputs.core_sha }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha=$CORE_SHA
+          if [[ -z $sha && $GITHUB_EVENT_NAME == pull_request ]]; then
+            sha=$(jq -er '
+              [(.pull_request.body // "" | split("\n")[] | rtrimstr("\r")) |
+               select(startswith("Desktop source: ")) | ltrimstr("Desktop source: ")] |
+              if length == 0 then ""
+              elif length == 1 and (.[0] | test("^[0-9a-f]{40}$")) then .[0]
+              else error("Use one Desktop source line with a full, lowercase core commit") end' "$GITHUB_EVENT_PATH")
+          fi
+          if [[ -z $sha ]]; then
+            sha=$(gh api -H 'Accept: application/vnd.github.raw+json' \
+              "repos/$GITHUB_REPOSITORY/contents/latest/foafnaut-browser-linux-x86_64.json?ref=main" |
+              jq -er 'select(.set == "foafnaut-browser-linux-x86_64") | .source_commit')
+          fi
+          [[ $sha =~ ^[0-9a-f]{40}$ ]]
+          short=${sha:0:12}
+          gh release download "build-$short-foafnaut-browser-linux-x86_64" -R "$GITHUB_REPOSITORY" \
+            -p build-info.json -O "$RUNNER_TEMP/desktop-build.json"
+          prefix="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/"
+          run_id=$(jq -er --arg sha "$sha" --arg prefix "$prefix" --arg core "$CORE_REPO" \
+            'select(.source_repo == $core and .source_commit == $sha and .set == "foafnaut-browser-linux-x86_64")
+             | .run_url | select(startswith($prefix)) | ltrimstr($prefix) | select(test("^[1-9][0-9]*$"))' \
+            "$RUNNER_TEMP/desktop-build.json")
+          [[ $(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" --jq .path) == .github/workflows/build.yml ]]
+          deno=$(jq -er '.toolchains.deno | capture("^deno (?<version>[0-9]+\\.[0-9]+\\.[0-9]+)( |$)").version' "$RUNNER_TEMP/desktop-build.json")
+          printf 'sha=%s\nshort=%s\nengines_run=%s\ndeno_version=%s\n' "$sha" "$short" "$run_id" "$deno" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ steps.source.outputs.sha }}
+          path: core
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: foafnaut-engines
+          run-id: ${{ steps.source.outputs.engines_run }}
+          github-token: ${{ github.token }}
+          path: core/labs/demos/foafnaut/.build
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.source.outputs.deno_version }}
+      - name: Package the browser and its native SDL library
+        shell: bash
+        env:
+          CORE_SHA: ${{ steps.source.outputs.sha }}
+          ENGINES_RUN: ${{ steps.source.outputs.engines_run }}
+        run: |
+          set -euo pipefail
+          [[ $(uname -m) == aarch64 && $(git -C core rev-parse HEAD) == "$CORE_SHA" ]]
+          sudo apt-get update && sudo apt-get install -y build-essential pkg-config libsdl2-dev
+          lab=core/labs/demos/foafnaut
+          python3 builds/scripts/verify-arm64-browser-inputs.py "$lab/.build" "$RUNNER_TEMP/desktop-build.json" \
+            "$CORE_SHA" "$GITHUB_REPOSITORY" "$ENGINES_RUN" > "$RUNNER_TEMP/engine-receipts.json"
+          stage="$RUNNER_TEMP/package"
+          browser="$stage/foafnaut-linux-arm64"
+          bash "$lab/build-linux-browser.sh" "$browser"
+          jq -e --arg sha "$CORE_SHA" '.commitFull == $sha and .dirty == false' "$browser/BUILD-INFO.json"
+          [[ ! -e "$browser/libweb-render.so" ]]
+          for file in "$browser/foafnaut" "$browser/libnative-window.so"; do
+            LC_ALL=C readelf -h "$file" | grep -Eq 'Machine:[[:space:]]+AArch64$'
+          done
+          (cd "$browser" && sha256sum --check --quiet SHA256SUMS)
+          cp builds/docs/linux-arm64-browser.md "$browser/README.md"
+          (cd "$browser" && find . -type f ! -name SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SHA256SUMS)
+          jq -n --arg deno "$(deno --version | sed -n '1p')" --arg cc "$(cc --version | sed -n '1p')" \
+            --arg sdl2 "$(pkg-config --modversion sdl2)" --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$ENGINES_RUN" \
+            --slurpfile donor "$RUNNER_TEMP/desktop-build.json" --slurpfile inputs "$RUNNER_TEMP/engine-receipts.json" \
+            '{deno:$deno,cc:$cc,sdl2:$sdl2,browser_target:"aarch64-unknown-linux-gnu",document_worker:"wasm",
+              portable_engines:{run_url:$run,lean:$donor[0].toolchains.lean,
+                emscripten:$donor[0].toolchains.emscripten,receipts:$inputs[0]}}' > "$RUNNER_TEMP/tools.json"
+          python3 builds/scripts/make-release.py "$stage" "$SET" "$CORE_SHA" "$CORE_SHA" "$RUNNER_TEMP/$SET" "$RUNNER_TEMP/tools.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SET }}-candidate
+          path: ${{ runner.temp }}/${{ env.SET }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  window:
+    needs: package
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.package.outputs.sha }}
+          sparse-checkout: labs/demos/foafnaut/check-linux-browser.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SET }}-candidate
+          path: ${{ runner.temp }}/candidate
+      - name: Exercise the relocated executable with X11 and software Vulkan
+        env:
+          CORE_SHA: ${{ needs.package.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          machine=$(uname -m)
+          [[ $machine == aarch64 ]]
+          sudo apt-get update && sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers \
+            xvfb xauth xdotool python3-pil python3-xlib
+          archive="$SET.tar.gz"
+          cd "$RUNNER_TEMP/candidate"
+          digest=$(jq -er --arg sha "$CORE_SHA" --arg set "$SET" --arg file "$archive" \
+            'select(.source_commit == $sha and .set == $set) | .artifacts[$file].sha256' build-info.json)
+          printf '%s  %s\n' "$digest" "$archive" | sha256sum --check
+          destination=$(mktemp -d)
+          tar -xzf "$archive" -C "$destination"
+          cd "$destination/foafnaut-linux-arm64"
+          sha256sum --check --quiet SHA256SUMS
+          test ! -e libweb-render.so
+          export PATH=/usr/bin:/bin SDL_VIDEODRIVER=x11 DENO_WEBGPU_BACKEND=vulkan
+          VK_DRIVER_FILES=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          [[ -n $VK_DRIVER_FILES ]]
+          export VK_DRIVER_FILES
+          XDG_RUNTIME_DIR=$(mktemp -d)
+          export XDG_RUNTIME_DIR
+          mkdir -p "$RUNNER_TEMP/evidence" "$RUNNER_TEMP/checked"
+          xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 \
+            "$GITHUB_WORKSPACE/labs/demos/foafnaut/check-linux-browser.py" "$PWD/foafnaut" "$RUNNER_TEMP/evidence"
+          jq -e --arg sha "$CORE_SHA" --arg digest "$digest" --arg machine "$machine" \
+            'select(.format == "foafnaut-linux-window-smoke-v1" and .status == "pass" and
+                    .sourceCommit == $sha and .worker == "wasm" and .inputEventsDropped == 0)
+             | .archive_sha256 = $digest | .runnerMachine = $machine' \
+            "$RUNNER_TEMP/evidence/window-smoke.json" > "$RUNNER_TEMP/checked/window-smoke.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ env.SET }}-evidence
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SET }}-checked
+          path: ${{ runner.temp }}/checked/window-smoke.json
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [package, window]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: foafnaut-browser-linux-arm64-release-${{ needs.package.outputs.sha }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: 'foafnaut-browser-linux-arm64-*'
+          path: art
+      - name: Publish the checked ARM64 archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.package.outputs.sha }}
+          SHORT: ${{ needs.package.outputs.short }}
+          REF: ${{ needs.package.outputs.sha }}
+          PUBLISH_SETS: foafnaut-browser-linux-arm64
+          FOAFNAUT_LINUX_BROWSER_ARM64: 'true'
+        run: scripts/publish.sh
