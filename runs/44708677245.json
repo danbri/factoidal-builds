@@ -1,0 +1,165 @@
+{
+ "format": "factoidal-ci-metrics-v1",
+ "run_id": 44708677245,
+ "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/44708677245",
+ "event": "workflow_dispatch",
+ "builds_branch": "main",
+ "builds_sha": "68937bd320a3b0e116b77390217ce2b341279bd1",
+ "title": "core b435748ed7cdcfe468dc3ecaab827cb73e590fc0",
+ "created_at": "2026-11-20T09:11:58Z",
+ "jobs": [
+  {
+   "name": "resolve",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 0.32,
+   "start_after_dispatch_minutes": 0.07,
+   "end_after_dispatch_minutes": 0.38,
+   "longest_steps": [
+    {
+     "name": "Run scripts/resolve-core.sh",
+     "minutes": 0.18
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.07
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run python3 scripts/mac-runs-on.py",
+     "minutes": 0.0
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "lean (ubuntu-latest, linux-x86_64)",
+   "conclusion": "failure",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 3.5,
+   "start_after_dispatch_minutes": 0.43,
+   "end_after_dispatch_minutes": 3.93,
+   "longest_steps": [
+    {
+     "name": "lake build (library, proofs,",
+     "minutes": 2.23
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.82
+    },
+    {
+     "name": "Cache .lake",
+     "minutes": 0.33
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-c11a32db874de8c4704480d930da8209d3fb8864f5a2ee8f2f23802876f530ce",
+     "result": "partial",
+     "bytes": 1122991843,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-6a86e2f1aa74819c91ab639b3938a0cc4dbed2384b5077f938cd1a632a2bfe90"
+    }
+   ]
+  },
+  {
+   "name": "foafnaut-engines",
+   "conclusion": "failure",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 14.17,
+   "start_after_dispatch_minutes": 0.42,
+   "end_after_dispatch_minutes": 14.58,
+   "longest_steps": [
+    {
+     "name": "Build and check the Foafnaut engines",
+     "minutes": 7.95
+    },
+    {
+     "name": "Build and check the Lean HTML browser runtime",
+     "minutes": 5.2
+    },
+    {
+     "name": "Restore .lake from the lean job's cache",
+     "minutes": 0.27
+    },
+    {
+     "name": "Install Emscripten 6.0.8 and libuv headers",
+     "minutes": 0.18
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "emsdk-6.0.8-Linux",
+     "result": "hit",
+     "bytes": 480270169,
+     "restored_key": "emsdk-6.0.8-Linux"
+    },
+    {
+     "action": "cache/restore",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-c11a32db874de8c4704480d930da8209d3fb8864f5a2ee8f2f23802876f530ce",
+     "result": "partial",
+     "bytes": 1122991843,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-6a86e2f1aa74819c91ab639b3938a0cc4dbed2384b5077f938cd1a632a2bfe90"
+    },
+    {
+     "action": "cache/restore",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-44708677245",
+     "result": "partial",
+     "bytes": 84927387,
+     "restored_key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-44704127826"
+    },
+    {
+     "action": "cache/save",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-44708677245",
+     "result": "saved",
+     "bytes": null
+    }
+   ],
+   "ccache": {
+    "hits": 94,
+    "lookups": 94
+   }
+  },
+  {
+   "name": "publish",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 0.08,
+   "start_after_dispatch_minutes": 14.63,
+   "end_after_dispatch_minutes": 14.72,
+   "longest_steps": [
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Assemble, pack and publish the Linux-built sets (linux-x86_64, web, foafnaut-web)",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.0
+    }
+   ],
+   "caches": []
+  }
+ ],
+ "wall_minutes": 14.72
+}
