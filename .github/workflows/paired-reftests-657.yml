@@ -83,21 +83,25 @@ jobs:
           import json, os
           urls = {"/css/CSS2/linebox/line-height-" + name + ".xht" for name in ("002", "101")}
           ref = "/css/CSS2/linebox/line-height-002-ref.xht"
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary, open("out/paired-summary.md", "w") as report:
               print("|Engine|WPT|Verdict|Changed pixels|Max channel difference|", file=summary)
               print("|---|---|---|---:|---:|", file=summary)
+              print("|Engine|WPT|Verdict|Changed pixels|Max channel difference|", file=report)
+              print("|---|---|---|---:|---:|", file=report)
               for role in ("baseline", "candidate"):
                   with open("out/" + role + "/results.json") as f:
                       data = json.load(f)
                   assert data["valid"] and {r["test"] for r in data["tests"]} == urls
                   for row in data["tests"]:
-                  edge, = row["edges"]
-                  assert edge["to"] == ref and edge["relation"] == "=="
-                  if "totalPixels" in edge:
-                      changed, max_difference = edge["totalPixels"], edge["maxDifference"]
-                  else:
-                      changed, max_difference = "—", "—"
-                  print(f'|{role}|{row["test"]}|{row["status"]}|{changed}|{max_difference}|', file=summary)
+                      edge, = row["edges"]
+                      assert edge["to"] == ref and edge["relation"] == "=="
+                      if "totalPixels" in edge:
+                          changed, max_difference = edge["totalPixels"], edge["maxDifference"]
+                      else:
+                          changed, max_difference = "—", "—"
+                      line = f'|{role}|{row["test"]}|{row["status"]}|{changed}|{max_difference}|'
+                      print(line, file=summary)
+                      print(line, file=report)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
