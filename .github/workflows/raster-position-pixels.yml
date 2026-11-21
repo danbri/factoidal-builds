@@ -77,7 +77,39 @@ jobs:
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           "$HOME/.elan/bin/elan" toolchain install "$tc"
           echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Check visible image placement without a background image
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import json, struct, zlib
+          from pathlib import Path
+          def chunk(name, content):
+              return struct.pack(">I", len(content)) + name + content + struct.pack(">I", zlib.crc32(name + content))
+          pixels = b"".join(b"\x00" + b"\xff\x00\x00" * 16 for _ in range(8))
+          Path("red.png").write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 16, 8, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(pixels)) + chunk(b"IEND", b""))
+          Path("object.html").write_text('<!doctype html><body style="margin:0;background:white"><img src="red.png" style="display:block;width:40px;height:40px;object-fit:contain;object-position:center bottom">')
+          Path("jobs.jsonl").write_text(json.dumps(dict(url=Path("object.html").resolve().as_uri(), file="position.png", width=64, height=64)) + "\n")
+          PY
+          for role in baseline candidate; do
+            lib=$(find "$PWD/$role" -name libweb-render.so)
+            mkdir -p "out/$role-scenes" "out/$role-picture"
+            deno run -A --unstable-ffi core/tests/browser-wpt/reftest-render.ts --native-engine "$lib" \
+              --list jobs.jsonl --out "out/$role-picture" --scenes "out/$role-scenes"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          for role, expected in (("baseline", (10, 29)), ("candidate", (20, 39))):
+              data = Path(f"out/{role}-scenes/position.png.cpu").read_bytes()
+              assert len(data) == 64 * 64 * 4
+              red = bytes([255, 0, 0, 255])
+              rows = [y for y in range(64) if data[4 * (y * 64 + 20):][:4] == red]
+              observed = (min(rows), max(rows)) if rows else None
+              print(f"{role}: opaque red covers rows {observed}, expected {expected}")
+              assert observed == expected, (role, observed)
+          PY
       - name: Fetch pinned WPT files and manifest
+        if: success() || failure()
         run: |
           set -euo pipefail
           d=css/css-images
@@ -87,6 +119,7 @@ jobs:
           done
           curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
       - name: Run both engines with identical pages, host and renderer
+        if: success() || failure()
         run: |
           set -euo pipefail
           for role in baseline candidate; do
