@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: e22a668b141677c008f923b63755b82e24340582
+          ref: 0656960a5185448730c5846800e51c69050d437e
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -36,13 +36,14 @@ jobs:
         with:
           deno-version: ${{ steps.pins.outputs.deno }}
       - name: Fetch the two engines and runtime
+        id: engines
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p candidate baseline web
-          run=44923555796
+          run=44936021005
           for attempt in $(seq 1 70); do
             verdict=$(gh api "repos/danbri/factoidal-builds/actions/runs/$run" --jq '.conclusion // ""')
             if [[ -n "$verdict" ]]; then
@@ -109,7 +110,7 @@ jobs:
               assert observed == expected, (role, observed)
           PY
       - name: Fetch pinned WPT files and manifest
-        if: success() || failure()
+        if: always() && steps.engines.outcome == 'success'
         run: |
           set -euo pipefail
           d=css/css-images
@@ -119,7 +120,7 @@ jobs:
           done
           curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
       - name: Run both engines with identical pages, host and renderer
-        if: success() || failure()
+        if: always() && steps.engines.outcome == 'success'
         run: |
           set -euo pipefail
           for role in baseline candidate; do
