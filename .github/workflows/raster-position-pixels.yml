@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 67c0343a275c82423736134510938ea583176b83
+          ref: 45264bb346f8b0dcdc5fc879003dbd30c1c4cc73
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p candidate baseline web
-          run=44937603720
+          run=44939633979
           for attempt in $(seq 1 70); do
             verdict=$(gh api "repos/danbri/factoidal-builds/actions/runs/$run" --jq '.conclusion // ""')
             if [[ -n "$verdict" ]]; then
