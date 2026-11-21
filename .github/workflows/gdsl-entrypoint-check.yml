@@ -1,0 +1,24 @@
+name: GDSL entry-point gate check
+on:
+  push:
+    branches: [wip/gdsl-entrypoint-check]
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 01a3a79d86c14a085de5f2b4e50fd0b5ccf067e3
+          persist-credentials: false
+          sparse-checkout: |
+            foundation
+            formal/lean4/Wasm
+            npm/factoidal
+            docs/dataflow-inventory.md
+            tools/entrypoint-gate.py
+          sparse-checkout-cone-mode: false
+      - run: python3 tools/entrypoint-gate.py
