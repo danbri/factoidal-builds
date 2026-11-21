@@ -1,22 +1,21 @@
-name: EPUB native build diagnosis
+name: EPUB release gate diagnosis
 on:
   push:
     branches: [wip/epub-lean-check]
     paths: [.github/workflows/epub-build-diagnosis.yml]
 permissions:
-  actions: read
   contents: read
 jobs:
-  diagnosis:
+  registry:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          run-id: 44952862905
-          name: build-log
-          github-token: ${{ github.token }}
-          path: log
-      - run: |
-          grep -n -i -E 'error|failed|refused|killed|no space' log/build.log | tail -35 || true
-          tail -35 log/build.log
+          repository: danbri/factoidal-core
+          ref: d929fac2a46828067f71c8cf2657dfd3830f785f
+          persist-credentials: false
+      - name: Check the release registry with the proposed patch
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/danbri/factoidal-core/2bfa6ac199e0782116c66985a56d584ad486990d/foundation/entrypoints.toml -o foundation/entrypoints.toml
+          bash tests/dataflow/run.sh
