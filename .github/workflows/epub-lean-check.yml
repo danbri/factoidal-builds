@@ -12,9 +12,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 986f2a5b6c3cd08a78cc418a2e05cf4c47bca7b6
+          ref: 4d40e5f30e8e8c889cf7c795cb9dcd8217e50051
           persist-credentials: false
-          sparse-checkout: formal/lean4
+          sparse-checkout: |
+            formal/lean4
+            tools
       - name: Install Lean
         run: |
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
@@ -52,6 +54,8 @@ jobs:
             IO.println "Deflated EPUB 3 archive opened and both chapters rendered"
           LEAN
           lake env lean --run CheckEpub.lean
+      - name: Run the generated C stack gate
+        run: python3 tools/lean-tail-recursion-audit.py --gate
       - name: Save the compiled pure reader for a private local book check
         uses: actions/upload-artifact@v4
         with:
