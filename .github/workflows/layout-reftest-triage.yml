@@ -59,7 +59,7 @@ jobs:
       - name: Fetch pinned WPT files and manifest
         run: |
           set -euo pipefail
-          for p in css/css-sizing/dynamic-change-inline-size-004.html css/css-flexbox/dynamic-stretch-change.html css/reference/ref-filled-green-100px-square.xht css/reference/ref-filled-green-100px-square-only.html css/css-flexbox/dynamic-baseline-change-ref.html css/css-flexbox/dynamic-baseline-change-nested.html css/css-flexbox/dynamic-baseline-change.html css/css-flexbox/dynamic-orthogonal-flex-item.html css/css-flexbox/fieldset-as-item-dynamic.html css/css-flexbox/flex-aspect-ratio-img-row-016.html; do
+          for p in css/css-backgrounds/background-image-001.html css/css-backgrounds/background-image-002.html css/css-backgrounds/background-image-cover-zoomed-1.html css/css-backgrounds/reference/background-image-001-ref.html css/css-backgrounds/reference/background-image-cover-zoomed-1-ref.html css/css-backgrounds/support/green.png css/css-backgrounds/support/red.png css/css-backgrounds/support/40px-wide-20px-tall-green-rect.png; do
             mkdir -p "wpt/$(dirname "$p")"
             curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$p" -o "wpt/$p"
           done
@@ -71,12 +71,12 @@ jobs:
           test "${#libs[@]}" -eq 1
           python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
             --wpt-root "$PWD/wpt" --native-engine "${libs[0]}" --prefix css/ --jobs 1 \
-            --only /css/css-sizing/dynamic-change-inline-size-004.html,/css/css-flexbox/dynamic-stretch-change.html,/css/css-flexbox/dynamic-baseline-change-nested.html,/css/css-flexbox/dynamic-baseline-change.html,/css/css-flexbox/dynamic-orthogonal-flex-item.html,/css/css-flexbox/fieldset-as-item-dynamic.html,/css/css-flexbox/flex-aspect-ratio-img-row-016.html --out "$PWD/out"
+            --only /css/css-backgrounds/background-image-001.html,/css/css-backgrounds/background-image-002.html,/css/css-backgrounds/background-image-cover-zoomed-1.html --out "$PWD/out"
           python3 - <<'PY'
           import json
           with open("out/results.json") as f:
               results = json.load(f)
-          assert results["valid"] and len(results["tests"]) == 7
+          assert results["valid"] and len(results["tests"]) == 3
           for row in results["tests"]:
               print(json.dumps(row))
           PY
