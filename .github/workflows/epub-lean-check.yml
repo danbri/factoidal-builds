@@ -42,12 +42,12 @@ jobs:
           open L4Factoidal.Epub
           def main : IO Unit := do
             let archive ← IO.FS.readBinFile "reflow.epub"
-            let .ok book := openBook archive | throw (IO.userError "openBook failed")
-            let .ok first := book.readerHtml (some 0) | throw (IO.userError "first chapter failed")
-            let .ok second := book.readerHtml (some 1) | throw (IO.userError "second chapter failed")
-            unless first.splitOn "?epubChapter=2#epub-chapter-2-target" |>.length == 2 do
+            let book ← IO.ofExcept (openBook archive |>.mapError IO.userError)
+            let first ← IO.ofExcept (book.readerHtml (some 0) |>.mapError IO.userError)
+            let second ← IO.ofExcept (book.readerHtml (some 1) |>.mapError IO.userError)
+            unless (first.splitOn "?epubChapter=2#epub-chapter-2-target").length == 2 do
               throw (IO.userError "Missing link to second chapter")
-            unless second.splitOn "Second chapter body" |>.length == 2 do
+            unless (second.splitOn "Second chapter body").length == 2 do
               throw (IO.userError "Missing second chapter text")
             IO.println "Deflated EPUB 3 archive opened and both chapters rendered"
           LEAN
