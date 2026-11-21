@@ -1,0 +1,27 @@
+name: EPUB Lean check
+on:
+  push:
+    branches: [wip/epub-lean-check]
+permissions:
+  contents: read
+jobs:
+  lean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 8c0eed54f9f228463f9daa943d48adbdbb4d9888
+          persist-credentials: false
+          sparse-checkout: formal/lean4
+      - name: Install Lean
+        run: |
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Compile the EPUB reader and run its guards
+        working-directory: formal/lean4
+        run: lake build L4Factoidal.Epub
+      - name: Check the reader and print its theorem axioms
+        working-directory: formal/lean4
+        run: lake env lean -DwarningAsError=true L4Factoidal/Epub.lean
