@@ -1,0 +1,55 @@
+name: Desktop native form check
+on:
+  push:
+    branches: [wip/desktop-search-probe]
+permissions:
+  contents: read
+jobs:
+  forms:
+    runs-on: macos-15
+    timeout-minutes: 15
+    env:
+      TAG: build-fda3bf0a5c16-foafnaut-darwin-arm64
+      SET: foafnaut-darwin-arm64
+      WEB: build-fda3bf0a5c16-foafnaut-web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: fda3bf0a5c162c33213cf86e7762b3ad95fecf6b
+          path: host
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' host/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Set up the released engine
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          R=$RUNNER_TEMP/rel; mkdir -p "$R/eng" "$R/web"
+          gh release download "$TAG" -R "${{ github.repository }}" -p "$SET.tar.gz" -p build-info.json -D "$R"
+          tar -xzf "$R/$SET.tar.gz" -C "$R/eng"
+          gh release download "$WEB" -R "${{ github.repository }}" -p foafnaut-web.tar.gz -D "$R"
+          tar -xzf "$R/foafnaut-web.tar.gz" -C "$R/web" docs/web/hub/html-webgpu/runtime
+          LIB=$(find "$R/eng" -name 'libweb-render.dylib' -o -name 'libweb-render.so' | head -1)
+          [ -n "$LIB" ] || { echo "::error::$TAG has no engine library"; exit 1; }
+          WINDOW=$(find "$R/eng" -name 'libnative-window.dylib' | head -1)
+          bash host/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/host/labs/demos/foafnaut" "$R/web" "$WINDOW"
+          echo "LIB=$LIB" >> "$GITHUB_ENV"
+      - name: Type and submit through the native desktop event path
+        run: |
+          set -uo pipefail
+          test=host/labs/demos/foafnaut/daily_use_check.ts
+          failures=0
+          for scenario in 'type in a search box with no script, press Enter' 'type in a search box, press its button'; do
+            deno run -A --unstable-ffi --unstable-webgpu "$test" --only "$scenario" --native-engine "$LIB" || failures=$((failures+1))
+          done
+          test "$failures" -eq 0
