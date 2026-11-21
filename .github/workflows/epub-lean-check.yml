@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 35f26ddbc33f6ad90a8e4433145475391fb7ec8f
+          ref: d4dc6caa9aab606617a97774343b9b421b2d5e1c
           persist-credentials: false
           sparse-checkout: formal/lean4
       - name: Install Lean
@@ -25,3 +25,30 @@ jobs:
       - name: Check the reader and print its theorem axioms
         working-directory: formal/lean4
         run: lake env lean -DwarningAsError=true L4Factoidal/Epub.lean
+      - name: Load an EPUB 3 archive from disk with deflated XHTML
+        working-directory: formal/lean4
+        run: |
+          python3 - <<'PY'
+          from zipfile import ZipFile, ZIP_DEFLATED, ZIP_STORED
+          with ZipFile('reflow.epub', 'w', ZIP_DEFLATED) as z:
+              z.writestr('mimetype', 'application/epub+zip', ZIP_STORED)
+              z.writestr('META-INF/container.xml', '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="EPUB/book.opf" media-type="application/oebps-package+xml"/></rootfiles></container>')
+              z.writestr('EPUB/book.opf', '<package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata><title xmlns="http://purl.org/dc/elements/1.1/">Reflow test</title></metadata><manifest><item id="a" href="a.xhtml" media-type="application/xhtml+xml"/><item id="b" href="b.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="b"/><itemref idref="a"/></spine></package>')
+              z.writestr('EPUB/a.xhtml', '<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Second</title></head><body><h1 id="target">Second chapter body</h1></body></html>')
+              z.writestr('EPUB/b.xhtml', '<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>First</title></head><body><a href="a.xhtml#target">Next</a></body></html>')
+          PY
+          cat > CheckEpub.lean <<'LEAN'
+          import L4Factoidal.Epub
+          open L4Factoidal.Epub
+          def main : IO Unit := do
+            let archive ← IO.FS.readBinFile "reflow.epub"
+            let .ok book := openBook archive | throw (IO.userError "openBook failed")
+            let .ok first := book.readerHtml (some 0) | throw (IO.userError "first chapter failed")
+            let .ok second := book.readerHtml (some 1) | throw (IO.userError "second chapter failed")
+            unless first.splitOn "?epubChapter=2#epub-chapter-2-target" |>.length == 2 do
+              throw (IO.userError "Missing link to second chapter")
+            unless second.splitOn "Second chapter body" |>.length == 2 do
+              throw (IO.userError "Missing second chapter text")
+            IO.println "Deflated EPUB 3 archive opened and both chapters rendered"
+          LEAN
+          lake env lean --run CheckEpub.lean
