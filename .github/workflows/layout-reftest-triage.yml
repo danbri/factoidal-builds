@@ -1,0 +1,88 @@
+name: Focused CSS layout reference tests
+on:
+  push:
+    branches: ['wip/layout-reftest-triage']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      WPT: 4b26db8978f6024d3184ca483d74afbc354b35de
+      BASE_TAG: build-3486f29c65fb-foafnaut-linux-x86_64
+      WEB_TAG: build-d0d956ffe053-foafnaut-web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 3486f29c65fb6fb66080cb2d432ac19f161b1b15
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+            tests/browser-wpt
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Read the host Deno pin
+        id: pins
+        run: |
+          echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Fetch the published engine and runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p baseline web
+          gh release download "$BASE_TAG" -R danbri/factoidal-builds -p foafnaut-linux-x86_64.tar.gz
+          echo '75aac8320fa26a14667e6e5ce93fb652913760f0b7491aefb09eac36bc7495d4  foafnaut-linux-x86_64.tar.gz' | sha256sum -c -
+          tar -xzf foafnaut-linux-x86_64.tar.gz -C baseline
+          gh release download "$WEB_TAG" -R danbri/factoidal-builds -p foafnaut-web.tar.gz
+          echo '6b93f59bd77a4d6d1cbe431691f02739043d871226994529d5f4147e15e19ab6  foafnaut-web.tar.gz' | sha256sum -c -
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          rt=web/docs/web/hub/html-webgpu/runtime
+          host=core/labs/demos/foafnaut/.build
+          mkdir -p "$host/native-html/runtime" "$host/engines"
+          cp "$rt/web-render.mjs" "$rt/web-render.wasm" "$host/native-html/runtime/"
+          cp "$rt/render-plan.mjs" "$rt/render-plan.wasm" "$host/engines/"
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Fetch pinned WPT files and manifest
+        run: |
+          set -euo pipefail
+          for p in css/css-sizing/dynamic-change-inline-size-004.html css/css-flexbox/dynamic-stretch-change.html css/reference/ref-filled-green-100px-square.xht css/reference/ref-filled-green-100px-square-only.html; do
+            mkdir -p "wpt/$(dirname "$p")"
+            curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$p" -o "wpt/$p"
+          done
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+      - name: Render the pinned WPT test and reference pages
+        run: |
+          set -euo pipefail
+          mapfile -t libs < <(find "$PWD/baseline" -name libweb-render.so)
+          test "${#libs[@]}" -eq 1
+          python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
+            --wpt-root "$PWD/wpt" --native-engine "${libs[0]}" --prefix css/ --jobs 1 \
+            --only /css/css-sizing/dynamic-change-inline-size-004.html,/css/css-flexbox/dynamic-stretch-change.html --out "$PWD/out"
+          python3 - <<'PY'
+          import json
+          with open("out/results.json") as f:
+              results = json.load(f)
+          assert results["valid"] and len(results["tests"]) == 2
+          for row in results["tests"]:
+              print(json.dumps(row))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: layout-reftest-triage
+          path: out/
+          retention-days: 14
