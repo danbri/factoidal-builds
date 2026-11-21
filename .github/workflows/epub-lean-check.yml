@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: d4dc6caa9aab606617a97774343b9b421b2d5e1c
+          ref: 986f2a5b6c3cd08a78cc418a2e05cf4c47bca7b6
           persist-credentials: false
           sparse-checkout: formal/lean4
       - name: Install Lean
@@ -52,3 +52,9 @@ jobs:
             IO.println "Deflated EPUB 3 archive opened and both chapters rendered"
           LEAN
           lake env lean --run CheckEpub.lean
+      - name: Save the compiled pure reader for a private local book check
+        uses: actions/upload-artifact@v4
+        with:
+          name: epub-lean-module-cache
+          path: formal/lean4/.lake/build/lib/lean/
+          retention-days: 2
