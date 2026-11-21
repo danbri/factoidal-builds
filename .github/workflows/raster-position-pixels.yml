@@ -1,0 +1,123 @@
+name: Raster object position paired reftests
+on:
+  push:
+    branches: ['wip/raster-position-pixels']
+    paths: ['.github/workflows/raster-position-pixels.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    env:
+      WPT: 4b26db8978f6024d3184ca483d74afbc354b35de
+      BASE_TAG: build-d0d956ffe053-foafnaut-linux-x86_64
+      WEB_TAG: build-d0d956ffe053-foafnaut-web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: a4cec30db827a7e332fe37aad471232188b9f4d7
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+            tests/browser-wpt
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Read the host Deno pin
+        id: pins
+        run: |
+          echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Fetch the two engines and runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p candidate baseline web
+          run=44916063261
+          for attempt in $(seq 1 70); do
+            verdict=$(gh api "repos/danbri/factoidal-builds/actions/runs/$run" --jq '.conclusion // ""')
+            if [[ -n "$verdict" ]]; then
+              test "$verdict" = success
+              break
+            fi
+            sleep 30
+          done
+          test "$verdict" = success
+          read -r artifact digest < <(gh api "repos/danbri/factoidal-builds/actions/runs/$run/artifacts" --jq '.artifacts[] | select(.name == "branch-engine") | [.id,.digest] | @tsv')
+          gh api "repos/danbri/factoidal-builds/actions/artifacts/$artifact/zip" > candidate.zip
+          echo "${digest#sha256:}  candidate.zip" | sha256sum -c -
+          unzip -q candidate.zip -d candidate
+          gh release download "$BASE_TAG" -R danbri/factoidal-builds -p foafnaut-linux-x86_64.tar.gz
+          echo 'deb934248a4ff96c19407825700ba8c786339b7f761d5e04d46ea1fb9202d2f8  foafnaut-linux-x86_64.tar.gz' | sha256sum -c -
+          tar -xzf foafnaut-linux-x86_64.tar.gz -C baseline
+          gh release download "$WEB_TAG" -R danbri/factoidal-builds -p foafnaut-web.tar.gz
+          echo '6b93f59bd77a4d6d1cbe431691f02739043d871226994529d5f4147e15e19ab6  foafnaut-web.tar.gz' | sha256sum -c -
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          rt=web/docs/web/hub/html-webgpu/runtime
+          host=core/labs/demos/foafnaut/.build
+          mkdir -p "$host/native-html/runtime" "$host/engines"
+          cp "$rt/web-render.mjs" "$rt/web-render.wasm" "$host/native-html/runtime/"
+          cp "$rt/render-plan.mjs" "$rt/render-plan.wasm" "$host/engines/"
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          test "$tc" = "$(tr -d '[:space:]' < candidate/lean-toolchain)"
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Fetch pinned WPT files and manifest
+        run: |
+          set -euo pipefail
+          d=css/css-images
+          for p in "$d/object-position-png-001i.html" "$d/object-position-png-002i.html" "$d/object-position-png-001-ref.html" "$d/object-position-png-002-ref.html" "$d/support/colors-16x8.png" "$d/support/colors-8x16.png"; do
+            mkdir -p "wpt/$(dirname "$p")"
+            curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$p" -o "wpt/$p"
+          done
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+      - name: Run both engines with identical pages, host and renderer
+        run: |
+          set -euo pipefail
+          for role in baseline candidate; do
+            mapfile -t libs < <(find "$PWD/$role" -name libweb-render.so)
+            test "${#libs[@]}" -eq 1
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
+              --wpt-root "$PWD/wpt" --native-engine "${libs[0]}" --prefix css/ --jobs 1 \
+              --only /css/css-images/object-position-png-001i.html,/css/css-images/object-position-png-002i.html --out "$PWD/out/$role"
+          done
+          python3 - <<'PY'
+          import json, os
+          refs = {f"/css/css-images/object-position-png-{num}i.html": f"/css/css-images/object-position-png-{num}-ref.html" for num in ("001", "002")}
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary, open("out/paired-summary.md", "w") as report:
+              print("|Engine|WPT|Verdict|Changed pixels|Max channel difference|", file=summary)
+              print("|---|---|---|---:|---:|", file=summary)
+              print("|Engine|WPT|Verdict|Changed pixels|Max channel difference|", file=report)
+              print("|---|---|---|---:|---:|", file=report)
+              for role in ("baseline", "candidate"):
+                  with open("out/" + role + "/results.json") as f:
+                      data = json.load(f)
+                  assert data["valid"] and {r["test"] for r in data["tests"]} == set(refs)
+                  for row in data["tests"]:
+                      edge, = row["edges"]
+                      assert edge["to"] == refs[row["test"]] and edge["relation"] == "=="
+                      if "totalPixels" in edge:
+                          changed, max_difference = edge["totalPixels"], edge["maxDifference"]
+                      else:
+                          changed, max_difference = "—", "—"
+                      line = f'|{role}|{row["test"]}|{row["status"]}|{changed}|{max_difference}|'
+                      print(line, file=summary)
+                      print(line, file=report)
+                      print(line)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: raster-position-pixels
+          path: out/
+          retention-days: 14
