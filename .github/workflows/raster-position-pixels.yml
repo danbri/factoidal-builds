@@ -46,7 +46,12 @@ jobs:
           for attempt in $(seq 1 70); do
             verdict=$(gh api "repos/danbri/factoidal-builds/actions/runs/$run" --jq '.conclusion // ""')
             if [[ -n "$verdict" ]]; then
-              test "$verdict" = success
+              if [[ "$verdict" != success ]]; then
+                artifact=$(gh api "repos/danbri/factoidal-builds/actions/runs/$run/artifacts" --jq '.artifacts[] | select(.name == "build-log") | .id')
+                gh api "repos/danbri/factoidal-builds/actions/artifacts/$artifact/zip" > build-log.zip
+                unzip -p build-log.zip | tail -100
+                exit 1
+              fi
               break
             fi
             sleep 30
