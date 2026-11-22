@@ -68,7 +68,10 @@ jobs:
           tar -xzf "$ARCHIVE"
           app="$package/foafnaut/foafnaut.app/Contents/MacOS/run"
           test -x "$app"
-          "$app" --version | tee "$RUNNER_TEMP/version.txt"
+          "$app" --version
+          trace="$HOME/Library/Logs/foafnaut/trace.jsonl"
+          mv "$trace" "$RUNNER_TEMP/version.txt"
+          cat "$RUNNER_TEMP/version.txt"
           grep -F "commit $CORE," "$RUNNER_TEMP/version.txt"
           ! grep -F "does not match" "$RUNNER_TEMP/version.txt"
       - name: Open a book and present chapter two in the native window
@@ -78,8 +81,12 @@ jobs:
           app="$RUNNER_TEMP/release with spaces/foafnaut/foafnaut.app/Contents/MacOS/run"
           printf '%s\n' '["title=How this reader opens a book","click:?epubChapter=2","url:sample.epub?epubChapter=2","title=How this reader opens a book"]' > "$RUNNER_TEMP/epub-steps.json"
           "$app" --html "$PWD/docs/web/hub/epub/sample.epub" --no-state --no-scripts --no-splash \
-            --steps "$RUNNER_TEMP/epub-steps.json" --log-all > "$RUNNER_TEMP/epub-release.log" 2>&1 ||
-            { tail -100 "$RUNNER_TEMP/epub-release.log"; exit 1; }
+            --steps "$RUNNER_TEMP/epub-steps.json" --log-all || result=$?
+          cp "$HOME/Library/Logs/foafnaut/trace.jsonl" "$RUNNER_TEMP/epub-release.log"
+          if (( ${result:-0} != 0 )); then
+            tail -100 "$RUNNER_TEMP/epub-release.log"
+            exit "$result"
+          fi
           python3 - "$RUNNER_TEMP/epub-release.log" <<'PY'
           import json
           import sys
