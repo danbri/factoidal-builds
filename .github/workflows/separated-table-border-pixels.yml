@@ -1,0 +1,175 @@
+name: Separated table borders paired reftests
+on:
+  push:
+    branches: [wip/paired-separated-table-borders]
+    paths: [.github/workflows/separated-table-border-pixels.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      WPT: 4b26db8978f6024d3184ca483d74afbc354b35de
+      WEB_TAG: build-ef1710ff226d-foafnaut-web
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 5b938de91fd7fb3b0388721150d1d027f3ee0523
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub
+            third_party/fonts
+            tests/browser-wpt
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Wait for the two exact native engine builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pair in 45064008718:e650d5bd958022e9573a3359feef3240a0cfef60 45065403962:5b938de91fd7fb3b0388721150d1d027f3ee0523; do
+            run=${pair%%:*}
+            sha=${pair#*:}
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
+              grep -Fx "Build libweb-render.so from $sha"
+            until gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
+              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status || true)
+              if [[ $status == completed ]]; then
+                echo "::error::Native build run $run ended without a branch-engine artifact."
+                exit 1
+              fi
+              sleep 30
+            done
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45064008718
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: baseline
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45065403962
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: candidate
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Install the renderer runtime and pinned WPT inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          for role in baseline candidate; do
+            test "$tc" = "$(cat "$role/lean-toolchain")"
+          done
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB_TAG" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz
+          echo 'cb7ef521b7ec41ae27375afba8d7056f75295498419a9f5f976e08323b7353d5  foafnaut-web.tar.gz' | sha256sum -c -
+          mkdir -p web
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          runtime=web/docs/web/hub/html-webgpu/runtime
+          host=core/labs/demos/foafnaut/.build
+          mkdir -p "$host/native-html/runtime" "$host/engines"
+          cp "$runtime"/web-render.{mjs,wasm} "$host/native-html/runtime/"
+          cp "$runtime"/render-plan.{mjs,wasm} "$host/engines/"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: 4b26db8978f6024d3184ca483d74afbc354b35de
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/CSS2/tables
+            fonts
+            common
+      - name: Create a border geometry regression alongside the pinned CSS2 tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p wpt/css/foafnaut-regressions
+          cat > wpt/css/foafnaut-regressions/separated-table-border.html <<'HTML'
+          <!doctype html>
+          <style>
+          body { margin: 0 }
+          table { width: 80px; border: 4px solid red; padding: 3px; border-spacing: 2px }
+          td { height: 10px; padding: 1px; border: 2px solid black; background: lime }
+          </style>
+          <table><tr><td></td></tr></table>
+          HTML
+          cat > wpt/css/foafnaut-regressions/separated-table-border-ref.html <<'HTML'
+          <!doctype html>
+          <style>
+          body { margin: 0 }
+          div { position: absolute; box-sizing: border-box }
+          .table { top: 0; left: 0; width: 80px; height: 34px; border: 4px solid red }
+          .cell { top: 9px; left: 9px; width: 62px; height: 16px; border: 2px solid black; background: lime }
+          </style>
+          <div class="table"></div><div class="cell"></div>
+          HTML
+          python3 - <<'PY' > names.txt
+          import json
+          from pathlib import Path
+
+          manifest = Path("MANIFEST.json")
+          data = json.loads(manifest.read_text())
+          css = data["items"]["reftest"]["css"]
+          table = css["CSS2"]["tables"]
+          prefix = "/css/CSS2/tables/"
+          names = [
+              prefix + name for name in table
+              if name.startswith(("separated-border-model-", "table-backgrounds-bs-"))
+          ]
+          assert len(names) >= 12
+          css["foafnaut-regressions"] = {
+              "separated-table-border.html": ["local", [None, [
+                  ["/css/foafnaut-regressions/separated-table-border-ref.html", "=="]
+              ], {}]]
+          }
+          manifest.write_text(json.dumps(data))
+          print(",".join(sorted(names)))
+          PY
+      - name: Compare exact native geometry on pinned border reftests
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture=/css/foafnaut-regressions/separated-table-border.html
+          names="$fixture,$(cat names.txt)"
+          for role in baseline candidate; do
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
+              --wpt-root "$PWD/wpt" --native-engine "$PWD/$role/libweb-render.so" --prefix css/ --jobs 2 \
+              --only "$names" --out "$PWD/out/$role"
+          done
+          python3 - "$names" "$fixture" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          from collections import Counter
+          from pathlib import Path
+
+          names, fixture = set(sys.argv[1].split(",")), sys.argv[2]
+          for role in ("baseline", "candidate"):
+              data = json.loads(Path(f"out/{role}/results.json").read_text())
+              assert data["valid"] and {row["test"] for row in data["tests"]} == names
+              print(role, dict(Counter(row["status"] for row in data["tests"])))
+              for row in data["tests"]:
+                  print(role, row["test"], row["status"], [edge.get("totalPixels") for edge in row["edges"]])
+                  if row["test"] == fixture:
+                      assert row["status"] == ("PASS" if role == "candidate" else "FAIL"), row
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: separated-table-border-pixels
+          path: out/
+          retention-days: 14
