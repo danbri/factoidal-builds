@@ -1,0 +1,149 @@
+name: Combined image and background positioning reftests
+on:
+  push:
+    branches: [wip/paired-combined-image-position]
+    paths: [.github/workflows/combined-image-position-pixels.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      WPT: 4b26db8978f6024d3184ca483d74afbc354b35de
+      WEB_TAG: build-ef1710ff226d-foafnaut-web
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: a8513da80d1da62169719d4fb7ba02307f9a19a0
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub
+            third_party/fonts
+            tests/browser-wpt
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Wait for the two exact native engine builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pair in 45068248461:10e24770a48eead98302ede9d9eefd85f91d5cea 45073626804:a8513da80d1da62169719d4fb7ba02307f9a19a0; do
+            run=${pair%%:*}
+            sha=${pair#*:}
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
+              grep -Fx "Build libweb-render.so from $sha"
+            until gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
+              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status || true)
+              if [[ $status == completed ]]; then
+                echo "::error::Native build run $run ended without a branch-engine artifact."
+                exit 1
+              fi
+              sleep 30
+            done
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45068248461
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: baseline
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45073626804
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: candidate
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Install the renderer runtime and pinned WPT inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          for role in baseline candidate; do
+            test "$tc" = "$(cat "$role/lean-toolchain")"
+          done
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB_TAG" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz
+          echo 'cb7ef521b7ec41ae27375afba8d7056f75295498419a9f5f976e08323b7353d5  foafnaut-web.tar.gz' | sha256sum -c -
+          mkdir -p web
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          runtime=web/docs/web/hub/html-webgpu/runtime
+          host=core/labs/demos/foafnaut/.build
+          mkdir -p "$host/native-html/runtime" "$host/engines"
+          cp "$runtime"/web-render.{mjs,wasm} "$host/native-html/runtime/"
+          cp "$runtime"/render-plan.{mjs,wasm} "$host/engines/"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: 4b26db8978f6024d3184ca483d74afbc354b35de
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/css-images
+            css/support
+            css/reference
+            common
+            fonts
+            images
+      - name: Compare pinned raster and SVG image and poster reftests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > names.txt
+          import json
+          import re
+          from pathlib import Path
+
+          data = json.loads(Path("MANIFEST.json").read_text())
+          cases = data["items"]["reftest"]["css"]["css-images"]
+          names = sorted(
+              f"/css/css-images/{name}" for name in cases
+              if name.startswith(("object-fit-", "object-position-"))
+              and re.search(r"\d[pi](?:\.tentative)?\.html$", name)
+          )
+          assert len(names) >= 80, names
+          print(",".join(names))
+          PY
+          names=$(cat names.txt)
+          for role in baseline candidate; do
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
+              --wpt-root "$PWD/wpt" --native-engine "$PWD/$role/libweb-render.so" --prefix css/ --jobs 2 \
+              --only "$names" --out "$PWD/out/$role"
+          done
+          python3 - "$names" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          from collections import Counter
+          from pathlib import Path
+
+          names = set(sys.argv[1].split(","))
+          results = {}
+          for role in ("baseline", "candidate"):
+              d = json.loads(Path(f"out/{role}/results.json").read_text())
+              assert d["valid"] and {row["test"] for row in d["tests"]} == names
+              results[role] = {row["test"]: row["status"] for row in d["tests"]}
+              print(role, dict(Counter(results[role].values())))
+          for name in sorted(names):
+              old, new = (results[role][name] for role in ("baseline", "candidate"))
+              if old != new:
+                  print(name, old, new)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: combined-image-position-pixels
+          path: out/
+          retention-days: 14
+
