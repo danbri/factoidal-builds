@@ -49,13 +49,14 @@ jobs:
             --steps "$PWD/steps.json" --log-all > epub.log 2>&1 || { tail -100 epub.log; exit 1; }
           chapter="$(python3 -c 'from pathlib import Path; print(Path("docs/web/hub/epub/sample.epub").resolve().as_uri()+"?epubChapter=2")')"
           timeout 90 xvfb-run -a -s '-screen 0 1280x1024x24' foafnaut-linux-x86_64/foafnaut \
-            --url "$chapter" --offscreen --no-state --no-scripts --shot "$PWD/epub.png" > shot.log 2>&1 || { tail -80 shot.log; exit 1; }
+            --url "$chapter" --offscreen --no-state --no-scripts --watch-sweep 7 --shot "$PWD/epub.png" > shot.log 2>&1 || { tail -80 shot.log; exit 1; }
           python3 - <<'PY'
           import json
           from pathlib import Path
           events=[json.loads(line) for line in Path("epub.log").read_text().splitlines() if line.startswith("{")]
           assert any(e.get("type")=="native-html-test-title" and e.get("ok") for e in events)
           assert any(e.get("type")=="native-html-test-url" and e.get("ok") and e.get("url","").endswith("sample.epub?epubChapter=2") for e in events)
+          assert any(e.get("type")=="native-html-presented" and e.get("url","").endswith("sample.epub?epubChapter=2") for e in events)
           assert Path("epub.png").stat().st_size > 100
           print("Packaged Foafnaut opened and rendered an EPUB window, then followed its chapter link.")
           PY
