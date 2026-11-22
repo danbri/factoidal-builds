@@ -4,6 +4,7 @@ on:
     branches: [wip/epub-lean-check]
     paths: [.github/workflows/epub-hub-check.yml]
 permissions:
+  actions: read
   contents: read
 jobs:
   browser:
@@ -90,3 +91,55 @@ jobs:
           })().catch(error => {console.error(error); process.exitCode = 1});
           JS
           node check.cjs
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: d6f7366a3673425d27ab6351256903079dc2a6ae
+          sparse-checkout: docs/web/hub/epub
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45002695423
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - name: Exercise the exact compiled native EPUB operation
+        shell: bash
+        run: |
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat engine/lean-toolchain)"
+          export LD_LIBRARY_PATH="$(find "$HOME/.elan/toolchains" -path '*/lib/lean' -print -quit)"
+          python3 - <<'PY'
+          import base64, ctypes as ffi, json, zipfile
+          from io import BytesIO
+          from pathlib import Path
+          so = ffi.CDLL(str(Path("engine/libweb-render.so").resolve()))
+          call = so.web_document_call
+          call.argtypes = (ffi.c_char_p, ffi.c_char_p, ffi.c_uint, ffi.c_uint)
+          call.restype = ffi.c_void_p
+          so.web_render_free.argtypes = (ffi.c_void_p,)
+          so.web_render_free.restype = None
+          def chapter(book, i):
+              ptr = call(base64.b64encode(book), json.dumps({"op":"epubReader","epubChapter":i}).encode(),1,1)
+              assert ptr
+              try:
+                  return json.loads(ffi.string_at(ptr))
+              finally:
+                  so.web_render_free(ptr)
+          book=Path("docs/web/hub/epub/sample.epub").read_bytes()
+          first=chapter(book,0)
+          second=chapter(book,1)
+          assert "Continue to Reading order" in first["source"], first
+          assert "epubChapter=2#epub-chapter-2-order" in first["source"], first
+          assert 'id="epub-chapter-2-order"' in second["source"], second
+          assert "out of range" in chapter(book,2)["error"]
+          protected=BytesIO(book)
+          with zipfile.ZipFile(protected,"a") as z:
+              z.writestr("META-INF/encryption.xml", "<encryption/>")
+          assert "Encrypted EPUB resources are unsupported" in chapter(protected.getvalue(),0)["error"]
+          print("Exact compiled native browser opened both EPUB chapters and rejected the encrypted-resource marker.")
+          PY
