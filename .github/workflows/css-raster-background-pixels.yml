@@ -1,4 +1,4 @@
-name: Raster CSS background paired reftests
+name: CSS background sizing paired reftests
 on:
   push:
     branches: [wip/paired-css-raster-backgrounds]
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: d82973e13977ffaf57c2bc3ec266a32a8102955c
+          ref: 14b642dbfd8ed6ee86d5dcb152ea7a27b095bafc
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for pair in 45052839017:b9f6c92bd022d7659752e0962aa34f7b4b53ccd1 45060292049:d82973e13977ffaf57c2bc3ec266a32a8102955c; do
+          for pair in 45062203910:a512ab9189130fda9043a40cc5d277ffa94801c7 45062334831:14b642dbfd8ed6ee86d5dcb152ea7a27b095bafc; do
             run=${pair%%:*}
             sha=${pair#*:}
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
@@ -48,13 +48,13 @@ jobs:
           done
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45052839017
+          run-id: 45062203910
           name: branch-engine
           github-token: ${{ github.token }}
           path: baseline
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45060292049
+          run-id: 45062334831
           name: branch-engine
           github-token: ${{ github.token }}
           path: candidate
@@ -83,86 +83,99 @@ jobs:
           mkdir -p "$host/native-html/runtime" "$host/engines"
           cp "$runtime"/web-render.{mjs,wasm} "$host/native-html/runtime/"
           cp "$runtime"/render-plan.{mjs,wasm} "$host/engines/"
-          suite=css/css-backgrounds
-          for file in background-image-001.html background-image-002.html background-image-cover-zoomed-1.html \
-              reference/background-image-001-ref.html reference/background-image-cover-zoomed-1-ref.html \
-              support/green.png support/red.png support/40px-wide-20px-tall-green-rect.png; do
-            mkdir -p "wpt/$suite/$(dirname "$file")"
-            curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$suite/$file" -o "wpt/$suite/$file"
-          done
           curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
-      - name: Add an imported stylesheet origin regression
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: 4b26db8978f6024d3184ca483d74afbc354b35de
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/css-backgrounds
+            css/support
+            common
+            fonts
+            images
+      - name: Exercise shorthand size and no-repeat on a 1px image
         shell: bash
         run: |
           set -euo pipefail
-          testdir=wpt/css/foafnaut-regressions
-          mkdir -p "$testdir/assets/nested" "$testdir/assets/pixels"
-          cp wpt/css/css-backgrounds/support/green.png "$testdir/assets/pixels/"
-          cat > "$testdir/background-import-url.html" <<'HTML'
+          mkdir -p wpt/css/foafnaut-regressions
+          cat > wpt/css/foafnaut-regressions/background-size-repeat.html <<'HTML'
           <!doctype html>
-          <link rel="stylesheet" href="assets/main.css">
-          <style>body { margin: 0 }</style>
-          <div class="tile" id="test"></div>
+          <style>
+          body { margin: 0 }
+          div { width: 80px; height: 30px; background: url(green.png) 0 0 / 50% 10px no-repeat }
+          </style>
+          <div></div>
           HTML
-          cat > "$testdir/assets/main.css" <<'CSS'
-          @import url("nested/card.css");
-          .tile { width: 100px; height: 100px; background-image: url(unused.png); }
-          CSS
-          cat > "$testdir/assets/nested/card.css" <<'CSS'
-          #test { background-color: red; background-image: url(../pixels/green.png); }
-          CSS
-          cat > "$testdir/background-import-url-ref.html" <<'HTML'
+          cat > wpt/css/foafnaut-regressions/background-size-repeat-ref.html <<'HTML'
           <!doctype html>
-          <style>body { margin: 0 }</style>
-          <img src="assets/pixels/green.png">
+          <style>body { margin: 0 } div { width: 40px; height: 10px; background: lime }</style>
+          <div></div>
           HTML
           python3 - <<'PY'
           import json
+          import struct
+          import zlib
           from pathlib import Path
 
+          def png_chunk(kind, contents):
+              body = kind + contents
+              return struct.pack(">I", len(contents)) + body + struct.pack(">I", zlib.crc32(body))
+
+          fixture = Path("wpt/css/foafnaut-regressions")
+          (fixture / "green.png").write_bytes(
+              b"\x89PNG\r\n\x1a\n"
+              + png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0))
+              + png_chunk(b"IDAT", zlib.compress(bytes((0, 0, 255, 0, 255))))
+              + png_chunk(b"IEND", b"")
+          )
           manifest = Path("MANIFEST.json")
           data = json.loads(manifest.read_text())
-          css = data["items"]["reftest"]["css"]
-          css["foafnaut-regressions"] = {
-              "background-import-url.html": ["local", [None, [
-                  ["/css/foafnaut-regressions/background-import-url-ref.html", "=="]
+          data["items"]["reftest"]["css"]["foafnaut-regressions"] = {
+              "background-size-repeat.html": ["local", [None, [
+                  ["/css/foafnaut-regressions/background-size-repeat-ref.html", "=="]
               ], {}]]
           }
           manifest.write_text(json.dumps(data))
           PY
-      - name: Compare both engines on WPT and the local stylesheet case
+      - name: Compare both engines on pinned background size and repeat cases
         shell: bash
         run: |
           set -euo pipefail
-          prefix=/css/css-backgrounds/background-image
+          local_case=/css/foafnaut-regressions/background-size-repeat.html
+          names="$local_case"
+          dir=/css/css-backgrounds
+          for size in 002 005 006 008 009 011 012 013 014 015 016 017 018 019 020; do
+            names="$names,$dir/background-size-$size.html"
+          done
+          for repeat in no-repeat repeat-x repeat-y; do
+            names="$names,$dir/background-repeat/background-repeat-$repeat.xht"
+          done
           for role in baseline candidate; do
             python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
               --wpt-root "$PWD/wpt" --native-engine "$PWD/$role/libweb-render.so" --prefix css/ --jobs 1 \
-              --only "$prefix-001.html,$prefix-002.html,$prefix-cover-zoomed-1.html,/css/foafnaut-regressions/background-import-url.html" --out "$PWD/out/$role"
+              --only "$names" --out "$PWD/out/$role"
           done
-          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 - "$names" "$local_case" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import json
+          import sys
           from pathlib import Path
 
-          names = {f"/css/css-backgrounds/background-image-{case}.html" for case in ("001", "002", "cover-zoomed-1")}
-          local_name = "/css/foafnaut-regressions/background-import-url.html"
-          names.add(local_name)
+          names, local_case = set(sys.argv[1].split(",")), sys.argv[2]
           for role in ("baseline", "candidate"):
               data = json.loads(Path(f"out/{role}/results.json").read_text())
               assert data["valid"] and {row["test"] for row in data["tests"]} == names
               for row in data["tests"]:
-                  edge, = row["edges"]
-                  if row["test"] == local_name:
-                      assert edge["to"] == "/css/foafnaut-regressions/background-import-url-ref.html"
+                  print(role, row["test"], row["status"], [edge.get("totalPixels") for edge in row["edges"]])
+                  assert row["status"] in ("PASS", "FAIL"), row
+                  if row["test"] == local_case:
                       assert row["status"] == ("PASS" if role == "candidate" else "FAIL"), row
-                  else:
-                      assert edge["to"].startswith("/css/css-backgrounds/reference/background-image-")
-                  assert row["status"] in ("PASS", "FAIL")
-                  print(role, row["test"], row["status"], edge.get("totalPixels"), edge.get("maxDifference"))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: css-raster-background-pixels
+          name: css-background-sizing-pixels
           path: out/
           retention-days: 14
