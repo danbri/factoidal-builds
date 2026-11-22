@@ -1,0 +1,115 @@
+name: Foafnaut Apple Silicon EPUB preview
+on:
+  push:
+    branches: [wip/epub-lean-check]
+    paths: [.github/workflows/epub-mac-preview.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  mac-preview:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 59a28a31780132757b4521e688eb9d80ba57c8a0
+          persist-credentials: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45001515696
+          name: foafnaut-engines
+          github-token: ${{ github.token }}
+          path: labs/demos/foafnaut/.build
+      - name: Package the native Cocoa window with the tested Lean Wasm runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ $(uname -m) == arm64 ]]
+          lab="$PWD/labs/demos/foafnaut"
+          build="$lab/.build"
+          runtime="$build/native-html"
+          output="$RUNNER_TEMP/preview/foafnaut-epub-preview"
+          app="$output/foafnaut.app"
+          mkdir -p "$runtime/runtime" "$app/Contents/MacOS"
+          shasum -a 256 --check --status "$build/source-SHA256SUMS"
+          cp "$build/web-render/engines"/web-render.{mjs,wasm} "$runtime/runtime/"
+          sha=$(git rev-parse HEAD)
+          version=$(node -p "require('./npm/factoidal/package.json').version")
+          jq -n --arg sha "$sha" --arg version "$version" --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{commit:($sha[0:12]),commitFull:$sha,version:$version,builtAt:$date,dirty:false,release:false}' \
+            > "$runtime/build-info.json"
+          xcrun clang -dynamiclib -fobjc-arc -O2 -Wall -Wextra -Werror -framework Cocoa -framework QuartzCore \
+            -Wl,-install_name,@rpath/libnative-window.dylib "$lab/native_window.m" -o "$output/libnative-window.dylib"
+          deno compile --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi \
+            --allow-read --allow-write --allow-net --allow-ffi --allow-env=HOME,FOAFNAUT_LOG \
+            --include "$runtime/build-info.json" --include "$runtime/runtime/web-render.wasm" \
+            --include "$PWD/third_party/fonts" \
+            --include "$PWD/docs/web/hub/foafnaut/font-coverage.mjs" --include "$PWD/docs/web/hub/foafnaut/fallback-fonts.mjs" \
+            --include "$build/engines/render-plan.wasm" \
+            --include "$lab/native-html/default.html" --include "$lab/native-html/next.html" --include "$lab/pages" \
+            --include "$lab/native_html_worker.ts" --output "$output/native-webgpu-html-darwin-arm64" "$lab/run_html.ts"
+          cat > "$app/Contents/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>CFBundleExecutable</key><string>run</string>
+          <key>CFBundleIdentifier</key><string>org.factoidal.foafnaut.epub-preview</string>
+          <key>CFBundleName</key><string>Foafnaut EPUB Preview</string>
+          <key>CFBundlePackageType</key><string>APPL</string>
+          <key>CFBundleShortVersionString</key><string>0.1</string>
+          <key>CFBundleVersion</key><string>1</string>
+          <key>LSMinimumSystemVersion</key><string>13.0</string>
+          <key>NSPrincipalClass</key><string>NSApplication</string>
+          <key>NSHighResolutionCapable</key><true/>
+          </dict></plist>
+          PLIST
+          cat > "$app/Contents/MacOS/run" <<'SH'
+          #!/bin/sh
+          set -eu
+          cd "$(dirname "$0")/../../.."
+          exec ./native-webgpu-html-darwin-arm64 --follow-links "$@"
+          SH
+          chmod +x "$app/Contents/MacOS/run"
+          cp "$runtime/build-info.json" "$output/BUILD-INFO.json"
+          cp LICENSE third_party/notices/GMP-NOTICE.txt "$output/"
+          printf 'This is an EPUB test build. Open the app and choose File > Open.\nKeep the app and the other package files together.\n' > "$output/README.txt"
+          "$app/Contents/MacOS/run" --version | tee "$RUNNER_TEMP/mac-version.txt"
+          grep -F "commit $sha," "$RUNNER_TEMP/mac-version.txt"
+          ! grep -F "does not match" "$RUNNER_TEMP/mac-version.txt"
+      - name: Read an EPUB with the native Mac browser package
+        shell: bash
+        run: |
+          set -euo pipefail
+          book="$RUNNER_TEMP/sample.epub"
+          curl -fsSL https://raw.githubusercontent.com/danbri/factoidal-core/d6f7366a3673425d27ab6351256903079dc2a6ae/docs/web/hub/epub/sample.epub -o "$book"
+          output="$RUNNER_TEMP/preview/foafnaut-epub-preview"
+          printf '%s\n' '["title=How this reader opens a book","click:?epubChapter=2","url:sample.epub?epubChapter=2","title=How this reader opens a book"]' > "$RUNNER_TEMP/steps.json"
+          "$output/foafnaut.app/Contents/MacOS/run" --html "$book" --no-state --no-scripts --no-splash \
+            --steps "$RUNNER_TEMP/steps.json" --log-all > "$RUNNER_TEMP/epub-mac.log" 2>&1 || { tail -100 "$RUNNER_TEMP/epub-mac.log"; exit 1; }
+          python3 - "$RUNNER_TEMP/epub-mac.log" <<'PY'
+          import json,sys
+          events=[json.loads(s) for s in open(sys.argv[1]) if s.startswith("{")]
+          assert sum(e.get("type")=="native-html-test-title" and e.get("ok") for e in events)==2
+          assert any(e.get("type")=="native-html-presented" and e.get("url","").endswith("sample.epub?epubChapter=2") for e in events)
+          print("Apple Silicon Foafnaut opened an EPUB and presented chapter two.")
+          PY
+      - name: Archive the verified test package
+        run: |
+          tar -czf "$RUNNER_TEMP/foafnaut-epub-macos-arm64.tar.gz" -C "$RUNNER_TEMP/preview" foafnaut-epub-preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foafnaut-epub-macos-arm64
+          path: ${{ runner.temp }}/foafnaut-epub-macos-arm64.tar.gz
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foafnaut-epub-mac-evidence
+          path: |
+            ${{ runner.temp }}/epub-mac.log
+            ${{ runner.temp }}/mac-version.txt
