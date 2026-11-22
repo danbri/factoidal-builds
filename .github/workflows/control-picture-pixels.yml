@@ -85,7 +85,10 @@ jobs:
           cp "$runtime"/render-plan.{mjs,wasm} "$host/engines/"
           report=20261122T1812Z-wpt-reftest-css-linux-x86_64-gh45053563282a1
           curl --retry 3 -fsSL "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/$report/results.tsv.gz" -o results.tsv.gz
-          gzip -dc results.tsv.gz | awk -F '\t' '$1 ~ /^\/css\/css-text\/white-space\/control-chars-[0-9A-F]+\.html$/ && $2 == "FAIL" && $8 == "0" {print $1}' > cases.txt
+          older=20261122T1336Z-wpt-reftest-css-linux-x86_64-gh45028286099a1
+          curl --retry 3 -fsSL "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/$older/results.tsv.gz" -o older.tsv.gz
+          awk -F '\t' 'NR==FNR { prior[$1]=$2; next } /control-chars-/ && $1 ~ /white-space\/control-chars-[0-9A-F]+\.html$/ && prior[$1]=="PASS" && $2=="FAIL" && $8=="0" {print $1}' \
+            <(gzip -dc older.tsv.gz) <(gzip -dc results.tsv.gz) > cases.txt
           test "$(wc -l < cases.txt)" -eq 60
           mkdir -p wpt/css/css-text/white-space/reference
           export WPT
