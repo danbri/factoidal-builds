@@ -1,0 +1,327 @@
+{
+ "format": "factoidal-wpt-reftests-run-v1",
+ "row": {
+  "run_id": "20261122T2301Z-wpt-reftest-svg-linux-x86_64-gh45080060302a1",
+  "started_utc": "2026-11-22T23:01:47Z",
+  "finished_utc": "2026-11-22T23:04:09Z",
+  "trigger": "factoidal-release",
+  "suite": "wpt-reftest-svg",
+  "platform": "linux-x86_64",
+  "engine": "native-cpu-raster",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "7444aac0e2dbd8536b9a318ea6af6d59507b7d28",
+  "commit_utc": "2026-11-22T22:01:32Z",
+  "snapshot_branch": "",
+  "release_tag": "build-7444aac0e2db-foafnaut-linux-x86_64",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "names_total": 693,
+  "names_run": 693,
+  "passed": 335,
+  "denominator": 693,
+  "share_pct": "48.3405",
+  "share_ex_encoding_pct": "",
+  "ok": 335,
+  "error": 2,
+  "timeout": 33,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": 323,
+  "server_failures": 2,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 2.4,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x1; core tests/browser-wpt/wpt-reftests.py, CPU raster, Noto Sans",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45080060302",
+  "result_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T2301Z-wpt-reftest-svg-linux-x86_64-gh45080060302a1/results.tsv",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T2301Z-wpt-reftest-svg-linux-x86_64-gh45080060302a1/meta.json"
+ },
+ "rules": "Every reftest item of the WPT manifest at wpt_commit under the suite's directory (print reftests are a separate kind), run by core tests/browser-wpt/wpt-reftests.py by wptrunner's rules: == and != references, reference chains, fuzzy annotations, the test's viewport size (800x600 by default); per pixel the largest channel difference and the count of differing pixels against the fuzzy ranges. Drawn by the release's engine library with its CPU raster (op render, cpu:true), Noto Sans and the Hub's fallback fonts (third_party/fonts), page scripts on BubblePopJS; reftest-wait honoured for up to 6 s of page time (TIMEOUT after). A reftest is one test, PASS or not, as on wpt.fyi.",
+ "validity": {
+  "rules": "every shard present; every test has a status; ERROR (harness) under 0.5% of tests",
+  "valid": true,
+  "reasons": []
+ },
+ "totals": {
+  "tests": 693,
+  "passed": 335,
+  "share_pct": 48.3405,
+  "statuses": {
+   "PASS": 335,
+   "TIMEOUT": 33,
+   "FAIL": 323,
+   "ERROR": 2
+  },
+  "harness_errors": 2,
+  "chrome_passed": 582,
+  "firefox_passed": 571,
+  "safari_passed": 440,
+  "edge_passed": 572,
+  "chrome_share_pct": 83.9827,
+  "firefox_share_pct": 82.3954,
+  "safari_share_pct": 63.4921,
+  "edge_share_pct": 82.5397,
+  "passed_where_chrome_passes": 293,
+  "chrome_passes_we_fail": 289,
+  "passed_with_skips": 100
+ },
+ "directories": {
+  "svg/animations/": {
+   "tests": 21,
+   "passed": 3,
+   "chrome": 18,
+   "firefox": 18,
+   "safari": 13,
+   "edge": 18
+  },
+  "svg/as-image/": {
+   "tests": 4,
+   "passed": 1,
+   "chrome": 4,
+   "firefox": 4,
+   "safari": 3,
+   "edge": 4
+  },
+  "svg/coordinate-systems/": {
+   "tests": 29,
+   "passed": 16,
+   "chrome": 28,
+   "firefox": 29,
+   "safari": 18,
+   "edge": 26
+  },
+  "svg/embedded/": {
+   "tests": 33,
+   "passed": 3,
+   "chrome": 28,
+   "firefox": 30,
+   "safari": 25,
+   "edge": 28
+  },
+  "svg/extensibility/": {
+   "tests": 19,
+   "passed": 4,
+   "chrome": 19,
+   "firefox": 18,
+   "safari": 9,
+   "edge": 19
+  },
+  "svg/fonts/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "svg/geometry/": {
+   "tests": 25,
+   "passed": 11,
+   "chrome": 25,
+   "firefox": 25,
+   "safari": 25,
+   "edge": 25
+  },
+  "svg/interact/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 0,
+   "edge": 1
+  },
+  "svg/layout/": {
+   "tests": 7,
+   "passed": 2,
+   "chrome": 7,
+   "firefox": 7,
+   "safari": 5,
+   "edge": 7
+  },
+  "svg/linking/": {
+   "tests": 58,
+   "passed": 25,
+   "chrome": 44,
+   "firefox": 50,
+   "safari": 33,
+   "edge": 42
+  },
+  "svg/painting/": {
+   "tests": 139,
+   "passed": 83,
+   "chrome": 129,
+   "firefox": 114,
+   "safari": 104,
+   "edge": 131
+  },
+  "svg/path/": {
+   "tests": 24,
+   "passed": 8,
+   "chrome": 16,
+   "firefox": 16,
+   "safari": 13,
+   "edge": 16
+  },
+  "svg/pservers/": {
+   "tests": 35,
+   "passed": 17,
+   "chrome": 35,
+   "firefox": 33,
+   "safari": 24,
+   "edge": 33
+  },
+  "svg/render/": {
+   "tests": 25,
+   "passed": 5,
+   "chrome": 24,
+   "firefox": 19,
+   "safari": 20,
+   "edge": 24
+  },
+  "svg/scripted/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "svg/shapes/": {
+   "tests": 29,
+   "passed": 25,
+   "chrome": 24,
+   "firefox": 29,
+   "safari": 28,
+   "edge": 25
+  },
+  "svg/struct/": {
+   "tests": 56,
+   "passed": 25,
+   "chrome": 51,
+   "firefox": 47,
+   "safari": 33,
+   "edge": 51
+  },
+  "svg/styling/": {
+   "tests": 96,
+   "passed": 38,
+   "chrome": 58,
+   "firefox": 60,
+   "safari": 44,
+   "edge": 58
+  },
+  "svg/text/": {
+   "tests": 89,
+   "passed": 67,
+   "chrome": 69,
+   "firefox": 68,
+   "safari": 41,
+   "edge": 61
+  },
+  "svg/top-level-document/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 0,
+   "edge": 1
+  }
+ },
+ "rivals": [
+  {
+   "recorded_utc": "2026-11-22T23:07:38Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "chrome",
+   "version": "158.0.8127.36",
+   "wptfyi_run_id": 5308846168604672,
+   "passed": 582,
+   "denominator": 693,
+   "share_pct": "83.9827",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T23:07:38Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "firefox",
+   "version": "160.0.1",
+   "wptfyi_run_id": 5108487085096960,
+   "passed": 571,
+   "denominator": 693,
+   "share_pct": "82.3954",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T23:07:38Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "safari",
+   "version": "27.2 (22625.2.8.11.9)",
+   "wptfyi_run_id": 4778240791805952,
+   "passed": 440,
+   "denominator": 693,
+   "share_pct": "63.4921",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T23:07:38Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "edge",
+   "version": "157.0.4341.60",
+   "wptfyi_run_id": 6199838727995392,
+   "passed": 572,
+   "denominator": 693,
+   "share_pct": "82.5397",
+   "status": "ok",
+   "reason": ""
+  }
+ ],
+ "since_previous": {
+  "previous_run": "20261122T2223Z-wpt-reftest-svg-linux-x86_64-gh45076547010a1",
+  "previous_commit": "d465ec781172e3a8819a1bcd312678aaf3a40b46",
+  "previous_wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "previous_passed": 335,
+  "passed_delta": 0,
+  "newly_passing": [],
+  "newly_failing": [],
+  "drop": false,
+  "same_wpt_commit": true
+ },
+ "incidents": [],
+ "shards": [
+  {
+   "shard": [
+    0,
+    1
+   ],
+   "tests": 693,
+   "wallSeconds": 141.6,
+   "pagesDrawn": 1056,
+   "engineSha256": "c6c962f7ee32673001661d9300fccfa32f2e9355edefd0cf85bca44eb43f6681"
+  }
+ ],
+ "completeness": "complete",
+ "shards_missing_reasons": {},
+ "plan": {
+  "release_tag": "build-7444aac0e2db-foafnaut-linux-x86_64",
+  "core_commit": "7444aac0e2dbd8536b9a318ea6af6d59507b7d28",
+  "commit_utc": "2026-11-22T22:01:32Z",
+  "web_tag": "build-4618bea0c1ac-foafnaut-web",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "suites": [
+   "svg"
+  ],
+  "trigger": "factoidal-release",
+  "planned_utc": "2026-11-22T23:00:25Z"
+ }
+}
