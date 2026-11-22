@@ -1,0 +1,1973 @@
+{
+ "format": "factoidal-wpt-reftests-run-v1",
+ "row": {
+  "run_id": "20261122T2013Z-wpt-reftest-css-linux-x86_64-gh45064828959a1",
+  "started_utc": "2026-11-22T20:13:00Z",
+  "finished_utc": "2026-11-22T20:39:33Z",
+  "trigger": "manual",
+  "suite": "wpt-reftest-css",
+  "platform": "linux-x86_64",
+  "engine": "native-cpu-raster",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "a512ab9189130fda9043a40cc5d277ffa94801c7",
+  "commit_utc": "2026-11-22T19:31:29Z",
+  "snapshot_branch": "",
+  "release_tag": "build-a512ab918913-foafnaut-linux-x86_64",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "names_total": 25813,
+  "names_run": 25813,
+  "passed": 10205,
+  "denominator": 25813,
+  "share_pct": "39.5343",
+  "share_ex_encoding_pct": "",
+  "ok": 10205,
+  "error": 22,
+  "timeout": 135,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": 15451,
+  "server_failures": 22,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 16,
+  "wall_minutes": 26.6,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x16; core tests/browser-wpt/wpt-reftests.py, CPU raster, Noto Sans",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45064828959",
+  "result_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T2013Z-wpt-reftest-css-linux-x86_64-gh45064828959a1/results.tsv.gz",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T2013Z-wpt-reftest-css-linux-x86_64-gh45064828959a1/meta.json"
+ },
+ "rules": "Every reftest item of the WPT manifest at wpt_commit under the suite's directory (print reftests are a separate kind), run by core tests/browser-wpt/wpt-reftests.py by wptrunner's rules: == and != references, reference chains, fuzzy annotations, the test's viewport size (800x600 by default); per pixel the largest channel difference and the count of differing pixels against the fuzzy ranges. Drawn by the release's engine library with its CPU raster (op render, cpu:true), Noto Sans and the Hub's fallback fonts (third_party/fonts), page scripts on BubblePopJS; reftest-wait honoured for up to 6 s of page time (TIMEOUT after). A reftest is one test, PASS or not, as on wpt.fyi.",
+ "validity": {
+  "rules": "every shard present; every test has a status; ERROR (harness) under 0.5% of tests",
+  "valid": true,
+  "reasons": []
+ },
+ "totals": {
+  "tests": 25813,
+  "passed": 10205,
+  "share_pct": 39.5343,
+  "statuses": {
+   "PASS": 10205,
+   "FAIL": 15451,
+   "ERROR": 22,
+   "TIMEOUT": 135
+  },
+  "harness_errors": 22,
+  "chrome_passed": 22725,
+  "firefox_passed": 21021,
+  "safari_passed": 20145,
+  "edge_passed": 22749,
+  "chrome_share_pct": 88.037,
+  "firefox_share_pct": 81.4357,
+  "safari_share_pct": 78.0421,
+  "edge_share_pct": 88.13,
+  "passed_where_chrome_passes": 9851,
+  "chrome_passes_we_fail": 12874,
+  "passed_with_skips": 103
+ },
+ "directories": {
+  "css/CSS2/": {
+   "tests": 6243,
+   "passed": 3268,
+   "chrome": 6116,
+   "firefox": 6105,
+   "safari": 5973,
+   "edge": 6111
+  },
+  "css/WOFF2/": {
+   "tests": 298,
+   "passed": 264,
+   "chrome": 292,
+   "firefox": 292,
+   "safari": 293,
+   "edge": 291
+  },
+  "css/compositing/": {
+   "tests": 60,
+   "passed": 8,
+   "chrome": 58,
+   "firefox": 52,
+   "safari": 44,
+   "edge": 56
+  },
+  "css/css-align/": {
+   "tests": 64,
+   "passed": 18,
+   "chrome": 61,
+   "firefox": 50,
+   "safari": 41,
+   "edge": 61
+  },
+  "css/css-anchor-position/": {
+   "tests": 239,
+   "passed": 28,
+   "chrome": 224,
+   "firefox": 190,
+   "safari": 219,
+   "edge": 224
+  },
+  "css/css-animations/": {
+   "tests": 37,
+   "passed": 14,
+   "chrome": 36,
+   "firefox": 32,
+   "safari": 32,
+   "edge": 34
+  },
+  "css/css-backgrounds/": {
+   "tests": 578,
+   "passed": 130,
+   "chrome": 476,
+   "firefox": 526,
+   "safari": 488,
+   "edge": 476
+  },
+  "css/css-borders/": {
+   "tests": 269,
+   "passed": 127,
+   "chrome": 225,
+   "firefox": 173,
+   "safari": 166,
+   "edge": 238
+  },
+  "css/css-box/": {
+   "tests": 42,
+   "passed": 0,
+   "chrome": 42,
+   "firefox": 2,
+   "safari": 31,
+   "edge": 42
+  },
+  "css/css-break/": {
+   "tests": 1135,
+   "passed": 144,
+   "chrome": 989,
+   "firefox": 554,
+   "safari": 618,
+   "edge": 988
+  },
+  "css/css-cascade/": {
+   "tests": 44,
+   "passed": 19,
+   "chrome": 44,
+   "firefox": 41,
+   "safari": 44,
+   "edge": 44
+  },
+  "css/css-color-adjust/": {
+   "tests": 24,
+   "passed": 7,
+   "chrome": 23,
+   "firefox": 22,
+   "safari": 20,
+   "edge": 23
+  },
+  "css/css-color/": {
+   "tests": 321,
+   "passed": 159,
+   "chrome": 297,
+   "firefox": 295,
+   "safari": 283,
+   "edge": 291
+  },
+  "css/css-conditional/": {
+   "tests": 173,
+   "passed": 117,
+   "chrome": 170,
+   "firefox": 161,
+   "safari": 161,
+   "edge": 169
+  },
+  "css/css-contain/": {
+   "tests": 436,
+   "passed": 192,
+   "chrome": 426,
+   "firefox": 426,
+   "safari": 416,
+   "edge": 428
+  },
+  "css/css-content/": {
+   "tests": 66,
+   "passed": 11,
+   "chrome": 62,
+   "firefox": 55,
+   "safari": 47,
+   "edge": 62
+  },
+  "css/css-counter-styles/": {
+   "tests": 259,
+   "passed": 21,
+   "chrome": 246,
+   "firefox": 239,
+   "safari": 216,
+   "edge": 246
+  },
+  "css/css-display/": {
+   "tests": 224,
+   "passed": 68,
+   "chrome": 151,
+   "firefox": 141,
+   "safari": 142,
+   "edge": 151
+  },
+  "css/css-exclusions/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-flexbox/": {
+   "tests": 1025,
+   "passed": 524,
+   "chrome": 1014,
+   "firefox": 943,
+   "safari": 925,
+   "edge": 1009
+  },
+  "css/css-font-loading/": {
+   "tests": 7,
+   "passed": 3,
+   "chrome": 7,
+   "firefox": 6,
+   "safari": 5,
+   "edge": 7
+  },
+  "css/css-fonts/": {
+   "tests": 386,
+   "passed": 161,
+   "chrome": 328,
+   "firefox": 336,
+   "safari": 311,
+   "edge": 330
+  },
+  "css/css-forms/": {
+   "tests": 16,
+   "passed": 2,
+   "chrome": 2,
+   "firefox": 2,
+   "safari": 2,
+   "edge": 2
+  },
+  "css/css-gaps/": {
+   "tests": 552,
+   "passed": 32,
+   "chrome": 359,
+   "firefox": 47,
+   "safari": 37,
+   "edge": 359
+  },
+  "css/css-grid/": {
+   "tests": 1767,
+   "passed": 471,
+   "chrome": 947,
+   "firefox": 926,
+   "safari": 1198,
+   "edge": 946
+  },
+  "css/css-highlight-api/": {
+   "tests": 111,
+   "passed": 15,
+   "chrome": 110,
+   "firefox": 102,
+   "safari": 64,
+   "edge": 103
+  },
+  "css/css-image-animation/": {
+   "tests": 22,
+   "passed": 16,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 4,
+   "edge": 3
+  },
+  "css/css-images/": {
+   "tests": 490,
+   "passed": 143,
+   "chrome": 394,
+   "firefox": 423,
+   "safari": 330,
+   "edge": 390
+  },
+  "css/css-inline/": {
+   "tests": 181,
+   "passed": 20,
+   "chrome": 162,
+   "firefox": 103,
+   "safari": 77,
+   "edge": 153
+  },
+  "css/css-layout-api/": {
+   "tests": 135,
+   "passed": 8,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/css-lists/": {
+   "tests": 198,
+   "passed": 96,
+   "chrome": 125,
+   "firefox": 181,
+   "safari": 91,
+   "edge": 127
+  },
+  "css/css-logical/": {
+   "tests": 6,
+   "passed": 5,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-masking/": {
+   "tests": 500,
+   "passed": 175,
+   "chrome": 467,
+   "firefox": 471,
+   "safari": 422,
+   "edge": 493
+  },
+  "css/css-multicol/": {
+   "tests": 464,
+   "passed": 131,
+   "chrome": 459,
+   "firefox": 381,
+   "safari": 278,
+   "edge": 458
+  },
+  "css/css-namespaces/": {
+   "tests": 23,
+   "passed": 5,
+   "chrome": 23,
+   "firefox": 23,
+   "safari": 23,
+   "edge": 23
+  },
+  "css/css-navigation/": {
+   "tests": 3,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-nesting/": {
+   "tests": 17,
+   "passed": 12,
+   "chrome": 17,
+   "firefox": 17,
+   "safari": 17,
+   "edge": 17
+  },
+  "css/css-overflow/": {
+   "tests": 733,
+   "passed": 175,
+   "chrome": 420,
+   "firefox": 303,
+   "safari": 226,
+   "edge": 420
+  },
+  "css/css-paint-api/": {
+   "tests": 115,
+   "passed": 100,
+   "chrome": 107,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 109
+  },
+  "css/css-painting/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-position/": {
+   "tests": 250,
+   "passed": 83,
+   "chrome": 249,
+   "firefox": 197,
+   "safari": 179,
+   "edge": 249
+  },
+  "css/css-properties-values-api/": {
+   "tests": 7,
+   "passed": 1,
+   "chrome": 7,
+   "firefox": 7,
+   "safari": 7,
+   "edge": 7
+  },
+  "css/css-pseudo/": {
+   "tests": 279,
+   "passed": 99,
+   "chrome": 251,
+   "firefox": 195,
+   "safari": 149,
+   "edge": 252
+  },
+  "css/css-rhythm/": {
+   "tests": 18,
+   "passed": 3,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/css-ruby/": {
+   "tests": 143,
+   "passed": 39,
+   "chrome": 99,
+   "firefox": 97,
+   "safari": 49,
+   "edge": 99
+  },
+  "css/css-scroll-anchoring/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 4,
+   "firefox": 4,
+   "safari": 4,
+   "edge": 4
+  },
+  "css/css-scroll-snap/": {
+   "tests": 26,
+   "passed": 2,
+   "chrome": 24,
+   "firefox": 25,
+   "safari": 23,
+   "edge": 24
+  },
+  "css/css-scrollbars/": {
+   "tests": 31,
+   "passed": 31,
+   "chrome": 31,
+   "firefox": 31,
+   "safari": 27,
+   "edge": 31
+  },
+  "css/css-shadow/": {
+   "tests": 114,
+   "passed": 46,
+   "chrome": 95,
+   "firefox": 95,
+   "safari": 90,
+   "edge": 95
+  },
+  "css/css-shapes/": {
+   "tests": 238,
+   "passed": 23,
+   "chrome": 236,
+   "firefox": 219,
+   "safari": 212,
+   "edge": 237
+  },
+  "css/css-sizing/": {
+   "tests": 612,
+   "passed": 217,
+   "chrome": 547,
+   "firefox": 483,
+   "safari": 446,
+   "edge": 545
+  },
+  "css/css-style-attr/": {
+   "tests": 16,
+   "passed": 14,
+   "chrome": 16,
+   "firefox": 16,
+   "safari": 16,
+   "edge": 16
+  },
+  "css/css-syntax/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-tables/": {
+   "tests": 170,
+   "passed": 67,
+   "chrome": 161,
+   "firefox": 148,
+   "safari": 121,
+   "edge": 161
+  },
+  "css/css-text-decor/": {
+   "tests": 339,
+   "passed": 114,
+   "chrome": 258,
+   "firefox": 290,
+   "safari": 150,
+   "edge": 271
+  },
+  "css/css-text/": {
+   "tests": 1564,
+   "passed": 550,
+   "chrome": 1263,
+   "firefox": 1188,
+   "safari": 1193,
+   "edge": 1276
+  },
+  "css/css-transforms/": {
+   "tests": 797,
+   "passed": 407,
+   "chrome": 791,
+   "firefox": 789,
+   "safari": 767,
+   "edge": 792
+  },
+  "css/css-transitions/": {
+   "tests": 6,
+   "passed": 5,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-typed-om/": {
+   "tests": 5,
+   "passed": 5,
+   "chrome": 5,
+   "firefox": 0,
+   "safari": 4,
+   "edge": 5
+  },
+  "css/css-ui/": {
+   "tests": 963,
+   "passed": 882,
+   "chrome": 947,
+   "firefox": 925,
+   "safari": 914,
+   "edge": 947
+  },
+  "css/css-values/": {
+   "tests": 212,
+   "passed": 81,
+   "chrome": 206,
+   "firefox": 149,
+   "safari": 145,
+   "edge": 206
+  },
+  "css/css-variables/": {
+   "tests": 183,
+   "passed": 142,
+   "chrome": 179,
+   "firefox": 178,
+   "safari": 179,
+   "edge": 179
+  },
+  "css/css-view-transitions/": {
+   "tests": 332,
+   "passed": 22,
+   "chrome": 322,
+   "firefox": 240,
+   "safari": 259,
+   "edge": 315
+  },
+  "css/css-viewport/": {
+   "tests": 113,
+   "passed": 18,
+   "chrome": 111,
+   "firefox": 81,
+   "safari": 87,
+   "edge": 111
+  },
+  "css/css-will-change/": {
+   "tests": 47,
+   "passed": 24,
+   "chrome": 47,
+   "firefox": 47,
+   "safari": 43,
+   "edge": 47
+  },
+  "css/css-writing-modes/": {
+   "tests": 1171,
+   "passed": 191,
+   "chrome": 1128,
+   "firefox": 1131,
+   "safari": 1063,
+   "edge": 1129
+  },
+  "css/cssom-view/": {
+   "tests": 11,
+   "passed": 7,
+   "chrome": 11,
+   "firefox": 11,
+   "safari": 8,
+   "edge": 11
+  },
+  "css/cssom/": {
+   "tests": 12,
+   "passed": 5,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/fill-stroke/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 0,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/filter-effects/": {
+   "tests": 373,
+   "passed": 141,
+   "chrome": 341,
+   "firefox": 321,
+   "safari": 262,
+   "edge": 343
+  },
+  "css/mediaqueries/": {
+   "tests": 58,
+   "passed": 36,
+   "chrome": 56,
+   "firefox": 56,
+   "safari": 48,
+   "edge": 56
+  },
+  "css/motion/": {
+   "tests": 101,
+   "passed": 3,
+   "chrome": 95,
+   "firefox": 98,
+   "safari": 89,
+   "edge": 95
+  },
+  "css/printing/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/reference/": {
+   "tests": 3,
+   "passed": 1,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/selectors/": {
+   "tests": 344,
+   "passed": 255,
+   "chrome": 323,
+   "firefox": 337,
+   "safari": 326,
+   "edge": 322
+  }
+ },
+ "rivals": [
+  {
+   "recorded_utc": "2026-11-22T20:40:06Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "chrome",
+   "version": "158.0.8127.36",
+   "wptfyi_run_id": 5308846168604672,
+   "passed": 22725,
+   "denominator": 25813,
+   "share_pct": "88.0370",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T20:40:06Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "firefox",
+   "version": "160.0.1",
+   "wptfyi_run_id": 5108487085096960,
+   "passed": 21021,
+   "denominator": 25813,
+   "share_pct": "81.4357",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T20:40:06Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "safari",
+   "version": "27.2 (22625.2.8.11.9)",
+   "wptfyi_run_id": 4778240791805952,
+   "passed": 20145,
+   "denominator": 25813,
+   "share_pct": "78.0421",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T20:40:06Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "edge",
+   "version": "157.0.4341.60",
+   "wptfyi_run_id": 6199838727995392,
+   "passed": 22749,
+   "denominator": 25813,
+   "share_pct": "88.1300",
+   "status": "ok",
+   "reason": ""
+  }
+ ],
+ "since_previous": {
+  "previous_run": "20261122T1812Z-wpt-reftest-css-linux-x86_64-gh45053563282a1",
+  "previous_commit": "b9f6c92bd022d7659752e0962aa34f7b4b53ccd1",
+  "previous_wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "previous_passed": 10306,
+  "passed_delta": -101,
+  "newly_passing": [
+   "/css/CSS2/backgrounds/background-002.xht",
+   "/css/CSS2/backgrounds/background-006.xht",
+   "/css/CSS2/backgrounds/background-010.xht",
+   "/css/CSS2/backgrounds/background-image-002.xht",
+   "/css/CSS2/backgrounds/background-image-003.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-001.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-002.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-003.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-004.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-007.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-009.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-012.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-013.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-014.xht",
+   "/css/CSS2/backgrounds/background-image-applies-to-015.xht",
+   "/css/CSS2/backgrounds/background-image-cover-002.xht",
+   "/css/CSS2/backgrounds/background-image-cover-004.xht",
+   "/css/CSS2/backgrounds/background-image-cover-attachment-001.xht",
+   "/css/CSS2/backgrounds/background-repeat-001.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-001.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-002.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-003.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-004.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-007.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-009.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-012.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-013.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-014.xht",
+   "/css/CSS2/backgrounds/background-repeat-applies-to-015.xht",
+   "/css/CSS2/backgrounds/background-root-006.xht",
+   "/css/CSS2/css1/c533-bgimage-000.xht",
+   "/css/CSS2/css1/c534-bgre-000.xht",
+   "/css/CSS2/css1/c5515-brdr-w-001.xht",
+   "/css/CSS2/linebox/vertical-align-sub-001.xht",
+   "/css/CSS2/linebox/vertical-align-super-001.xht",
+   "/css/CSS2/syntax/uri-004.xht",
+   "/css/CSS2/syntax/uri-014.xht",
+   "/css/css-backgrounds/animations/background-color-animation-with-images.html",
+   "/css/css-backgrounds/background-334.html",
+   "/css/css-backgrounds/background-image-001.html",
+   "/css/css-backgrounds/background-image-002.html",
+   "/css/css-backgrounds/background-image-cover-zoomed-1.html",
+   "/css/css-backgrounds/background-image-table-cells-zoomed.html",
+   "/css/css-backgrounds/background-size-008.html",
+   "/css/css-backgrounds/background-size-011.html",
+   "/css/css-backgrounds/background-size-percentage-root.html",
+   "/css/css-backgrounds/background-size/background-size-near-zero-png.html",
+   "/css/css-backgrounds/background-size/background-size-near-zero-svg.html",
+   "/css/css-borders/corner-shape/corner-shape-img-border.html",
+   "/css/css-borders/corner-shape/corner-shape-img.html",
+   "/css/css-images/gradient/legacy-color-gradient.html",
+   "/css/css-images/gradient/srgb-gradient.html",
+   "/css/css-images/image-set/image-set-calc-x-rendering-2.html",
+   "/css/css-images/image-set/image-set-calc-x-rendering.html",
+   "/css/css-images/image-set/image-set-dpcm-rendering.html",
+   "/css/css-images/image-set/image-set-dpi-rendering-2.html",
+   "/css/css-images/image-set/image-set-dpi-rendering.html",
+   "/css/css-images/image-set/image-set-dppx-rendering.html",
+   "/css/css-images/image-set/image-set-empty-url-rendering.html",
+   "/css/css-images/image-set/image-set-first-match-rendering.html",
+   "/css/css-images/image-set/image-set-no-res-rendering-2.html",
+   "/css/css-images/image-set/image-set-no-res-rendering.html",
+   "/css/css-images/image-set/image-set-rendering-2.html",
+   "/css/css-images/image-set/image-set-rendering.html",
+   "/css/css-images/image-set/image-set-type-first-match-rendering.html",
+   "/css/css-images/image-set/image-set-type-rendering-2.html",
+   "/css/css-images/image-set/image-set-type-rendering-3.html",
+   "/css/css-images/image-set/image-set-type-rendering.html",
+   "/css/css-style-attr/style-attr-urls-001.xht",
+   "/css/css-style-attr/style-attr-urls-002.xht",
+   "/css/css-text/white-space/control-chars-001.html",
+   "/css/css-text/white-space/control-chars-002.html",
+   "/css/css-text/white-space/control-chars-003.html",
+   "/css/css-text/white-space/control-chars-004.html",
+   "/css/css-text/white-space/control-chars-005.html",
+   "/css/css-text/white-space/control-chars-006.html",
+   "/css/css-text/white-space/control-chars-007.html",
+   "/css/css-text/white-space/control-chars-008.html",
+   "/css/css-text/white-space/control-chars-00B.html",
+   "/css/css-text/white-space/control-chars-00E.html",
+   "/css/css-text/white-space/control-chars-00F.html",
+   "/css/css-text/white-space/control-chars-010.html",
+   "/css/css-text/white-space/control-chars-011.html",
+   "/css/css-text/white-space/control-chars-012.html",
+   "/css/css-text/white-space/control-chars-013.html",
+   "/css/css-text/white-space/control-chars-014.html",
+   "/css/css-text/white-space/control-chars-015.html",
+   "/css/css-text/white-space/control-chars-016.html",
+   "/css/css-text/white-space/control-chars-017.html",
+   "/css/css-text/white-space/control-chars-018.html",
+   "/css/css-text/white-space/control-chars-019.html",
+   "/css/css-text/white-space/control-chars-01A.html",
+   "/css/css-text/white-space/control-chars-01B.html",
+   "/css/css-text/white-space/control-chars-01C.html",
+   "/css/css-text/white-space/control-chars-01D.html",
+   "/css/css-text/white-space/control-chars-01E.html",
+   "/css/css-text/white-space/control-chars-01F.html",
+   "/css/css-text/white-space/control-chars-07F.html",
+   "/css/css-text/white-space/control-chars-080.html",
+   "/css/css-text/white-space/control-chars-081.html",
+   "/css/css-text/white-space/control-chars-082.html",
+   "/css/css-text/white-space/control-chars-083.html",
+   "/css/css-text/white-space/control-chars-084.html",
+   "/css/css-text/white-space/control-chars-085.html",
+   "/css/css-text/white-space/control-chars-086.html",
+   "/css/css-text/white-space/control-chars-087.html",
+   "/css/css-text/white-space/control-chars-088.html",
+   "/css/css-text/white-space/control-chars-089.html",
+   "/css/css-text/white-space/control-chars-08A.html",
+   "/css/css-text/white-space/control-chars-08B.html",
+   "/css/css-text/white-space/control-chars-08C.html",
+   "/css/css-text/white-space/control-chars-08D.html",
+   "/css/css-text/white-space/control-chars-08E.html",
+   "/css/css-text/white-space/control-chars-08F.html",
+   "/css/css-text/white-space/control-chars-090.html",
+   "/css/css-text/white-space/control-chars-091.html",
+   "/css/css-text/white-space/control-chars-092.html",
+   "/css/css-text/white-space/control-chars-093.html",
+   "/css/css-text/white-space/control-chars-094.html",
+   "/css/css-text/white-space/control-chars-095.html",
+   "/css/css-text/white-space/control-chars-096.html",
+   "/css/css-text/white-space/control-chars-097.html",
+   "/css/css-text/white-space/control-chars-098.html",
+   "/css/css-text/white-space/control-chars-099.html",
+   "/css/css-text/white-space/control-chars-09A.html",
+   "/css/css-text/white-space/control-chars-09B.html",
+   "/css/css-text/white-space/control-chars-09C.html",
+   "/css/css-text/white-space/control-chars-09D.html",
+   "/css/css-text/white-space/control-chars-09E.html",
+   "/css/css-text/white-space/control-chars-09F.html"
+  ],
+  "newly_failing": [
+   {
+    "test": "/css/CSS2/backgrounds/background-attachment-009.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/backgrounds/background-image-005.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/backgrounds/background-position-152.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/backgrounds/background-root-008.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/backgrounds/background-root-009.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/backgrounds/background-root-013b.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/css1/c534-bgre-001.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/css1/c534-bgreps-001.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/floats-clear/floats-136.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-002.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-005.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-006.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-007.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-008.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-012.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-013.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-015a.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-022.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/margin-collapse-028.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/normal-flow/block-formatting-contexts-004.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/positioning/position-relative-nested-001.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/syntax/escaped-url-001.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/compositing/root-element-background-image-transparency-001.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/compositing/root-element-background-image-transparency-002.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/compositing/root-element-background-image-transparency-003.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/compositing/root-element-background-image-transparency-004.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-attachment-350.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-clip/clip-border-area-background-geometry.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-clip/clip-border-area-border-image.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-clip/clip-border-area-border-on-top.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-image-first-line.html",
+    "status": "TIMEOUT"
+   },
+   {
+    "test": "/css/css-backgrounds/background-image-no-repeat-does-not-wrap.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-repeat-space-10.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-repeat-space-8.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-repeat-space-9.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-size-007.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-size-010.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/background-size/background-size-cover-svg.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-backgrounds/scroll-positioned-multiple-background-images.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-borders/border-image-space-001.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-borders/corner-shape/corner-shape-iframe-border.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-borders/corner-shape/corner-shape-video-border.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-break/background-image-007.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-image-animation/image-animation-root-background-body-paused-no-propagation.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/cross-fade-cross-origin-orientation.sub.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/gradient/css-color-4-colors-default-to-oklab-gradient.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/gradient/display-p3-linear-gradient.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/gradient/oklab-gradient.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/gradient/srgb-linear-gradient.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/gradient/xyz-gradient.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-light-dark.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-orientation/image-orientation-background-image.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-orientation/image-orientation-background-position.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-orientation/image-orientation-background-properties-border-radius.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-orientation/image-orientation-background-properties.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-orientation/image-orientation-none-cross-origin-background-repeat.sub.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-orientation/image-orientation-none-cross-origin-svg.html",
+    "status": "TIMEOUT"
+   },
+   {
+    "test": "/css/css-images/image-set/image-set-negative-resolution-rendering-3.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-set/image-set-type-unsupported-rendering-2.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-set/image-set-type-unsupported-rendering.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-set/image-set-zero-resolution-rendering-2.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/image-set/image-set-zero-resolution-rendering.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-change-svg-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-001c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-002c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-png-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-003e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-003o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-003p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-004e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-004o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-004p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-005e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-005o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-005p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-006e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-006o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-contain-svg-006p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-containsize-png-001c.tentative.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-containsize-png-001e.tentative.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-containsize-png-001p.tentative.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-001c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-002c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-png-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-003e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-003o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-003p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-004e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-004o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-004p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-005e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-005o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-005p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-006e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-006o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-cover-svg-006p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-001c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-002c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-png-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-003e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-003o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-003p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-004e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-004o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-004p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-005e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-005o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-005p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-006e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-006o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-fill-svg-006p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-001c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-002c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-png-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-003e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-003o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-003p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-004e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-004o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-004p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-005e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-005o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-005p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-006e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-006o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-none-svg-006p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-001c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-002c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-png-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-003e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-003o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-003p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-004e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-004o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-004p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-005e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-005o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-005p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-006e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-006o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-fit-scale-down-svg-006p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-001c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-002c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-png-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-svg-001e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-svg-001o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-svg-001p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-svg-002e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-svg-002o.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-images/object-position-svg-002p.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-composite-1a.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-composite-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-composite-1d.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-mode-a.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-mode-b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-mode-e.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-mode-luminance-with-mask-size.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-mode-to-mask-type.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-background-002.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-background-003.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-background-004.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-background-005.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-background-006.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-background-008.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-fixed-bg-002.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-fixed-bg-003.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-fixed-bg-004.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-fixed-bg-006.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-fixed-bg-007.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-values/calc-background-size-1.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-viewport/zoom/background-image.html",
+    "status": "FAIL"
+   }
+  ],
+  "drop": true,
+  "same_wpt_commit": true
+ },
+ "incidents": [],
+ "shards": [
+  {
+   "shard": [
+    13,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 543.1,
+   "pagesDrawn": 2828,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    8,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 617.9,
+   "pagesDrawn": 2782,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    12,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 601.3,
+   "pagesDrawn": 2824,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    9,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 540.4,
+   "pagesDrawn": 2788,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    1,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 599.1,
+   "pagesDrawn": 2794,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    11,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 459.4,
+   "pagesDrawn": 2831,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    15,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 474.0,
+   "pagesDrawn": 2801,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    7,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 451.2,
+   "pagesDrawn": 2789,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    14,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 394.6,
+   "pagesDrawn": 2817,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    6,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 636.1,
+   "pagesDrawn": 2803,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    4,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 630.9,
+   "pagesDrawn": 2792,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    3,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 384.1,
+   "pagesDrawn": 2802,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    10,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 620.8,
+   "pagesDrawn": 2808,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    5,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 614.3,
+   "pagesDrawn": 2801,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    2,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 471.4,
+   "pagesDrawn": 2791,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  },
+  {
+   "shard": [
+    0,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 474.3,
+   "pagesDrawn": 2816,
+   "engineSha256": "28ff4a27118a49b39cc08309fa90e1270814c28eb6f86570e8cbb85a569edbd8"
+  }
+ ],
+ "completeness": "complete",
+ "shards_missing_reasons": {},
+ "plan": {
+  "release_tag": "build-a512ab918913-foafnaut-linux-x86_64",
+  "core_commit": "a512ab9189130fda9043a40cc5d277ffa94801c7",
+  "commit_utc": "2026-11-22T19:31:29Z",
+  "web_tag": "build-4618bea0c1ac-foafnaut-web",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "suites": [
+   "css"
+  ],
+  "trigger": "manual",
+  "planned_utc": "2026-11-22T20:11:58Z"
+ }
+}
