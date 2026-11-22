@@ -1,4 +1,4 @@
-name: Combined image and background positioning reftests
+name: Object positioning on current main
 on:
   push:
     branches: [wip/paired-combined-image-position]
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: a8513da80d1da62169719d4fb7ba02307f9a19a0
+          ref: cc3608496db6d6e39f09137bee73bd9c0983a64b
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for pair in 45068248461:10e24770a48eead98302ede9d9eefd85f91d5cea 45073626804:a8513da80d1da62169719d4fb7ba02307f9a19a0; do
+          for pair in 45079857825:f7e0a22ffcc78d7ce6ef4581b5459c763ca7dcaa 45079803152:cc3608496db6d6e39f09137bee73bd9c0983a64b; do
             run=${pair%%:*}
             sha=${pair#*:}
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
@@ -48,13 +48,13 @@ jobs:
           done
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45068248461
+          run-id: 45079857825
           name: branch-engine
           github-token: ${{ github.token }}
           path: baseline
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45073626804
+          run-id: 45079803152
           name: branch-engine
           github-token: ${{ github.token }}
           path: candidate
@@ -113,7 +113,7 @@ jobs:
               if name.startswith(("object-fit-", "object-position-"))
               and re.search(r"\d[pi](?:\.tentative)?\.html$", name)
           )
-          assert len(names) >= 80, names
+          assert len(names) == 92, names
           print(",".join(names))
           PY
           names=$(cat names.txt)
@@ -146,4 +146,3 @@ jobs:
           name: combined-image-position-pixels
           path: out/
           retention-days: 14
-
