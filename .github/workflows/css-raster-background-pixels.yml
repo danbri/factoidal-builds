@@ -91,7 +91,46 @@ jobs:
             curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$suite/$file" -o "wpt/$suite/$file"
           done
           curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
-      - name: Compare the same three WPT pages on both engines
+      - name: Add an imported stylesheet origin regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          testdir=wpt/css/foafnaut-regressions
+          mkdir -p "$testdir/assets/nested" "$testdir/assets/pixels"
+          cp wpt/css/css-backgrounds/support/green.png "$testdir/assets/pixels/"
+          cat > "$testdir/background-import-url.html" <<'HTML'
+          <!doctype html>
+          <link rel="stylesheet" href="assets/main.css">
+          <style>body { margin: 0 }</style>
+          <div class="tile" id="test"></div>
+          HTML
+          cat > "$testdir/assets/main.css" <<'CSS'
+          @import url("nested/card.css");
+          .tile { width: 100px; height: 100px; background-image: url(unused.png); }
+          CSS
+          cat > "$testdir/assets/nested/card.css" <<'CSS'
+          #test { background-color: red; background-image: url(../pixels/green.png); }
+          CSS
+          cat > "$testdir/background-import-url-ref.html" <<'HTML'
+          <!doctype html>
+          <style>body { margin: 0 }</style>
+          <img src="assets/pixels/green.png">
+          HTML
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = Path("MANIFEST.json")
+          data = json.loads(manifest.read_text())
+          css = data["items"]["reftest"]["css"]
+          css["foafnaut-regressions"] = {
+              "background-import-url.html": ["local", [None, [
+                  ["/css/foafnaut-regressions/background-import-url-ref.html", "=="]
+              ], {}]]
+          }
+          manifest.write_text(json.dumps(data))
+          PY
+      - name: Compare both engines on WPT and the local stylesheet case
         shell: bash
         run: |
           set -euo pipefail
@@ -99,19 +138,25 @@ jobs:
           for role in baseline candidate; do
             python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
               --wpt-root "$PWD/wpt" --native-engine "$PWD/$role/libweb-render.so" --prefix css/ --jobs 1 \
-              --only "$prefix-001.html,$prefix-002.html,$prefix-cover-zoomed-1.html" --out "$PWD/out/$role"
+              --only "$prefix-001.html,$prefix-002.html,$prefix-cover-zoomed-1.html,/css/foafnaut-regressions/background-import-url.html" --out "$PWD/out/$role"
           done
           python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import json
           from pathlib import Path
 
           names = {f"/css/css-backgrounds/background-image-{case}.html" for case in ("001", "002", "cover-zoomed-1")}
+          local_name = "/css/foafnaut-regressions/background-import-url.html"
+          names.add(local_name)
           for role in ("baseline", "candidate"):
               data = json.loads(Path(f"out/{role}/results.json").read_text())
               assert data["valid"] and {row["test"] for row in data["tests"]} == names
               for row in data["tests"]:
                   edge, = row["edges"]
-                  assert edge["to"].startswith("/css/css-backgrounds/reference/background-image-")
+                  if row["test"] == local_name:
+                      assert edge["to"] == "/css/foafnaut-regressions/background-import-url-ref.html"
+                      assert row["status"] == ("PASS" if role == "candidate" else "FAIL"), row
+                  else:
+                      assert edge["to"].startswith("/css/css-backgrounds/reference/background-image-")
                   assert row["status"] in ("PASS", "FAIL")
                   print(role, row["test"], row["status"], edge.get("totalPixels"), edge.get("maxDifference"))
           PY
