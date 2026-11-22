@@ -46,7 +46,10 @@ jobs:
           printf '%s\n' '["title=How this reader opens a book","click:?epubChapter=2","url:sample.epub?epubChapter=2","title=How this reader opens a book"]' > steps.json
           timeout 90 xvfb-run -a -s '-screen 0 1280x1024x24' foafnaut-linux-x86_64/foafnaut \
             --html "$PWD/docs/web/hub/epub/sample.epub" --follow-links --no-state --no-scripts --no-splash \
-            --steps "$PWD/steps.json" --log-all --shot-at-end --shot "$PWD/epub.png" > epub.log 2>&1 || { tail -100 epub.log; exit 1; }
+            --steps "$PWD/steps.json" --log-all > epub.log 2>&1 || { tail -100 epub.log; exit 1; }
+          chapter="$(python3 -c 'from pathlib import Path; print(Path("docs/web/hub/epub/sample.epub").resolve().as_uri()+"?epubChapter=2")')"
+          timeout 90 xvfb-run -a -s '-screen 0 1280x1024x24' foafnaut-linux-x86_64/foafnaut \
+            --url "$chapter" --offscreen --no-state --no-scripts --shot "$PWD/epub.png" > shot.log 2>&1 || { tail -80 shot.log; exit 1; }
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -63,3 +66,4 @@ jobs:
           path: |
             epub.log
             epub.png
+            shot.log
