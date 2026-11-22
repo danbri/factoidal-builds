@@ -1,0 +1,65 @@
+name: Foafnaut desktop EPUB smoke
+on:
+  push:
+    branches: [wip/epub-lean-check]
+    paths: [.github/workflows/epub-desktop-check.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: d6f7366a3673425d27ab6351256903079dc2a6ae
+          sparse-checkout: docs/web/hub/epub
+          persist-credentials: false
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth
+      - name: Wait for the browser package from the EPUB release build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          for attempt in $(seq 1 36); do
+            if gh api "repos/$REPO/actions/runs/45001515696/artifacts" --jq '.artifacts[].name' | grep -qx 'foafnaut-browser-linux-x86_64-candidate'; then exit 0; fi
+            if gh api "repos/$REPO/actions/jobs/137153467384" --jq .conclusion | grep -Eq '^(failure|cancelled|timed_out|skipped)$'; then exit 1; fi
+            sleep 20
+          done
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45001515696
+          name: foafnaut-browser-linux-x86_64-candidate
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Open a local EPUB and click into the second chapter
+        run: |
+          tar -xzf candidate/foafnaut-browser-linux-x86_64.tar.gz
+          export SDL_VIDEODRIVER=x11 DENO_WEBGPU_BACKEND=vulkan
+          export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)"
+          export XDG_RUNTIME_DIR="$(mktemp -d)"
+          printf '%s\n' '["title=How this reader opens a book","click:?epubChapter=2","url:sample.epub?epubChapter=2","title=How this reader opens a book"]' > steps.json
+          timeout 90 xvfb-run -a -s '-screen 0 1280x1024x24' foafnaut-linux-x86_64/foafnaut \
+            --html "$PWD/docs/web/hub/epub/sample.epub" --follow-links --no-state --no-scripts --no-splash \
+            --steps "$PWD/steps.json" --log-all --shot-at-end --shot "$PWD/epub.png" > epub.log 2>&1 || { tail -100 epub.log; exit 1; }
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          events=[json.loads(line) for line in Path("epub.log").read_text().splitlines() if line.startswith("{")]
+          assert any(e.get("type")=="native-html-test-title" and e.get("ok") for e in events)
+          assert any(e.get("type")=="native-html-test-url" and e.get("ok") and e.get("url","").endswith("sample.epub?epubChapter=2") for e in events)
+          assert Path("epub.png").stat().st_size > 100
+          print("Packaged Foafnaut opened and rendered an EPUB window, then followed its chapter link.")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foafnaut-epub-desktop-smoke
+          path: |
+            epub.log
+            epub.png
