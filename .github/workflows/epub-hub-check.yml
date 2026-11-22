@@ -1,0 +1,92 @@
+name: EPUB Hub browser check
+on:
+  push:
+    branches: [wip/epub-lean-check]
+    paths: [.github/workflows/epub-hub-check.yml]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: a448b52bc121ba4bc89dc367ec691a8f22e8ac95
+          sparse-checkout: docs/web/hub/epub
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install chromium
+      - name: Check the front end with Lean-generated chapter fixtures
+        run: |
+          mkdir -p site/epub site/html-webgpu/runtime
+          cp docs/web/hub/epub/* site/epub/
+          cat > site/html-webgpu/runtime/chapter-0.html <<'FIXTURE'
+          <!doctype html><meta charset="utf-8"><title>How this reader opens a book</title><style>body{margin:24px;max-width:760px;line-height:1.5}img{max-width:100%}pre{white-space:pre-wrap}section{margin-top:2em}</style><h1>How this reader opens a book</h1><nav aria-label="Reading order"><ol><li><a href="?epubChapter=1">Inside an EPUB</a></li><li><a href="?epubChapter=2">Reading order</a></li></ol></nav><section id="epub-chapter-1"><h2>Inside an EPUB</h2><p>An EPUB is a ZIP archive with a package document, text, and other resources. Factoidal reads the package and prepares a reading view in your browser.</p><p><a href="?epubChapter=2#epub-chapter-2-order">Continue to Reading order</a></p></section>
+          FIXTURE
+          cat > site/html-webgpu/runtime/chapter-1.html <<'FIXTURE'
+          <!doctype html><meta charset="utf-8"><title>How this reader opens a book</title><style>body{margin:24px;max-width:760px;line-height:1.5}img{max-width:100%}pre{white-space:pre-wrap}section{margin-top:2em}</style><h1>How this reader opens a book</h1><nav aria-label="Reading order"><ol><li><a href="?epubChapter=1">Inside an EPUB</a></li><li><a href="?epubChapter=2">Reading order</a></li></ol></nav><section id="epub-chapter-2"><h2 id="epub-chapter-2-order">Reading order</h2><p>The spine in the package document lists the documents in order. The links above let you open each section of this book.</p><p><a href="?epubChapter=1#epub-chapter-1">Back to Inside an EPUB</a></p></section>
+          FIXTURE
+          cat > site/html-webgpu/runtime/web-render.mjs <<'FIXTURE'
+          export default async function createModule() {
+            const chapters = await Promise.all([0, 1].map(i => fetch(new URL(`./chapter-${i}.html`, import.meta.url)).then(r => r.text())));
+            const expected = new Uint8Array(await fetch(new URL("../../epub/sample.epub", import.meta.url)).then(r => r.arrayBuffer()));
+            const HEAPU8 = new Uint8Array(1024 * 1024), encoder = new TextEncoder(), decoder = new TextDecoder();
+            let output;
+            return {
+              HEAPU8,
+              _malloc() { return 1; },
+              _free() {},
+              UTF8ToString() { return output; },
+              ccall(name, _type, _types, args) {
+                if (name === "web_render_free") return;
+                const [address, json] = args;
+                const {op, epubChapter} = JSON.parse(json);
+                if (op !== "epubReader") throw new Error("Unexpected operation");
+                const supplied = atob(decoder.decode(HEAPU8.slice(address, HEAPU8.indexOf(0, address))));
+                output = supplied === String.fromCharCode(...expected) && chapters[epubChapter]
+                  ? JSON.stringify({source: chapters[epubChapter]})
+                  : JSON.stringify({error: "Invalid sample bytes"});
+                HEAPU8.set(encoder.encode(""), 0);
+                return 65536;
+              }
+            };
+          }
+          FIXTURE
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('site/epub')
+          layout="""<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:"><link rel="stylesheet" href="./style.css">"""
+          (p/'index.html').write_text(layout+'<main>'+ (p/'index.njk').read_text().split('---',2)[2]+'</main><script type="module" src="./app.mjs"></script>')
+          PY
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory site > server.log 2>&1 &
+          cat > check.cjs <<'JS'
+          const {chromium} = require('playwright');
+          const assert = require('node:assert/strict');
+          (async () => {
+            const browser = await chromium.launch();
+            try {
+              const page = await browser.newPage({viewport: {width: 390, height: 760}});
+              page.setDefaultTimeout(12000);
+              page.on('pageerror', error => console.error(error));
+              await page.goto('http://127.0.0.1:8765/epub/');
+              await page.getByRole('button', {name: 'Try a sample'}).click();
+              const frame = page.frameLocator('#reader');
+              await frame.getByRole('heading', {name: 'Inside an EPUB'}).waitFor();
+              await frame.getByRole('link', {name: 'Continue to Reading order'}).click();
+              await frame.getByRole('heading', {name: 'Reading order'}).waitFor();
+              await page.getByLabel('Choose an EPUB').setInputFiles('site/epub/sample.epub');
+              await frame.getByRole('heading', {name: 'Inside an EPUB'}).waitFor();
+              assert.equal(await page.locator('#status').textContent(), '');
+              console.log('Sample, cross-chapter navigation, and local file picker passed.');
+            } finally {
+              await browser.close();
+            }
+          })().catch(error => {console.error(error); process.exitCode = 1});
+          JS
+          node check.cjs
