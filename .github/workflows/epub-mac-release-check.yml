@@ -1,0 +1,100 @@
+name: Published Apple Silicon EPUB package smoke
+on:
+  push:
+    branches: [wip/epub-lean-check]
+    paths: [.github/workflows/epub-mac-release-check.yml]
+permissions:
+  actions: read
+  contents: read
+env:
+  CORE: 298f7b18723dd9cb3176863de5c7ba675137b9f4
+  TAG: build-298f7b18723d-foafnaut-darwin-arm64
+  ARCHIVE: foafnaut-darwin-arm64.tar.gz
+  RELEASE_RUN: '45004393670'
+jobs:
+  wait-for-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 185
+    steps:
+      - name: Wait for the archive and build information on the official release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 180); do
+            if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>/dev/null |
+              jq -e --arg archive "$ARCHIVE" '
+                .draft == false and .prerelease == false and
+                any(.assets[]; .name == $archive) and any(.assets[]; .name == "build-info.json")
+              ' >/dev/null; then
+              echo "Found $TAG with $ARCHIVE"
+              exit 0
+            fi
+            if [ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RELEASE_RUN" --jq .status || true)" = completed ]; then
+              echo "::error::The release run finished without both expected assets"
+              exit 1
+            fi
+            sleep 60
+          done
+          exit 1
+  open-book:
+    needs: wait-for-publish
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 298f7b18723dd9cb3176863de5c7ba675137b9f4
+          sparse-checkout: docs/web/hub/epub
+          persist-credentials: false
+      - name: Download and check the published archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ $(uname -m) == arm64 ]]
+          package="$RUNNER_TEMP/release with spaces"
+          mkdir -p "$package"
+          cd "$package"
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$ARCHIVE" -p build-info.json
+          digest=$(jq -er --arg commit "$CORE" --arg file "$ARCHIVE" '
+            select(.source_commit == $commit and .set == "foafnaut-darwin-arm64") |
+            .artifacts[$file].sha256
+          ' build-info.json)
+          printf '%s  %s\n' "$digest" "$ARCHIVE" | shasum -a 256 --check
+          tar -xzf "$ARCHIVE"
+          app="$package/foafnaut/foafnaut.app/Contents/MacOS/run"
+          test -x "$app"
+          "$app" --version | tee "$RUNNER_TEMP/version.txt"
+          grep -F "commit $CORE," "$RUNNER_TEMP/version.txt"
+          ! grep -F "does not match" "$RUNNER_TEMP/version.txt"
+      - name: Open a book and present chapter two in the native window
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/release with spaces/foafnaut/foafnaut.app/Contents/MacOS/run"
+          printf '%s\n' '["title=How this reader opens a book","click:?epubChapter=2","url:sample.epub?epubChapter=2","title=How this reader opens a book"]' > "$RUNNER_TEMP/epub-steps.json"
+          "$app" --html "$PWD/docs/web/hub/epub/sample.epub" --no-state --no-scripts --no-splash \
+            --steps "$RUNNER_TEMP/epub-steps.json" --log-all > "$RUNNER_TEMP/epub-release.log" 2>&1 ||
+            { tail -100 "$RUNNER_TEMP/epub-release.log"; exit 1; }
+          python3 - "$RUNNER_TEMP/epub-release.log" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1]) as log:
+              events = [json.loads(line) for line in log if line.startswith("{")]
+          assert sum(e.get("type") == "native-html-test-title" and e.get("ok") for e in events) == 2
+          assert any(e.get("type") == "native-html-presented" and
+                     e.get("url", "").endswith("sample.epub?epubChapter=2") for e in events)
+          print("The published Apple Silicon browser opened EPUB and presented chapter two.")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foafnaut-apple-silicon-release-epub-evidence
+          path: |
+            ${{ runner.temp }}/version.txt
+            ${{ runner.temp }}/epub-release.log
