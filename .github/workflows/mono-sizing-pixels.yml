@@ -1,0 +1,73 @@
+name: Generic monospace sizing pixels
+on:
+  push:
+    branches: [wip/mono-sizing-pixels]
+    paths: [.github/workflows/mono-sizing-pixels.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CORE: 534c1e2aefaa3b890d2f4edd35910e9f2dc34e8a
+      NATIVE_RUN: 45078891909
+      NO_COLOR: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            formal/lean4/lean-toolchain
+            third_party/fonts/noto-sans
+            third_party/fonts/liberation-mono
+          sparse-checkout-cone-mode: false
+      - name: Wait for the exact native build
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="repos/$GITHUB_REPOSITORY/actions/runs/$NATIVE_RUN"
+          gh api "$url/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CORE"
+          until gh api "$url/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
+            if [[ $(gh api "$url" --jq .status) == completed ]]; then
+              echo "::error::No native engine produced by run $NATIVE_RUN"
+              exit 1
+            fi
+            sleep 30
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          name: branch-engine
+          run-id: ${{ env.NATIVE_RUN }}
+          github-token: ${{ github.token }}
+          path: native
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Run the native CPU font sizing test
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < formal/lean4/lean-toolchain)
+          test "$tc" = "$(cat native/lean-toolchain)"
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          export LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean
+          gh release download build-ef1710ff226d-foafnaut-web -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz
+          echo 'cb7ef521b7ec41ae27375afba8d7056f75295498419a9f5f976e08323b7353d5  foafnaut-web.tar.gz' | sha256sum -c -
+          tar -xzf foafnaut-web.tar.gz docs/web/hub/html-webgpu/runtime
+          lab=labs/demos/foafnaut
+          mkdir -p "$lab/.build/native-html/runtime" "$lab/.build/web-render/engines"
+          cp docs/web/hub/html-webgpu/runtime/web-render.{mjs,wasm} "$lab/.build/native-html/runtime/"
+          cp native/libweb-render.so "$lab/.build/web-render/engines/"
+          test -s "$lab/.build/web-render/engines/libweb-render.so"
+          deno test --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi             --allow-read --allow-ffi --filter 'monospace sizing: keyword' "$lab/mono_face_test.ts" | tee native-test.log
+          grep -F '1 passed | 0 failed' native-test.log
