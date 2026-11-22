@@ -1,0 +1,343 @@
+### Since 20261116T0716Z-wpt-reftest-css-linux-x86_64-gh43820777162a1 (core 0ccd896a0684, other WPT commit fa649586f3)
+
+Tests passed 9,472 -> 9,559 (+87) DROP
+
+Newly passing: 204. Newly not passing: 128.
+
+Newly not passing:
+
+- `/css/CSS2/box-display/display-018.xht`: FAIL
+- `/css/CSS2/fonts/font-size-119.xht`: FAIL
+- `/css/CSS2/linebox/iframe-in-block-in-inline.html`: FAIL
+- `/css/CSS2/linebox/inline-formatting-context-001.xht`: FAIL
+- `/css/CSS2/linebox/vertical-align-sub-001.xht`: FAIL
+- `/css/CSS2/linebox/vertical-align-super-001.xht`: FAIL
+- `/css/CSS2/visudet/line-height-203.html`: ERROR
+- `/css/css-anchor-position/position-try-fallbacks-001.html`: FAIL
+- `/css/css-anchor-position/position-visibility-anchor-visible-non-intervening-container.html`: FAIL
+- `/css/css-anchor-position/scroll-to-anchored-fixed-001.html`: FAIL
+- `/css/css-anchor-position/scroll-to-anchored-fixed-002.html`: FAIL
+- `/css/css-anchor-position/scroll-to-anchored-fixed-005.html`: FAIL
+- `/css/css-animations/animation-delay-009.html`: FAIL
+- `/css/css-backgrounds/animations/background-color-animation-with-zero-playbackRate.html`: FAIL
+- `/css/css-backgrounds/background-image-gradient-currentcolor-linear-repaint.html`: FAIL
+- `/css/css-backgrounds/background-image-gradient-currentcolor-self-repaint.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-1a.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-1b.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-1c.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-3.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-4.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-5.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-6.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-7.html`: FAIL
+- `/css/css-break/box-decoration-break-clone-012.html`: FAIL
+- `/css/css-break/contain-strict-with-opacity-and-oof.html`: FAIL
+- `/css/css-break/flexbox/flex-item-content-overflow-003.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-018.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-024.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-037.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-038.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-045.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-083a.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-083b.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-083c.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-083d.html`: FAIL
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-091.html`: FAIL
+- `/css/css-break/grid/grid-container-fragmentation-013.html`: FAIL
+- `/css/css-break/grid/grid-item-overflow-001.html`: FAIL
+- `/css/css-break/grid/grid-lanes/row-multi-lane-fragmentation-019.html`: FAIL
+- `/css/css-break/out-of-flow-in-multicolumn-005.html`: FAIL
+- `/css/css-break/soft-break-before-margin-001.html`: FAIL
+- `/css/css-break/table/repeated-section/image.tentative.html`: FAIL
+- `/css/css-break/transform-016.html`: FAIL
+- `/css/css-break/widows-orphans-002.html`: FAIL
+- `/css/css-break/widows-orphans-004.html`: FAIL
+- `/css/css-break/widows-orphans-017.html`: FAIL
+- `/css/css-break/widows-orphans-021.html`: FAIL
+- `/css/css-conditional/container-queries/container-units-gradient-invalidation.html`: FAIL
+- `/css/css-conditional/container-queries/container-units-gradient.html`: FAIL
+- `/css/css-contain/contain-size-select-001.html`: FAIL
+- `/css/css-contain/contain-size-select-002.html`: FAIL
+- `/css/css-contain/contain-size-select-elem-001.html`: FAIL
+- `/css/css-contain/contain-size-select-elem-002.html`: FAIL
+- `/css/css-counter-styles/counter-style-at-rule/redefine-attr-mapping.html`: FAIL
+- `/css/css-flexbox/stretch-flex-item-checkbox-input.html`: FAIL
+- `/css/css-flexbox/stretch-flex-item-radio-input.html`: FAIL
+- `/css/css-fonts/first-available-font-003.html`: ERROR
+- `/css/css-fonts/font-stretch-12.html`: FAIL
+- `/css/css-fonts/font-stretch-13.html`: FAIL
+- `/css/css-fonts/font-stretch-14.html`: FAIL
+- `/css/css-fonts/font-stretch-15.html`: FAIL
+- `/css/css-fonts/font-stretch-16.html`: FAIL
+- `/css/css-fonts/font-stretch-17.html`: FAIL
+- `/css/css-fonts/font-stretch-18.html`: FAIL
+- `/css/css-gaps/grid-lanes/row-gap-decorations-inset-overlap-negative.html`: FAIL
+- `/css/css-grid/stretch-grid-item-checkbox-input.html`: FAIL
+- `/css/css-grid/stretch-grid-item-radio-input.html`: FAIL
+- `/css/css-highlight-api/painting/custom-highlight-dynamic-container-metrics-001.html`: TIMEOUT
+- `/css/css-highlight-api/painting/custom-highlight-dynamic-viewport-metrics-001.html`: TIMEOUT
+- `/css/css-highlight-api/painting/custom-highlight-dynamic-viewport-metrics-first-line-001.html`: TIMEOUT
+- `/css/css-images/gradient/gradient-analogous-missing-components-001.html`: FAIL
+- `/css/css-images/gradient/legacy-color-gradient.html`: FAIL
+- `/css/css-images/gradient/srgb-gradient.html`: FAIL
+- `/css/css-images/gradients-with-transparent.html`: FAIL
+- `/css/css-images/linear-gradient-calc-em-units.html`: FAIL
+- `/css/css-images/linear-gradient-sibling-index.html`: FAIL
+- `/css/css-images/object-view-box-writing-mode-video.html`: FAIL
+- `/css/css-images/tiled-gradients.html`: FAIL
+- `/css/css-masking/mask-image/backdrop-filter-good-and-bad-mask-image.html`: FAIL
+- `/css/css-masking/mask-image/mask-image-5.html`: FAIL
+- `/css/css-masking/mask-image/mask-size-cover.html`: FAIL
+- `/css/css-multicol/ancestor-toggle-spanner-001.html`: FAIL
+- `/css/css-multicol/balance-break-avoidance-001.html`: FAIL
+- `/css/css-multicol/balance-grid-container.html`: FAIL
+- `/css/css-multicol/column-fill-balance-orthog-block-001.html`: FAIL
+- `/css/css-multicol/column-height-019.html`: FAIL
+- `/css/css-multicol/multicol-dynamic-change-inside-break-inside-avoid-001.html`: FAIL
+- `/css/css-multicol/multicol-fill-balance-032.html`: FAIL
+- `/css/css-multicol/multicol-oof-inline-cb-001.html`: FAIL
+- `/css/css-multicol/multicol-rule-nested-balancing-003.html`: FAIL
+- `/css/css-multicol/multicol-span-all-005.html`: FAIL
+- `/css/css-multicol/multicol-span-all-006.html`: FAIL
+- `/css/css-multicol/multicol-span-all-007.html`: FAIL
+- `/css/css-multicol/multicol-span-all-008.html`: FAIL
+- `/css/css-multicol/multicol-span-all-009.html`: FAIL
+- `/css/css-multicol/multicol-span-all-011.html`: FAIL
+- `/css/css-multicol/multicol-span-all-fieldset-001.html`: FAIL
+- `/css/css-multicol/multicol-span-all-fieldset-002.html`: FAIL
+- `/css/css-multicol/multicol-span-all-fieldset-003.html`: FAIL
+- `/css/css-multicol/nested-with-padding-and-spanner.html`: FAIL
+- `/css/css-multicol/remove-transform-descendant-becomes-spanner.html`: FAIL
+- `/css/css-multicol/spanner-in-opacity.html`: FAIL
+- `/css/css-multicol/with-custom-layout-on-same-element.https.html`: FAIL
+- `/css/css-overflow/input-scrollable-region-001.html`: FAIL
+- `/css/css-overflow/line-clamp/line-clamp-form-select-001.tentative.html`: FAIL
+- `/css/css-overflow/scrollable-overflow-input-001.html`: FAIL
+- `/css/css-overflow/scrollable-overflow-input-002.html`: FAIL
+- `/css/css-overflow/scrollbar-gutter-with-background-gradient.html`: FAIL
+- `/css/css-overflow/select-size-overflow-001.html`: FAIL
+- `/css/css-sizing/hori-block-size-small-or-larger-than-container-with-min-or-max-content-1.html`: FAIL
+- `/css/css-sizing/intrinsic-size-min-content-box-sizing.html`: FAIL
+- `/css/css-sizing/stretch/stretch-quirk-002.html`: FAIL
+- `/css/css-sizing/vert-block-size-small-or-larger-than-container-with-min-or-max-content-2b.html`: FAIL
+- `/css/css-text/boundary-shaping/boundary-shaping-001.html`: FAIL
+- `/css/css-text/boundary-shaping/boundary-shaping-003.html`: FAIL
+- `/css/css-text/boundary-shaping/boundary-shaping-004.html`: FAIL
+- `/css/css-text/white-space/textarea-pre-wrap-014.html`: FAIL
+- `/css/css-transforms/3d-scene-with-iframe-001.html`: FAIL
+- `/css/css-transforms/preserve3d-button.html`: FAIL
+- `/css/css-ui/widget-percentage-height-001.html`: FAIL
+- `/css/css-values/calc-background-linear-gradient-1.html`: FAIL
+- `/css/css-viewport/zoom/outline-width.html`: FAIL
+- `/css/css-writing-modes/forms/checkbox-appearance-native-vertical-lr-baseline.optional.html`: FAIL
+- `/css/css-writing-modes/forms/checkbox-appearance-native-vertical-rl-baseline.optional.html`: FAIL
+- `/css/css-writing-modes/forms/number-input-vertical-overflow.html`: FAIL
+- `/css/css-writing-modes/forms/radio-appearance-native-vertical-lr-baseline.optional.html`: FAIL
+- `/css/css-writing-modes/forms/radio-appearance-native-vertical-rl-baseline.optional.html`: FAIL
+
+Newly passing:
+
+- `/css/CSS2/generated-content/content-175.xht`
+- `/css/CSS2/normal-flow/block-replaced-height-004.xht`
+- `/css/CSS2/normal-flow/block-replaced-height-005.xht`
+- `/css/CSS2/normal-flow/block-replaced-height-007.xht`
+- `/css/CSS2/positioning/absolute-replaced-height-004.xht`
+- `/css/CSS2/positioning/absolute-replaced-height-005.xht`
+- `/css/CSS2/visufx/clip-004.xht`
+- `/css/CSS2/visufx/clip-005.xht`
+- `/css/CSS2/visufx/clip-006.xht`
+- `/css/CSS2/visufx/clip-007.xht`
+- `/css/CSS2/visufx/clip-008.xht`
+- `/css/CSS2/visufx/clip-098.xht`
+- `/css/compositing/mix-blend-mode/mix-blend-mode-mask.html`
+- `/css/compositing/root-element-background-margin-opacity.html`
+- `/css/css-anchor-position/anchor-position-multicol-011.html`
+- `/css/css-anchor-position/anchor-scroll-position-try-012.html`
+- `/css/css-anchor-position/anchor-scroll-update-010.html`
+- `/css/css-anchor-position/position-anchor-dynamic-unset-raf-visibility-hidden.html`
+- `/css/css-anchor-position/position-anchor-dynamic-unset-visibility-hidden.html`
+- `/css/css-anchor-position/position-area-inset-one-side-auto.tentative.html`
+- `/css/css-anchor-position/position-try-005.html`
+- `/css/css-animations/animation-offscreen-to-onscreen.html`
+- `/css/css-backgrounds/animations/background-color-animation-custom-timing-function-reverse.html`
+- `/css/css-backgrounds/animations/background-color-animation-custom-timing-function.html`
+- `/css/css-backgrounds/animations/background-color-animation-half-opaque.html`
+- `/css/css-backgrounds/animations/background-color-animation-will-change-contents.html`
+- `/css/css-backgrounds/animations/background-color-animation-with-mask.html`
+- `/css/css-backgrounds/background-image-none-gradient-repaint.html`
+- `/css/css-backgrounds/background-size/background-size-near-zero-gradient.html`
+- `/css/css-borders/corner-shape/corner-shape-iframe-border.html`
+- `/css/css-borders/corner-shape/corner-shape-video-border.html`
+- `/css/css-break/avoid-border-break.html`
+- `/css/css-break/borders-000.html`
+- `/css/css-break/box-shadow-001.html`
+- `/css/css-break/break-at-end-container-edge-003.html`
+- `/css/css-break/break-at-end-container-edge-005.html`
+- `/css/css-break/break-between-avoid-000.html`
+- `/css/css-break/break-between-avoid-001.html`
+- `/css/css-break/break-between-avoid-002.html`
+- `/css/css-break/break-between-avoid-005.html`
+- `/css/css-break/break-between-avoid-006.html`
+- `/css/css-break/break-between-avoid-008.html`
+- `/css/css-break/break-between-avoid-011.html`
+- `/css/css-break/break-between-avoid-012.html`
+- `/css/css-break/break-between-avoid-013.html`
+- `/css/css-break/break-between-force-000.html`
+- `/css/css-break/break-between-force-001.html`
+- `/css/css-break/break-between-force-002.html`
+- `/css/css-break/break-inside-avoid-min-block-size-1.html`
+- `/css/css-break/break-inside-avoid-min-block-size-2.html`
+- `/css/css-break/change-break-after.html`
+- `/css/css-break/change-break-before.html`
+- `/css/css-break/change-break-inside.html`
+- `/css/css-break/flexbox/multi-line-column-flex-fragmentation-042.html`
+- `/css/css-break/flexbox/multi-line-column-flex-fragmentation-043.html`
+- `/css/css-break/flexbox/multi-line-column-flex-fragmentation-044.html`
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-021.html`
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-025.html`
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-032.html`
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-047.html`
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-048.html`
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-049.html`
+- `/css/css-break/flexbox/multi-line-row-flex-fragmentation-050.html`
+- `/css/css-break/flexbox/single-line-column-flex-fragmentation-053.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-008.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-014.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-015.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-017.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-019.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-020.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-022.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-027.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-037.html`
+- `/css/css-break/flexbox/single-line-row-flex-fragmentation-040.html`
+- `/css/css-break/float-003.html`
+- `/css/css-break/float-013.html`
+- `/css/css-break/float-014.tentative.html`
+- `/css/css-break/float-015.tentative.html`
+- `/css/css-break/forced-break-before-new-fc-001.html`
+- `/css/css-break/forced-break-before-new-fc-002.html`
+- `/css/css-break/forced-break-before-new-fc-003.html`
+- `/css/css-break/grid/grid-container-fragmentation-003.html`
+- `/css/css-break/grid/grid-container-fragmentation-005.html`
+- `/css/css-break/grid/grid-lanes/column-single-lane-fragmentation-005.html`
+- `/css/css-break/grid/subgrid/subgrid-container-fragmentation-003.html`
+- `/css/css-break/grid/subgrid/subgrid-container-fragmentation-005.html`
+- `/css/css-break/monolithic-content-with-forced-break-002.html`
+- `/css/css-break/monolithic-content-with-forced-break-003.html`
+- `/css/css-break/monolithic-with-overflow-lr.html`
+- `/css/css-break/monolithic-with-overflow-rl.html`
+- `/css/css-break/monolithic-with-overflow.html`
+- `/css/css-break/orphans-in-parallel-flow.html`
+- `/css/css-break/out-of-flow-in-multicolumn-099.html`
+- `/css/css-break/out-of-flow-in-multicolumn-113.html`
+- `/css/css-break/ruby-000.html`
+- `/css/css-break/ruby-001.html`
+- `/css/css-break/table/break-after-table-cell-child.html`
+- `/css/css-break/table/break-after-table-cell.html`
+- `/css/css-break/table/break-before-table-cell-child.html`
+- `/css/css-break/table/break-before-table-cell.html`
+- `/css/css-break/table/caption-margin-004.html`
+- `/css/css-break/table/table-caption-with-block.html`
+- `/css/css-break/tall-line-in-short-fragmentainer-001.html`
+- `/css/css-break/tall-line-in-short-fragmentainer-002.html`
+- `/css/css-break/widows-orphans-008.html`
+- `/css/css-break/widows-orphans-010.html`
+- `/css/css-break/widows-orphans-011.html`
+- `/css/css-break/widows-orphans-013.html`
+- `/css/css-contain/contain-size-monolithic-001.html`
+- `/css/css-contain/content-visibility/content-visibility-video.html`
+- `/css/css-flexbox/align-content-001.htm`
+- `/css/css-flexbox/align-content-002.htm`
+- `/css/css-flexbox/align-content-003.htm`
+- `/css/css-flexbox/align-content-005.htm`
+- `/css/css-flexbox/align-content-007.htm`
+- `/css/css-flexbox/align-items-001.htm`
+- `/css/css-flexbox/align-items-002.htm`
+- `/css/css-flexbox/align-items-003.htm`
+- `/css/css-flexbox/anonymous-flex-item-001.html`
+- `/css/css-flexbox/anonymous-flex-item-002.html`
+- `/css/css-flexbox/anonymous-flex-item-003.html`
+- `/css/css-flexbox/flexbox-baseline-multi-line-horiz-001.html`
+- `/css/css-flexbox/flexbox-basic-fieldset-horiz-001.xhtml`
+- `/css/css-flexbox/flexbox-basic-textarea-horiz-001.xhtml`
+- `/css/css-flexbox/flexbox_fbfc2.html`
+- `/css/css-flexbox/flexbox_item-clear.html`
+- `/css/css-flexbox/flexbox_stf-table-singleline-2.html`
+- `/css/css-flexbox/flexbox_stf-table-singleline.html`
+- `/css/css-flexbox/justify-content-003.htm`
+- `/css/css-fonts/system-ui-ja.html`
+- `/css/css-fonts/system-ui-zh.html`
+- `/css/css-fonts/variation-sequences.html`
+- `/css/css-grid/grid-lanes/subgrid/grid-lanes-subgridded-to-grid-lanes/column/independent-formatting-context.html`
+- `/css/css-images/cross-fade-natural-size-gradients.html`
+- `/css/css-images/multiple-position-color-stop-linear.html`
+- `/css/css-images/normalization-linear-2.html`
+- `/css/css-images/normalization-linear.html`
+- `/css/css-images/object-view-box-fit-contain-video.html`
+- `/css/css-images/object-view-box-fit-none-video.html`
+- `/css/css-masking/clip/clip-negative-values-001.html`
+- `/css/css-masking/clip/clip-negative-values-002.html`
+- `/css/css-masking/mask-image/backdrop-filter-mask-image-multi-layer-while-loading.tentative.html`
+- `/css/css-masking/mask-image/mask-composite-1a.html`
+- `/css/css-masking/mask-image/mask-composite-1b.html`
+- `/css/css-masking/mask-image/mask-composite-1d.html`
+- `/css/css-masking/mask-image/mask-image-4a.html`
+- `/css/css-masking/mask-image/mask-image-multi-layer-while-loading.tentative.html`
+- `/css/css-masking/mask-image/mask-mode-a.html`
+- `/css/css-masking/mask-image/mask-mode-b.html`
+- `/css/css-masking/mask-image/mask-mode-luminance-with-mask-size.html`
+- `/css/css-multicol/change-transform-in-nested.html`
+- `/css/css-multicol/change-transform-in-second-column.html`
+- `/css/css-multicol/columnfill-auto-max-height-003.html`
+- `/css/css-multicol/composited-under-clip-under-multicol.html`
+- `/css/css-multicol/inline-block-and-column-span-all.html`
+- `/css/css-multicol/multicol-basic-001.html`
+- `/css/css-multicol/multicol-basic-002.html`
+- `/css/css-multicol/multicol-basic-003.html`
+- `/css/css-multicol/multicol-basic-004.html`
+- `/css/css-multicol/multicol-fill-auto-005.html`
+- `/css/css-multicol/multicol-fill-balance-002.html`
+- `/css/css-multicol/multicol-fill-balance-024.html`
+- `/css/css-multicol/multicol-fill-balance-033.html`
+- `/css/css-multicol/multicol-fill-balance-034.html`
+- `/css/css-multicol/multicol-fill-balance-036.html`
+- `/css/css-multicol/multicol-fill-balance-038.html`
+- `/css/css-multicol/multicol-fill-balance-039.html`
+- `/css/css-multicol/multicol-fill-balance-040.html`
+- `/css/css-multicol/multicol-nested-008.html`
+- `/css/css-multicol/multicol-nested-009.html`
+- `/css/css-multicol/multicol-nested-010.html`
+- `/css/css-multicol/multicol-nested-011.html`
+- `/css/css-multicol/multicol-nested-019.html`
+- `/css/css-multicol/multicol-nested-020.html`
+- `/css/css-multicol/multicol-nested-022.html`
+- `/css/css-multicol/multicol-nested-023.html`
+- `/css/css-multicol/multicol-nested-027.html`
+- `/css/css-multicol/multicol-reduce-000.xht`
+- `/css/css-multicol/multicol-scroll-content.html`
+- `/css/css-multicol/remove-inline-with-block-beside-spanners.html`
+- `/css/css-multicol/resize-multicol-with-fixed-size-children.html`
+- `/css/css-overflow/no-scrollable-overflow-vertical-rl.html`
+- `/css/css-shapes/shape-outside/shape-image/gradients/shape-outside-linear-gradient-002.html`
+- `/css/css-shapes/shape-outside/shape-image/gradients/shape-outside-linear-gradient-003.html`
+- `/css/css-sizing/aspect-ratio/replaced-element-002.html`
+- `/css/css-sizing/aspect-ratio/replaced-element-003.html`
+- `/css/css-sizing/responsive-iframe/responsive-iframe-cross-origin-no-match-element.sub.html`
+- `/css/css-sizing/responsive-iframe/responsive-iframe-cross-origin-not-embedded-sized.sub.html`
+- `/css/css-sizing/responsive-iframe/responsive-iframe-meta-dynamic-append-after-body.html`
+- `/css/css-sizing/responsive-iframe/responsive-iframe-meta-dynamic-name-change-after-body.html`
+- `/css/css-sizing/responsive-iframe/responsive-iframe-meta-in-body.html`
+- `/css/css-sizing/responsive-iframe/responsive-iframe-no-match-element.html`
+- `/css/css-sizing/responsive-iframe/responsive-iframe-not-embedded-sized.html`
+- `/css/css-text/i18n/css3-text-line-break-opclns-169.html`
+- `/css/css-text/line-breaking/line-breaking-text-001.html`
+- `/css/css-text/shaping/shaping_lig-001.html`
+- `/css/css-transforms/animation/transform-percent-with-width-and-height-separate.html`
+- `/css/css-transforms/animation/transform-percent-with-width-and-height.html`
+- `/css/css-transforms/animation/translate-percent-with-width-and-height-separate.html`
+- `/css/css-transforms/animation/translate-percent-with-width-and-height.html`
+- `/css/css-transforms/backface-visibility-hidden-background-blend-mode.html`
+- `/css/css-typed-om/background-image-gradient.html`
+- `/css/css-ui/outline-with-padding-001.html`
+- `/css/filter-effects/backdrop-filter-backdrop-root-clip-path-2.html`
