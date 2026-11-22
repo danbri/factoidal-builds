@@ -1,0 +1,109 @@
+name: Replay selection after the original worker warmup
+on:
+  push:
+    branches: [wip/selection-stall-replay]
+    paths: [.github/workflows/selection-warmed-replay.yml]
+permissions:
+  contents: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      ENGINE: build-4618bea0c1ac-foafnaut-linux-x86_64
+      WEB: build-4618bea0c1ac-foafnaut-web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: replay
+          persist-credentials: false
+          sparse-checkout: release-tests/diagnostics/selection-warmed.list
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 97ae5cf6e01519e5a4b092909bb284cab7c3e718
+          path: builds
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 4618bea0c1ac3b719b4b58cc6dc9580a9204a980
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install the pinned Lean runtime and WPT server dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+      - name: Compare a fresh worker with the recorded worker sequence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/inputs" "$RUNNER_TEMP/out"
+          printf '%s\n' '{"wpt_commit":"4b26db8978f6024d3184ca483d74afbc354b35de"}' > "$RUNNER_TEMP/inputs/inputs.json"
+          (while true; do
+            date -u +%FT%TZ
+            ps -C deno -o pid=,rss=,etimes=,comm= || true
+            sleep 30
+          done) > "$RUNNER_TEMP/out/deno-rss-kib.log" &
+          diagnostic_pid=$!
+          trap 'kill "$diagnostic_pid" 2>/dev/null || true' EXIT
+          for role in fresh warmed; do
+            if [[ $role == fresh ]]; then
+              printf '%s\n' /selection/addRange-32.html /selection/contenteditable/modify.tentative.html > "$RUNNER_TEMP/inputs/full.list"
+              minutes=12
+            else
+              cp replay/release-tests/diagnostics/selection-warmed.list "$RUNNER_TEMP/inputs/full.list"
+              minutes=55
+            fi
+            sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" "HOME=$HOME" \
+              systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue --uid="$(id -u)" --gid="$(id -g)" -- \
+              "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --core core \
+              --inputs "$RUNNER_TEMP/inputs" --engine-dir "$RUNNER_TEMP/engine" \
+              --work "$RUNNER_TEMP/work-$role" --out "$RUNNER_TEMP/out/$role" \
+              --engine-tag "$ENGINE" --web-tag "$WEB" --index 0 --shards 1 \
+              --platform linux-x86_64 --script-engine bubblepop --jobs 1 --max-minutes "$minutes" --pydeps "$RUNNER_TEMP/pydeps"
+          done
+          python3 - "$RUNNER_TEMP/out" <<'PYRESULT' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          from pathlib import Path
+
+          case = "selection/addRange-32.html"
+          for role, expected in (("fresh", 2), ("warmed", 865)):
+              directory = Path(sys.argv[1]) / role
+              meta = json.loads((directory / "shard-meta.json").read_text())
+              assert meta["names"] == expected and meta["names_run"] == expected and not meta.get("problems"), meta
+              rows = [json.loads(line) for part in (directory / "results").glob("*.jsonl") for line in part.read_text().splitlines()]
+              row, = (row for row in rows if row["file"] == case)
+              subtests = row.get("subtests", [])
+              process_resets = sum(r["harness"] in ("STALL", "CRASH") for r in rows if r["file"] != case)
+              print(role, row["harness"], sum(s["status"] == "PASS" for s in subtests), len(subtests), row.get("ms"), row.get("message"), "other resets", process_resets)
+          PYRESULT
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selection-warmed-replay
+          path: ${{ runner.temp }}/out/
+          retention-days: 14
