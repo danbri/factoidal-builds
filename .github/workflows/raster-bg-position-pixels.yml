@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: f8c13cf7450105f736be219a5e26a170a2710165
+          ref: c1c9f25d32599a4ae6312d0a3313767e3e43e9b6
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for pair in 45068248543:3abafe8e49518b313f197d721088e95090d4fda5 45069093254:f8c13cf7450105f736be219a5e26a170a2710165; do
+          for pair in 45068248543:3abafe8e49518b313f197d721088e95090d4fda5 45073255373:c1c9f25d32599a4ae6312d0a3313767e3e43e9b6; do
             run=${pair%%:*}
             sha=${pair#*:}
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
@@ -54,7 +54,7 @@ jobs:
           path: baseline
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45069093254
+          run-id: 45073255373
           name: branch-engine
           github-token: ${{ github.token }}
           path: candidate
@@ -179,6 +179,10 @@ jobs:
           local = "/css/foafnaut-regressions/raster-position.html"
           assert results["baseline"][local] == "FAIL", results["baseline"][local]
           assert results["candidate"][local] == "PASS", results["candidate"][local]
+          boundary_cases = ["/css/css-backgrounds/background-position-negative-percentage-comparison" + suffix
+                            for suffix in (".html", "-002.html")]
+          for name in boundary_cases:
+              assert results["candidate"][name] == "PASS", (name, results["candidate"][name])
           for name in sorted(names):
               old, new = (results[role][name] for role in ("baseline", "candidate"))
               if old != new:
