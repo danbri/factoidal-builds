@@ -1,0 +1,2943 @@
+{
+ "format": "factoidal-test262-run-v1",
+ "row": {
+  "run_id": "20261122T0639Z-test262-linux-x86_64-gh44994666734a1",
+  "started_utc": "2026-11-22T06:39:15Z",
+  "finished_utc": "2026-11-22T06:55:04Z",
+  "trigger": "schedule",
+  "suite": "test262",
+  "platform": "linux-x86_64",
+  "engine": "bubblepopjs-page",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "57872a9b315b72cce3aca9942d909ee54d1ead99",
+  "commit_utc": "2026-11-21T22:27:37Z",
+  "snapshot_branch": "",
+  "release_tag": "build-57872a9b315b-linux-x86_64",
+  "wpt_commit": "2e58f87d8350ad51224617a041c6e041d52f8444",
+  "names_total": 53795,
+  "names_run": 53795,
+  "passed": 47369,
+  "denominator": 53795,
+  "share_pct": "88.0547",
+  "share_ex_encoding_pct": "91.4328",
+  "ok": 91338,
+  "error": 12195,
+  "timeout": 0,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": 6426,
+  "server_failures": 0,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 8,
+  "wall_minutes": 15.8,
+  "repeat_of": "20261121T2353Z-test262-linux-x86_64-gh44963946727a1",
+  "runner": "ubuntu-latest x8 (4 processes each); bubblepop-test262 built from core 57872a9b315b",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/44994666734",
+  "result_url": "https://github.com/danbri/factoidal-builds/releases/download/test-results/20261122T0639Z-test262-linux-x86_64-gh44994666734a1.test262.txt.gz",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T0639Z-test262-linux-x86_64-gh44994666734a1/meta.json"
+ },
+ "rules": "tc39/test262 at wpt_commit (for suite test262 that column holds the Test262 commit); every file under test/ except _FIXTURE files, each in the modes Test262 runs it in (sloppy and strict; onlyStrict strict; noStrict and raw sloppy; module once, as a module); includes from harness/; negative tests pass on the named error type in the named phase; async tests pass on Test262:AsyncTestComplete. A file passes when every mode passes (the unit of test262.fyi). passed/denominator: files. share_ex_encoding_pct holds, for this suite, the share without the files of the excluded features (totals.share_ex_features_pct). $262: global and detachArrayBuffer only (createRealm, evalScript, gc, agent, IsHTMLDDA absent: those tests fail).",
+ "engine": {
+  "script_engine": "bubblepop",
+  "realm": "page",
+  "runner": "bubblepop-test262 test262-files",
+  "why": "the page realm Foafnaut runs page scripts in (core WasmVM/Hosts/Test262Page.lean: LeanJS.prepareSource, BubblePopJS with tools/wasmvm/quickjs/prelude.js on an empty document), built from the release's core commit",
+  "core_commit": "57872a9b315b72cce3aca9942d909ee54d1ead99",
+  "release_tag": "build-57872a9b315b-linux-x86_64"
+ },
+ "validity": {
+  "rules": "every file listed and every shard present; runs with no result plus harness errors under 0.5% of runs; at least 50000 files",
+  "valid": true,
+  "reasons": [],
+  "no_result": 0,
+  "harness_errors": 0,
+  "no_result_sample": []
+ },
+ "totals": {
+  "files": 53795,
+  "passed": 47369,
+  "share_pct": 88.0547,
+  "files_ex_features": 50927,
+  "passed_ex_features": 46564,
+  "share_ex_features_pct": 91.4328,
+  "runs": 103533,
+  "runs_passed": 91338,
+  "runs_share_pct": 88.2211,
+  "outcomes": {
+   "FAIL": 12195,
+   "PASS": 91338
+  }
+ },
+ "excluded_features": [
+  "Intl.Era-monthcode",
+  "Intl.Locale-info",
+  "Intl.NumberFormat-v3",
+  "IsHTMLDDA",
+  "Iterator.prototype.join",
+  "ShadowRealm",
+  "await-dictionary",
+  "cross-realm",
+  "decorators",
+  "error-stack-accessor",
+  "export-defer",
+  "host-gc-required",
+  "immutable-arraybuffer",
+  "import-bytes",
+  "import-defer",
+  "import-text",
+  "legacy-regexp",
+  "nonextensible-applies-to-private",
+  "source-phase-imports",
+  "source-phase-imports-module-source",
+  "tail-call-optimization"
+ ],
+ "excluded_features_why": {
+  "IsHTMLDDA": "Test-Harness Feature: a host object ($262.IsHTMLDDA) a JavaScript engine alone does not have",
+  "host-gc-required": "Test-Harness Feature: needs $262.gc",
+  "cross-realm": "needs $262.createRealm (a second realm from the host); the runner gives none",
+  "tail-call-optimization": "proper tail calls: V8 and SpiderMonkey do not ship them either",
+  "Intl.Era-monthcode": "stage 3 proposal (features.txt, Proposed language features)",
+  "Intl.Locale-info": "stage 3 proposal (features.txt, Proposed language features)",
+  "Intl.NumberFormat-v3": "stage 3 proposal (features.txt, Proposed language features)",
+  "legacy-regexp": "stage 3 proposal (features.txt, Proposed language features)",
+  "ShadowRealm": "stage 3 proposal (features.txt, Proposed language features)",
+  "decorators": "stage 3 proposal (features.txt, Proposed language features)",
+  "source-phase-imports": "stage 3 proposal (features.txt, Proposed language features)",
+  "source-phase-imports-module-source": "stage 3 proposal (features.txt, Proposed language features)",
+  "import-defer": "stage 3 proposal (features.txt, Proposed language features)",
+  "export-defer": "stage 3 proposal (features.txt, Proposed language features)",
+  "import-text": "stage 3 proposal (features.txt, Proposed language features)",
+  "immutable-arraybuffer": "stage 3 proposal (features.txt, Proposed language features)",
+  "import-bytes": "stage 3 proposal (features.txt, Proposed language features)",
+  "nonextensible-applies-to-private": "stage 3 proposal (features.txt, Proposed language features)",
+  "await-dictionary": "stage 3 proposal (features.txt, Proposed language features)",
+  "error-stack-accessor": "stage 3 proposal (features.txt, Proposed language features)",
+  "Iterator.prototype.join": "stage 3 proposal (features.txt, Proposed language features)"
+ },
+ "sections": {
+  "annexB": {
+   "total": 1086,
+   "passed": 936,
+   "runs": 1377,
+   "runs_passed": 1164,
+   "share_pct": 86.1878
+  },
+  "built-ins": {
+   "total": 23879,
+   "passed": 22374,
+   "runs": 47453,
+   "runs_passed": 44517,
+   "share_pct": 93.6974
+  },
+  "harness": {
+   "total": 117,
+   "passed": 116,
+   "runs": 234,
+   "runs_passed": 232,
+   "share_pct": 99.1453
+  },
+  "intl402": {
+   "total": 3394,
+   "passed": 91,
+   "runs": 6788,
+   "runs_passed": 182,
+   "share_pct": 2.6812
+  },
+  "language": {
+   "total": 23832,
+   "passed": 22770,
+   "runs": 44709,
+   "runs_passed": 42978,
+   "share_pct": 95.5438
+  },
+  "staging": {
+   "total": 1487,
+   "passed": 1082,
+   "runs": 2972,
+   "runs_passed": 2265,
+   "share_pct": 72.764
+  }
+ },
+ "directories": {
+  "annexB/built-ins": {
+   "total": 241,
+   "passed": 201,
+   "runs": 482,
+   "runs_passed": 402,
+   "share_pct": 83.4025
+  },
+  "annexB/language": {
+   "total": 845,
+   "passed": 735,
+   "runs": 895,
+   "runs_passed": 762,
+   "share_pct": 86.9822
+  },
+  "built-ins/AbstractModuleSource": {
+   "total": 8,
+   "passed": 0,
+   "runs": 8,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "built-ins/AggregateError": {
+   "total": 25,
+   "passed": 25,
+   "runs": 50,
+   "runs_passed": 50,
+   "share_pct": 100.0
+  },
+  "built-ins/Array": {
+   "total": 3083,
+   "passed": 2979,
+   "runs": 6119,
+   "runs_passed": 5911,
+   "share_pct": 96.6267
+  },
+  "built-ins/ArrayBuffer": {
+   "total": 221,
+   "passed": 183,
+   "runs": 442,
+   "runs_passed": 366,
+   "share_pct": 82.8054
+  },
+  "built-ins/ArrayIteratorPrototype": {
+   "total": 27,
+   "passed": 26,
+   "runs": 46,
+   "runs_passed": 44,
+   "share_pct": 96.2963
+  },
+  "built-ins/AsyncDisposableStack": {
+   "total": 104,
+   "passed": 99,
+   "runs": 208,
+   "runs_passed": 198,
+   "share_pct": 95.1923
+  },
+  "built-ins/AsyncFromSyncIteratorPrototype": {
+   "total": 38,
+   "passed": 38,
+   "runs": 76,
+   "runs_passed": 76,
+   "share_pct": 100.0
+  },
+  "built-ins/AsyncFunction": {
+   "total": 18,
+   "passed": 18,
+   "runs": 36,
+   "runs_passed": 36,
+   "share_pct": 100.0
+  },
+  "built-ins/AsyncGeneratorFunction": {
+   "total": 23,
+   "passed": 23,
+   "runs": 46,
+   "runs_passed": 46,
+   "share_pct": 100.0
+  },
+  "built-ins/AsyncGeneratorPrototype": {
+   "total": 48,
+   "passed": 48,
+   "runs": 96,
+   "runs_passed": 96,
+   "share_pct": 100.0
+  },
+  "built-ins/AsyncIteratorPrototype": {
+   "total": 13,
+   "passed": 4,
+   "runs": 26,
+   "runs_passed": 8,
+   "share_pct": 30.7692
+  },
+  "built-ins/Atomics": {
+   "total": 389,
+   "passed": 194,
+   "runs": 778,
+   "runs_passed": 388,
+   "share_pct": 49.8715
+  },
+  "built-ins/BigInt": {
+   "total": 77,
+   "passed": 75,
+   "runs": 154,
+   "runs_passed": 150,
+   "share_pct": 97.4026
+  },
+  "built-ins/Boolean": {
+   "total": 51,
+   "passed": 51,
+   "runs": 101,
+   "runs_passed": 101,
+   "share_pct": 100.0
+  },
+  "built-ins/DataView": {
+   "total": 560,
+   "passed": 539,
+   "runs": 1120,
+   "runs_passed": 1078,
+   "share_pct": 96.25
+  },
+  "built-ins/Date": {
+   "total": 610,
+   "passed": 599,
+   "runs": 1220,
+   "runs_passed": 1198,
+   "share_pct": 98.1967
+  },
+  "built-ins/DisposableStack": {
+   "total": 93,
+   "passed": 90,
+   "runs": 186,
+   "runs_passed": 180,
+   "share_pct": 96.7742
+  },
+  "built-ins/Error": {
+   "total": 93,
+   "passed": 90,
+   "runs": 186,
+   "runs_passed": 180,
+   "share_pct": 96.7742
+  },
+  "built-ins/FinalizationRegistry": {
+   "total": 47,
+   "passed": 47,
+   "runs": 94,
+   "runs_passed": 94,
+   "share_pct": 100.0
+  },
+  "built-ins/Function": {
+   "total": 509,
+   "passed": 457,
+   "runs": 893,
+   "runs_passed": 815,
+   "share_pct": 89.7839
+  },
+  "built-ins/GeneratorFunction": {
+   "total": 23,
+   "passed": 22,
+   "runs": 46,
+   "runs_passed": 44,
+   "share_pct": 95.6522
+  },
+  "built-ins/GeneratorPrototype": {
+   "total": 61,
+   "passed": 61,
+   "runs": 122,
+   "runs_passed": 122,
+   "share_pct": 100.0
+  },
+  "built-ins/Infinity": {
+   "total": 6,
+   "passed": 6,
+   "runs": 10,
+   "runs_passed": 10,
+   "share_pct": 100.0
+  },
+  "built-ins/Iterator": {
+   "total": 684,
+   "passed": 653,
+   "runs": 1368,
+   "runs_passed": 1307,
+   "share_pct": 95.4678
+  },
+  "built-ins/JSON": {
+   "total": 166,
+   "passed": 149,
+   "runs": 332,
+   "runs_passed": 298,
+   "share_pct": 89.759
+  },
+  "built-ins/Map": {
+   "total": 204,
+   "passed": 204,
+   "runs": 405,
+   "runs_passed": 405,
+   "share_pct": 100.0
+  },
+  "built-ins/MapIteratorPrototype": {
+   "total": 11,
+   "passed": 10,
+   "runs": 22,
+   "runs_passed": 20,
+   "share_pct": 90.9091
+  },
+  "built-ins/Math": {
+   "total": 327,
+   "passed": 308,
+   "runs": 654,
+   "runs_passed": 616,
+   "share_pct": 94.1896
+  },
+  "built-ins/NaN": {
+   "total": 6,
+   "passed": 6,
+   "runs": 10,
+   "runs_passed": 10,
+   "share_pct": 100.0
+  },
+  "built-ins/NativeErrors": {
+   "total": 94,
+   "passed": 93,
+   "runs": 188,
+   "runs_passed": 186,
+   "share_pct": 98.9362
+  },
+  "built-ins/Number": {
+   "total": 340,
+   "passed": 336,
+   "runs": 680,
+   "runs_passed": 672,
+   "share_pct": 98.8235
+  },
+  "built-ins/Object": {
+   "total": 3411,
+   "passed": 3302,
+   "runs": 6802,
+   "runs_passed": 6590,
+   "share_pct": 96.8045
+  },
+  "built-ins/Promise": {
+   "total": 732,
+   "passed": 732,
+   "runs": 1458,
+   "runs_passed": 1458,
+   "share_pct": 100.0
+  },
+  "built-ins/Proxy": {
+   "total": 311,
+   "passed": 222,
+   "runs": 607,
+   "runs_passed": 441,
+   "share_pct": 71.3826
+  },
+  "built-ins/Reflect": {
+   "total": 153,
+   "passed": 147,
+   "runs": 306,
+   "runs_passed": 294,
+   "share_pct": 96.0784
+  },
+  "built-ins/RegExp": {
+   "total": 1879,
+   "passed": 1877,
+   "runs": 3756,
+   "runs_passed": 3752,
+   "share_pct": 99.8936
+  },
+  "built-ins/RegExpStringIteratorPrototype": {
+   "total": 17,
+   "passed": 17,
+   "runs": 34,
+   "runs_passed": 34,
+   "share_pct": 100.0
+  },
+  "built-ins/Set": {
+   "total": 383,
+   "passed": 377,
+   "runs": 764,
+   "runs_passed": 752,
+   "share_pct": 98.4334
+  },
+  "built-ins/SetIteratorPrototype": {
+   "total": 11,
+   "passed": 10,
+   "runs": 22,
+   "runs_passed": 20,
+   "share_pct": 90.9091
+  },
+  "built-ins/ShadowRealm": {
+   "total": 64,
+   "passed": 0,
+   "runs": 124,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "built-ins/SharedArrayBuffer": {
+   "total": 104,
+   "passed": 95,
+   "runs": 208,
+   "runs_passed": 190,
+   "share_pct": 91.3462
+  },
+  "built-ins/String": {
+   "total": 1223,
+   "passed": 1178,
+   "runs": 2443,
+   "runs_passed": 2353,
+   "share_pct": 96.3205
+  },
+  "built-ins/StringIteratorPrototype": {
+   "total": 7,
+   "passed": 6,
+   "runs": 14,
+   "runs_passed": 12,
+   "share_pct": 85.7143
+  },
+  "built-ins/SuppressedError": {
+   "total": 22,
+   "passed": 22,
+   "runs": 44,
+   "runs_passed": 44,
+   "share_pct": 100.0
+  },
+  "built-ins/Symbol": {
+   "total": 98,
+   "passed": 86,
+   "runs": 192,
+   "runs_passed": 168,
+   "share_pct": 87.7551
+  },
+  "built-ins/Temporal": {
+   "total": 4616,
+   "passed": 4133,
+   "runs": 9232,
+   "runs_passed": 8266,
+   "share_pct": 89.5364
+  },
+  "built-ins/ThrowTypeError": {
+   "total": 14,
+   "passed": 9,
+   "runs": 28,
+   "runs_passed": 19,
+   "share_pct": 64.2857
+  },
+  "built-ins/TypedArray": {
+   "total": 1453,
+   "passed": 1381,
+   "runs": 2890,
+   "runs_passed": 2746,
+   "share_pct": 95.0447
+  },
+  "built-ins/TypedArrayConstructors": {
+   "total": 738,
+   "passed": 667,
+   "runs": 1446,
+   "runs_passed": 1320,
+   "share_pct": 90.3794
+  },
+  "built-ins/Uint8Array": {
+   "total": 70,
+   "passed": 68,
+   "runs": 140,
+   "runs_passed": 136,
+   "share_pct": 97.1429
+  },
+  "built-ins/WeakMap": {
+   "total": 141,
+   "passed": 141,
+   "runs": 281,
+   "runs_passed": 281,
+   "share_pct": 100.0
+  },
+  "built-ins/WeakRef": {
+   "total": 29,
+   "passed": 29,
+   "runs": 58,
+   "runs_passed": 58,
+   "share_pct": 100.0
+  },
+  "built-ins/WeakSet": {
+   "total": 85,
+   "passed": 85,
+   "runs": 170,
+   "runs_passed": 170,
+   "share_pct": 100.0
+  },
+  "built-ins/decodeURI": {
+   "total": 55,
+   "passed": 55,
+   "runs": 110,
+   "runs_passed": 110,
+   "share_pct": 100.0
+  },
+  "built-ins/decodeURIComponent": {
+   "total": 56,
+   "passed": 56,
+   "runs": 112,
+   "runs_passed": 112,
+   "share_pct": 100.0
+  },
+  "built-ins/encodeURI": {
+   "total": 31,
+   "passed": 31,
+   "runs": 62,
+   "runs_passed": 62,
+   "share_pct": 100.0
+  },
+  "built-ins/encodeURIComponent": {
+   "total": 31,
+   "passed": 31,
+   "runs": 62,
+   "runs_passed": 62,
+   "share_pct": 100.0
+  },
+  "built-ins/eval": {
+   "total": 10,
+   "passed": 9,
+   "runs": 20,
+   "runs_passed": 18,
+   "share_pct": 90.0
+  },
+  "built-ins/global": {
+   "total": 29,
+   "passed": 29,
+   "runs": 56,
+   "runs_passed": 56,
+   "share_pct": 100.0
+  },
+  "built-ins/isFinite": {
+   "total": 15,
+   "passed": 15,
+   "runs": 30,
+   "runs_passed": 30,
+   "share_pct": 100.0
+  },
+  "built-ins/isNaN": {
+   "total": 15,
+   "passed": 15,
+   "runs": 30,
+   "runs_passed": 30,
+   "share_pct": 100.0
+  },
+  "built-ins/parseFloat": {
+   "total": 54,
+   "passed": 53,
+   "runs": 108,
+   "runs_passed": 106,
+   "share_pct": 98.1481
+  },
+  "built-ins/parseInt": {
+   "total": 55,
+   "passed": 55,
+   "runs": 110,
+   "runs_passed": 110,
+   "share_pct": 100.0
+  },
+  "built-ins/undefined": {
+   "total": 8,
+   "passed": 8,
+   "runs": 12,
+   "runs_passed": 12,
+   "share_pct": 100.0
+  },
+  "harness": {
+   "total": 117,
+   "passed": 116,
+   "runs": 234,
+   "runs_passed": 232,
+   "share_pct": 99.1453
+  },
+  "intl402": {
+   "total": 22,
+   "passed": 0,
+   "runs": 44,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/Array": {
+   "total": 2,
+   "passed": 1,
+   "runs": 4,
+   "runs_passed": 2,
+   "share_pct": 50.0
+  },
+  "intl402/BigInt": {
+   "total": 11,
+   "passed": 3,
+   "runs": 22,
+   "runs_passed": 6,
+   "share_pct": 27.2727
+  },
+  "intl402/Collator": {
+   "total": 65,
+   "passed": 0,
+   "runs": 130,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/Date": {
+   "total": 12,
+   "passed": 8,
+   "runs": 24,
+   "runs_passed": 16,
+   "share_pct": 66.6667
+  },
+  "intl402/DateTimeFormat": {
+   "total": 246,
+   "passed": 0,
+   "runs": 492,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/DisplayNames": {
+   "total": 57,
+   "passed": 0,
+   "runs": 114,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/DurationFormat": {
+   "total": 110,
+   "passed": 0,
+   "runs": 220,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/FallbackSymbol": {
+   "total": 2,
+   "passed": 0,
+   "runs": 4,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/Intl": {
+   "total": 66,
+   "passed": 0,
+   "runs": 132,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/ListFormat": {
+   "total": 81,
+   "passed": 0,
+   "runs": 162,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/Locale": {
+   "total": 190,
+   "passed": 0,
+   "runs": 380,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/Number": {
+   "total": 7,
+   "passed": 2,
+   "runs": 14,
+   "runs_passed": 4,
+   "share_pct": 28.5714
+  },
+  "intl402/NumberFormat": {
+   "total": 251,
+   "passed": 0,
+   "runs": 502,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/PluralRules": {
+   "total": 53,
+   "passed": 0,
+   "runs": 106,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/RelativeTimeFormat": {
+   "total": 80,
+   "passed": 0,
+   "runs": 160,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/Segmenter": {
+   "total": 79,
+   "passed": 0,
+   "runs": 158,
+   "runs_passed": 0,
+   "share_pct": 0.0
+  },
+  "intl402/String": {
+   "total": 19,
+   "passed": 6,
+   "runs": 38,
+   "runs_passed": 12,
+   "share_pct": 31.5789
+  },
+  "intl402/Temporal": {
+   "total": 2040,
+   "passed": 70,
+   "runs": 4080,
+   "runs_passed": 140,
+   "share_pct": 3.4314
+  },
+  "intl402/TypedArray": {
+   "total": 1,
+   "passed": 1,
+   "runs": 2,
+   "runs_passed": 2,
+   "share_pct": 100.0
+  },
+  "language/arguments-object": {
+   "total": 263,
+   "passed": 240,
+   "runs": 460,
+   "runs_passed": 437,
+   "share_pct": 91.2548
+  },
+  "language/asi": {
+   "total": 102,
+   "passed": 102,
+   "runs": 204,
+   "runs_passed": 204,
+   "share_pct": 100.0
+  },
+  "language/block-scope": {
+   "total": 145,
+   "passed": 145,
+   "runs": 287,
+   "runs_passed": 287,
+   "share_pct": 100.0
+  },
+  "language/comments": {
+   "total": 52,
+   "passed": 52,
+   "runs": 81,
+   "runs_passed": 81,
+   "share_pct": 100.0
+  },
+  "language/computed-property-names": {
+   "total": 48,
+   "passed": 48,
+   "runs": 96,
+   "runs_passed": 96,
+   "share_pct": 100.0
+  },
+  "language/destructuring": {
+   "total": 19,
+   "passed": 18,
+   "runs": 37,
+   "runs_passed": 36,
+   "share_pct": 94.7368
+  },
+  "language/directive-prologue": {
+   "total": 62,
+   "passed": 60,
+   "runs": 62,
+   "runs_passed": 60,
+   "share_pct": 96.7742
+  },
+  "language/eval-code": {
+   "total": 347,
+   "passed": 317,
+   "runs": 454,
+   "runs_passed": 411,
+   "share_pct": 91.3545
+  },
+  "language/export": {
+   "total": 3,
+   "passed": 3,
+   "runs": 3,
+   "runs_passed": 3,
+   "share_pct": 100.0
+  },
+  "language/expressions": {
+   "total": 11156,
+   "passed": 10776,
+   "runs": 21394,
+   "runs_passed": 20765,
+   "share_pct": 96.5938
+  },
+  "language/function-code": {
+   "total": 217,
+   "passed": 217,
+   "runs": 281,
+   "runs_passed": 281,
+   "share_pct": 100.0
+  },
+  "language/future-reserved-words": {
+   "total": 55,
+   "passed": 55,
+   "runs": 85,
+   "runs_passed": 85,
+   "share_pct": 100.0
+  },
+  "language/global-code": {
+   "total": 42,
+   "passed": 41,
+   "runs": 75,
+   "runs_passed": 73,
+   "share_pct": 97.619
+  },
+  "language/identifier-resolution": {
+   "total": 14,
+   "passed": 13,
+   "runs": 22,
+   "runs_passed": 21,
+   "share_pct": 92.8571
+  },
+  "language/identifiers": {
+   "total": 268,
+   "passed": 262,
+   "runs": 535,
+   "runs_passed": 523,
+   "share_pct": 97.7612
+  },
+  "language/import": {
+   "total": 129,
+   "passed": 24,
+   "runs": 135,
+   "runs_passed": 30,
+   "share_pct": 18.6047
+  },
+  "language/keywords": {
+   "total": 25,
+   "passed": 25,
+   "runs": 50,
+   "runs_passed": 50,
+   "share_pct": 100.0
+  },
+  "language/line-terminators": {
+   "total": 41,
+   "passed": 41,
+   "runs": 82,
+   "runs_passed": 82,
+   "share_pct": 100.0
+  },
+  "language/literals": {
+   "total": 536,
+   "passed": 535,
+   "runs": 1041,
+   "runs_passed": 1039,
+   "share_pct": 99.8134
+  },
+  "language/module-code": {
+   "total": 599,
+   "passed": 566,
+   "runs": 602,
+   "runs_passed": 568,
+   "share_pct": 94.4908
+  },
+  "language/punctuators": {
+   "total": 11,
+   "passed": 11,
+   "runs": 22,
+   "runs_passed": 22,
+   "share_pct": 100.0
+  },
+  "language/reserved-words": {
+   "total": 27,
+   "passed": 27,
+   "runs": 53,
+   "runs_passed": 53,
+   "share_pct": 100.0
+  },
+  "language/rest-parameters": {
+   "total": 11,
+   "passed": 11,
+   "runs": 22,
+   "runs_passed": 22,
+   "share_pct": 100.0
+  },
+  "language/source-text": {
+   "total": 1,
+   "passed": 1,
+   "runs": 2,
+   "runs_passed": 2,
+   "share_pct": 100.0
+  },
+  "language/statementList": {
+   "total": 80,
+   "passed": 76,
+   "runs": 160,
+   "runs_passed": 152,
+   "share_pct": 95.0
+  },
+  "language/statements": {
+   "total": 9399,
+   "passed": 8928,
+   "runs": 18119,
+   "runs_passed": 17258,
+   "share_pct": 94.9888
+  },
+  "language/types": {
+   "total": 113,
+   "passed": 111,
+   "runs": 211,
+   "runs_passed": 207,
+   "share_pct": 98.2301
+  },
+  "language/white-space": {
+   "total": 67,
+   "passed": 65,
+   "runs": 134,
+   "runs_passed": 130,
+   "share_pct": 97.0149
+  },
+  "staging": {
+   "total": 4,
+   "passed": 4,
+   "runs": 8,
+   "runs_passed": 8,
+   "share_pct": 100.0
+  },
+  "staging/Temporal": {
+   "total": 2,
+   "passed": 2,
+   "runs": 4,
+   "runs_passed": 4,
+   "share_pct": 100.0
+  },
+  "staging/Uint8Array": {
+   "total": 1,
+   "passed": 1,
+   "runs": 2,
+   "runs_passed": 2,
+   "share_pct": 100.0
+  },
+  "staging/built-ins": {
+   "total": 8,
+   "passed": 4,
+   "runs": 16,
+   "runs_passed": 8,
+   "share_pct": 50.0
+  },
+  "staging/decorators": {
+   "total": 7,
+   "passed": 5,
+   "runs": 14,
+   "runs_passed": 10,
+   "share_pct": 71.4286
+  },
+  "staging/explicit-resource-management": {
+   "total": 53,
+   "passed": 26,
+   "runs": 105,
+   "runs_passed": 52,
+   "share_pct": 49.0566
+  },
+  "staging/set-methods": {
+   "total": 3,
+   "passed": 3,
+   "runs": 6,
+   "runs_passed": 6,
+   "share_pct": 100.0
+  },
+  "staging/sm": {
+   "total": 1406,
+   "passed": 1035,
+   "runs": 2812,
+   "runs_passed": 2172,
+   "share_pct": 73.6131
+  },
+  "staging/source-phase-imports": {
+   "total": 2,
+   "passed": 1,
+   "runs": 4,
+   "runs_passed": 2,
+   "share_pct": 50.0
+  },
+  "staging/top-level-await": {
+   "total": 1,
+   "passed": 1,
+   "runs": 1,
+   "runs_passed": 1,
+   "share_pct": 100.0
+  }
+ },
+ "features": {
+  "(none)": {
+   "total": 18673,
+   "passed": 17316,
+   "excluded": false,
+   "share_pct": 92.7328
+  },
+  "AggregateError": {
+   "total": 31,
+   "passed": 31,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Array.fromAsync": {
+   "total": 95,
+   "passed": 85,
+   "excluded": false,
+   "share_pct": 89.4737
+  },
+  "Array.prototype.at": {
+   "total": 12,
+   "passed": 12,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Array.prototype.flat": {
+   "total": 15,
+   "passed": 12,
+   "excluded": false,
+   "share_pct": 80.0
+  },
+  "Array.prototype.flatMap": {
+   "total": 21,
+   "passed": 19,
+   "excluded": false,
+   "share_pct": 90.4762
+  },
+  "Array.prototype.includes": {
+   "total": 69,
+   "passed": 43,
+   "excluded": false,
+   "share_pct": 62.3188
+  },
+  "Array.prototype.values": {
+   "total": 4,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "ArrayBuffer": {
+   "total": 278,
+   "passed": 256,
+   "excluded": false,
+   "share_pct": 92.0863
+  },
+  "Atomics": {
+   "total": 386,
+   "passed": 195,
+   "excluded": false,
+   "share_pct": 50.5181
+  },
+  "Atomics.pause": {
+   "total": 5,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Atomics.waitAsync": {
+   "total": 101,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "BigInt": {
+   "total": 1506,
+   "passed": 1353,
+   "excluded": false,
+   "share_pct": 89.8406
+  },
+  "DataView": {
+   "total": 193,
+   "passed": 175,
+   "excluded": false,
+   "share_pct": 90.6736
+  },
+  "DataView.prototype.getFloat32": {
+   "total": 7,
+   "passed": 7,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "DataView.prototype.getFloat64": {
+   "total": 5,
+   "passed": 5,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "DataView.prototype.getInt16": {
+   "total": 7,
+   "passed": 7,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "DataView.prototype.getInt32": {
+   "total": 7,
+   "passed": 7,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "DataView.prototype.getInt8": {
+   "total": 5,
+   "passed": 5,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "DataView.prototype.getUint16": {
+   "total": 7,
+   "passed": 7,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "DataView.prototype.getUint32": {
+   "total": 7,
+   "passed": 7,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "DataView.prototype.setUint8": {
+   "total": 56,
+   "passed": 56,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Error.isError": {
+   "total": 13,
+   "passed": 13,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "FinalizationRegistry": {
+   "total": 49,
+   "passed": 49,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Float16Array": {
+   "total": 51,
+   "passed": 51,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Float32Array": {
+   "total": 7,
+   "passed": 5,
+   "excluded": false,
+   "share_pct": 71.4286
+  },
+  "Float64Array": {
+   "total": 7,
+   "passed": 5,
+   "excluded": false,
+   "share_pct": 71.4286
+  },
+  "Int16Array": {
+   "total": 2,
+   "passed": 2,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Int32Array": {
+   "total": 4,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Int8Array": {
+   "total": 38,
+   "passed": 33,
+   "excluded": false,
+   "share_pct": 86.8421
+  },
+  "Intl-enumeration": {
+   "total": 35,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DateTimeFormat-datetimestyle": {
+   "total": 16,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DateTimeFormat-dayPeriod": {
+   "total": 12,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DateTimeFormat-extend-timezonename": {
+   "total": 2,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DateTimeFormat-formatRange": {
+   "total": 37,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DateTimeFormat-fractionalSecondDigits": {
+   "total": 10,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DisplayNames": {
+   "total": 47,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DisplayNames-v2": {
+   "total": 12,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.DurationFormat": {
+   "total": 111,
+   "passed": 1,
+   "excluded": false,
+   "share_pct": 0.9009
+  },
+  "Intl.Era-monthcode": {
+   "total": 1566,
+   "passed": 65,
+   "excluded": true,
+   "share_pct": 4.1507
+  },
+  "Intl.ListFormat": {
+   "total": 81,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.Locale": {
+   "total": 205,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.Locale-info": {
+   "total": 77,
+   "passed": 0,
+   "excluded": true,
+   "share_pct": 0.0
+  },
+  "Intl.NumberFormat-unified": {
+   "total": 68,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.NumberFormat-v3": {
+   "total": 99,
+   "passed": 0,
+   "excluded": true,
+   "share_pct": 0.0
+  },
+  "Intl.RelativeTimeFormat": {
+   "total": 79,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Intl.Segmenter": {
+   "total": 79,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "IsHTMLDDA": {
+   "total": 42,
+   "passed": 15,
+   "excluded": true,
+   "share_pct": 35.7143
+  },
+  "Iterator.prototype.join": {
+   "total": 18,
+   "passed": 18,
+   "excluded": true,
+   "share_pct": 100.0
+  },
+  "Map": {
+   "total": 40,
+   "passed": 39,
+   "excluded": false,
+   "share_pct": 97.5
+  },
+  "Math.sumPrecise": {
+   "total": 10,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "Object.fromEntries": {
+   "total": 25,
+   "passed": 18,
+   "excluded": false,
+   "share_pct": 72.0
+  },
+  "Object.hasOwn": {
+   "total": 62,
+   "passed": 62,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Object.is": {
+   "total": 2,
+   "passed": 2,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Promise": {
+   "total": 4,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Promise.allSettled": {
+   "total": 102,
+   "passed": 102,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Promise.any": {
+   "total": 92,
+   "passed": 92,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Promise.prototype.finally": {
+   "total": 29,
+   "passed": 29,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Proxy": {
+   "total": 479,
+   "passed": 305,
+   "excluded": false,
+   "share_pct": 63.6743
+  },
+  "Reflect": {
+   "total": 478,
+   "passed": 385,
+   "excluded": false,
+   "share_pct": 80.5439
+  },
+  "Reflect.construct": {
+   "total": 704,
+   "passed": 656,
+   "excluded": false,
+   "share_pct": 93.1818
+  },
+  "Reflect.set": {
+   "total": 46,
+   "passed": 40,
+   "excluded": false,
+   "share_pct": 86.9565
+  },
+  "Reflect.setPrototypeOf": {
+   "total": 23,
+   "passed": 23,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "RegExp.escape": {
+   "total": 21,
+   "passed": 21,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Set": {
+   "total": 38,
+   "passed": 37,
+   "excluded": false,
+   "share_pct": 97.3684
+  },
+  "ShadowRealm": {
+   "total": 64,
+   "passed": 0,
+   "excluded": true,
+   "share_pct": 0.0
+  },
+  "SharedArrayBuffer": {
+   "total": 467,
+   "passed": 282,
+   "excluded": false,
+   "share_pct": 60.3854
+  },
+  "String.fromCodePoint": {
+   "total": 22,
+   "passed": 22,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "String.prototype.at": {
+   "total": 11,
+   "passed": 10,
+   "excluded": false,
+   "share_pct": 90.9091
+  },
+  "String.prototype.endsWith": {
+   "total": 27,
+   "passed": 27,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "String.prototype.includes": {
+   "total": 26,
+   "passed": 26,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "String.prototype.isWellFormed": {
+   "total": 8,
+   "passed": 8,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "String.prototype.matchAll": {
+   "total": 16,
+   "passed": 11,
+   "excluded": false,
+   "share_pct": 68.75
+  },
+  "String.prototype.replaceAll": {
+   "total": 41,
+   "passed": 37,
+   "excluded": false,
+   "share_pct": 90.2439
+  },
+  "String.prototype.toWellFormed": {
+   "total": 8,
+   "passed": 8,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "String.prototype.trimEnd": {
+   "total": 24,
+   "passed": 24,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "String.prototype.trimStart": {
+   "total": 23,
+   "passed": 23,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Symbol": {
+   "total": 1494,
+   "passed": 1367,
+   "excluded": false,
+   "share_pct": 91.4993
+  },
+  "Symbol.asyncIterator": {
+   "total": 538,
+   "passed": 538,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Symbol.hasInstance": {
+   "total": 17,
+   "passed": 17,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Symbol.isConcatSpreadable": {
+   "total": 34,
+   "passed": 34,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Symbol.iterator": {
+   "total": 1867,
+   "passed": 1760,
+   "excluded": false,
+   "share_pct": 94.2689
+  },
+  "Symbol.match": {
+   "total": 88,
+   "passed": 85,
+   "excluded": false,
+   "share_pct": 96.5909
+  },
+  "Symbol.matchAll": {
+   "total": 63,
+   "passed": 59,
+   "excluded": false,
+   "share_pct": 93.6508
+  },
+  "Symbol.prototype.description": {
+   "total": 8,
+   "passed": 5,
+   "excluded": false,
+   "share_pct": 62.5
+  },
+  "Symbol.replace": {
+   "total": 98,
+   "passed": 92,
+   "excluded": false,
+   "share_pct": 93.8776
+  },
+  "Symbol.search": {
+   "total": 37,
+   "passed": 34,
+   "excluded": false,
+   "share_pct": 91.8919
+  },
+  "Symbol.species": {
+   "total": 284,
+   "passed": 258,
+   "excluded": false,
+   "share_pct": 90.8451
+  },
+  "Symbol.split": {
+   "total": 58,
+   "passed": 57,
+   "excluded": false,
+   "share_pct": 98.2759
+  },
+  "Symbol.toPrimitive": {
+   "total": 233,
+   "passed": 184,
+   "excluded": false,
+   "share_pct": 78.97
+  },
+  "Symbol.toStringTag": {
+   "total": 131,
+   "passed": 93,
+   "excluded": false,
+   "share_pct": 70.9924
+  },
+  "Symbol.unscopables": {
+   "total": 45,
+   "passed": 37,
+   "excluded": false,
+   "share_pct": 82.2222
+  },
+  "Temporal": {
+   "total": 6738,
+   "passed": 4205,
+   "excluded": false,
+   "share_pct": 62.4072
+  },
+  "TypedArray": {
+   "total": 2531,
+   "passed": 2228,
+   "excluded": false,
+   "share_pct": 88.0284
+  },
+  "TypedArray.prototype.at": {
+   "total": 13,
+   "passed": 13,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Uint16Array": {
+   "total": 6,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 66.6667
+  },
+  "Uint32Array": {
+   "total": 2,
+   "passed": 2,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "Uint8Array": {
+   "total": 13,
+   "passed": 9,
+   "excluded": false,
+   "share_pct": 69.2308
+  },
+  "Uint8ClampedArray": {
+   "total": 6,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 66.6667
+  },
+  "WeakMap": {
+   "total": 79,
+   "passed": 78,
+   "excluded": false,
+   "share_pct": 98.7342
+  },
+  "WeakRef": {
+   "total": 37,
+   "passed": 37,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "WeakSet": {
+   "total": 34,
+   "passed": 33,
+   "excluded": false,
+   "share_pct": 97.0588
+  },
+  "__getter__": {
+   "total": 27,
+   "passed": 24,
+   "excluded": false,
+   "share_pct": 88.8889
+  },
+  "__proto__": {
+   "total": 20,
+   "passed": 18,
+   "excluded": false,
+   "share_pct": 90.0
+  },
+  "__setter__": {
+   "total": 27,
+   "passed": 24,
+   "excluded": false,
+   "share_pct": 88.8889
+  },
+  "align-detached-buffer-semantics-with-web-reality": {
+   "total": 158,
+   "passed": 120,
+   "excluded": false,
+   "share_pct": 75.9494
+  },
+  "arbitrary-module-namespace-names": {
+   "total": 16,
+   "passed": 12,
+   "excluded": false,
+   "share_pct": 75.0
+  },
+  "array-find-from-last": {
+   "total": 109,
+   "passed": 100,
+   "excluded": false,
+   "share_pct": 91.7431
+  },
+  "array-grouping": {
+   "total": 28,
+   "passed": 28,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "arraybuffer-transfer": {
+   "total": 59,
+   "passed": 57,
+   "excluded": false,
+   "share_pct": 96.6102
+  },
+  "arrow-function": {
+   "total": 950,
+   "passed": 855,
+   "excluded": false,
+   "share_pct": 90.0
+  },
+  "async-functions": {
+   "total": 705,
+   "passed": 643,
+   "excluded": false,
+   "share_pct": 91.2057
+  },
+  "async-iteration": {
+   "total": 4971,
+   "passed": 4940,
+   "excluded": false,
+   "share_pct": 99.3764
+  },
+  "await-dictionary": {
+   "total": 89,
+   "passed": 89,
+   "excluded": true,
+   "share_pct": 100.0
+  },
+  "caller": {
+   "total": 23,
+   "passed": 23,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "canonical-tz": {
+   "total": 19,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "change-array-by-copy": {
+   "total": 137,
+   "passed": 124,
+   "excluded": false,
+   "share_pct": 90.5109
+  },
+  "class": {
+   "total": 4916,
+   "passed": 4762,
+   "excluded": false,
+   "share_pct": 96.8674
+  },
+  "class-fields-private": {
+   "total": 1144,
+   "passed": 1096,
+   "excluded": false,
+   "share_pct": 95.8042
+  },
+  "class-fields-private-in": {
+   "total": 19,
+   "passed": 17,
+   "excluded": false,
+   "share_pct": 89.4737
+  },
+  "class-fields-public": {
+   "total": 2159,
+   "passed": 2087,
+   "excluded": false,
+   "share_pct": 96.6651
+  },
+  "class-methods-private": {
+   "total": 1709,
+   "passed": 1691,
+   "excluded": false,
+   "share_pct": 98.9468
+  },
+  "class-static-block": {
+   "total": 66,
+   "passed": 63,
+   "excluded": false,
+   "share_pct": 95.4545
+  },
+  "class-static-fields-private": {
+   "total": 345,
+   "passed": 343,
+   "excluded": false,
+   "share_pct": 99.4203
+  },
+  "class-static-fields-public": {
+   "total": 295,
+   "passed": 286,
+   "excluded": false,
+   "share_pct": 96.9492
+  },
+  "class-static-methods-private": {
+   "total": 1513,
+   "passed": 1513,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "coalesce-expression": {
+   "total": 26,
+   "passed": 23,
+   "excluded": false,
+   "share_pct": 88.4615
+  },
+  "computed-property-names": {
+   "total": 488,
+   "passed": 464,
+   "excluded": false,
+   "share_pct": 95.082
+  },
+  "const": {
+   "total": 15,
+   "passed": 15,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "cross-realm": {
+   "total": 203,
+   "passed": 172,
+   "excluded": true,
+   "share_pct": 84.7291
+  },
+  "decorators": {
+   "total": 31,
+   "passed": 7,
+   "excluded": true,
+   "share_pct": 22.5806
+  },
+  "default-parameters": {
+   "total": 2269,
+   "passed": 2242,
+   "excluded": false,
+   "share_pct": 98.81
+  },
+  "destructuring-assignment": {
+   "total": 141,
+   "passed": 137,
+   "excluded": false,
+   "share_pct": 97.1631
+  },
+  "destructuring-binding": {
+   "total": 6637,
+   "passed": 6517,
+   "excluded": false,
+   "share_pct": 98.192
+  },
+  "dynamic-import": {
+   "total": 1011,
+   "passed": 997,
+   "excluded": false,
+   "share_pct": 98.6152
+  },
+  "error-cause": {
+   "total": 5,
+   "passed": 1,
+   "excluded": false,
+   "share_pct": 20.0
+  },
+  "error-stack-accessor": {
+   "total": 35,
+   "passed": 35,
+   "excluded": true,
+   "share_pct": 100.0
+  },
+  "explicit-resource-management": {
+   "total": 483,
+   "passed": 317,
+   "excluded": false,
+   "share_pct": 65.6315
+  },
+  "exponentiation": {
+   "total": 105,
+   "passed": 102,
+   "excluded": false,
+   "share_pct": 97.1429
+  },
+  "export-star-as-namespace-from-module": {
+   "total": 19,
+   "passed": 15,
+   "excluded": false,
+   "share_pct": 78.9474
+  },
+  "for-in-order": {
+   "total": 9,
+   "passed": 9,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "for-of": {
+   "total": 5,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 80.0
+  },
+  "generators": {
+   "total": 4129,
+   "passed": 3997,
+   "excluded": false,
+   "share_pct": 96.8031
+  },
+  "globalThis": {
+   "total": 148,
+   "passed": 148,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "hashbang": {
+   "total": 29,
+   "passed": 29,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "host-gc-required": {
+   "total": 15,
+   "passed": 11,
+   "excluded": true,
+   "share_pct": 73.3333
+  },
+  "immutable-arraybuffer": {
+   "total": 66,
+   "passed": 1,
+   "excluded": true,
+   "share_pct": 1.5152
+  },
+  "import-attributes": {
+   "total": 101,
+   "passed": 89,
+   "excluded": false,
+   "share_pct": 88.1188
+  },
+  "import-bytes": {
+   "total": 5,
+   "passed": 0,
+   "excluded": true,
+   "share_pct": 0.0
+  },
+  "import-defer": {
+   "total": 252,
+   "passed": 153,
+   "excluded": true,
+   "share_pct": 60.7143
+  },
+  "import-text": {
+   "total": 6,
+   "passed": 0,
+   "excluded": true,
+   "share_pct": 0.0
+  },
+  "import.meta": {
+   "total": 23,
+   "passed": 14,
+   "excluded": false,
+   "share_pct": 60.8696
+  },
+  "intl-normative-optional": {
+   "total": 8,
+   "passed": 0,
+   "excluded": false,
+   "share_pct": 0.0
+  },
+  "iterator-chunking": {
+   "total": 82,
+   "passed": 82,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "iterator-helpers": {
+   "total": 586,
+   "passed": 559,
+   "excluded": false,
+   "share_pct": 95.3925
+  },
+  "iterator-includes": {
+   "total": 44,
+   "passed": 44,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "iterator-sequencing": {
+   "total": 40,
+   "passed": 36,
+   "excluded": false,
+   "share_pct": 90.0
+  },
+  "joint-iteration": {
+   "total": 82,
+   "passed": 71,
+   "excluded": false,
+   "share_pct": 86.5854
+  },
+  "json-modules": {
+   "total": 14,
+   "passed": 13,
+   "excluded": false,
+   "share_pct": 92.8571
+  },
+  "json-parse-with-source": {
+   "total": 22,
+   "passed": 5,
+   "excluded": false,
+   "share_pct": 22.7273
+  },
+  "json-superset": {
+   "total": 4,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "legacy-regexp": {
+   "total": 26,
+   "passed": 1,
+   "excluded": true,
+   "share_pct": 3.8462
+  },
+  "let": {
+   "total": 77,
+   "passed": 56,
+   "excluded": false,
+   "share_pct": 72.7273
+  },
+  "logical-assignment-operators": {
+   "total": 111,
+   "passed": 101,
+   "excluded": false,
+   "share_pct": 90.991
+  },
+  "new.target": {
+   "total": 63,
+   "passed": 62,
+   "excluded": false,
+   "share_pct": 98.4127
+  },
+  "nonextensible-applies-to-private": {
+   "total": 4,
+   "passed": 0,
+   "excluded": true,
+   "share_pct": 0.0
+  },
+  "numeric-separator-literal": {
+   "total": 159,
+   "passed": 159,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "object-rest": {
+   "total": 358,
+   "passed": 351,
+   "excluded": false,
+   "share_pct": 98.0447
+  },
+  "object-spread": {
+   "total": 135,
+   "passed": 132,
+   "excluded": false,
+   "share_pct": 97.7778
+  },
+  "optional-catch-binding": {
+   "total": 5,
+   "passed": 5,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "optional-chaining": {
+   "total": 56,
+   "passed": 52,
+   "excluded": false,
+   "share_pct": 92.8571
+  },
+  "promise-try": {
+   "total": 15,
+   "passed": 15,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "promise-with-resolvers": {
+   "total": 10,
+   "passed": 8,
+   "excluded": false,
+   "share_pct": 80.0
+  },
+  "proxy-missing-checks": {
+   "total": 3,
+   "passed": 1,
+   "excluded": false,
+   "share_pct": 33.3333
+  },
+  "regexp-dotall": {
+   "total": 17,
+   "passed": 17,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "regexp-duplicate-named-groups": {
+   "total": 19,
+   "passed": 19,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "regexp-lookbehind": {
+   "total": 19,
+   "passed": 19,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "regexp-match-indices": {
+   "total": 31,
+   "passed": 31,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "regexp-modifiers": {
+   "total": 230,
+   "passed": 230,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "regexp-named-groups": {
+   "total": 100,
+   "passed": 100,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "regexp-unicode-property-escapes": {
+   "total": 681,
+   "passed": 681,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "regexp-v-flag": {
+   "total": 187,
+   "passed": 187,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "resizable-arraybuffer": {
+   "total": 471,
+   "passed": 412,
+   "excluded": false,
+   "share_pct": 87.4735
+  },
+  "rest-parameters": {
+   "total": 96,
+   "passed": 96,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "set-methods": {
+   "total": 193,
+   "passed": 187,
+   "excluded": false,
+   "share_pct": 96.8912
+  },
+  "source-phase-imports": {
+   "total": 253,
+   "passed": 240,
+   "excluded": true,
+   "share_pct": 94.8617
+  },
+  "source-phase-imports-module-source": {
+   "total": 109,
+   "passed": 105,
+   "excluded": true,
+   "share_pct": 96.3303
+  },
+  "stable-array-sort": {
+   "total": 4,
+   "passed": 4,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "stable-typedarray-sort": {
+   "total": 1,
+   "passed": 1,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "string-trimming": {
+   "total": 54,
+   "passed": 54,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "super": {
+   "total": 19,
+   "passed": 16,
+   "excluded": false,
+   "share_pct": 84.2105
+  },
+  "symbols-as-weakmap-keys": {
+   "total": 29,
+   "passed": 29,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "tail-call-optimization": {
+   "total": 35,
+   "passed": 0,
+   "excluded": true,
+   "share_pct": 0.0
+  },
+  "template": {
+   "total": 1,
+   "passed": 1,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "top-level-await": {
+   "total": 277,
+   "passed": 248,
+   "excluded": false,
+   "share_pct": 89.5307
+  },
+  "u180e": {
+   "total": 25,
+   "passed": 21,
+   "excluded": false,
+   "share_pct": 84.0
+  },
+  "uint8array-base64": {
+   "total": 71,
+   "passed": 69,
+   "excluded": false,
+   "share_pct": 97.1831
+  },
+  "upsert": {
+   "total": 72,
+   "passed": 72,
+   "excluded": false,
+   "share_pct": 100.0
+  },
+  "well-formed-json-stringify": {
+   "total": 1,
+   "passed": 1,
+   "excluded": false,
+   "share_pct": 100.0
+  }
+ },
+ "top_failures": [
+  {
+   "status": "FAIL",
+   "why": "ReferenceError: Intl is not defined",
+   "runs": 2494
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'gregory'",
+   "runs": 504
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a TypeError to be thrown but no exception was thr",
+   "runs": 440
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'hebrew'",
+   "runs": 288
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'chinese'",
+   "runs": 274
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'japanese'",
+   "runs": 270
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'buddhist'",
+   "runs": 266
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'dangi'",
+   "runs": 240
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'roc'",
+   "runs": 228
+  },
+  {
+   "status": "FAIL",
+   "why": "include atomicsHelper.js failed",
+   "runs": 224
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'islamic-civil'",
+   "runs": 212
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'ethiopic'",
+   "runs": 208
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'islamic-tbla'",
+   "runs": 186
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'ethioaa'",
+   "runs": 168
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'coptic'",
+   "runs": 168
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'persian'",
+   "runs": 166
+  },
+  {
+   "status": "FAIL",
+   "why": "expected SyntaxError at parse, got TestN: This statement should not be",
+   "runs": 166
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected SameValue(\u00abN\u00bb, \u00abN\u00bb) to be true",
+   "runs": 164
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'islamic-umalqura'",
+   "runs": 164
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'indian'",
+   "runs": 146
+  },
+  {
+   "status": "FAIL",
+   "why": "parse: SyntaxError: missing ';' at 'x' (offset N)",
+   "runs": 133
+  },
+  {
+   "status": "FAIL",
+   "why": "ReferenceError: ShadowRealm is not defined",
+   "runs": 118
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a ReferenceError to be thrown but no exception wa",
+   "runs": 112
+  },
+  {
+   "status": "FAIL",
+   "why": "SyntaxError: yield in this position is not supported",
+   "runs": 99
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: The value of `typeof Atomics.waitAsync` is \"function\" Expe",
+   "runs": 88
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a SyntaxError to be thrown but no exception was t",
+   "runs": 88
+  },
+  {
+   "status": "FAIL",
+   "why": "parse: SyntaxError: expected 'from' at '*' (offset N)",
+   "runs": 87
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected SameValue(\u00abN\u00bb, \u00abundefined\u00bb) to be true",
+   "runs": 87
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: a zoned relativeTo is not supported",
+   "runs": 84
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a RangeError to be thrown but no exception was th",
+   "runs": 70
+  },
+  {
+   "status": "FAIL",
+   "why": "parse: SyntaxError: missing ';' at '_' (offset N)",
+   "runs": 59
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: the date-time is outside the range Temporal supports",
+   "runs": 54
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown time zone 'America/Vancouver' (only UTC and fixed ",
+   "runs": 54
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'N-N'",
+   "runs": 50
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: the date is outside the range Temporal supports",
+   "runs": 46
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected SameValue(\u00abtrue\u00bb, \u00abfalse\u00bb) to be true",
+   "runs": 44
+  },
+  {
+   "status": "FAIL",
+   "why": "TypeError: Cannot convert undefined or null to object",
+   "runs": 42
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: binding value is updated following evaluation Expected Sam",
+   "runs": 40
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: An initialized binding is not created prior to evaluation ",
+   "runs": 40
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected SameValue(\u00ab\"inside\"\u00bb, \u00ab\"outside\"\u00bb) to be true",
+   "runs": 40
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected true but got false",
+   "runs": 39
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a SyntaxError but got a ReferenceError",
+   "runs": 39
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: Maximum call stack size exceeded",
+   "runs": 38
+  },
+  {
+   "status": "FAIL",
+   "why": "ReferenceError: arguments is not defined",
+   "runs": 38
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a TestNError to be thrown but no exception was th",
+   "runs": 37
+  },
+  {
+   "status": "FAIL",
+   "why": "TypeError: transferToImmutable is not a function",
+   "runs": 36
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: no arg factories match include immutable and exclude undef",
+   "runs": 36
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a SyntaxError but got a TypeError",
+   "runs": 36
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected SameValue(\u00abfalse\u00bb, \u00abtrue\u00bb) to be true",
+   "runs": 34
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: the instant is outside the range Temporal supports",
+   "runs": 34
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: ",
+   "runs": 34
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: #N: scope.x === N. Actual: undefined",
+   "runs": 32
+  },
+  {
+   "status": "FAIL",
+   "why": "parse: SyntaxError: strict mode code may not include a with statement ",
+   "runs": 28
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a TestNError but got a ReferenceError",
+   "runs": 27
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown time zone 'America/Vancouver'",
+   "runs": 26
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: unknown calendar 'islamicc'",
+   "runs": 26
+  },
+  {
+   "status": "FAIL",
+   "why": "parse: SyntaxError: unexpected token at '@' (offset N)",
+   "runs": 26
+  },
+  {
+   "status": "FAIL",
+   "why": "TypeError: Cannot read properties of undefined (reading 'get')",
+   "runs": 24
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a TestNError but got a TypeError",
+   "runs": 24
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: a duration has mixed signs",
+   "runs": 24
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected SameValue(\u00ab\"undefined\"\u00bb, \u00ab\"function\"\u00bb) to be true",
+   "runs": 23
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a TypeError but got a ReferenceError",
+   "runs": 22
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: testResult !== true",
+   "runs": 20
+  },
+  {
+   "status": "FAIL",
+   "why": "TypeError: Function.prototype.toString requires that 'this' be a Funct",
+   "runs": 20
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: ISO string N-N-NTN:N-N:N:N with a sub-minute offset is not",
+   "runs": 20
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Non-empty value replaces previous non-empty value Expected",
+   "runs": 20
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a RangeError but got a TypeError",
+   "runs": 18
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: +N:N:N is not a valid time zone string Expected a RangeErr",
+   "runs": 18
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Actual [get other.calendar, get other.calendar, get other.",
+   "runs": 18
+  },
+  {
+   "status": "FAIL",
+   "why": "parse: SyntaxError: missing ';' at '_N' (offset N)",
+   "runs": 18
+  },
+  {
+   "status": "FAIL",
+   "why": "async: ",
+   "runs": 18
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: value Expected SameValue(\u00ab\"\"\u00bb, \u00ab\"value\"\u00bb) to be true",
+   "runs": 18
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a ReferenceError but got a TestNError",
+   "runs": 17
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Expected a TypeError but got a TestNError",
+   "runs": 16
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: isConstructor invoked with a non-function value",
+   "runs": 16
+  },
+  {
+   "status": "FAIL",
+   "why": "RangeError: Invalid array length",
+   "runs": 16
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: 'N-N' is ambiguous and requires T prefix Expected a RangeE",
+   "runs": 16
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: #N: innerScope.x === N. Actual: undefined",
+   "runs": 16
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Actual [get options.largestUnit, get options.largestUnit.t",
+   "runs": 16
+  },
+  {
+   "status": "FAIL",
+   "why": "TestNError: Missing year throws TypeError before month/monthCode confl",
+   "runs": 16
+  }
+ ],
+ "incidents": {
+  "crash_or_stall": []
+ },
+ "since_previous": {
+  "previous_run": "20261121T2353Z-test262-linux-x86_64-gh44963946727a1",
+  "previous_commit": "57872a9b315b72cce3aca9942d909ee54d1ead99",
+  "previous_passed": 47369,
+  "passed_delta": 0,
+  "points": -0.0,
+  "drop": false,
+  "newly_passing": [],
+  "newly_failing": []
+ },
+ "rivals": {
+  "source": {
+   "revision": "2a1ade3",
+   "generated_utc": "2026-11-22T04:00:59Z",
+   "same_commit": false
+  },
+  "rows": [
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "V8",
+    "version": "16.0.102",
+    "passed": 52536,
+    "denominator": 53801,
+    "share_pct": "97.6487",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "SpiderMonkey",
+    "version": "163.0a1",
+    "passed": 52958,
+    "denominator": 53801,
+    "share_pct": "98.4331",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "JavaScriptCore",
+    "version": "327542",
+    "passed": 53151,
+    "denominator": 53801,
+    "share_pct": "98.7918",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "QuickJS-NG",
+    "version": "dce8c0b",
+    "passed": 44923,
+    "denominator": 53801,
+    "share_pct": "83.4984",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "QuickJS",
+    "version": "e585640",
+    "passed": 53200,
+    "denominator": 53801,
+    "share_pct": "98.8829",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "XS",
+    "version": "61c84af",
+    "passed": 43738,
+    "denominator": 53801,
+    "share_pct": "81.2959",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "LibJS (Ladybird)",
+    "version": "237002f",
+    "passed": 0,
+    "denominator": 53801,
+    "share_pct": "0.0000",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "Boa",
+    "version": "a902642",
+    "passed": 51371,
+    "denominator": 53801,
+    "share_pct": "95.4834",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "Kiesel",
+    "version": "0.5.0-dev.40+27410638d",
+    "passed": 51001,
+    "denominator": 53801,
+    "share_pct": "94.7956",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "Nova",
+    "version": "591bf7b",
+    "passed": 41344,
+    "denominator": 53801,
+    "share_pct": "76.8462",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "Porffor",
+    "version": "alpha 25 (c9af40c 2026-11-17)",
+    "passed": 51368,
+    "denominator": 53801,
+    "share_pct": "95.4778",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "njs",
+    "version": "997957b",
+    "passed": 18955,
+    "denominator": 53801,
+    "share_pct": "35.2317",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "V8 (experimental flags)",
+    "version": "16.0.102",
+    "passed": 52963,
+    "denominator": 53801,
+    "share_pct": "98.4424",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "SpiderMonkey (experimental flags)",
+    "version": "163.0a1",
+    "passed": 53178,
+    "denominator": 53801,
+    "share_pct": "98.8420",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   },
+   {
+    "recorded_utc": "2026-11-22T06:55:04Z",
+    "test262_commit": "2a1ade3",
+    "engine": "JavaScriptCore (experimental flags)",
+    "version": "327543",
+    "passed": 53149,
+    "denominator": 53801,
+    "share_pct": "98.7881",
+    "status": "other_commit",
+    "reason": "test262.fyi ran Test262 2a1ade3, not 2e58f87d83",
+    "source": "https://data.test262.fyi/index.json",
+    "generated_utc": "2026-11-22T04:00:59Z"
+   }
+  ],
+  "directories": {}
+ },
+ "completeness": "complete",
+ "shards_missing_reasons": {},
+ "shards": [
+  {
+   "shard": 0,
+   "shards": 8,
+   "files": 6725,
+   "lines": 12954,
+   "seconds": 234,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  },
+  {
+   "shard": 1,
+   "shards": 8,
+   "files": 6725,
+   "lines": 12944,
+   "seconds": 226,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  },
+  {
+   "shard": 2,
+   "shards": 8,
+   "files": 6725,
+   "lines": 12940,
+   "seconds": 211,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  },
+  {
+   "shard": 3,
+   "shards": 8,
+   "files": 6724,
+   "lines": 12938,
+   "seconds": 178,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  },
+  {
+   "shard": 4,
+   "shards": 8,
+   "files": 6724,
+   "lines": 12943,
+   "seconds": 130,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  },
+  {
+   "shard": 5,
+   "shards": 8,
+   "files": 6724,
+   "lines": 12936,
+   "seconds": 201,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  },
+  {
+   "shard": 6,
+   "shards": 8,
+   "files": 6724,
+   "lines": 12935,
+   "seconds": 204,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  },
+  {
+   "shard": 7,
+   "shards": 8,
+   "files": 6724,
+   "lines": 12943,
+   "seconds": 147,
+   "jobs": 4,
+   "processes": 34,
+   "process_ends": 0
+  }
+ ]
+}
