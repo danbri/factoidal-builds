@@ -1,0 +1,90 @@
+name: EPUB Hub Wasm integration
+on:
+  push:
+    branches: [wip/epub-lean-check]
+    paths: [.github/workflows/epub-hub-wasm.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: d6f7366a3673425d27ab6351256903079dc2a6ae
+          sparse-checkout: docs/web/hub/epub
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install chromium
+      - name: Wait for the EPUB-enabled browser artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          for attempt in $(seq 1 45); do
+            if gh api "repos/$REPO/actions/runs/45001515696/artifacts" --jq '.artifacts[].name' | grep -qx 'foafnaut-engines'; then exit 0; fi
+            if gh api "repos/$REPO/actions/jobs/137143972275" --jq .conclusion | grep -Eq '^(failure|cancelled|timed_out)$'; then exit 1; fi
+            sleep 20
+          done
+          echo 'The release workflow has not produced a browser artifact.'
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45001515696
+          name: foafnaut-engines
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Open a book with the release runtime and navigate it in Chromium
+        run: |
+          mkdir -p site/epub site/html-webgpu/runtime
+          cp docs/web/hub/epub/* site/epub/
+          cp candidate/web-render/engines/web-render.mjs candidate/web-render/engines/web-render.wasm site/html-webgpu/runtime/
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('site/epub')
+          layout="""<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:"><link rel="stylesheet" href="./style.css">"""
+          (p/'index.html').write_text(layout+'<main>'+ (p/'index.njk').read_text().split('---',2)[2]+'</main><script type="module" src="./app.mjs"></script>')
+          PY
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory site > server.log 2>&1 &
+          cat > check.cjs <<'JS'
+          const {chromium} = require('playwright');
+          const assert = require('node:assert/strict');
+          (async () => {
+            const browser = await chromium.launch();
+            try {
+              const page = await browser.newPage({viewport: {width: 390, height: 760}});
+              page.setDefaultTimeout(12000);
+              page.on('pageerror', error => console.error(error));
+              const sent = [];
+              page.on('request', request => {
+                if (request.method() !== 'GET') sent.push(request.method());
+              });
+              await page.goto('http://127.0.0.1:8765/epub/');
+              await page.getByRole('button', {name: 'Try a sample'}).click();
+              const frame = page.frameLocator('#reader');
+              await frame.getByRole('heading', {name: 'Inside an EPUB'}).waitFor();
+              await frame.getByRole('link', {name: 'Continue to Reading order'}).click();
+              await frame.getByRole('heading', {name: 'Reading order'}).waitFor();
+              await page.getByLabel('Choose an EPUB').setInputFiles('site/epub/sample.epub');
+              await frame.getByRole('heading', {name: 'Inside an EPUB'}).waitFor();
+              assert.equal(await page.locator('#status').textContent(), '');
+              assert.deepEqual(sent, []);
+              await page.getByLabel('Choose an EPUB').setInputFiles({
+                name: 'broken.epub', mimeType: 'application/epub+zip', buffer: Buffer.from('not a ZIP')
+              });
+              await page.waitForFunction(() => document.querySelector('#status').textContent !== 'Opening the EPUB in Lean…');
+              assert.match(await page.locator('#status').textContent(), /zip|archive|directory/i);
+              console.log('Real Lean WebAssembly opened sample and local file, followed the chapter link, and rejected an invalid EPUB.');
+            } finally {
+              await browser.close();
+            }
+          })().catch(error => {console.error(error); process.exitCode = 1});
+          JS
+          node check.cjs
