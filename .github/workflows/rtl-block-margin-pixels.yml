@@ -1,0 +1,151 @@
+name: RTL block margin paired reftests
+on:
+  push:
+    branches: [wip/paired-rtl-block-margins]
+    paths: [.github/workflows/rtl-block-margin-pixels.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      WPT: 4b26db8978f6024d3184ca483d74afbc354b35de
+      WEB_TAG: build-ef1710ff226d-foafnaut-web
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 9a8e00127922426230aeec46555e770c2b999549
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub
+            third_party/fonts
+            tests/browser-wpt
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Wait for the two exact native engine builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pair in 45064008718:e650d5bd958022e9573a3359feef3240a0cfef60 45066215827:9a8e00127922426230aeec46555e770c2b999549; do
+            run=${pair%%:*}
+            sha=${pair#*:}
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
+              grep -Fx "Build libweb-render.so from $sha"
+            until gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
+              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status || true)
+              if [[ $status == completed ]]; then
+                echo "::error::Native build run $run ended without a branch-engine artifact."
+                exit 1
+              fi
+              sleep 30
+            done
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45064008718
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: baseline
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45066215827
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: candidate
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Install the renderer runtime and pinned WPT inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          for role in baseline candidate; do
+            test "$tc" = "$(cat "$role/lean-toolchain")"
+          done
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB_TAG" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz
+          echo 'cb7ef521b7ec41ae27375afba8d7056f75295498419a9f5f976e08323b7353d5  foafnaut-web.tar.gz' | sha256sum -c -
+          mkdir -p web
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          runtime=web/docs/web/hub/html-webgpu/runtime
+          host=core/labs/demos/foafnaut/.build
+          mkdir -p "$host/native-html/runtime" "$host/engines"
+          cp "$runtime"/web-render.{mjs,wasm} "$host/native-html/runtime/"
+          cp "$runtime"/render-plan.{mjs,wasm} "$host/engines/"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+      - name: Compare RTL, LTR and auto-margin block placement
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p wpt/css/foafnaut-regressions
+          fixture=/css/foafnaut-regressions/rtl-block-margin.html
+          cat > "wpt$fixture" <<'HTML'
+          <!doctype html>
+          <style>
+          body { margin: 0 }
+          section { display: flow-root; width: 100px; height: 20px; background: #eee }
+          section > div { width: 40px; height: 20px; margin-left: 7px; margin-right: 5px; background: lime }
+          </style>
+          <section dir="rtl"><div dir="ltr"></div></section>
+          <section dir="ltr"><div dir="rtl"></div></section>
+          <section dir="rtl"><div style="margin: auto"></div></section>
+          HTML
+          cat > wpt/css/foafnaut-regressions/rtl-block-margin-ref.html <<'HTML'
+          <!doctype html>
+          <style>
+          body { margin: 0 }
+          section { width: 100px; height: 60px; background: #eee }
+          i { position: absolute; width: 40px; height: 20px; background: lime }
+          </style>
+          <section></section>
+          <i style="left:55px;top:0"></i>
+          <i style="left:7px;top:20px"></i>
+          <i style="left:30px;top:40px"></i>
+          HTML
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = Path("MANIFEST.json")
+          data = json.loads(manifest.read_text())
+          data["items"]["reftest"]["css"]["foafnaut-regressions"] = {
+              "rtl-block-margin.html": ["local", [None, [
+                  ["/css/foafnaut-regressions/rtl-block-margin-ref.html", "=="]
+              ], {}]]
+          }
+          manifest.write_text(json.dumps(data))
+          PY
+          for role in baseline candidate; do
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
+              --wpt-root "$PWD/wpt" --native-engine "$PWD/$role/libweb-render.so" --prefix css/ --jobs 1 \
+              --only "$fixture" --out "$PWD/out/$role"
+          done
+          python3 - "$fixture" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          from pathlib import Path
+
+          for role in ("baseline", "candidate"):
+              data = json.loads(Path(f"out/{role}/results.json").read_text())
+              row, = data["tests"]
+              assert data["valid"] and row["test"] == sys.argv[1]
+              print(role, row["status"], row["edges"][0]["totalPixels"])
+              assert row["status"] == ("PASS" if role == "candidate" else "FAIL"), row
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rtl-block-margin-pixels
+          path: out/
+          retention-days: 14
