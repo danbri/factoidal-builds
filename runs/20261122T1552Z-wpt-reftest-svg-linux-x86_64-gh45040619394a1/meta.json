@@ -1,0 +1,5103 @@
+{
+ "format": "factoidal-wpt-reftests-run-v1",
+ "row": {
+  "run_id": "20261122T1552Z-wpt-reftest-svg-linux-x86_64-gh45040619394a1",
+  "started_utc": "2026-11-22T15:52:42Z",
+  "finished_utc": "2026-11-22T15:53:02Z",
+  "trigger": "factoidal-release",
+  "suite": "wpt-reftest-svg",
+  "platform": "linux-x86_64",
+  "engine": "native-cpu-raster",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "2eddda1e1da7c722f1abf154d12a67c07d0c424b",
+  "commit_utc": "2026-11-22T13:49:07Z",
+  "snapshot_branch": "",
+  "release_tag": "build-2eddda1e1da7-foafnaut-linux-x86_64",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "names_total": 693,
+  "names_run": 0,
+  "passed": 0,
+  "denominator": 693,
+  "share_pct": "0.0000",
+  "share_ex_encoding_pct": "",
+  "ok": 0,
+  "error": 0,
+  "timeout": 0,
+  "skip": 0,
+  "crash": 693,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": 0,
+  "server_failures": 0,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.3,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x1; core tests/browser-wpt/wpt-reftests.py, CPU raster, Noto Sans",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45040619394",
+  "result_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T1552Z-wpt-reftest-svg-linux-x86_64-gh45040619394a1/results.tsv",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T1552Z-wpt-reftest-svg-linux-x86_64-gh45040619394a1/meta.json"
+ },
+ "rules": "Every reftest item of the WPT manifest at wpt_commit under the suite's directory (print reftests are a separate kind), run by core tests/browser-wpt/wpt-reftests.py by wptrunner's rules: == and != references, reference chains, fuzzy annotations, the test's viewport size (800x600 by default); per pixel the largest channel difference and the count of differing pixels against the fuzzy ranges. Drawn by the release's engine library with its CPU raster (op render, cpu:true), Noto Sans and the Hub's fallback fonts (third_party/fonts), page scripts on BubblePopJS; reftest-wait honoured for up to 6 s of page time (TIMEOUT after). A reftest is one test, PASS or not, as on wpt.fyi.",
+ "validity": {
+  "rules": "every shard present; every test has a status; ERROR (harness) under 0.5% of tests",
+  "valid": true,
+  "reasons": []
+ },
+ "totals": {
+  "tests": 693,
+  "passed": 0,
+  "share_pct": 0.0,
+  "statuses": {
+   "CRASH": 693
+  },
+  "harness_errors": 0,
+  "chrome_passed": 582,
+  "firefox_passed": 571,
+  "safari_passed": 440,
+  "edge_passed": 572,
+  "chrome_share_pct": 83.9827,
+  "firefox_share_pct": 82.3954,
+  "safari_share_pct": 63.4921,
+  "edge_share_pct": 82.5397,
+  "passed_where_chrome_passes": 0,
+  "chrome_passes_we_fail": 582,
+  "passed_with_skips": 0
+ },
+ "directories": {
+  "svg/animations/": {
+   "tests": 21,
+   "passed": 0,
+   "chrome": 18,
+   "firefox": 18,
+   "safari": 13,
+   "edge": 18
+  },
+  "svg/as-image/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 4,
+   "firefox": 4,
+   "safari": 3,
+   "edge": 4
+  },
+  "svg/coordinate-systems/": {
+   "tests": 29,
+   "passed": 0,
+   "chrome": 28,
+   "firefox": 29,
+   "safari": 18,
+   "edge": 26
+  },
+  "svg/embedded/": {
+   "tests": 33,
+   "passed": 0,
+   "chrome": 28,
+   "firefox": 30,
+   "safari": 25,
+   "edge": 28
+  },
+  "svg/extensibility/": {
+   "tests": 19,
+   "passed": 0,
+   "chrome": 19,
+   "firefox": 18,
+   "safari": 9,
+   "edge": 19
+  },
+  "svg/fonts/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "svg/geometry/": {
+   "tests": 25,
+   "passed": 0,
+   "chrome": 25,
+   "firefox": 25,
+   "safari": 25,
+   "edge": 25
+  },
+  "svg/interact/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 0,
+   "edge": 1
+  },
+  "svg/layout/": {
+   "tests": 7,
+   "passed": 0,
+   "chrome": 7,
+   "firefox": 7,
+   "safari": 5,
+   "edge": 7
+  },
+  "svg/linking/": {
+   "tests": 58,
+   "passed": 0,
+   "chrome": 44,
+   "firefox": 50,
+   "safari": 33,
+   "edge": 42
+  },
+  "svg/painting/": {
+   "tests": 139,
+   "passed": 0,
+   "chrome": 129,
+   "firefox": 114,
+   "safari": 104,
+   "edge": 131
+  },
+  "svg/path/": {
+   "tests": 24,
+   "passed": 0,
+   "chrome": 16,
+   "firefox": 16,
+   "safari": 13,
+   "edge": 16
+  },
+  "svg/pservers/": {
+   "tests": 35,
+   "passed": 0,
+   "chrome": 35,
+   "firefox": 33,
+   "safari": 24,
+   "edge": 33
+  },
+  "svg/render/": {
+   "tests": 25,
+   "passed": 0,
+   "chrome": 24,
+   "firefox": 19,
+   "safari": 20,
+   "edge": 24
+  },
+  "svg/scripted/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "svg/shapes/": {
+   "tests": 29,
+   "passed": 0,
+   "chrome": 24,
+   "firefox": 29,
+   "safari": 28,
+   "edge": 25
+  },
+  "svg/struct/": {
+   "tests": 56,
+   "passed": 0,
+   "chrome": 51,
+   "firefox": 47,
+   "safari": 33,
+   "edge": 51
+  },
+  "svg/styling/": {
+   "tests": 96,
+   "passed": 0,
+   "chrome": 58,
+   "firefox": 60,
+   "safari": 44,
+   "edge": 58
+  },
+  "svg/text/": {
+   "tests": 89,
+   "passed": 0,
+   "chrome": 69,
+   "firefox": 68,
+   "safari": 41,
+   "edge": 61
+  },
+  "svg/top-level-document/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 0,
+   "edge": 1
+  }
+ },
+ "rivals": [
+  {
+   "recorded_utc": "2026-11-22T15:53:37Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "chrome",
+   "version": "158.0.8127.36",
+   "wptfyi_run_id": 5308846168604672,
+   "passed": 582,
+   "denominator": 693,
+   "share_pct": "83.9827",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T15:53:37Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "firefox",
+   "version": "160.0.1",
+   "wptfyi_run_id": 5108487085096960,
+   "passed": 571,
+   "denominator": 693,
+   "share_pct": "82.3954",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T15:53:37Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "safari",
+   "version": "27.2 (22625.2.8.11.9)",
+   "wptfyi_run_id": 4778240791805952,
+   "passed": 440,
+   "denominator": 693,
+   "share_pct": "63.4921",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T15:53:37Z",
+   "suite": "wpt-reftest-svg",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "edge",
+   "version": "157.0.4341.60",
+   "wptfyi_run_id": 6199838727995392,
+   "passed": 572,
+   "denominator": 693,
+   "share_pct": "82.5397",
+   "status": "ok",
+   "reason": ""
+  }
+ ],
+ "since_previous": {
+  "previous_run": "20261122T1200Z-wpt-reftest-svg-linux-x86_64-gh45019958934a1",
+  "previous_commit": "e0666850902b16471c3299bde30944aa389604ec",
+  "previous_wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "previous_passed": 328,
+  "passed_delta": -328,
+  "newly_passing": [],
+  "newly_failing": [
+   {
+    "test": "/svg/animations/animate-display-to-none-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/animations/animate-fill-underlying-value-change.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/animations/set-animation-end-1.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/as-image/sprite-sheet-fractional-size.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/out-of-flow-svg-root.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/outer-svg-transform-attribute-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/outer-svg-transform-attribute-dynamic-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/outer-svg-transform-attribute-dynamic-002.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/outer-svg-transform-attribute-svg-dom-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/outer-svg-transform-attribute-zoom-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/view-invalid-viewBox.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/view-transform-viewBox.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-baseVal-change-invalid.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-change-repaint-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-fractional-valid.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-pattern.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-symbol.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/embedded/image-embedding-nested-http-url.sub.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/embedded/image-embedding-svg-with-near-integral-width.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/embedded/image-large-bitmap.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/extensibility/foreignObject/composited-inside-object.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/extensibility/foreignObject/compositing-backface-visibility.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/extensibility/foreignObject/filter-repaint.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/extensibility/foreignObject/foreign-object-scale-scroll.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/circle-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/circle-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/circle-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/circle-006.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/ellipse-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/ellipse-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/ellipse-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/ellipse-007.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/percentage-attribute.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/rect-005.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/geometry/reftests/rect-006.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/layout/svg-negative-viewbox.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/layout/svg-with-percent-dimensions-relayout.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/href-feImage-element.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/href-filter-element.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/href-gradient-element.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/href-image-element.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/href-pattern-element.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/href-textPath-element.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/href-use-element.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/media-fragment-spatial-percent-zero-size.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/svgview-and-xywh.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/svgview-viewbox-invalid.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/url-processing-whitespace-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/url-processing-whitespace-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/use-descendant-combinator-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/use-hidden-attr-change.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/use-nested-symbol-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/use-symbol-rendered-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/use-template.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/linking/reftests/view-viewbox-invalid-fallback.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/currentColor-override-pserver-fallback.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/currentColor-override-pserver-fill.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/currentColor-override-pserver-stroke.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/currentcolor-fill-stroke-repaint.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/foreignObject-overflow.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/marker-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/marker-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/marker-005.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/marker-008.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/marker-orient-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/negative-dashoffset-odd-dasharray.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/fallback-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/fallback-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/large-transform-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-context-fill-transform.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-011.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-012.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-013.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-021.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-022.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/marker-path-023.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/markers-orient-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/non-scaling-stroke-005.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/non-scaling-stroke-006.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/non-scaling-stroke-outer-svg-transform.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/non-scaling-stroke-paint-server-transform.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/non-scaling-stroke-precision-loss.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-context-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-context-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-context-004.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-context-008.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-a98-rgb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-a98-rgb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-display-p3.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-hex.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-hsl-legacy.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-hsl.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-hwb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-lab.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-lch.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-oklab.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-oklch.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-prophoto-rgb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-rec2020.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-rgb-legacy-percent.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-rgb-legacy.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-rgb-modern.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-rgb-percent-rounding.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-srgb-linear.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-srgb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-xyz-d50.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-xyz-d65.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-attr-xyz.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-display-p3.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-hex.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-hsl-legacy.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-hsl.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-hwb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-lab.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-lch.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-oklab.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-oklch.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-prophoto-rgb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-rec2020.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-rgb-legacy-percent.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-rgb-legacy.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-rgb-modern.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-rgb-percent-rounding.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-srgb-linear.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-srgb.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-xyz-d50.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-xyz-d65.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-fill-xyz.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-order-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-order-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/paint-order-text-decorations.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/percentage-attribute.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/percentage.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/small-nested-viewbox.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/reftests/visibility-collapse-001.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/painting/svg-percent-stroke-width-viewbox-update.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/distance/path-length-css-zoom.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/distance/pathLength-positive-percentage.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/distance/pathLength-zero-percentage.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/distance/pathlength-path-mutating.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/distance/pathlength-path.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/distance/pathlength-rect-mutating.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/distance/pathlength-rect.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/path/property/marker-path.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/fill-fallback-currentcolor-1.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/fill-fallback-currentcolor-2.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/fill-fallback-invalid-uri.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/fill-fallback-none-1.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/fill-fallback-none-2.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/fill-fallback-none-3.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/gradient-on-tspan-after-font-size-change.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/gradient-transform-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/gradient-transform-02.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/pattern-text-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/pattern-transform-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/pattern-transform-template-inheritance.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/pattern-viewbox-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/radialgradient-basic-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/radialgradient-basic-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/stop-color-currentcolor-dynamic-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/pservers/reftests/stroke-fallback-invalid-uri.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/render/reftests/blending-svg-foreign-object.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/render/reftests/filter-effects-on-pattern.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/render/reftests/outer-svg-outline.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/render/reftests/overflow-clip.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/render/reftests/render-sync-with-font-size.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/scripted/script-style-attribute-csp.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/circle-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-02.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-03.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-04.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-05.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-06.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-07.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-08.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/ellipse-09.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/line-dasharray.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/rect-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/rect-02.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/rect-05.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/rect-rx-set-by-css.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/disabled-shapes-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/ellipse-auto-rx-clip-path.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/ellipse-auto-rx-css-clip-path.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/ellipse-auto-rx-percent-clip-path.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/ellipse-auto-rx-textpath.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/pathlength-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/pathlength-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/pathlength-004a.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/pathlength-004b.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/shapes/reftests/pathlength-005.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/currentScale-change-repaint.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/gradient-in-symbol.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/image-symbol.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/inner-svg-rotate-transform.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/inner-svg-transform-and-viewbox.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/inner-svg-transform.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/requiredextensions-empty-string.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/svg-getIntersectionList-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/sync-svg-attributes.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-data-url-set-attributeName.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-encoding.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-external-use.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-image-href-mutating.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-no-tspan.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-svg-dimensions-override-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-svg-dimensions-override-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-svg-inline-css.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-symbol-dimensions-override-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-symbol-dimensions-override-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-symbol-display-none.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-symbol-inline-css-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-symbol-inline-css-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/struct/reftests/use-symbol-inline-css-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/css-var-on-length-attributes-02.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/css-var-on-length-attributes-04.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/css-var-on-length-attributes-05.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/image-sizing-min-content.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/invalidation/pct-filter-grow.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/invalidation/pct-filter.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/invalidation/pct-marker-grow.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/invalidation/pct-marker.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/invalidation/pct-stroke-dasharray-01.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/invalidation/pct-stroke-dasharray-02.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-auto.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-calc-size.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-calc.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-ems.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-fit-content.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-inherit.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-initial.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-max-content.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-min-content.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-percent.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-rems.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-stretch.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing-with-use.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/nested-svg-sizing.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/render/opacity-text-decoration.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-cross-origin-frame-in-cross-origin-frame.tentative.sub.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-cross-origin-frame-in-same-origin-frame.tentative.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-cross-origin-frame.tentative.sub.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-cross-origin-navigation-in-srcdoc-frame.tentative.sub.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-same-origin-frame-in-cross-origin-frame.tentative.sub.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-same-origin-frame-reload-as-sandbox.tentative.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-sandbox-frame.tentative.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-swap-content-visibility.tentative.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-swap.tentative.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/svg-filter-render-web-plugin.tentative.https.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/text-overflow-presentation-attribute-foreignobject.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/use-element-animations.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/styling/use-element-web-animations.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/dominant-baseline-central-large-font-size.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/first-letter.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/gradient-after-reposition.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/multiple-textpaths.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/no-background.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/no-margin-border-padding.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/opacity.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-clipped-offscreen-move-onscreen.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-complex-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-complex-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-context-fill.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-005.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-006.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-007.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-101.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-inline-size-201.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-multiline-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-multiline-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-multiline-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-path-transformed.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-positioning-list-combining-marks-indexing.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-positioning-list-combining-marks.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-shape-inside-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-shape-inside-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-unknown-element-not-rendered.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-visibility-hidden-tspan-visible.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/text-xml-space-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textLength-list-y-spacing.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textLength-list-y-spacingAndGlyphs.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-combining-marks.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-dynamic-href-change.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-dynamic-insert-target.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-dynamic-remove-readd-target.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-letter-spacing-01.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-ancestor-transform.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-combining-marks.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-dangling-href.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-empty-fallback.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-invalid-path-fallback.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-multiple-subpaths.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-pathlength-ignored.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-precedence-over-href.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-rtl.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-side-right.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-truncated-coordinate.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-two-textpaths.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-use-up-to-first-error.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-user-space.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr-whitespace-fallback.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-path-attr.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-pathlength-css-display-none.tentative.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-pathlength-zero-offset-percentage.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-pathlength-zero-offset-zero.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-shape-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-side-001.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-side-002.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-side-003.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-side-004.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-side-005.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-side-right-startoffset.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/textpath-side-right-subpaths.svg",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/tiny-text-with-scaling.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/transform-dynamic-change-root.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/transform-dynamic-change.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/text/reftests/writing-mode-dynamic-change.html",
+    "status": "CRASH"
+   },
+   {
+    "test": "/svg/top-level-document/svg-image-document-svg-xml-mime-type.tentative.html",
+    "status": "CRASH"
+   }
+  ],
+  "drop": true,
+  "same_wpt_commit": true
+ },
+ "incidents": [
+  {
+   "test": "/svg/animations/animate-display-to-none-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/animate-fill-underlying-value-change.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/animate-rewind-freeze-indefinite.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/conditional-processing-01.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/invalid-attribute-type-does-not-block-other-animations.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/invalid-attribute-type-does-not-block-same-group-animation.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/media-fragment-override-animation.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/scripted/animateMotion-animated-line.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/scripted/clear-mapped-animation.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/set-animation-end-1.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/set-animation-end-2.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/stop-animation-01.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/switch-animation-01.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/switch-animation-02.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/use-animate-display-none-symbol-2.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/use-animate-display-none-symbol.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/use-external-resource-animate-href.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/use-external-resource-animate.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/use-instance-animate-begin-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/use-instance-animate-event-base.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/animations/use-instance-animate-inherits-begin.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/as-image/external-resource-data-url-import.sub.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/as-image/external-resource-data-url-sheet.sub.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/as-image/external-resource-inline-sheet.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/as-image/sprite-sheet-fractional-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/abspos.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/out-of-flow-svg-root.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-intrinsic-size-003.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-intrinsic-size-004.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-intrinsic-size-005.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-003.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-dynamic-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-dynamic-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-individual-transform-properties-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-stacking-context-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-svg-dom-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-zoom-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/outer-svg-transform-attribute-zoom-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/view-invalid-viewBox.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/view-transform-viewBox.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-baseVal-change-invalid.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-change-repaint-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-fractional-valid.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-scaling-text-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-synthesized-in-img-001.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-contexts.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-marker.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-pattern.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/coordinate-systems/viewBox-zero-disables-rendering-symbol.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nested-data-url-from-canvas-post-window-load.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nested-data-url-from-canvas-window-load.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nested-data-url-from-canvas.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nested-data-url-png.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nested-data-url.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nested-external-data-url-png.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nested-http-url.sub.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-nesteder-data-url.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-svg-nested-svg-in-foreignobject.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-svg-viewref-with-viewbox.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-svg-with-auto-height.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-svg-with-fractional-viewbox.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-svg-with-near-integral-width.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-svg-with-viewport-units-inline-style.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-embedding-svg-with-viewport-units.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-fractional-width-vertical-fidelity.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-large-bitmap.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-modify-href-1.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-modify-href-2.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-modify-href-3.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-modify-href-4.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-does-not-affect-img.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-ignores-svg-root-viewbox.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-meet-svg-viewbox-only.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-meet-svg-with-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-none-animated-viewbox.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-none-shared-document.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-none-svg-viewbox-only.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-overrides-svg-root.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-preserveaspectratio-slice-svg.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-remove-href-1.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-remove-href-2.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/embedded/image-remove-href-3.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/composited-inside-object.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/compositing-backface-visibility.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/filter-repaint.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/foreign-object-containing-svg-in-svg-in-object.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/foreign-object-margin-collapsing.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/foreign-object-paints-before-rect.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/foreign-object-scale-scroll.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/foreign-object-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/foreign-object-visibility-hidden-visible-content.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/foreign-object-with-position-under-clip-path.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/isolation-with-html.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/isolation-with-svg.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/masked.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/overlapped-positioned-and-will-change-transform-descendant.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/position-svg-root-in-foreign-object.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/scroll-transform-nested-stacked-children.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/stacking-context.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/will-change-in-foreign-object-paint-order.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/extensibility/foreignObject/will-change-in-transformed-foreign-object.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/fonts/font-size-adjust-scale-text.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/circle-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/circle-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/circle-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/circle-004.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/circle-005.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/circle-006.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/circle-calc-dynamic-viewport.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-004.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-005.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-006.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-007.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/ellipse-calc-dynamic-viewport.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/percentage-attribute.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/percentage.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-004.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-005.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-006.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-007.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/geometry/reftests/rect-calc-dynamic-viewport.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/interact/use-instance-hover.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/layout/svg-embed-intrinsic-size-min-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/layout/svg-foreign-relayout-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/layout/svg-foreign-relayout-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/layout/svg-intrinsic-size-invalidation.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/layout/svg-intrinsic-size-min-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/layout/svg-negative-viewbox.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/layout/svg-with-percent-dimensions-relayout.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-a-element-attr-change.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-feImage-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-filter-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-gradient-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-image-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-pattern-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-textPath-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/href-use-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-override-multiple.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-decimal-values.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-img-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-invalid-negative-width.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-invalid-zero-height.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-invalid-zero-width.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-last-wins.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-overflow-clamped-nonzero-origin.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-overflow-clamped.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-percent-full.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-percent-img-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-percent-no-natural-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-percent-nonsquare.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-percent-viewbox-no-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-percent-zero-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-percent.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-pixel-explicit.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-pixel-implicit.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-viewbox-only.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/media-fragment-spatial-viewbox-width.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-and-xywh.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-attribute-order.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-escaped-semicolon.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-img-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-preserveaspectratio-meet.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-preserveaspectratio.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-spaces-around-semicolon.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-spaces.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-timesegment.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-viewbox-invalid.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-viewbox-override-multiple.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-viewbox-then-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/svgview-viewbox-zero.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/url-processing-fetch-properties-001.sub.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/url-processing-fetch-properties-002.sub.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/url-processing-whitespace-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/url-processing-whitespace-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/url-processing-whitespace-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/url-reference-local-textpath.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-descendant-combinator-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-descendant-combinator-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-descendant-combinator-003.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-hidden-attr-change.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-keyframes.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-nested-symbol-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-symbol-rendered-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/use-template.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/view-viewbox-invalid-fallback.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/linking/reftests/view-viewbox-override.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/animated-dashoffset-odd-dasharray.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/color-interpolation-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/color-mix-currentcolor-fill-stroke-repaint.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/currentColor-override-pserver-fallback.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/currentColor-override-pserver-fill.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/currentColor-override-pserver-stroke.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/currentcolor-fill-stroke-repaint.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/foreignObject-overflow.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/inline-svg-resize-viewport-dependent-mask.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/inner-outer-svg-overflow-auto.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-004.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-005.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-006.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-007.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-008.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-009.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/marker-orient-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/mask-containing-image-with-clip-path.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/negative-dashoffset-odd-dasharray.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/display-none-mask.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/fallback-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/fallback-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/gradient-external-reference.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/large-transform-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-context-fill-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-data-uri-reference.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-external-reference.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-implicit-subpaths.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-orient-auto-closepath.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-011.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-012.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-013.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-021.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-022.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-path-023.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-units-strokewidth-non-scaling-stroke.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/marker-units-userspaceonuse-non-scaling-stroke.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/markers-orient-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/markers-orient-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/mask-percentage.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-003.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-004.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-005.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-006.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-007.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-008.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-009.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-010.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-non-uniform-scale.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-outer-svg-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-paint-server-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-precision-loss.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-text-css-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/non-scaling-stroke-with-none-preserve-aspect-ratio.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-context-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-context-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-context-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-context-004.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-context-006.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-context-007.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-context-008.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-a98-rgb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-a98-rgb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-display-p3.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-hex.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-hsl-legacy.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-hsl.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-hwb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-lab.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-lch.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-oklab.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-oklch.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-prophoto-rgb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-rec2020.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-rgb-legacy-percent.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-rgb-legacy.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-rgb-modern.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-rgb-percent-rounding.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-srgb-linear.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-srgb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-xyz-d50.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-xyz-d65.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-attr-xyz.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-display-p3.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-hex.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-hsl-legacy.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-hsl.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-hwb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-lab.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-lch.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-oklab.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-oklch.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-prophoto-rgb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-rec2020.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-rgb-legacy-percent.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-rgb-legacy.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-rgb-modern.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-rgb-percent-rounding.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-srgb-linear.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-srgb.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-xyz-d50.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-xyz-d65.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-fill-xyz.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-order-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-order-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-order-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/paint-order-text-decorations.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/pattern-external-reference.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/percentage-attribute.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/percentage.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/small-nested-viewbox.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/svg-percent-stroke-dasharray-line-viewbox-update.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/svg-percent-stroke-dasharray-path-viewbox-update.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/svg-percent-stroke-dasharray-rect-viewbox-update.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/svg-percent-stroke-dashoffset-line-viewbox-update.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/svg-percent-stroke-dashoffset-path-viewbox-update.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/svg-percent-stroke-dashoffset-rect-viewbox-update.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/symbol-in-mask.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/text-shadow-01.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/text-shadow-02.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/text-shadow-03.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/visibility-collapse-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/reftests/zero-scale-svg-transform-inside-g-tag.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/scripted/marker-element-added.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/subpixel-clip-path-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/svg-child-will-change-transform-invalidation.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/svg-percent-stroke-width-viewbox-update.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/svg-with-outline.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/text-clip-path-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/text-mask-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/painting/will-change-under-mask.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/bearing/absolute.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/bearing/relative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/bearing/zero.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/path-length-css-overrides-presentation-attribute.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/path-length-css-property.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/path-length-css-zero.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/path-length-css-zoom.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathLength-positive-percentage.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathLength-positive.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathLength-zero-percentage.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathLength-zero.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathlength-circle-mutating.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathlength-path-mutating.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathlength-path-negative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathlength-path-zero.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathlength-path.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathlength-rect-mutating.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/distance/pathlength-rect.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/error-handling/render-until-error.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/property/d-none.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/property/marker-path.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/property/mpath.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/property/priority.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/path/reftests/path-zoom.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/css-color-visited-currentcolor-svg-fill.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/fill-fallback-currentcolor-1.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/fill-fallback-currentcolor-2.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/fill-fallback-invalid-uri.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/fill-fallback-none-1.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/fill-fallback-none-2.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/fill-fallback-none-3.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-color-interpolation.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-objectBoundingBox-absolute-units.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-on-tspan-after-font-size-change.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-on-use-context-fill-after-font-size-change.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-transform-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-transform-02.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-transform-03.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/gradient-transform-template-inheritance.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/linear-gradient-transform-empty-attr.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-inheritance-template-pattern-removed.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-opacity-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-text-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-transform-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-transform-02.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-transform-03.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-transform-empty-attr.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-transform-template-inheritance.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/pattern-viewbox-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/percent-encoded-fragment-fill-stroke.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/radial-gradient-transform-empty-attr.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/radialgradient-basic-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/radialgradient-basic-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/radialgradient-fully-overlapping.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/stop-color-currentcolor-dynamic-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/reftests/stroke-fallback-invalid-uri.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/scripted/linear-gradient-transform-clear.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/scripted/pattern-transform-clear.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/pservers/scripted/radial-gradient-transform-clear.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/order/clip-path-filter-order.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/order/z-index.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-2d-transform.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-3d-to-2d-transform-dynamic.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-foreign-object.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-root-contain-paint.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-root-flex-item-z-index.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-root-position-sticky.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-root.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-stacking-context.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/blending-svg-will-change-opacity.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/change-sync-for-nested-use.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/filter-effects-on-pattern.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/nested-svg-overflow-clip.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/outer-svg-mask.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/outer-svg-outline.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/outer-svg-transform-box-shadow.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/outer-svg-transform-outline.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/outer-svg-transform-overflow-clip.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/overflow-clip.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/render-sync-with-font-size.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/svg-filter-unresolved-reference.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/render/reftests/visibility-hidden-container-mask-clip.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/scripted/script-style-attribute-csp.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/circle-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-02.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-03.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-04.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-05.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-06.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-07.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-08.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/ellipse-09.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/line-dasharray.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/rect-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/rect-02.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/rect-03.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/rect-04.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/rect-05.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/rect-rx-set-by-css.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/disabled-shapes-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/ellipse-auto-rx-clip-path.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/ellipse-auto-rx-css-clip-path.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/ellipse-auto-rx-percent-clip-path.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/ellipse-auto-rx-textpath.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/pathlength-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/pathlength-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/pathlength-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/pathlength-004a.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/pathlength-004b.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/pathlength-005.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/shapes/reftests/polygon-with-filtered-marker.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/conditional-processing-never-rendered-resources.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/currentScale-change-repaint.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/currentScale.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/gradient-in-symbol.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/image-symbol.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/inner-svg-css-transform.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/inner-svg-rotate-transform.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/inner-svg-transform-and-viewbox.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/inner-svg-transform.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/nested-svg-through-display-contents.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/outer-svg-css-transform-in-html-scale.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/outer-svg-transform-in-html-scale.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/outer-svg-transform-in-html.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/outer-svg-transform.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/requiredextensions-empty-string.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/requiredextensions-xhtml.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/svg-getIntersectionList-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/sync-svg-attributes.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-a.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-adopted-with-external-resource.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-cross-origin.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-data-url-set-attributeName.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-data-url-setAttribute.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-data-url.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-encoding.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-event-handler-no-loss-of-events.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-html-resource-with-content-type-svg.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-html-resource-with-doctype.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-html-resource.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-resource-nested-image.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-resource-nested-symbol.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-resource-no-svg-root.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-resource-target-pseudo-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-resource-target-pseudo-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-resource-with-revalidation.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-svg-resource-no-fragment-id.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-external-use.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-foreignObject.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-image-href-mutating.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-inheritance-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-inheritance-nth-child-of.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-inheritance-nth-last-child-of.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-no-tspan.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-ref-inside-data-url.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-referencing-non-svg-fragment-element.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-same-origin.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-svg-dimensions-override-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-svg-dimensions-override-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-svg-inline-css.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-switch.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-symbol-dimensions-override-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-symbol-dimensions-override-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-symbol-display-none.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-symbol-inline-css-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-symbol-inline-css-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/struct/reftests/use-symbol-inline-css-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/border-spacing-svg-zoom-table-display.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/color-inherit-link-visited.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/css-linked-parameters-precedence-1.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/css-linked-parameters-precedence-2.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-custom-property-dynamic.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-linked-parameters-1.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-linked-parameters-2.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-linked-parameters-cleared-dynamic.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-url-fragment-identifiers-1.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-url-fragment-identifiers-2.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-url-function-1.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/img-with-url-function-2.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-background-image.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-basic.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-currentcolor-typed.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-currentcolor-untyped.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-duplicate-name.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-dynamic.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-fallback.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-feimage-dynamic.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-feimage-resolution.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-feimage-subregion.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-feimage.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-fragment-identifier-background.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-fragment-identifier.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-fragment-shared-resource.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-geometry.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-invalid-typed-value.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-none.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-linked-parameters/link-parameters-per-container.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-var-on-length-attributes-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-var-on-length-attributes-02.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-var-on-length-attributes-03.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-var-on-length-attributes-04.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-var-on-length-attributes-05.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-var-on-length-attributes-06.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/css-var-on-length-attributes-quirk.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/image-sizing-min-content.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/nth-child-of-class.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/nth-last-child-of-class.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/pct-filter-grow.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/pct-filter.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/pct-marker-grow.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/pct-marker.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/pct-stroke-dasharray-01.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/invalidation/pct-stroke-dasharray-02.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-auto.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-calc-size.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-calc.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-ems.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-fit-content.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-inherit.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-initial.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-max-content.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-min-content.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-percent.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-rems.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-stretch.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-viewport-units-with-ICB.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-viewport-units.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing-with-use.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/nested-svg-sizing.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/outermost-svg-sizing-viewport-units.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/padding-on-svg-via-img.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/rect-sizing-viewport-units.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/render/opacity-text-decoration.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/render/transform-box.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/render/transform-origin.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/render/transform.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/stroke-color-inherit-link-visited.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-cross-origin-frame-in-cross-origin-frame.tentative.sub.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-cross-origin-frame-in-same-origin-frame.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-cross-origin-frame.tentative.sub.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-cross-origin-navigation-in-srcdoc-frame.tentative.sub.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-same-origin-frame-in-cross-origin-frame.tentative.sub.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-same-origin-frame-in-same-origin-frame.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-same-origin-frame-reload-as-sandbox.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-same-origin-frame.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-sandbox-frame.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-srcdoc-frame.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-swap-content-visibility.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-swap.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/svg-filter-render-web-plugin.tentative.https.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/text-overflow-presentation-attribute-foreignobject.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-animations.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-attr-selector-transition.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-attr-selector.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-class-selector-transition.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-class-selector.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-id-selector-transition.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-id-selector.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-non-rendered-has-selector.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-non-rendered-sibling-selector.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-transitions-dom-mutation.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-transitions.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/styling/use-element-web-animations.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/dominant-baseline-central-large-font-size.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/dominant-baseline-hanging-small-font-size.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/dominant-baseline-text-after-edge.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/dominant-baseline-text-before-edge.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/first-letter.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/font-size-scaling.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/gradient-after-reposition.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/lang-attribute-dynamic.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/lang-attribute.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/lengthAdjust-large-font-vertical.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/lengthAdjust-large-font.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/lengthAdjust-vertical.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/multiple-textpaths.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/no-background.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/no-margin-border-padding.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/opacity.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/rtl-text-path.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-bidi-controls-anchors-1.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-bidi-controls-anchors-2.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-clipped-offscreen-move-onscreen.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-complex-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-complex-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-context-fill.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-font-face-load-image.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-005.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-006.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-007.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-101.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-inline-size-201.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-multiline-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-multiline-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-multiline-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-path-transformed-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-path-transformed.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-positioning-list-combining-marks-indexing.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-positioning-list-combining-marks.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-shape-inside-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-shape-inside-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-transform-001.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-transform-002.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-unknown-element-not-rendered.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-visibility-hidden-tspan-visible.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/text-xml-space-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textLength-list-x-spacingAndGlyphs.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textLength-list-y-spacing.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textLength-list-y-spacingAndGlyphs.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-combining-marks.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-dynamic-href-change.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-dynamic-insert-target.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-dynamic-remove-readd-target.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-letter-spacing-01.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-ancestor-transform.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-combining-marks.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-dangling-href.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-empty-fallback.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-invalid-path-fallback.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-multiple-subpaths.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-pathlength-ignored.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-precedence-over-href.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-rtl.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-side-right.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-truncated-coordinate.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-two-textpaths.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-use-up-to-first-error.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-user-space.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr-whitespace-fallback.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-path-attr.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-pathlength-css-display-none.tentative.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-pathlength-zero-offset-percentage.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-pathlength-zero-offset-positive.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-pathlength-zero-offset-zero.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-shape-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-side-001.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-side-002.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-side-003.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-side-004.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-side-005.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-side-right-startoffset.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/textpath-side-right-subpaths.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/tiny-text-with-scaling.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/transform-dynamic-change-root.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/transform-dynamic-change.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/tspan-opacity-mixed-direction.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/writing-mode-dynamic-change.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/xml-lang-attribute-dynamic.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/text/reftests/xml-lang-attribute.svg",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  },
+  {
+   "test": "/svg/top-level-document/svg-image-document-svg-xml-mime-type.tentative.html",
+   "status": "CRASH",
+   "message": "drawing process exited 1"
+  }
+ ],
+ "shards": [
+  {
+   "shard": [
+    0,
+    1
+   ],
+   "tests": 693,
+   "wallSeconds": 20.4,
+   "pagesDrawn": 1056,
+   "engineSha256": "1129ad0d2ae312c6d6e8843df538809d98d5c6fe954f4676784bb0b059cf31be"
+  }
+ ],
+ "completeness": "complete",
+ "shards_missing_reasons": {},
+ "plan": {
+  "release_tag": "build-2eddda1e1da7-foafnaut-linux-x86_64",
+  "core_commit": "2eddda1e1da7c722f1abf154d12a67c07d0c424b",
+  "commit_utc": "2026-11-22T13:49:07Z",
+  "web_tag": "build-2eddda1e1da7-foafnaut-web",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "suites": [
+   "svg"
+  ],
+  "trigger": "factoidal-release",
+  "planned_utc": "2026-11-22T15:52:05Z"
+ }
+}
