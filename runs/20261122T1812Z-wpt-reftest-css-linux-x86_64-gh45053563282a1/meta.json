@@ -1,0 +1,2116 @@
+{
+ "format": "factoidal-wpt-reftests-run-v1",
+ "row": {
+  "run_id": "20261122T1812Z-wpt-reftest-css-linux-x86_64-gh45053563282a1",
+  "started_utc": "2026-11-22T18:12:17Z",
+  "finished_utc": "2026-11-22T18:30:26Z",
+  "trigger": "manual",
+  "suite": "wpt-reftest-css",
+  "platform": "linux-x86_64",
+  "engine": "native-cpu-raster",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "b9f6c92bd022d7659752e0962aa34f7b4b53ccd1",
+  "commit_utc": "2026-11-22T17:23:08Z",
+  "snapshot_branch": "",
+  "release_tag": "build-b9f6c92bd022-foafnaut-linux-x86_64",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "names_total": 25813,
+  "names_run": 25813,
+  "passed": 10306,
+  "denominator": 25813,
+  "share_pct": "39.9256",
+  "share_ex_encoding_pct": "",
+  "ok": 10306,
+  "error": 22,
+  "timeout": 133,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": 15352,
+  "server_failures": 22,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 16,
+  "wall_minutes": 18.1,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x16; core tests/browser-wpt/wpt-reftests.py, CPU raster, Noto Sans",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45053563282",
+  "result_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T1812Z-wpt-reftest-css-linux-x86_64-gh45053563282a1/results.tsv.gz",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T1812Z-wpt-reftest-css-linux-x86_64-gh45053563282a1/meta.json"
+ },
+ "rules": "Every reftest item of the WPT manifest at wpt_commit under the suite's directory (print reftests are a separate kind), run by core tests/browser-wpt/wpt-reftests.py by wptrunner's rules: == and != references, reference chains, fuzzy annotations, the test's viewport size (800x600 by default); per pixel the largest channel difference and the count of differing pixels against the fuzzy ranges. Drawn by the release's engine library with its CPU raster (op render, cpu:true), Noto Sans and the Hub's fallback fonts (third_party/fonts), page scripts on BubblePopJS; reftest-wait honoured for up to 6 s of page time (TIMEOUT after). A reftest is one test, PASS or not, as on wpt.fyi.",
+ "validity": {
+  "rules": "every shard present; every test has a status; ERROR (harness) under 0.5% of tests",
+  "valid": true,
+  "reasons": []
+ },
+ "totals": {
+  "tests": 25813,
+  "passed": 10306,
+  "share_pct": 39.9256,
+  "statuses": {
+   "PASS": 10306,
+   "FAIL": 15352,
+   "ERROR": 22,
+   "TIMEOUT": 133
+  },
+  "harness_errors": 22,
+  "chrome_passed": 22725,
+  "firefox_passed": 21021,
+  "safari_passed": 20145,
+  "edge_passed": 22749,
+  "chrome_share_pct": 88.037,
+  "firefox_share_pct": 81.4357,
+  "safari_share_pct": 78.0421,
+  "edge_share_pct": 88.13,
+  "passed_where_chrome_passes": 9917,
+  "chrome_passes_we_fail": 12808,
+  "passed_with_skips": 104
+ },
+ "directories": {
+  "css/CSS2/": {
+   "tests": 6243,
+   "passed": 3253,
+   "chrome": 6116,
+   "firefox": 6105,
+   "safari": 5973,
+   "edge": 6111
+  },
+  "css/WOFF2/": {
+   "tests": 298,
+   "passed": 264,
+   "chrome": 292,
+   "firefox": 292,
+   "safari": 293,
+   "edge": 291
+  },
+  "css/compositing/": {
+   "tests": 60,
+   "passed": 12,
+   "chrome": 58,
+   "firefox": 52,
+   "safari": 44,
+   "edge": 56
+  },
+  "css/css-align/": {
+   "tests": 64,
+   "passed": 18,
+   "chrome": 61,
+   "firefox": 50,
+   "safari": 41,
+   "edge": 61
+  },
+  "css/css-anchor-position/": {
+   "tests": 239,
+   "passed": 28,
+   "chrome": 224,
+   "firefox": 190,
+   "safari": 219,
+   "edge": 224
+  },
+  "css/css-animations/": {
+   "tests": 37,
+   "passed": 14,
+   "chrome": 36,
+   "firefox": 32,
+   "safari": 32,
+   "edge": 34
+  },
+  "css/css-backgrounds/": {
+   "tests": 578,
+   "passed": 132,
+   "chrome": 476,
+   "firefox": 526,
+   "safari": 488,
+   "edge": 476
+  },
+  "css/css-borders/": {
+   "tests": 269,
+   "passed": 128,
+   "chrome": 225,
+   "firefox": 173,
+   "safari": 166,
+   "edge": 238
+  },
+  "css/css-box/": {
+   "tests": 42,
+   "passed": 0,
+   "chrome": 42,
+   "firefox": 2,
+   "safari": 31,
+   "edge": 42
+  },
+  "css/css-break/": {
+   "tests": 1135,
+   "passed": 145,
+   "chrome": 989,
+   "firefox": 554,
+   "safari": 618,
+   "edge": 988
+  },
+  "css/css-cascade/": {
+   "tests": 44,
+   "passed": 19,
+   "chrome": 44,
+   "firefox": 41,
+   "safari": 44,
+   "edge": 44
+  },
+  "css/css-color-adjust/": {
+   "tests": 24,
+   "passed": 7,
+   "chrome": 23,
+   "firefox": 22,
+   "safari": 20,
+   "edge": 23
+  },
+  "css/css-color/": {
+   "tests": 321,
+   "passed": 159,
+   "chrome": 297,
+   "firefox": 295,
+   "safari": 283,
+   "edge": 291
+  },
+  "css/css-conditional/": {
+   "tests": 173,
+   "passed": 117,
+   "chrome": 170,
+   "firefox": 161,
+   "safari": 161,
+   "edge": 169
+  },
+  "css/css-contain/": {
+   "tests": 436,
+   "passed": 192,
+   "chrome": 426,
+   "firefox": 426,
+   "safari": 416,
+   "edge": 428
+  },
+  "css/css-content/": {
+   "tests": 66,
+   "passed": 11,
+   "chrome": 62,
+   "firefox": 55,
+   "safari": 47,
+   "edge": 62
+  },
+  "css/css-counter-styles/": {
+   "tests": 259,
+   "passed": 21,
+   "chrome": 246,
+   "firefox": 239,
+   "safari": 216,
+   "edge": 246
+  },
+  "css/css-display/": {
+   "tests": 224,
+   "passed": 68,
+   "chrome": 151,
+   "firefox": 141,
+   "safari": 142,
+   "edge": 151
+  },
+  "css/css-exclusions/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-flexbox/": {
+   "tests": 1025,
+   "passed": 524,
+   "chrome": 1014,
+   "firefox": 943,
+   "safari": 925,
+   "edge": 1009
+  },
+  "css/css-font-loading/": {
+   "tests": 7,
+   "passed": 3,
+   "chrome": 7,
+   "firefox": 6,
+   "safari": 5,
+   "edge": 7
+  },
+  "css/css-fonts/": {
+   "tests": 386,
+   "passed": 161,
+   "chrome": 328,
+   "firefox": 336,
+   "safari": 311,
+   "edge": 330
+  },
+  "css/css-forms/": {
+   "tests": 16,
+   "passed": 2,
+   "chrome": 2,
+   "firefox": 2,
+   "safari": 2,
+   "edge": 2
+  },
+  "css/css-gaps/": {
+   "tests": 552,
+   "passed": 32,
+   "chrome": 359,
+   "firefox": 47,
+   "safari": 37,
+   "edge": 359
+  },
+  "css/css-grid/": {
+   "tests": 1767,
+   "passed": 471,
+   "chrome": 947,
+   "firefox": 926,
+   "safari": 1198,
+   "edge": 946
+  },
+  "css/css-highlight-api/": {
+   "tests": 111,
+   "passed": 15,
+   "chrome": 110,
+   "firefox": 102,
+   "safari": 64,
+   "edge": 103
+  },
+  "css/css-image-animation/": {
+   "tests": 22,
+   "passed": 17,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 4,
+   "edge": 3
+  },
+  "css/css-images/": {
+   "tests": 490,
+   "passed": 291,
+   "chrome": 394,
+   "firefox": 423,
+   "safari": 330,
+   "edge": 390
+  },
+  "css/css-inline/": {
+   "tests": 181,
+   "passed": 20,
+   "chrome": 162,
+   "firefox": 103,
+   "safari": 77,
+   "edge": 153
+  },
+  "css/css-layout-api/": {
+   "tests": 135,
+   "passed": 8,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/css-lists/": {
+   "tests": 198,
+   "passed": 96,
+   "chrome": 125,
+   "firefox": 181,
+   "safari": 91,
+   "edge": 127
+  },
+  "css/css-logical/": {
+   "tests": 6,
+   "passed": 5,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-masking/": {
+   "tests": 500,
+   "passed": 183,
+   "chrome": 467,
+   "firefox": 471,
+   "safari": 422,
+   "edge": 493
+  },
+  "css/css-multicol/": {
+   "tests": 464,
+   "passed": 131,
+   "chrome": 459,
+   "firefox": 381,
+   "safari": 278,
+   "edge": 458
+  },
+  "css/css-namespaces/": {
+   "tests": 23,
+   "passed": 5,
+   "chrome": 23,
+   "firefox": 23,
+   "safari": 23,
+   "edge": 23
+  },
+  "css/css-navigation/": {
+   "tests": 3,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-nesting/": {
+   "tests": 17,
+   "passed": 12,
+   "chrome": 17,
+   "firefox": 17,
+   "safari": 17,
+   "edge": 17
+  },
+  "css/css-overflow/": {
+   "tests": 733,
+   "passed": 175,
+   "chrome": 420,
+   "firefox": 303,
+   "safari": 226,
+   "edge": 420
+  },
+  "css/css-paint-api/": {
+   "tests": 115,
+   "passed": 100,
+   "chrome": 107,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 109
+  },
+  "css/css-painting/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-position/": {
+   "tests": 250,
+   "passed": 83,
+   "chrome": 249,
+   "firefox": 197,
+   "safari": 179,
+   "edge": 249
+  },
+  "css/css-properties-values-api/": {
+   "tests": 7,
+   "passed": 1,
+   "chrome": 7,
+   "firefox": 7,
+   "safari": 7,
+   "edge": 7
+  },
+  "css/css-pseudo/": {
+   "tests": 279,
+   "passed": 99,
+   "chrome": 251,
+   "firefox": 195,
+   "safari": 149,
+   "edge": 252
+  },
+  "css/css-rhythm/": {
+   "tests": 18,
+   "passed": 3,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/css-ruby/": {
+   "tests": 143,
+   "passed": 39,
+   "chrome": 99,
+   "firefox": 97,
+   "safari": 49,
+   "edge": 99
+  },
+  "css/css-scroll-anchoring/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 4,
+   "firefox": 4,
+   "safari": 4,
+   "edge": 4
+  },
+  "css/css-scroll-snap/": {
+   "tests": 26,
+   "passed": 2,
+   "chrome": 24,
+   "firefox": 25,
+   "safari": 23,
+   "edge": 24
+  },
+  "css/css-scrollbars/": {
+   "tests": 31,
+   "passed": 31,
+   "chrome": 31,
+   "firefox": 31,
+   "safari": 27,
+   "edge": 31
+  },
+  "css/css-shadow/": {
+   "tests": 114,
+   "passed": 46,
+   "chrome": 95,
+   "firefox": 95,
+   "safari": 90,
+   "edge": 95
+  },
+  "css/css-shapes/": {
+   "tests": 238,
+   "passed": 23,
+   "chrome": 236,
+   "firefox": 219,
+   "safari": 212,
+   "edge": 237
+  },
+  "css/css-sizing/": {
+   "tests": 612,
+   "passed": 217,
+   "chrome": 547,
+   "firefox": 483,
+   "safari": 446,
+   "edge": 545
+  },
+  "css/css-style-attr/": {
+   "tests": 16,
+   "passed": 12,
+   "chrome": 16,
+   "firefox": 16,
+   "safari": 16,
+   "edge": 16
+  },
+  "css/css-syntax/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-tables/": {
+   "tests": 170,
+   "passed": 67,
+   "chrome": 161,
+   "firefox": 148,
+   "safari": 121,
+   "edge": 161
+  },
+  "css/css-text-decor/": {
+   "tests": 339,
+   "passed": 114,
+   "chrome": 258,
+   "firefox": 290,
+   "safari": 150,
+   "edge": 271
+  },
+  "css/css-text/": {
+   "tests": 1564,
+   "passed": 490,
+   "chrome": 1263,
+   "firefox": 1188,
+   "safari": 1193,
+   "edge": 1276
+  },
+  "css/css-transforms/": {
+   "tests": 797,
+   "passed": 418,
+   "chrome": 791,
+   "firefox": 789,
+   "safari": 767,
+   "edge": 792
+  },
+  "css/css-transitions/": {
+   "tests": 6,
+   "passed": 5,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-typed-om/": {
+   "tests": 5,
+   "passed": 5,
+   "chrome": 5,
+   "firefox": 0,
+   "safari": 4,
+   "edge": 5
+  },
+  "css/css-ui/": {
+   "tests": 963,
+   "passed": 882,
+   "chrome": 947,
+   "firefox": 925,
+   "safari": 914,
+   "edge": 947
+  },
+  "css/css-values/": {
+   "tests": 212,
+   "passed": 82,
+   "chrome": 206,
+   "firefox": 149,
+   "safari": 145,
+   "edge": 206
+  },
+  "css/css-variables/": {
+   "tests": 183,
+   "passed": 142,
+   "chrome": 179,
+   "firefox": 178,
+   "safari": 179,
+   "edge": 179
+  },
+  "css/css-view-transitions/": {
+   "tests": 332,
+   "passed": 22,
+   "chrome": 322,
+   "firefox": 240,
+   "safari": 259,
+   "edge": 315
+  },
+  "css/css-viewport/": {
+   "tests": 113,
+   "passed": 19,
+   "chrome": 111,
+   "firefox": 81,
+   "safari": 87,
+   "edge": 111
+  },
+  "css/css-will-change/": {
+   "tests": 47,
+   "passed": 24,
+   "chrome": 47,
+   "firefox": 47,
+   "safari": 43,
+   "edge": 47
+  },
+  "css/css-writing-modes/": {
+   "tests": 1171,
+   "passed": 191,
+   "chrome": 1128,
+   "firefox": 1131,
+   "safari": 1063,
+   "edge": 1129
+  },
+  "css/cssom-view/": {
+   "tests": 11,
+   "passed": 7,
+   "chrome": 11,
+   "firefox": 11,
+   "safari": 8,
+   "edge": 11
+  },
+  "css/cssom/": {
+   "tests": 12,
+   "passed": 5,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/fill-stroke/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 0,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/filter-effects/": {
+   "tests": 373,
+   "passed": 141,
+   "chrome": 341,
+   "firefox": 321,
+   "safari": 262,
+   "edge": 343
+  },
+  "css/mediaqueries/": {
+   "tests": 58,
+   "passed": 36,
+   "chrome": 56,
+   "firefox": 56,
+   "safari": 48,
+   "edge": 56
+  },
+  "css/motion/": {
+   "tests": 101,
+   "passed": 3,
+   "chrome": 95,
+   "firefox": 98,
+   "safari": 89,
+   "edge": 95
+  },
+  "css/printing/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/reference/": {
+   "tests": 3,
+   "passed": 1,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/selectors/": {
+   "tests": 344,
+   "passed": 255,
+   "chrome": 323,
+   "firefox": 337,
+   "safari": 326,
+   "edge": 322
+  }
+ },
+ "rivals": [
+  {
+   "recorded_utc": "2026-11-22T18:30:57Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "chrome",
+   "version": "158.0.8127.36",
+   "wptfyi_run_id": 5308846168604672,
+   "passed": 22725,
+   "denominator": 25813,
+   "share_pct": "88.0370",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T18:30:57Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "firefox",
+   "version": "160.0.1",
+   "wptfyi_run_id": 5108487085096960,
+   "passed": 21021,
+   "denominator": 25813,
+   "share_pct": "81.4357",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T18:30:57Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "safari",
+   "version": "27.2 (22625.2.8.11.9)",
+   "wptfyi_run_id": 4778240791805952,
+   "passed": 20145,
+   "denominator": 25813,
+   "share_pct": "78.0421",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-22T18:30:57Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+   "browser": "edge",
+   "version": "157.0.4341.60",
+   "wptfyi_run_id": 6199838727995392,
+   "passed": 22749,
+   "denominator": 25813,
+   "share_pct": "88.1300",
+   "status": "ok",
+   "reason": ""
+  }
+ ],
+ "since_previous": {
+  "previous_run": "20261122T1336Z-wpt-reftest-css-linux-x86_64-gh45028286099a1",
+  "previous_commit": "e0666850902b16471c3299bde30944aa389604ec",
+  "previous_wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "previous_passed": 9559,
+  "passed_delta": 747,
+  "newly_passing": [
+   "/css/CSS2/abspos/hypothetical-inline-alone-on-second-line.html",
+   "/css/CSS2/bidi-text/bidi-box-model-010.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-011.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-012.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-014.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-015.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-016.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-017.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-018.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-019.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-020.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-021.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-025.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-026.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-027.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-028.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-029.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-030.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-032.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-033.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-034.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-035.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-036.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-037.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-041.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-042.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-043.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-044.xht",
+   "/css/CSS2/bidi-text/bidi-box-model-045.xht",
+   "/css/CSS2/bidi-text/bidi-breaking-001.xht",
+   "/css/CSS2/bidi-text/bidi-glyph-mirroring-002.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-001.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-002.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-003.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-004.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-007.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-009.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-012.xht",
+   "/css/CSS2/bidi-text/direction-applies-to-015.xht",
+   "/css/CSS2/bidi-text/line-breaking-bidi-003.xht",
+   "/css/CSS2/borders/border-bottom-006.xht",
+   "/css/CSS2/borders/border-bottom-width-013.xht",
+   "/css/CSS2/borders/border-bottom-width-015.xht",
+   "/css/CSS2/borders/border-bottom-width-016.xht",
+   "/css/CSS2/borders/border-bottom-width-017.xht",
+   "/css/CSS2/borders/border-bottom-width-018.xht",
+   "/css/CSS2/borders/border-bottom-width-024.xht",
+   "/css/CSS2/borders/border-bottom-width-025.xht",
+   "/css/CSS2/borders/border-bottom-width-026.xht",
+   "/css/CSS2/borders/border-bottom-width-027.xht",
+   "/css/CSS2/borders/border-bottom-width-028.xht",
+   "/css/CSS2/borders/border-bottom-width-029.xht",
+   "/css/CSS2/borders/border-bottom-width-035.xht",
+   "/css/CSS2/borders/border-bottom-width-037.xht",
+   "/css/CSS2/borders/border-bottom-width-038.xht",
+   "/css/CSS2/borders/border-bottom-width-039.xht",
+   "/css/CSS2/borders/border-bottom-width-040.xht",
+   "/css/CSS2/borders/border-bottom-width-046.xht",
+   "/css/CSS2/borders/border-bottom-width-048.xht",
+   "/css/CSS2/borders/border-bottom-width-049.xht",
+   "/css/CSS2/borders/border-bottom-width-050.xht",
+   "/css/CSS2/borders/border-bottom-width-051.xht",
+   "/css/CSS2/borders/border-bottom-width-057.xht",
+   "/css/CSS2/borders/border-bottom-width-058.xht",
+   "/css/CSS2/borders/border-bottom-width-059.xht",
+   "/css/CSS2/borders/border-bottom-width-060.xht",
+   "/css/CSS2/borders/border-bottom-width-061.xht",
+   "/css/CSS2/borders/border-bottom-width-062.xht",
+   "/css/CSS2/borders/border-bottom-width-068.xht",
+   "/css/CSS2/borders/border-bottom-width-069.xht",
+   "/css/CSS2/borders/border-bottom-width-070.xht",
+   "/css/CSS2/borders/border-bottom-width-071.xht",
+   "/css/CSS2/borders/border-bottom-width-072.xht",
+   "/css/CSS2/borders/border-bottom-width-073.xht",
+   "/css/CSS2/borders/border-bottom-width-079.xht",
+   "/css/CSS2/borders/border-bottom-width-081.xht",
+   "/css/CSS2/borders/border-bottom-width-082.xht",
+   "/css/CSS2/borders/border-bottom-width-applies-to-009.xht",
+   "/css/CSS2/borders/border-bottom-width-applies-to-012.xht",
+   "/css/CSS2/borders/border-bottom-width-applies-to-015.xht",
+   "/css/CSS2/borders/border-left-006.xht",
+   "/css/CSS2/borders/border-left-width-013.xht",
+   "/css/CSS2/borders/border-left-width-015.xht",
+   "/css/CSS2/borders/border-left-width-016.xht",
+   "/css/CSS2/borders/border-left-width-017.xht",
+   "/css/CSS2/borders/border-left-width-018.xht",
+   "/css/CSS2/borders/border-left-width-024.xht",
+   "/css/CSS2/borders/border-left-width-025.xht",
+   "/css/CSS2/borders/border-left-width-026.xht",
+   "/css/CSS2/borders/border-left-width-027.xht",
+   "/css/CSS2/borders/border-left-width-028.xht",
+   "/css/CSS2/borders/border-left-width-029.xht",
+   "/css/CSS2/borders/border-left-width-035.xht",
+   "/css/CSS2/borders/border-left-width-037.xht",
+   "/css/CSS2/borders/border-left-width-038.xht",
+   "/css/CSS2/borders/border-left-width-039.xht",
+   "/css/CSS2/borders/border-left-width-040.xht",
+   "/css/CSS2/borders/border-left-width-046.xht",
+   "/css/CSS2/borders/border-left-width-048.xht",
+   "/css/CSS2/borders/border-left-width-049.xht",
+   "/css/CSS2/borders/border-left-width-050.xht",
+   "/css/CSS2/borders/border-left-width-051.xht",
+   "/css/CSS2/borders/border-left-width-057.xht",
+   "/css/CSS2/borders/border-left-width-058.xht",
+   "/css/CSS2/borders/border-left-width-059.xht",
+   "/css/CSS2/borders/border-left-width-060.xht",
+   "/css/CSS2/borders/border-left-width-061.xht",
+   "/css/CSS2/borders/border-left-width-062.xht",
+   "/css/CSS2/borders/border-left-width-068.xht",
+   "/css/CSS2/borders/border-left-width-069.xht",
+   "/css/CSS2/borders/border-left-width-070.xht",
+   "/css/CSS2/borders/border-left-width-071.xht",
+   "/css/CSS2/borders/border-left-width-072.xht",
+   "/css/CSS2/borders/border-left-width-073.xht",
+   "/css/CSS2/borders/border-left-width-079.xht",
+   "/css/CSS2/borders/border-left-width-081.xht",
+   "/css/CSS2/borders/border-left-width-082.xht",
+   "/css/CSS2/borders/border-left-width-applies-to-009.xht",
+   "/css/CSS2/borders/border-left-width-applies-to-012.xht",
+   "/css/CSS2/borders/border-left-width-applies-to-015.xht",
+   "/css/CSS2/borders/border-right-006.xht",
+   "/css/CSS2/borders/border-right-width-013.xht",
+   "/css/CSS2/borders/border-right-width-015.xht",
+   "/css/CSS2/borders/border-right-width-016.xht",
+   "/css/CSS2/borders/border-right-width-017.xht",
+   "/css/CSS2/borders/border-right-width-018.xht",
+   "/css/CSS2/borders/border-right-width-024.xht",
+   "/css/CSS2/borders/border-right-width-025.xht",
+   "/css/CSS2/borders/border-right-width-026.xht",
+   "/css/CSS2/borders/border-right-width-027.xht",
+   "/css/CSS2/borders/border-right-width-028.xht",
+   "/css/CSS2/borders/border-right-width-029.xht",
+   "/css/CSS2/borders/border-right-width-035.xht",
+   "/css/CSS2/borders/border-right-width-037.xht",
+   "/css/CSS2/borders/border-right-width-038.xht",
+   "/css/CSS2/borders/border-right-width-039.xht",
+   "/css/CSS2/borders/border-right-width-040.xht",
+   "/css/CSS2/borders/border-right-width-046.xht",
+   "/css/CSS2/borders/border-right-width-048.xht",
+   "/css/CSS2/borders/border-right-width-049.xht",
+   "/css/CSS2/borders/border-right-width-050.xht",
+   "/css/CSS2/borders/border-right-width-051.xht",
+   "/css/CSS2/borders/border-right-width-057.xht",
+   "/css/CSS2/borders/border-right-width-058.xht",
+   "/css/CSS2/borders/border-right-width-059.xht",
+   "/css/CSS2/borders/border-right-width-060.xht",
+   "/css/CSS2/borders/border-right-width-061.xht",
+   "/css/CSS2/borders/border-right-width-062.xht",
+   "/css/CSS2/borders/border-right-width-068.xht",
+   "/css/CSS2/borders/border-right-width-069.xht",
+   "/css/CSS2/borders/border-right-width-070.xht",
+   "/css/CSS2/borders/border-right-width-071.xht",
+   "/css/CSS2/borders/border-right-width-072.xht",
+   "/css/CSS2/borders/border-right-width-073.xht",
+   "/css/CSS2/borders/border-right-width-079.xht",
+   "/css/CSS2/borders/border-right-width-081.xht",
+   "/css/CSS2/borders/border-right-width-082.xht",
+   "/css/CSS2/borders/border-right-width-applies-to-009.xht",
+   "/css/CSS2/borders/border-right-width-applies-to-012.xht",
+   "/css/CSS2/borders/border-right-width-applies-to-015.xht",
+   "/css/CSS2/borders/border-top-006.xht",
+   "/css/CSS2/borders/border-top-width-013.xht",
+   "/css/CSS2/borders/border-top-width-015.xht",
+   "/css/CSS2/borders/border-top-width-016.xht",
+   "/css/CSS2/borders/border-top-width-017.xht",
+   "/css/CSS2/borders/border-top-width-018.xht",
+   "/css/CSS2/borders/border-top-width-024.xht",
+   "/css/CSS2/borders/border-top-width-025.xht",
+   "/css/CSS2/borders/border-top-width-026.xht",
+   "/css/CSS2/borders/border-top-width-027.xht",
+   "/css/CSS2/borders/border-top-width-028.xht",
+   "/css/CSS2/borders/border-top-width-029.xht",
+   "/css/CSS2/borders/border-top-width-035.xht",
+   "/css/CSS2/borders/border-top-width-037.xht",
+   "/css/CSS2/borders/border-top-width-038.xht",
+   "/css/CSS2/borders/border-top-width-039.xht",
+   "/css/CSS2/borders/border-top-width-040.xht",
+   "/css/CSS2/borders/border-top-width-046.xht",
+   "/css/CSS2/borders/border-top-width-048.xht",
+   "/css/CSS2/borders/border-top-width-049.xht",
+   "/css/CSS2/borders/border-top-width-050.xht",
+   "/css/CSS2/borders/border-top-width-051.xht",
+   "/css/CSS2/borders/border-top-width-057.xht",
+   "/css/CSS2/borders/border-top-width-058.xht",
+   "/css/CSS2/borders/border-top-width-059.xht",
+   "/css/CSS2/borders/border-top-width-060.xht",
+   "/css/CSS2/borders/border-top-width-061.xht",
+   "/css/CSS2/borders/border-top-width-062.xht",
+   "/css/CSS2/borders/border-top-width-068.xht",
+   "/css/CSS2/borders/border-top-width-069.xht",
+   "/css/CSS2/borders/border-top-width-070.xht",
+   "/css/CSS2/borders/border-top-width-071.xht",
+   "/css/CSS2/borders/border-top-width-072.xht",
+   "/css/CSS2/borders/border-top-width-073.xht",
+   "/css/CSS2/borders/border-top-width-079.xht",
+   "/css/CSS2/borders/border-top-width-081.xht",
+   "/css/CSS2/borders/border-top-width-082.xht",
+   "/css/CSS2/borders/border-top-width-applies-to-009.xht",
+   "/css/CSS2/borders/border-top-width-applies-to-012.xht",
+   "/css/CSS2/borders/border-top-width-applies-to-015.xht",
+   "/css/CSS2/borders/border-width-applies-to-008.xht",
+   "/css/CSS2/box-display/anonymous-boxes-inheritance-001.xht",
+   "/css/CSS2/box-display/display-change-001.xht",
+   "/css/CSS2/colors/color-174.xht",
+   "/css/CSS2/css1/c526-font-sz-001.xht",
+   "/css/CSS2/css1/c526-font-sz-003.xht",
+   "/css/CSS2/css1/c548-leadin-000.xht",
+   "/css/CSS2/css1/c5505-mrgn-001.xht",
+   "/css/CSS2/css1/c5505-mrgn-003.xht",
+   "/css/CSS2/css1/c5506-ipadn-t-000.xht",
+   "/css/CSS2/css1/c5506-ipadn-t-001.xht",
+   "/css/CSS2/css1/c5506-ipadn-t-002.xht",
+   "/css/CSS2/css1/c5506-padn-t-000.xht",
+   "/css/CSS2/css1/c5508-ipadn-b-000.xht",
+   "/css/CSS2/css1/c5508-ipadn-b-001.xht",
+   "/css/CSS2/css1/c5508-ipadn-b-002.xht",
+   "/css/CSS2/css1/c5508-ipadn-b-003.xht",
+   "/css/CSS2/css1/c5510-padn-000.xht",
+   "/css/CSS2/css1/c5510-padn-001.xht",
+   "/css/CSS2/css1/c5511-ibrdr-tw-000.xht",
+   "/css/CSS2/css1/c5512-ibrdr-rw-000.xht",
+   "/css/CSS2/css1/c5513-ibrdr-bw-000.xht",
+   "/css/CSS2/css1/c5514-ibrdr-lw-000.xht",
+   "/css/CSS2/floats-clear/float-006.xht",
+   "/css/CSS2/floats-clear/float-replaced-height-002.xht",
+   "/css/CSS2/floats-clear/floats-006.xht",
+   "/css/CSS2/floats-clear/floats-009.xht",
+   "/css/CSS2/floats-clear/floats-024.xht",
+   "/css/CSS2/floats-clear/floats-043.xht",
+   "/css/CSS2/floats-clear/floats-111.xht",
+   "/css/CSS2/floats-clear/floats-112.xht",
+   "/css/CSS2/floats-clear/floats-113.xht",
+   "/css/CSS2/floats-clear/floats-115.xht",
+   "/css/CSS2/floats-clear/floats-117.xht",
+   "/css/CSS2/floats-clear/floats-118.xht",
+   "/css/CSS2/floats-clear/floats-120.xht",
+   "/css/CSS2/floats-clear/floats-122.xht",
+   "/css/CSS2/floats-clear/floats-123.xht",
+   "/css/CSS2/floats-clear/floats-133.xht",
+   "/css/CSS2/floats-clear/floats-134.xht",
+   "/css/CSS2/floats-clear/floats-136.xht",
+   "/css/CSS2/floats-clear/floats-139.xht",
+   "/css/CSS2/floats/float-nowrap-5.html",
+   "/css/CSS2/floats/float-nowrap-6.html",
+   "/css/CSS2/fonts/font-051.xht",
+   "/css/CSS2/fonts/font-family-009.xht",
+   "/css/CSS2/fonts/font-size-120.xht",
+   "/css/CSS2/linebox/border-padding-bleed-001.xht",
+   "/css/CSS2/linebox/border-padding-bleed-002.xht",
+   "/css/CSS2/linebox/border-padding-bleed-003.xht",
+   "/css/CSS2/linebox/inline-formatting-context-008.xht",
+   "/css/CSS2/linebox/inline-formatting-context-009.xht",
+   "/css/CSS2/linebox/inline-formatting-context-011.xht",
+   "/css/CSS2/linebox/inline-formatting-context-013.xht",
+   "/css/CSS2/linebox/line-height-121.xht",
+   "/css/CSS2/linebox/line-height-128.xht",
+   "/css/CSS2/linebox/vertical-align-004.xht",
+   "/css/CSS2/linebox/vertical-align-005.xht",
+   "/css/CSS2/linebox/vertical-align-006.xht",
+   "/css/CSS2/linebox/vertical-align-016.xht",
+   "/css/CSS2/linebox/vertical-align-017.xht",
+   "/css/CSS2/linebox/vertical-align-018.xht",
+   "/css/CSS2/linebox/vertical-align-028.xht",
+   "/css/CSS2/linebox/vertical-align-029.xht",
+   "/css/CSS2/linebox/vertical-align-030.xht",
+   "/css/CSS2/linebox/vertical-align-040.xht",
+   "/css/CSS2/linebox/vertical-align-041.xht",
+   "/css/CSS2/linebox/vertical-align-042.xht",
+   "/css/CSS2/linebox/vertical-align-052.xht",
+   "/css/CSS2/linebox/vertical-align-053.xht",
+   "/css/CSS2/linebox/vertical-align-054.xht",
+   "/css/CSS2/linebox/vertical-align-064.xht",
+   "/css/CSS2/linebox/vertical-align-065.xht",
+   "/css/CSS2/linebox/vertical-align-066.xht",
+   "/css/CSS2/linebox/vertical-align-076.xht",
+   "/css/CSS2/linebox/vertical-align-077.xht",
+   "/css/CSS2/linebox/vertical-align-078.xht",
+   "/css/CSS2/linebox/vertical-align-088.xht",
+   "/css/CSS2/linebox/vertical-align-089.xht",
+   "/css/CSS2/linebox/vertical-align-090.xht",
+   "/css/CSS2/linebox/vertical-align-100.xht",
+   "/css/CSS2/linebox/vertical-align-101.xht",
+   "/css/CSS2/linebox/vertical-align-102.xht",
+   "/css/CSS2/linebox/vertical-align-109.xht",
+   "/css/CSS2/linebox/vertical-align-110.xht",
+   "/css/CSS2/linebox/vertical-align-111.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-001.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-002.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-003.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-004.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-005.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-006.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-007.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-009.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-012.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-013.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-014.xht",
+   "/css/CSS2/linebox/vertical-align-applies-to-015.xht",
+   "/css/CSS2/linebox/vertical-align-baseline-004a.xht",
+   "/css/CSS2/margin-padding-clear/margin-auto-on-block-box.html",
+   "/css/CSS2/margin-padding-clear/margin-bottom-019.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-020.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-031.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-032.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-043.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-044.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-055.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-056.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-067.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-068.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-079.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-080.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-113.xht",
+   "/css/CSS2/margin-padding-clear/margin-bottom-applies-to-008.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-001.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-008.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-012.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-106.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-112.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-130.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-131.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-156.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-159.xht",
+   "/css/CSS2/margin-padding-clear/margin-inline-001.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-019.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-020.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-031.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-032.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-043.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-044.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-055.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-056.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-067.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-068.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-079.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-080.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-103.xht",
+   "/css/CSS2/margin-padding-clear/margin-left-104.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-019.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-020.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-031.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-032.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-043.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-044.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-055.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-056.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-067.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-068.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-079.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-080.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-103.xht",
+   "/css/CSS2/margin-padding-clear/margin-right-104.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-019.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-020.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-031.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-032.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-043.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-044.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-055.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-056.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-067.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-068.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-079.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-080.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-103.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-104.xht",
+   "/css/CSS2/margin-padding-clear/margin-top-applies-to-008.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-014.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-017.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-018.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-025.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-028.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-029.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-039.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-040.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-050.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-051.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-058.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-061.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-062.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-069.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-072.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-073.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-094.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-095.xht",
+   "/css/CSS2/margin-padding-clear/padding-bottom-103.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-017.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-018.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-025.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-028.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-029.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-039.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-040.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-050.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-051.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-058.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-061.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-062.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-069.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-072.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-073.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-094.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-095.xht",
+   "/css/CSS2/margin-padding-clear/padding-left-103.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-017.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-018.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-025.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-028.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-029.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-039.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-040.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-050.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-051.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-058.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-069.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-072.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-094.xht",
+   "/css/CSS2/margin-padding-clear/padding-right-095.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-014.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-017.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-018.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-025.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-028.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-029.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-039.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-040.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-050.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-051.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-058.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-061.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-062.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-069.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-072.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-073.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-094.xht",
+   "/css/CSS2/margin-padding-clear/padding-top-095.xht",
+   "/css/CSS2/normal-flow/block-formatting-contexts-004.xht",
+   "/css/CSS2/normal-flow/block-non-replaced-height-005.xht",
+   "/css/CSS2/normal-flow/block-non-replaced-width-007.xht",
+   "/css/CSS2/normal-flow/block-replaced-height-002.xht",
+   "/css/CSS2/normal-flow/block-replaced-width-006.xht",
+   "/css/CSS2/normal-flow/blocks-011.xht",
+   "/css/CSS2/normal-flow/blocks-020.xht",
+   "/css/CSS2/normal-flow/blocks-021.xht",
+   "/css/CSS2/normal-flow/blocks-022.xht",
+   "/css/CSS2/normal-flow/height-017.xht",
+   "/css/CSS2/normal-flow/height-018.xht",
+   "/css/CSS2/normal-flow/height-028.xht",
+   "/css/CSS2/normal-flow/height-029.xht",
+   "/css/CSS2/normal-flow/height-039.xht",
+   "/css/CSS2/normal-flow/height-040.xht",
+   "/css/CSS2/normal-flow/height-050.xht",
+   "/css/CSS2/normal-flow/height-051.xht",
+   "/css/CSS2/normal-flow/height-061.xht",
+   "/css/CSS2/normal-flow/height-062.xht",
+   "/css/CSS2/normal-flow/height-094.xht",
+   "/css/CSS2/normal-flow/height-095.xht",
+   "/css/CSS2/normal-flow/height-114.xht",
+   "/css/CSS2/normal-flow/inline-block-non-replaced-width-001.xht",
+   "/css/CSS2/normal-flow/inline-block-non-replaced-width-002.xht",
+   "/css/CSS2/normal-flow/inline-block-replaced-height-002.xht",
+   "/css/CSS2/normal-flow/inline-block-replaced-height-009.xht",
+   "/css/CSS2/normal-flow/inline-block-replaced-width-007.xht",
+   "/css/CSS2/normal-flow/inline-block-replaced-width-008.xht",
+   "/css/CSS2/normal-flow/inline-block-zorder-004.xht",
+   "/css/CSS2/normal-flow/inline-block-zorder-005.xht",
+   "/css/CSS2/normal-flow/inline-non-replaced-width-001.xht",
+   "/css/CSS2/normal-flow/inline-non-replaced-width-002.xht",
+   "/css/CSS2/normal-flow/inline-replaced-height-002.xht",
+   "/css/CSS2/normal-flow/inline-replaced-height-009.xht",
+   "/css/CSS2/normal-flow/inline-replaced-width-008.xht",
+   "/css/CSS2/normal-flow/inline-replaced-width-009.xht",
+   "/css/CSS2/normal-flow/inline-table-zorder-004.xht",
+   "/css/CSS2/normal-flow/inlines-016.xht",
+   "/css/CSS2/normal-flow/inlines-017.xht",
+   "/css/CSS2/normal-flow/max-height-017.xht",
+   "/css/CSS2/normal-flow/max-height-018.xht",
+   "/css/CSS2/normal-flow/max-height-028.xht",
+   "/css/CSS2/normal-flow/max-height-029.xht",
+   "/css/CSS2/normal-flow/max-height-039.xht",
+   "/css/CSS2/normal-flow/max-height-040.xht",
+   "/css/CSS2/normal-flow/max-height-050.xht",
+   "/css/CSS2/normal-flow/max-height-051.xht",
+   "/css/CSS2/normal-flow/max-height-061.xht",
+   "/css/CSS2/normal-flow/max-height-062.xht",
+   "/css/CSS2/normal-flow/max-height-072.xht",
+   "/css/CSS2/normal-flow/max-height-073.xht",
+   "/css/CSS2/normal-flow/max-height-094.xht",
+   "/css/CSS2/normal-flow/max-height-095.xht",
+   "/css/CSS2/normal-flow/max-height-107.xht",
+   "/css/CSS2/normal-flow/max-height-110.xht",
+   "/css/CSS2/normal-flow/max-height-applies-to-008.xht",
+   "/css/CSS2/normal-flow/max-width-017.xht",
+   "/css/CSS2/normal-flow/max-width-018.xht",
+   "/css/CSS2/normal-flow/max-width-028.xht",
+   "/css/CSS2/normal-flow/max-width-029.xht",
+   "/css/CSS2/normal-flow/max-width-039.xht",
+   "/css/CSS2/normal-flow/max-width-040.xht",
+   "/css/CSS2/normal-flow/max-width-050.xht",
+   "/css/CSS2/normal-flow/max-width-051.xht",
+   "/css/CSS2/normal-flow/max-width-061.xht",
+   "/css/CSS2/normal-flow/max-width-062.xht",
+   "/css/CSS2/normal-flow/max-width-072.xht",
+   "/css/CSS2/normal-flow/max-width-073.xht",
+   "/css/CSS2/normal-flow/max-width-094.xht",
+   "/css/CSS2/normal-flow/max-width-095.xht",
+   "/css/CSS2/normal-flow/max-width-applies-to-008.xht",
+   "/css/CSS2/normal-flow/min-height-017.xht",
+   "/css/CSS2/normal-flow/min-height-018.xht",
+   "/css/CSS2/normal-flow/min-height-028.xht",
+   "/css/CSS2/normal-flow/min-height-029.xht",
+   "/css/CSS2/normal-flow/min-height-039.xht",
+   "/css/CSS2/normal-flow/min-height-040.xht",
+   "/css/CSS2/normal-flow/min-height-050.xht",
+   "/css/CSS2/normal-flow/min-height-051.xht",
+   "/css/CSS2/normal-flow/min-height-061.xht",
+   "/css/CSS2/normal-flow/min-height-062.xht",
+   "/css/CSS2/normal-flow/min-height-067.xht",
+   "/css/CSS2/normal-flow/min-height-068.xht",
+   "/css/CSS2/normal-flow/min-height-070.xht",
+   "/css/CSS2/normal-flow/min-height-071.xht",
+   "/css/CSS2/normal-flow/min-height-072.xht",
+   "/css/CSS2/normal-flow/min-height-073.xht",
+   "/css/CSS2/normal-flow/min-height-078.xht",
+   "/css/CSS2/normal-flow/min-height-079.xht",
+   "/css/CSS2/normal-flow/min-height-081.xht",
+   "/css/CSS2/normal-flow/min-height-082.xht",
+   "/css/CSS2/normal-flow/min-height-094.xht",
+   "/css/CSS2/normal-flow/min-height-095.xht",
+   "/css/CSS2/normal-flow/min-height-applies-to-008.xht",
+   "/css/CSS2/normal-flow/min-width-017.xht",
+   "/css/CSS2/normal-flow/min-width-018.xht",
+   "/css/CSS2/normal-flow/min-width-028.xht",
+   "/css/CSS2/normal-flow/min-width-029.xht",
+   "/css/CSS2/normal-flow/min-width-039.xht",
+   "/css/CSS2/normal-flow/min-width-040.xht",
+   "/css/CSS2/normal-flow/min-width-050.xht",
+   "/css/CSS2/normal-flow/min-width-051.xht",
+   "/css/CSS2/normal-flow/min-width-061.xht",
+   "/css/CSS2/normal-flow/min-width-062.xht",
+   "/css/CSS2/normal-flow/min-width-072.xht",
+   "/css/CSS2/normal-flow/min-width-073.xht",
+   "/css/CSS2/normal-flow/min-width-094.xht",
+   "/css/CSS2/normal-flow/min-width-095.xht",
+   "/css/CSS2/normal-flow/min-width-applies-to-008.xht",
+   "/css/CSS2/normal-flow/width-017.xht",
+   "/css/CSS2/normal-flow/width-018.xht",
+   "/css/CSS2/normal-flow/width-028.xht",
+   "/css/CSS2/normal-flow/width-029.xht",
+   "/css/CSS2/normal-flow/width-039.xht",
+   "/css/CSS2/normal-flow/width-040.xht",
+   "/css/CSS2/normal-flow/width-050.xht",
+   "/css/CSS2/normal-flow/width-051.xht",
+   "/css/CSS2/normal-flow/width-061.xht",
+   "/css/CSS2/normal-flow/width-062.xht",
+   "/css/CSS2/normal-flow/width-072.xht",
+   "/css/CSS2/normal-flow/width-073.xht",
+   "/css/CSS2/normal-flow/width-094.xht",
+   "/css/CSS2/normal-flow/width-095.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-height-002.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-height-007.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-001.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-003.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-004.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-006.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-010.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-011.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-013.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-014.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-016.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-001.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-002.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-003a.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-003b.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-003c.xht",
+   "/css/CSS2/positioning/abspos-002.xht",
+   "/css/CSS2/positioning/bottom-019.xht",
+   "/css/CSS2/positioning/bottom-020.xht",
+   "/css/CSS2/positioning/bottom-031.xht",
+   "/css/CSS2/positioning/bottom-032.xht",
+   "/css/CSS2/positioning/bottom-043.xht",
+   "/css/CSS2/positioning/bottom-044.xht",
+   "/css/CSS2/positioning/bottom-055.xht",
+   "/css/CSS2/positioning/bottom-056.xht",
+   "/css/CSS2/positioning/bottom-067.xht",
+   "/css/CSS2/positioning/bottom-068.xht",
+   "/css/CSS2/positioning/bottom-079.xht",
+   "/css/CSS2/positioning/bottom-080.xht",
+   "/css/CSS2/positioning/bottom-103.xht",
+   "/css/CSS2/positioning/bottom-104.xht",
+   "/css/CSS2/positioning/left-019.xht",
+   "/css/CSS2/positioning/left-020.xht",
+   "/css/CSS2/positioning/left-031.xht",
+   "/css/CSS2/positioning/left-032.xht",
+   "/css/CSS2/positioning/left-043.xht",
+   "/css/CSS2/positioning/left-044.xht",
+   "/css/CSS2/positioning/left-055.xht",
+   "/css/CSS2/positioning/left-056.xht",
+   "/css/CSS2/positioning/left-067.xht",
+   "/css/CSS2/positioning/left-068.xht",
+   "/css/CSS2/positioning/left-079.xht",
+   "/css/CSS2/positioning/left-080.xht",
+   "/css/CSS2/positioning/left-103.xht",
+   "/css/CSS2/positioning/left-104.xht",
+   "/css/CSS2/positioning/right-019.xht",
+   "/css/CSS2/positioning/right-020.xht",
+   "/css/CSS2/positioning/right-031.xht",
+   "/css/CSS2/positioning/right-032.xht",
+   "/css/CSS2/positioning/right-043.xht",
+   "/css/CSS2/positioning/right-044.xht",
+   "/css/CSS2/positioning/right-055.xht",
+   "/css/CSS2/positioning/right-056.xht",
+   "/css/CSS2/positioning/right-067.xht",
+   "/css/CSS2/positioning/right-068.xht",
+   "/css/CSS2/positioning/right-079.xht",
+   "/css/CSS2/positioning/right-080.xht",
+   "/css/CSS2/positioning/right-103.xht",
+   "/css/CSS2/positioning/right-104.xht",
+   "/css/CSS2/selectors/first-line-inherit-002.xht",
+   "/css/CSS2/selectors/first-line-inherit-003.xht",
+   "/css/CSS2/syntax/at-charset-quotes-001.xht",
+   "/css/CSS2/syntax/at-charset-space-001.xht",
+   "/css/CSS2/syntax/at-charset-space-002.xht",
+   "/css/CSS2/syntax/at-charset-utf16-be-001.xht",
+   "/css/CSS2/syntax/at-charset-utf16-le-001.xht",
+   "/css/CSS2/tables/fixed-table-layout-003a01.xht",
+   "/css/CSS2/tables/fixed-table-layout-003a03.xht",
+   "/css/CSS2/tables/fixed-table-layout-003a05.xht",
+   "/css/CSS2/tables/fixed-table-layout-003d01.xht",
+   "/css/CSS2/tables/fixed-table-layout-003d03.xht",
+   "/css/CSS2/tables/fixed-table-layout-003d05.xht",
+   "/css/CSS2/tables/table-cell-dynamic-color.html",
+   "/css/CSS2/text/text-align-white-space-004.xht",
+   "/css/CSS2/text/white-space-001.xht",
+   "/css/CSS2/text/white-space-002.xht",
+   "/css/CSS2/text/white-space-003.xht",
+   "/css/CSS2/text/white-space-006.xht",
+   "/css/CSS2/text/white-space-applies-to-001.xht",
+   "/css/CSS2/text/white-space-applies-to-002.xht",
+   "/css/CSS2/text/white-space-applies-to-005.xht",
+   "/css/CSS2/text/white-space-applies-to-006.xht",
+   "/css/CSS2/text/white-space-applies-to-007.xht",
+   "/css/CSS2/text/white-space-applies-to-008.xht",
+   "/css/CSS2/text/white-space-applies-to-009.xht",
+   "/css/CSS2/text/white-space-applies-to-010.xht",
+   "/css/CSS2/text/white-space-applies-to-011.xht",
+   "/css/CSS2/text/white-space-applies-to-012.xht",
+   "/css/CSS2/text/white-space-applies-to-013.xht",
+   "/css/CSS2/text/white-space-applies-to-014.xht",
+   "/css/CSS2/text/white-space-applies-to-015.xht",
+   "/css/CSS2/text/white-space-collapsing-001.xht",
+   "/css/CSS2/text/white-space-collapsing-002.xht",
+   "/css/CSS2/text/white-space-normal-009.xht",
+   "/css/CSS2/text/white-space-nowrap-001.xht",
+   "/css/CSS2/text/white-space-processing-001.xht",
+   "/css/CSS2/text/white-space-processing-011.xht",
+   "/css/CSS2/text/white-space-processing-012.xht",
+   "/css/CSS2/text/white-space-processing-019.xht",
+   "/css/CSS2/text/white-space-processing-020.xht",
+   "/css/CSS2/text/white-space-processing-022.xht",
+   "/css/CSS2/text/white-space-processing-023.xht",
+   "/css/CSS2/text/white-space-processing-025.xht",
+   "/css/CSS2/text/white-space-processing-026.xht",
+   "/css/CSS2/text/white-space-processing-031.xht",
+   "/css/CSS2/text/white-space-processing-032.xht",
+   "/css/CSS2/text/white-space-processing-033.xht",
+   "/css/CSS2/text/white-space-processing-034.xht",
+   "/css/CSS2/text/white-space-processing-035.xht",
+   "/css/CSS2/text/white-space-processing-036.xht",
+   "/css/CSS2/text/white-space-processing-037.xht",
+   "/css/CSS2/text/white-space-processing-038.xht",
+   "/css/CSS2/text/white-space-processing-040.xht",
+   "/css/CSS2/text/white-space-processing-041.xht",
+   "/css/CSS2/text/white-space-processing-042.xht",
+   "/css/CSS2/text/white-space-processing-043.xht",
+   "/css/CSS2/text/white-space-processing-044.xht",
+   "/css/CSS2/text/white-space-processing-050.xht",
+   "/css/CSS2/text/white-space-processing-051.xht",
+   "/css/CSS2/text/white-space-processing-054.xht",
+   "/css/CSS2/text/white-space-processing-055.xht",
+   "/css/CSS2/text/white-space-processing-056.xht",
+   "/css/CSS2/ui/overflow-applies-to-008.xht",
+   "/css/CSS2/values/numbers-units-011.xht",
+   "/css/CSS2/values/numbers-units-013.xht",
+   "/css/CSS2/values/units-006.xht",
+   "/css/CSS2/values/units-008.xht",
+   "/css/CSS2/values/units-009.xht",
+   "/css/CSS2/visudet/content-height-005.html",
+   "/css/CSS2/visufx/visibility-005.xht",
+   "/css/css-align/abspos/align-self-static-position-005.html",
+   "/css/css-anchor-position/scroll-to-anchored-fixed-001.html",
+   "/css/css-anchor-position/scroll-to-anchored-fixed-002.html",
+   "/css/css-anchor-position/scroll-to-anchored-fixed-005.html",
+   "/css/css-backgrounds/box-shadow-overlapping-002.html",
+   "/css/css-backgrounds/box-shadow-overlapping-004.html",
+   "/css/css-backgrounds/box-shadow/inset-shadow-large-spread-cloned-inline.html",
+   "/css/css-backgrounds/box-shadow/inset-shadow-large-spread-fragmented-inline.html",
+   "/css/css-borders/border-bottom-width-thick.html",
+   "/css/css-borders/border-bottom-width-thin.html",
+   "/css/css-borders/border-left-width-thick.html",
+   "/css/css-borders/border-left-width-thin.html",
+   "/css/css-borders/border-right-width-thick.html",
+   "/css/css-borders/border-right-width-thin.html",
+   "/css/css-borders/border-top-width-thick.html",
+   "/css/css-borders/border-top-width-thin.html",
+   "/css/css-conditional/at-media-content-002.html",
+   "/css/css-conditional/at-supports-content-002.html",
+   "/css/css-contain/contain-layout-002.html",
+   "/css/css-contain/contain-layout-003.html",
+   "/css/css-contain/contain-layout-004.html",
+   "/css/css-contain/contain-layout-005.html",
+   "/css/css-contain/contain-layout-009.html",
+   "/css/css-contain/contain-layout-010.html",
+   "/css/css-contain/contain-layout-011.html",
+   "/css/css-contain/contain-layout-012.html",
+   "/css/css-contain/contain-size-breaks-001.html",
+   "/css/css-contain/content-visibility/content-visibility-079.html",
+   "/css/css-contain/content-visibility/content-visibility-on-root-svg.html",
+   "/css/css-contain/content-visibility/content-visibility-svg-forced-layout.html",
+   "/css/css-display/display-contents-dynamic-inline-flex-001-inline.html",
+   "/css/css-display/display-contents-dynamic-inline-flex-001-none.html",
+   "/css/css-display/display-contents-inline-flex-001.html",
+   "/css/css-display/display-contents-table-003.html",
+   "/css/css-flexbox/align-items-004.htm",
+   "/css/css-flexbox/align-items-009.html",
+   "/css/css-flexbox/anonymous-flex-item-restyle.html",
+   "/css/css-flexbox/css-box-justify-content.html",
+   "/css/css-flexbox/flex-item-min-height-min-content-overflow.html",
+   "/css/css-flexbox/flexbox-align-self-baseline-horiz-002.xhtml",
+   "/css/css-flexbox/flexbox-anonymous-items-001.html",
+   "/css/css-flexbox/flexbox-baseline-align-self-baseline-vert-001.html",
+   "/css/css-flexbox/flexbox-baseline-multi-item-vert-001a.html",
+   "/css/css-flexbox/flexbox-baseline-multi-item-vert-001b.html",
+   "/css/css-flexbox/flexbox-with-multi-column-property.html",
+   "/css/css-flexbox/percentage-descendant-of-anonymous-flex-item.html",
+   "/css/css-fonts/matching/font-unicode-PUA-primary-font.html",
+   "/css/css-grid/grid-items/grid-inline-items-inline-blocks-001.html",
+   "/css/css-grid/grid-items/grid-inline-order-property-painting-001.html",
+   "/css/css-grid/grid-items/grid-inline-order-property-painting-002.html",
+   "/css/css-grid/grid-items/grid-inline-order-property-painting-003.html",
+   "/css/css-grid/grid-items/grid-inline-order-property-painting-004.html",
+   "/css/css-grid/grid-items/grid-inline-order-property-painting-005.html",
+   "/css/css-grid/grid-items/grid-item-min-size-auto-overflow-002.html",
+   "/css/css-grid/grid-items/grid-items-inline-blocks-001.html",
+   "/css/css-grid/grid-items/grid-order-property-painting-001.html",
+   "/css/css-grid/grid-items/grid-order-property-painting-002.html",
+   "/css/css-grid/grid-items/grid-order-property-painting-003.html",
+   "/css/css-grid/grid-items/grid-order-property-painting-004.html",
+   "/css/css-grid/grid-items/grid-order-property-painting-005.html",
+   "/css/css-grid/grid-items/overflow-hidden-min-content-contribution-in-abs-pos-grid-in-flexbox.html",
+   "/css/css-grid/grid-lanes/subgrid/grid-subgridded-to-grid-lanes/subgrid-item-with-margin-left-auto.html",
+   "/css/css-grid/grid-model/grid-inline-first-letter-001.html",
+   "/css/css-grid/grid-model/grid-inline-first-letter-002.html",
+   "/css/css-grid/grid-model/grid-inline-first-line-001.html",
+   "/css/css-grid/grid-model/grid-inline-first-line-002.html",
+   "/css/css-grid/grid-model/grid-inline-margins-no-collapse-001.html",
+   "/css/css-highlight-api/painting/custom-highlight-painting-line-wrap-001.html",
+   "/css/css-images/image-orientation/image-orientation-none-cross-origin-svg.html",
+   "/css/css-images/image-orientation/svg-image-orientation-none.html",
+   "/css/css-inline/firefox-bug-2073465.html",
+   "/css/css-inline/text-box-trim/text-box-trim-float-clear-br-002.html",
+   "/css/css-masking/clip-path/clip-path-scaled-video.html",
+   "/css/css-masking/clip-path/clip-path-transform-mutated-001.html",
+   "/css/css-masking/clip-path/clip-path-transform-mutated-002.html",
+   "/css/css-masking/clip-path/reference-nonexisting-existing-local.html",
+   "/css/css-multicol/columnfill-auto-max-height-001.html",
+   "/css/css-multicol/columnfill-auto-max-height-002.html",
+   "/css/css-multicol/multicol-break-000.xht",
+   "/css/css-multicol/multicol-break-001.xht",
+   "/css/css-multicol/multicol-count-computed-004.xht",
+   "/css/css-multicol/multicol-fill-balance-001.xht",
+   "/css/css-multicol/multicol-gap-000.xht",
+   "/css/css-multicol/multicol-gap-001.xht",
+   "/css/css-multicol/multicol-gap-fraction-001.xht",
+   "/css/css-multicol/multicol-gap-large-001.xht",
+   "/css/css-multicol/multicol-gap-large-002.xht",
+   "/css/css-multicol/multicol-inherit-001.xht",
+   "/css/css-multicol/multicol-margin-002.xht",
+   "/css/css-multicol/multicol-margin-child-001.xht",
+   "/css/css-multicol/multicol-nested-002.xht",
+   "/css/css-multicol/multicol-nested-margin-001.xht",
+   "/css/css-multicol/multicol-oof-inline-cb-001.html",
+   "/css/css-multicol/multicol-rule-002.xht",
+   "/css/css-multicol/multicol-rule-fraction-003.xht",
+   "/css/css-multicol/multicol-rule-hidden-000.xht",
+   "/css/css-multicol/multicol-rule-none-000.xht",
+   "/css/css-multicol/multicol-span-none-001.xht",
+   "/css/css-multicol/multicol-width-negative-001.xht",
+   "/css/css-overflow/line-clamp/line-clamp-auto-010.html",
+   "/css/css-overflow/line-clamp/webkit-line-clamp-037.html",
+   "/css/css-overflow/overflow-does-not-apply-to-inline-box.html",
+   "/css/css-overflow/overflow-recalc-001.html",
+   "/css/css-overflow/scrollbar-empty-002.html",
+   "/css/css-overflow/text-overflow-016.html",
+   "/css/css-overflow/text-overflow-020.html",
+   "/css/css-pseudo/first-letter-require-first-formatted-line.html",
+   "/css/css-shapes/shape-outside/shape-image/shape-image-012.html",
+   "/css/css-shapes/shape-outside/supported-shapes/inset/shape-outside-inset-028.html",
+   "/css/css-shapes/shape-outside/supported-shapes/inset/shape-outside-inset-029.html",
+   "/css/css-shapes/shape-outside/supported-shapes/inset/shape-outside-inset-030.html",
+   "/css/css-shapes/shape-outside/supported-shapes/polygon/shape-outside-polygon-012.html",
+   "/css/css-shapes/shape-outside/supported-shapes/polygon/shape-outside-polygon-013.html",
+   "/css/css-shapes/shape-outside/supported-shapes/polygon/shape-outside-polygon-014.html",
+   "/css/css-shapes/shape-outside/supported-shapes/polygon/shape-outside-polygon-015.html",
+   "/css/css-shapes/shape-outside/supported-shapes/polygon/shape-outside-polygon-032.html",
+   "/css/css-tables/table-row-group-color-inheritance-001.html",
+   "/css/css-text/letter-spacing/letter-spacing-control-chars-001.html",
+   "/css/css-text/letter-spacing/letter-spacing-ligatures-003.html",
+   "/css/css-text/letter-spacing/letter-spacing-ligatures-004.html",
+   "/css/css-text/line-breaking/line-breaking-030.html",
+   "/css/css-text/line-breaking/line-breaking-031.html",
+   "/css/css-text/line-breaking/line-breaking-atomic-001.html",
+   "/css/css-text/line-breaking/line-breaking-atomic-007.html",
+   "/css/css-text/overflow-wrap/overflow-wrap-min-content-size-004.html",
+   "/css/css-text/overflow-wrap/overflow-wrap-min-content-size-006.html",
+   "/css/css-text/text-indent/text-indent-abspos-hanging-001.html",
+   "/css/css-text/text-justify/text-justify-001.html",
+   "/css/css-text/text-transform/text-transform-upperlower-106.html",
+   "/css/css-text/white-space/break-spaces-051.html",
+   "/css/css-text/white-space/break-spaces-052.html",
+   "/css/css-text/white-space/pre-line-051.html",
+   "/css/css-text/white-space/pre-line-052.html",
+   "/css/css-text/white-space/pre-wrap-051.html",
+   "/css/css-text/white-space/pre-wrap-052.html",
+   "/css/css-text/white-space/text-wrap-balance-line-clamp-012.html",
+   "/css/css-text/white-space/text-wrap-balance-overflow-002.html",
+   "/css/css-text/white-space/white-space-pre-051.html",
+   "/css/css-text/white-space/white-space-pre-052.html",
+   "/css/css-values/ch-unit-001.html",
+   "/css/css-values/ch-unit-008.html",
+   "/css/css-writing-modes/block-flow-direction-004.xht",
+   "/css/css-writing-modes/block-flow-direction-htb-001.xht",
+   "/css/css-writing-modes/float-rgt-orthog-vlr-in-htb-003.xht",
+   "/css/css-writing-modes/float-rgt-orthog-vrl-in-htb-003.xht",
+   "/css/css-writing-modes/height-width-inline-non-replaced-vlr-003.xht",
+   "/css/filter-effects/backdrop-filter-svg.html",
+   "/css/filter-effects/svg-empty-element-with-filter-001.html"
+  ],
+  "newly_failing": [
+   {
+    "test": "/css/CSS2/fonts/font-applies-to-017.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/fonts/font-family-013.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/fonts/fonts-013.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/generated-content/content-155.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/syntax/case-sensitive-004.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/tables/table-anonymous-objects-079.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/tables/table-anonymous-objects-081.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/tables/table-anonymous-objects-083.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/tables/table-anonymous-objects-085.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/tables/table-anonymous-objects-155.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/text/text-transform-bicameral-009.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/text/text-transform-bicameral-010.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-contain/contain-size-select-elem-003.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-contain/contain-size-select-elem-004.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-contain/contain-size-select-elem-005.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-counter-styles/symbols-function/dynamic.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-flexbox/multiline-last-baseline-item-count.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-fonts/font-face-unicode-range-nbsp.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-fonts/variation-sequences.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-grid/grid-lanes/subgrid/grid-subgridded-to-grid-lanes/track-sizing/auto-track-sizing-001.tentative.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-grid/layout-algorithm/auto-margins-ignored-during-track-sizing-001.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-grid/subgrid/auto-track-sizing-002.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-multicol/multicol-fill-balance-031.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-multicol/multicol-on-broken-image-alt-text.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-pseudo/marker-text-emphasis.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-pseudo/marker-text-shadow.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/line-breaking/line-breaking-018.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-001.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-002.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-003.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-004.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-005.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-006.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-007.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-008.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-00B.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-00E.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-00F.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-010.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-011.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-012.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-013.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-014.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-015.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-016.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-017.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-018.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-019.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-01A.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-01B.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-01C.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-01D.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-01E.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-01F.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-07F.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-080.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-081.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-082.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-083.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-084.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-085.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-086.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-087.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-088.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-089.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-08A.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-08B.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-08C.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-08D.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-08E.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-08F.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-090.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-091.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-092.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-093.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-094.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-095.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-096.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-097.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-098.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-099.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-09A.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-09B.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-09C.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-09D.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-09E.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/control-chars-09F.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/eol-spaces-bidi-001.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/text-wrap-balance-float-005.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-text/white-space/white-space-normal-011.html",
+    "status": "FAIL"
+   }
+  ],
+  "drop": true,
+  "same_wpt_commit": true
+ },
+ "incidents": [],
+ "shards": [
+  {
+   "shard": [
+    13,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 572.2,
+   "pagesDrawn": 2828,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    8,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 591.1,
+   "pagesDrawn": 2782,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    12,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 285.6,
+   "pagesDrawn": 2824,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    9,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 584.9,
+   "pagesDrawn": 2788,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    1,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 538.2,
+   "pagesDrawn": 2794,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    11,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 294.5,
+   "pagesDrawn": 2831,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    15,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 584.3,
+   "pagesDrawn": 2801,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    7,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 312.3,
+   "pagesDrawn": 2789,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    14,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 582.7,
+   "pagesDrawn": 2817,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    6,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 421.2,
+   "pagesDrawn": 2803,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    4,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 562.8,
+   "pagesDrawn": 2792,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    3,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 563.8,
+   "pagesDrawn": 2802,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    10,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 351.6,
+   "pagesDrawn": 2808,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    5,
+    16
+   ],
+   "tests": 1613,
+   "wallSeconds": 353.5,
+   "pagesDrawn": 2801,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    2,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 581.1,
+   "pagesDrawn": 2791,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  },
+  {
+   "shard": [
+    0,
+    16
+   ],
+   "tests": 1614,
+   "wallSeconds": 588.1,
+   "pagesDrawn": 2816,
+   "engineSha256": "7329849c3a9b64fb2e425a37b16409869fae4be0d1d15fe0a3095b01dc1e3756"
+  }
+ ],
+ "completeness": "complete",
+ "shards_missing_reasons": {},
+ "plan": {
+  "release_tag": "build-b9f6c92bd022-foafnaut-linux-x86_64",
+  "core_commit": "b9f6c92bd022d7659752e0962aa34f7b4b53ccd1",
+  "commit_utc": "2026-11-22T17:23:08Z",
+  "web_tag": "build-ef1710ff226d-foafnaut-web",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "suites": [
+   "css"
+  ],
+  "trigger": "manual",
+  "planned_utc": "2026-11-22T18:11:33Z"
+ }
+}

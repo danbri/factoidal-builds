@@ -1,0 +1,401 @@
+### Since 20261122T1336Z-wpt-reftest-css-linux-x86_64-gh45028286099a1 (core e0666850902b)
+
+Tests passed 9,559 -> 10,306 (+747) DROP
+
+Newly passing: 837. Newly not passing: 90.
+
+Newly not passing:
+
+- `/css/CSS2/fonts/font-applies-to-017.xht`: FAIL
+- `/css/CSS2/fonts/font-family-013.xht`: FAIL
+- `/css/CSS2/fonts/fonts-013.xht`: FAIL
+- `/css/CSS2/generated-content/content-155.xht`: FAIL
+- `/css/CSS2/syntax/case-sensitive-004.xht`: FAIL
+- `/css/CSS2/tables/table-anonymous-objects-079.xht`: FAIL
+- `/css/CSS2/tables/table-anonymous-objects-081.xht`: FAIL
+- `/css/CSS2/tables/table-anonymous-objects-083.xht`: FAIL
+- `/css/CSS2/tables/table-anonymous-objects-085.xht`: FAIL
+- `/css/CSS2/tables/table-anonymous-objects-155.xht`: FAIL
+- `/css/CSS2/text/text-transform-bicameral-009.xht`: FAIL
+- `/css/CSS2/text/text-transform-bicameral-010.xht`: FAIL
+- `/css/css-contain/contain-size-select-elem-003.html`: FAIL
+- `/css/css-contain/contain-size-select-elem-004.html`: FAIL
+- `/css/css-contain/contain-size-select-elem-005.html`: FAIL
+- `/css/css-counter-styles/symbols-function/dynamic.html`: FAIL
+- `/css/css-flexbox/multiline-last-baseline-item-count.html`: FAIL
+- `/css/css-fonts/font-face-unicode-range-nbsp.html`: FAIL
+- `/css/css-fonts/variation-sequences.html`: FAIL
+- `/css/css-grid/grid-lanes/subgrid/grid-subgridded-to-grid-lanes/track-sizing/auto-track-sizing-001.tentative.html`: FAIL
+- `/css/css-grid/layout-algorithm/auto-margins-ignored-during-track-sizing-001.html`: FAIL
+- `/css/css-grid/subgrid/auto-track-sizing-002.html`: FAIL
+- `/css/css-multicol/multicol-fill-balance-031.html`: FAIL
+- `/css/css-multicol/multicol-on-broken-image-alt-text.html`: FAIL
+- `/css/css-pseudo/marker-text-emphasis.html`: FAIL
+- `/css/css-pseudo/marker-text-shadow.html`: FAIL
+- `/css/css-text/line-breaking/line-breaking-018.html`: FAIL
+- `/css/css-text/white-space/control-chars-001.html`: FAIL
+- `/css/css-text/white-space/control-chars-002.html`: FAIL
+- `/css/css-text/white-space/control-chars-003.html`: FAIL
+- `/css/css-text/white-space/control-chars-004.html`: FAIL
+- `/css/css-text/white-space/control-chars-005.html`: FAIL
+- `/css/css-text/white-space/control-chars-006.html`: FAIL
+- `/css/css-text/white-space/control-chars-007.html`: FAIL
+- `/css/css-text/white-space/control-chars-008.html`: FAIL
+- `/css/css-text/white-space/control-chars-00B.html`: FAIL
+- `/css/css-text/white-space/control-chars-00E.html`: FAIL
+- `/css/css-text/white-space/control-chars-00F.html`: FAIL
+- `/css/css-text/white-space/control-chars-010.html`: FAIL
+- `/css/css-text/white-space/control-chars-011.html`: FAIL
+- `/css/css-text/white-space/control-chars-012.html`: FAIL
+- `/css/css-text/white-space/control-chars-013.html`: FAIL
+- `/css/css-text/white-space/control-chars-014.html`: FAIL
+- `/css/css-text/white-space/control-chars-015.html`: FAIL
+- `/css/css-text/white-space/control-chars-016.html`: FAIL
+- `/css/css-text/white-space/control-chars-017.html`: FAIL
+- `/css/css-text/white-space/control-chars-018.html`: FAIL
+- `/css/css-text/white-space/control-chars-019.html`: FAIL
+- `/css/css-text/white-space/control-chars-01A.html`: FAIL
+- `/css/css-text/white-space/control-chars-01B.html`: FAIL
+- `/css/css-text/white-space/control-chars-01C.html`: FAIL
+- `/css/css-text/white-space/control-chars-01D.html`: FAIL
+- `/css/css-text/white-space/control-chars-01E.html`: FAIL
+- `/css/css-text/white-space/control-chars-01F.html`: FAIL
+- `/css/css-text/white-space/control-chars-07F.html`: FAIL
+- `/css/css-text/white-space/control-chars-080.html`: FAIL
+- `/css/css-text/white-space/control-chars-081.html`: FAIL
+- `/css/css-text/white-space/control-chars-082.html`: FAIL
+- `/css/css-text/white-space/control-chars-083.html`: FAIL
+- `/css/css-text/white-space/control-chars-084.html`: FAIL
+- `/css/css-text/white-space/control-chars-085.html`: FAIL
+- `/css/css-text/white-space/control-chars-086.html`: FAIL
+- `/css/css-text/white-space/control-chars-087.html`: FAIL
+- `/css/css-text/white-space/control-chars-088.html`: FAIL
+- `/css/css-text/white-space/control-chars-089.html`: FAIL
+- `/css/css-text/white-space/control-chars-08A.html`: FAIL
+- `/css/css-text/white-space/control-chars-08B.html`: FAIL
+- `/css/css-text/white-space/control-chars-08C.html`: FAIL
+- `/css/css-text/white-space/control-chars-08D.html`: FAIL
+- `/css/css-text/white-space/control-chars-08E.html`: FAIL
+- `/css/css-text/white-space/control-chars-08F.html`: FAIL
+- `/css/css-text/white-space/control-chars-090.html`: FAIL
+- `/css/css-text/white-space/control-chars-091.html`: FAIL
+- `/css/css-text/white-space/control-chars-092.html`: FAIL
+- `/css/css-text/white-space/control-chars-093.html`: FAIL
+- `/css/css-text/white-space/control-chars-094.html`: FAIL
+- `/css/css-text/white-space/control-chars-095.html`: FAIL
+- `/css/css-text/white-space/control-chars-096.html`: FAIL
+- `/css/css-text/white-space/control-chars-097.html`: FAIL
+- `/css/css-text/white-space/control-chars-098.html`: FAIL
+- `/css/css-text/white-space/control-chars-099.html`: FAIL
+- `/css/css-text/white-space/control-chars-09A.html`: FAIL
+- `/css/css-text/white-space/control-chars-09B.html`: FAIL
+- `/css/css-text/white-space/control-chars-09C.html`: FAIL
+- `/css/css-text/white-space/control-chars-09D.html`: FAIL
+- `/css/css-text/white-space/control-chars-09E.html`: FAIL
+- `/css/css-text/white-space/control-chars-09F.html`: FAIL
+- `/css/css-text/white-space/eol-spaces-bidi-001.html`: FAIL
+- `/css/css-text/white-space/text-wrap-balance-float-005.html`: FAIL
+- `/css/css-text/white-space/white-space-normal-011.html`: FAIL
+
+Newly passing:
+
+- `/css/CSS2/abspos/hypothetical-inline-alone-on-second-line.html`
+- `/css/CSS2/bidi-text/bidi-box-model-010.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-011.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-012.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-014.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-015.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-016.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-017.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-018.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-019.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-020.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-021.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-025.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-026.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-027.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-028.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-029.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-030.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-032.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-033.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-034.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-035.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-036.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-037.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-041.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-042.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-043.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-044.xht`
+- `/css/CSS2/bidi-text/bidi-box-model-045.xht`
+- `/css/CSS2/bidi-text/bidi-breaking-001.xht`
+- `/css/CSS2/bidi-text/bidi-glyph-mirroring-002.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-001.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-002.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-003.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-004.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-007.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-009.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-012.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-015.xht`
+- `/css/CSS2/bidi-text/line-breaking-bidi-003.xht`
+- `/css/CSS2/borders/border-bottom-006.xht`
+- `/css/CSS2/borders/border-bottom-width-013.xht`
+- `/css/CSS2/borders/border-bottom-width-015.xht`
+- `/css/CSS2/borders/border-bottom-width-016.xht`
+- `/css/CSS2/borders/border-bottom-width-017.xht`
+- `/css/CSS2/borders/border-bottom-width-018.xht`
+- `/css/CSS2/borders/border-bottom-width-024.xht`
+- `/css/CSS2/borders/border-bottom-width-025.xht`
+- `/css/CSS2/borders/border-bottom-width-026.xht`
+- `/css/CSS2/borders/border-bottom-width-027.xht`
+- `/css/CSS2/borders/border-bottom-width-028.xht`
+- `/css/CSS2/borders/border-bottom-width-029.xht`
+- `/css/CSS2/borders/border-bottom-width-035.xht`
+- `/css/CSS2/borders/border-bottom-width-037.xht`
+- `/css/CSS2/borders/border-bottom-width-038.xht`
+- `/css/CSS2/borders/border-bottom-width-039.xht`
+- `/css/CSS2/borders/border-bottom-width-040.xht`
+- `/css/CSS2/borders/border-bottom-width-046.xht`
+- `/css/CSS2/borders/border-bottom-width-048.xht`
+- `/css/CSS2/borders/border-bottom-width-049.xht`
+- `/css/CSS2/borders/border-bottom-width-050.xht`
+- `/css/CSS2/borders/border-bottom-width-051.xht`
+- `/css/CSS2/borders/border-bottom-width-057.xht`
+- `/css/CSS2/borders/border-bottom-width-058.xht`
+- `/css/CSS2/borders/border-bottom-width-059.xht`
+- `/css/CSS2/borders/border-bottom-width-060.xht`
+- `/css/CSS2/borders/border-bottom-width-061.xht`
+- `/css/CSS2/borders/border-bottom-width-062.xht`
+- `/css/CSS2/borders/border-bottom-width-068.xht`
+- `/css/CSS2/borders/border-bottom-width-069.xht`
+- `/css/CSS2/borders/border-bottom-width-070.xht`
+- `/css/CSS2/borders/border-bottom-width-071.xht`
+- `/css/CSS2/borders/border-bottom-width-072.xht`
+- `/css/CSS2/borders/border-bottom-width-073.xht`
+- `/css/CSS2/borders/border-bottom-width-079.xht`
+- `/css/CSS2/borders/border-bottom-width-081.xht`
+- `/css/CSS2/borders/border-bottom-width-082.xht`
+- `/css/CSS2/borders/border-bottom-width-applies-to-009.xht`
+- `/css/CSS2/borders/border-bottom-width-applies-to-012.xht`
+- `/css/CSS2/borders/border-bottom-width-applies-to-015.xht`
+- `/css/CSS2/borders/border-left-006.xht`
+- `/css/CSS2/borders/border-left-width-013.xht`
+- `/css/CSS2/borders/border-left-width-015.xht`
+- `/css/CSS2/borders/border-left-width-016.xht`
+- `/css/CSS2/borders/border-left-width-017.xht`
+- `/css/CSS2/borders/border-left-width-018.xht`
+- `/css/CSS2/borders/border-left-width-024.xht`
+- `/css/CSS2/borders/border-left-width-025.xht`
+- `/css/CSS2/borders/border-left-width-026.xht`
+- `/css/CSS2/borders/border-left-width-027.xht`
+- `/css/CSS2/borders/border-left-width-028.xht`
+- `/css/CSS2/borders/border-left-width-029.xht`
+- `/css/CSS2/borders/border-left-width-035.xht`
+- `/css/CSS2/borders/border-left-width-037.xht`
+- `/css/CSS2/borders/border-left-width-038.xht`
+- `/css/CSS2/borders/border-left-width-039.xht`
+- `/css/CSS2/borders/border-left-width-040.xht`
+- `/css/CSS2/borders/border-left-width-046.xht`
+- `/css/CSS2/borders/border-left-width-048.xht`
+- `/css/CSS2/borders/border-left-width-049.xht`
+- `/css/CSS2/borders/border-left-width-050.xht`
+- `/css/CSS2/borders/border-left-width-051.xht`
+- `/css/CSS2/borders/border-left-width-057.xht`
+- `/css/CSS2/borders/border-left-width-058.xht`
+- `/css/CSS2/borders/border-left-width-059.xht`
+- `/css/CSS2/borders/border-left-width-060.xht`
+- `/css/CSS2/borders/border-left-width-061.xht`
+- `/css/CSS2/borders/border-left-width-062.xht`
+- `/css/CSS2/borders/border-left-width-068.xht`
+- `/css/CSS2/borders/border-left-width-069.xht`
+- `/css/CSS2/borders/border-left-width-070.xht`
+- `/css/CSS2/borders/border-left-width-071.xht`
+- `/css/CSS2/borders/border-left-width-072.xht`
+- `/css/CSS2/borders/border-left-width-073.xht`
+- `/css/CSS2/borders/border-left-width-079.xht`
+- `/css/CSS2/borders/border-left-width-081.xht`
+- `/css/CSS2/borders/border-left-width-082.xht`
+- `/css/CSS2/borders/border-left-width-applies-to-009.xht`
+- `/css/CSS2/borders/border-left-width-applies-to-012.xht`
+- `/css/CSS2/borders/border-left-width-applies-to-015.xht`
+- `/css/CSS2/borders/border-right-006.xht`
+- `/css/CSS2/borders/border-right-width-013.xht`
+- `/css/CSS2/borders/border-right-width-015.xht`
+- `/css/CSS2/borders/border-right-width-016.xht`
+- `/css/CSS2/borders/border-right-width-017.xht`
+- `/css/CSS2/borders/border-right-width-018.xht`
+- `/css/CSS2/borders/border-right-width-024.xht`
+- `/css/CSS2/borders/border-right-width-025.xht`
+- `/css/CSS2/borders/border-right-width-026.xht`
+- `/css/CSS2/borders/border-right-width-027.xht`
+- `/css/CSS2/borders/border-right-width-028.xht`
+- `/css/CSS2/borders/border-right-width-029.xht`
+- `/css/CSS2/borders/border-right-width-035.xht`
+- `/css/CSS2/borders/border-right-width-037.xht`
+- `/css/CSS2/borders/border-right-width-038.xht`
+- `/css/CSS2/borders/border-right-width-039.xht`
+- `/css/CSS2/borders/border-right-width-040.xht`
+- `/css/CSS2/borders/border-right-width-046.xht`
+- `/css/CSS2/borders/border-right-width-048.xht`
+- `/css/CSS2/borders/border-right-width-049.xht`
+- `/css/CSS2/borders/border-right-width-050.xht`
+- `/css/CSS2/borders/border-right-width-051.xht`
+- `/css/CSS2/borders/border-right-width-057.xht`
+- `/css/CSS2/borders/border-right-width-058.xht`
+- `/css/CSS2/borders/border-right-width-059.xht`
+- `/css/CSS2/borders/border-right-width-060.xht`
+- `/css/CSS2/borders/border-right-width-061.xht`
+- `/css/CSS2/borders/border-right-width-062.xht`
+- `/css/CSS2/borders/border-right-width-068.xht`
+- `/css/CSS2/borders/border-right-width-069.xht`
+- `/css/CSS2/borders/border-right-width-070.xht`
+- `/css/CSS2/borders/border-right-width-071.xht`
+- `/css/CSS2/borders/border-right-width-072.xht`
+- `/css/CSS2/borders/border-right-width-073.xht`
+- `/css/CSS2/borders/border-right-width-079.xht`
+- `/css/CSS2/borders/border-right-width-081.xht`
+- `/css/CSS2/borders/border-right-width-082.xht`
+- `/css/CSS2/borders/border-right-width-applies-to-009.xht`
+- `/css/CSS2/borders/border-right-width-applies-to-012.xht`
+- `/css/CSS2/borders/border-right-width-applies-to-015.xht`
+- `/css/CSS2/borders/border-top-006.xht`
+- `/css/CSS2/borders/border-top-width-013.xht`
+- `/css/CSS2/borders/border-top-width-015.xht`
+- `/css/CSS2/borders/border-top-width-016.xht`
+- `/css/CSS2/borders/border-top-width-017.xht`
+- `/css/CSS2/borders/border-top-width-018.xht`
+- `/css/CSS2/borders/border-top-width-024.xht`
+- `/css/CSS2/borders/border-top-width-025.xht`
+- `/css/CSS2/borders/border-top-width-026.xht`
+- `/css/CSS2/borders/border-top-width-027.xht`
+- `/css/CSS2/borders/border-top-width-028.xht`
+- `/css/CSS2/borders/border-top-width-029.xht`
+- `/css/CSS2/borders/border-top-width-035.xht`
+- `/css/CSS2/borders/border-top-width-037.xht`
+- `/css/CSS2/borders/border-top-width-038.xht`
+- `/css/CSS2/borders/border-top-width-039.xht`
+- `/css/CSS2/borders/border-top-width-040.xht`
+- `/css/CSS2/borders/border-top-width-046.xht`
+- `/css/CSS2/borders/border-top-width-048.xht`
+- `/css/CSS2/borders/border-top-width-049.xht`
+- `/css/CSS2/borders/border-top-width-050.xht`
+- `/css/CSS2/borders/border-top-width-051.xht`
+- `/css/CSS2/borders/border-top-width-057.xht`
+- `/css/CSS2/borders/border-top-width-058.xht`
+- `/css/CSS2/borders/border-top-width-059.xht`
+- `/css/CSS2/borders/border-top-width-060.xht`
+- `/css/CSS2/borders/border-top-width-061.xht`
+- `/css/CSS2/borders/border-top-width-062.xht`
+- `/css/CSS2/borders/border-top-width-068.xht`
+- `/css/CSS2/borders/border-top-width-069.xht`
+- `/css/CSS2/borders/border-top-width-070.xht`
+- `/css/CSS2/borders/border-top-width-071.xht`
+- `/css/CSS2/borders/border-top-width-072.xht`
+- `/css/CSS2/borders/border-top-width-073.xht`
+- `/css/CSS2/borders/border-top-width-079.xht`
+- `/css/CSS2/borders/border-top-width-081.xht`
+- `/css/CSS2/borders/border-top-width-082.xht`
+- `/css/CSS2/borders/border-top-width-applies-to-009.xht`
+- `/css/CSS2/borders/border-top-width-applies-to-012.xht`
+- `/css/CSS2/borders/border-top-width-applies-to-015.xht`
+- `/css/CSS2/borders/border-width-applies-to-008.xht`
+- `/css/CSS2/box-display/anonymous-boxes-inheritance-001.xht`
+- `/css/CSS2/box-display/display-change-001.xht`
+- `/css/CSS2/colors/color-174.xht`
+- `/css/CSS2/css1/c526-font-sz-001.xht`
+- `/css/CSS2/css1/c526-font-sz-003.xht`
+- `/css/CSS2/css1/c548-leadin-000.xht`
+- `/css/CSS2/css1/c5505-mrgn-001.xht`
+- `/css/CSS2/css1/c5505-mrgn-003.xht`
+- `/css/CSS2/css1/c5506-ipadn-t-000.xht`
+- `/css/CSS2/css1/c5506-ipadn-t-001.xht`
+- `/css/CSS2/css1/c5506-ipadn-t-002.xht`
+- `/css/CSS2/css1/c5506-padn-t-000.xht`
+- `/css/CSS2/css1/c5508-ipadn-b-000.xht`
+- `/css/CSS2/css1/c5508-ipadn-b-001.xht`
+- `/css/CSS2/css1/c5508-ipadn-b-002.xht`
+- `/css/CSS2/css1/c5508-ipadn-b-003.xht`
+- `/css/CSS2/css1/c5510-padn-000.xht`
+- `/css/CSS2/css1/c5510-padn-001.xht`
+- `/css/CSS2/css1/c5511-ibrdr-tw-000.xht`
+- `/css/CSS2/css1/c5512-ibrdr-rw-000.xht`
+- `/css/CSS2/css1/c5513-ibrdr-bw-000.xht`
+- `/css/CSS2/css1/c5514-ibrdr-lw-000.xht`
+- `/css/CSS2/floats-clear/float-006.xht`
+- `/css/CSS2/floats-clear/float-replaced-height-002.xht`
+- `/css/CSS2/floats-clear/floats-006.xht`
+- `/css/CSS2/floats-clear/floats-009.xht`
+- `/css/CSS2/floats-clear/floats-024.xht`
+- `/css/CSS2/floats-clear/floats-043.xht`
+- `/css/CSS2/floats-clear/floats-111.xht`
+- `/css/CSS2/floats-clear/floats-112.xht`
+- `/css/CSS2/floats-clear/floats-113.xht`
+- `/css/CSS2/floats-clear/floats-115.xht`
+- `/css/CSS2/floats-clear/floats-117.xht`
+- `/css/CSS2/floats-clear/floats-118.xht`
+- `/css/CSS2/floats-clear/floats-120.xht`
+- `/css/CSS2/floats-clear/floats-122.xht`
+- `/css/CSS2/floats-clear/floats-123.xht`
+- `/css/CSS2/floats-clear/floats-133.xht`
+- `/css/CSS2/floats-clear/floats-134.xht`
+- `/css/CSS2/floats-clear/floats-136.xht`
+- `/css/CSS2/floats-clear/floats-139.xht`
+- `/css/CSS2/floats/float-nowrap-5.html`
+- `/css/CSS2/floats/float-nowrap-6.html`
+- `/css/CSS2/fonts/font-051.xht`
+- `/css/CSS2/fonts/font-family-009.xht`
+- `/css/CSS2/fonts/font-size-120.xht`
+- `/css/CSS2/linebox/border-padding-bleed-001.xht`
+- `/css/CSS2/linebox/border-padding-bleed-002.xht`
+- `/css/CSS2/linebox/border-padding-bleed-003.xht`
+- `/css/CSS2/linebox/inline-formatting-context-008.xht`
+- `/css/CSS2/linebox/inline-formatting-context-009.xht`
+- `/css/CSS2/linebox/inline-formatting-context-011.xht`
+- `/css/CSS2/linebox/inline-formatting-context-013.xht`
+- `/css/CSS2/linebox/line-height-121.xht`
+- `/css/CSS2/linebox/line-height-128.xht`
+- `/css/CSS2/linebox/vertical-align-004.xht`
+- `/css/CSS2/linebox/vertical-align-005.xht`
+- `/css/CSS2/linebox/vertical-align-006.xht`
+- `/css/CSS2/linebox/vertical-align-016.xht`
+- `/css/CSS2/linebox/vertical-align-017.xht`
+- `/css/CSS2/linebox/vertical-align-018.xht`
+- `/css/CSS2/linebox/vertical-align-028.xht`
+- `/css/CSS2/linebox/vertical-align-029.xht`
+- `/css/CSS2/linebox/vertical-align-030.xht`
+- `/css/CSS2/linebox/vertical-align-040.xht`
+- `/css/CSS2/linebox/vertical-align-041.xht`
+- `/css/CSS2/linebox/vertical-align-042.xht`
+- `/css/CSS2/linebox/vertical-align-052.xht`
+- `/css/CSS2/linebox/vertical-align-053.xht`
+- `/css/CSS2/linebox/vertical-align-054.xht`
+- `/css/CSS2/linebox/vertical-align-064.xht`
+- `/css/CSS2/linebox/vertical-align-065.xht`
+- `/css/CSS2/linebox/vertical-align-066.xht`
+- `/css/CSS2/linebox/vertical-align-076.xht`
+- `/css/CSS2/linebox/vertical-align-077.xht`
+- `/css/CSS2/linebox/vertical-align-078.xht`
+- `/css/CSS2/linebox/vertical-align-088.xht`
+- `/css/CSS2/linebox/vertical-align-089.xht`
+- `/css/CSS2/linebox/vertical-align-090.xht`
+- `/css/CSS2/linebox/vertical-align-100.xht`
+- `/css/CSS2/linebox/vertical-align-101.xht`
+- `/css/CSS2/linebox/vertical-align-102.xht`
+- `/css/CSS2/linebox/vertical-align-109.xht`
+- `/css/CSS2/linebox/vertical-align-110.xht`
+- `/css/CSS2/linebox/vertical-align-111.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-001.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-002.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-003.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-004.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-005.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-006.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-007.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-009.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-012.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-013.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-014.xht`
+- `/css/CSS2/linebox/vertical-align-applies-to-015.xht`
+- `/css/CSS2/linebox/vertical-align-baseline-004a.xht`
+- `/css/CSS2/margin-padding-clear/margin-auto-on-block-box.html`
