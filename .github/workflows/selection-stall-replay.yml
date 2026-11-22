@@ -1,0 +1,100 @@
+name: Replay the selection stall on the exact published releases
+on:
+  push:
+    branches: [wip/selection-stall-replay]
+    paths: [.github/workflows/selection-stall-replay.yml]
+permissions:
+  contents: read
+jobs:
+  replay:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - role: previous
+            core: 4618bea0c1ac3b719b4b58cc6dc9580a9204a980
+            engine: build-4618bea0c1ac-foafnaut-linux-x86_64
+            web: build-b9f6c92bd022-foafnaut-web
+          - role: raster
+            core: a512ab9189130fda9043a40cc5d277ffa94801c7
+            engine: build-a512ab918913-foafnaut-linux-x86_64
+            web: build-4618bea0c1ac-foafnaut-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 97ae5cf6e01519e5a4b092909bb284cab7c3e718
+          path: builds
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ matrix.core }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install the pinned Lean runtime and WPT server dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+      - name: Replay target and neighboring fixtures twice
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENGINE: ${{ matrix.engine }}
+          WEB: ${{ matrix.web }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/inputs"
+          printf '%s\n' '{"wpt_commit":"4b26db8978f6024d3184ca483d74afbc354b35de"}' > "$RUNNER_TEMP/inputs/inputs.json"
+          printf '%s\n' /selection/addRange-{28,32,36}.html > "$RUNNER_TEMP/inputs/full.list"
+          for attempt in 1 2; do
+            sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" "HOME=$HOME" \
+              systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue --uid="$(id -u)" --gid="$(id -g)" -- \
+              "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --core core \
+              --inputs "$RUNNER_TEMP/inputs" --engine-dir "$RUNNER_TEMP/engine" \
+              --work "$RUNNER_TEMP/work/$attempt" --out "$RUNNER_TEMP/out/$attempt" \
+              --engine-tag "$ENGINE" --web-tag "$WEB" --index 0 --shards 1 \
+              --platform linux-x86_64 --script-engine bubblepop --jobs 1 --max-minutes 12 --pydeps "$RUNNER_TEMP/pydeps"
+          done
+          python3 - "$RUNNER_TEMP/out" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          from pathlib import Path
+
+          expected = {f"selection/addRange-{n}.html" for n in (28, 32, 36)}
+          for attempt in (1, 2):
+              directory = Path(sys.argv[1]) / str(attempt)
+              meta = json.loads((directory / "shard-meta.json").read_text())
+              assert not meta.get("problems") and meta["names"] == 3 and meta["names_run"] == 3 and meta["server_failures"] == 0, meta
+              rows = [json.loads(line) for part in (directory / "results").glob("*.jsonl") for line in part.read_text().splitlines()]
+              assert {r["file"].lstrip("/") for r in rows} == expected
+              for row in sorted(rows, key=lambda r: r["file"]):
+                  outcomes = row.get("subtests", [])
+                  print(attempt, row["file"], row["harness"], sum(s["status"] == "PASS" for s in outcomes), len(outcomes), row.get("ms"), row.get("message"))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selection-replay-${{ matrix.role }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 14
