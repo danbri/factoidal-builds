@@ -1,0 +1,126 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261122T0938Z-l4-jsonld_frame-linux-x86_64-gh45008521825a1",
+  "started_utc": "2026-11-22T09:40:04Z",
+  "finished_utc": "2026-11-22T09:40:17Z",
+  "trigger": "factoidal-release",
+  "suite": "l4-jsonld_frame",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "298f7b18723dd9cb3176863de5c7ba675137b9f4",
+  "commit_utc": "2026-11-22T08:57:52Z",
+  "snapshot_branch": "",
+  "release_tag": "build-298f7b18723d-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 92,
+  "names_run": 91,
+  "passed": 91,
+  "denominator": 92,
+  "share_pct": "98.9130",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 1,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45008521825",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261122T0938Z-l4-jsonld_frame-linux-x86_64-gh45008521825a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-22T09:38:37Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45008521825",
+  "trigger": "factoidal-release",
+  "core_commit": "298f7b18723dd9cb3176863de5c7ba675137b9f4",
+  "core_short": "298f7b18723d",
+  "on_main": true,
+  "commit_author_utc": "2026-11-22T08:57:52Z",
+  "commit_committer_utc": "2026-11-22T08:57:52Z",
+  "commit_subject": "Register the EPUB operation in the Foafnaut host contract (#731)",
+  "release_sets": {
+   "foafnaut-browser-linux-x86_64": {
+    "tag": "build-298f7b18723d-foafnaut-browser-linux-x86_64",
+    "published_at": "2026-11-22T09:34:05Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-298f7b18723d-foafnaut-browser-linux-x86_64"
+   },
+   "foafnaut-web": {
+    "tag": "build-298f7b18723d-foafnaut-web",
+    "published_at": "2026-11-22T09:37:52Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-298f7b18723d-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-298f7b18723d-linux-x86_64",
+    "published_at": "2026-11-22T09:37:43Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-298f7b18723d-linux-x86_64"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-22T09:38:40Z",
+  "candidate_why": "published by build run 45005250913",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "4b26db8978f6024d3184ca483d74afbc354b35de",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": false,
+  "suites": true,
+  "platforms": [],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "command": [
+   "tools/lean-scoreboard.sh",
+   "--only",
+   "l4shacl-core10,l4shacl-sparql10,l4shacl-core12,l4shacl-sparql12,l4shacl-nodeexpr,l4shacl-rules,l4shex,l4shexc,l4rif,l4csvw-rdf,l4csvw-json,l4csvw-validate,l4xmlconf,l4xslt,l4schematron,l4mathml,l4jsonschema,l4jsonld-probe,l4jsonld-api,l4jsonld-frame,l4rml,l4vc-probe,l4rdf-semantics,l4owl-probe-species"
+  ],
+  "started_utc": "2026-11-22T09:40:04Z",
+  "exit": 1,
+  "seconds": 13,
+  "finished_utc": "2026-11-22T09:40:17Z"
+ },
+ "scoreboard_row": {
+  "spec_area": "JSON-LD framing",
+  "label": "",
+  "runner": "l4jsonld-frame",
+  "job": "l4jsonld-frame",
+  "status": "ok",
+  "pass": 91,
+  "fail": 0,
+  "other": 1,
+  "total": 92,
+  "parse": true,
+  "note": "other = local-override + unsupported",
+  "command": "formal/lean4/.lake/build/bin/l4jsonld-frame",
+  "log": "/home/runner/work/_temp/suite-out/semweb/logs/l4jsonld-frame.log",
+  "seconds": 1,
+  "exit_code": "0",
+  "raw_summary_line": "jsonld-frame: 91 pass, 0 fail, 1 local-override, 0 unsupported (out of 92)",
+  "detail": ""
+ },
+ "continues_fstar_suite": "",
+ "group": "lean-semweb",
+ "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
