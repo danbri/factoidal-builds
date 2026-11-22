@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 3f3975dc5d4531676ce9b8274793dcc081534c7c
+          ref: ef3d6d1284770a585eacdcc15cb4ad81ad047c85
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for pair in 45064008718:e650d5bd958022e9573a3359feef3240a0cfef60 45071374187:3f3975dc5d4531676ce9b8274793dcc081534c7c; do
+          for pair in 45075544023:7444aac0e2dbd8536b9a318ea6af6d59507b7d28 45075544042:ef3d6d1284770a585eacdcc15cb4ad81ad047c85; do
             run=${pair%%:*}
             sha=${pair#*:}
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
@@ -48,13 +48,13 @@ jobs:
           done
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45064008718
+          run-id: 45075544023
           name: branch-engine
           github-token: ${{ github.token }}
           path: baseline
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45071374187
+          run-id: 45075544042
           name: branch-engine
           github-token: ${{ github.token }}
           path: candidate
