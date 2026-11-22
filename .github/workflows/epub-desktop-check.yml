@@ -26,14 +26,14 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           for attempt in $(seq 1 36); do
-            if gh api "repos/$REPO/actions/runs/45001515696/artifacts" --jq '.artifacts[].name' | grep -qx 'foafnaut-browser-linux-x86_64-candidate'; then exit 0; fi
-            if gh api "repos/$REPO/actions/jobs/137153467384" --jq .conclusion | grep -Eq '^(failure|cancelled|timed_out|skipped)$'; then exit 1; fi
+            if gh api "repos/$REPO/actions/runs/45005250913/artifacts" --jq '.artifacts[].name' | grep -qx 'foafnaut-browser-linux-x86_64-candidate'; then exit 0; fi
+            if gh api "repos/$REPO/actions/jobs/137163300566" --jq .conclusion | grep -Eq '^(failure|cancelled|timed_out|skipped)$'; then exit 1; fi
             sleep 20
           done
           exit 1
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45001515696
+          run-id: 45005250913
           name: foafnaut-browser-linux-x86_64-candidate
           github-token: ${{ github.token }}
           path: candidate
