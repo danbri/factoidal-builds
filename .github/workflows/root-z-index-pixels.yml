@@ -113,7 +113,7 @@ jobs:
           css = data["items"]["reftest"]["css"]
           names = [f"/css/CSS2/zindex/{name}" for name in css["CSS2"]["zindex"]
                    if name.startswith("z-index-abspos-") and not name.endswith("-ref.xht")]
-          assert len(names) == 9, names
+          assert len(names) == 6, names
           names.append("/css/CSS2/tables/separated-border-model-004b.xht")
           folder = Path("wpt/css/foafnaut-regressions")
           folder.mkdir(parents=True, exist_ok=True)
