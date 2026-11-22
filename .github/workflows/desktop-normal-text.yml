@@ -1,0 +1,124 @@
+name: Desktop normal text size check
+on:
+  push:
+    branches: [wip/desktop-search-probe]
+    paths: [.github/workflows/desktop-normal-text.yml]
+permissions:
+  actions: read
+  contents: read
+env:
+  CORE: 01a03d05b585e2e11e6e444a533fe90a89925016
+  ENGINE_RUN: '45063188972'
+  WEB: build-ef1710ff226d-foafnaut-web
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Wait for the exact branch engine artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          until gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ENGINE_RUN/artifacts" --jq '.artifacts[].name' |
+              grep -qx foafnaut-engine-darwin-arm64; do
+            status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ENGINE_RUN" --jq .status || true)
+            if [ "$status" = completed ]; then
+              echo 'The branch engine build ended without its macOS artifact.'
+              exit 1
+            fi
+            sleep 30
+          done
+  compare:
+    needs: wait
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.ENGINE_RUN }}
+          name: foafnaut-engine-darwin-arm64
+          github-token: ${{ github.token }}
+          path: engine
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Install the checked native engine and browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          engine = Path("engine")
+          manifest = json.loads((engine / "build-info.json").read_text())
+          assert manifest["source_commit"] == os.environ["CORE"], manifest["source_commit"]
+          archive = engine / "foafnaut-engine-darwin-arm64.tar.gz"
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["artifacts"][archive.name]["sha256"]
+          PY
+          tar -xzf engine/foafnaut-engine-darwin-arm64.tar.gz -C engine
+          mkdir -p web
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz
+          echo 'cb7ef521b7ec41ae27375afba8d7056f75295498419a9f5f976e08323b7353d5  foafnaut-web.tar.gz' | shasum -a 256 -c -
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          bash core/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/core/labs/demos/foafnaut" "$PWD/web" ""
+      - name: Compare the default with explicitly selecting 100 and 200 percent
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cat > out/zoom.html <<'HTML'
+          <!doctype html>
+          <meta charset=utf-8>
+          <title>Desktop text size check</title>
+          <style>body { font: 16px/1.4 sans-serif } main { width: 320px }</style>
+          <main><h1>World Wide Web</h1><p>A browser should fit its text at the normal desktop size.</p></main>
+          HTML
+          host="$PWD/core/labs/demos/foafnaut"
+          engine="$PWD/engine/foafnaut/libweb-render.dylib"
+          for scale in 1 2; do
+            for zoom in default 100 200; do
+              args=()
+              if [ "$zoom" != default ]; then args=(--text-size "$zoom"); fi
+              capture="$PWD/out/zoom-$scale-$zoom"
+              deno run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A "$host/run_html.ts" \
+                --offscreen --offscreen-size "800x600@$scale" --no-state --no-scripts --native-engine "$engine" \
+                --url "file://$PWD/out/zoom.html" --shot "$capture.png" --shot-at-end --watch-sweep 1 \
+                ${args[@]+"${args[@]}"} > "$capture.log" 2>&1 || { cat "$capture.log"; exit 1; }
+              test -s "$capture.png"
+            done
+            cmp "out/zoom-$scale-default.png" "out/zoom-$scale-100.png"
+            if cmp -s "out/zoom-$scale-default.png" "out/zoom-$scale-200.png"; then
+              echo "Zoom control did not change the scale-$scale picture."
+              exit 1
+            fi
+            echo "Backing scale $scale: default equals explicit 100%, and differs from explicit 200%." >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Capture the reported desktop pages
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          host="$PWD/core/labs/demos/foafnaut"
+          deno run -A "$host/realpages/survey.ts" --platform macos --host "$host" \
+            --engine "$PWD/engine/foafnaut/libweb-render.dylib" --out "$PWD/out/live" \
+            --only desktop-wikipedia-www,desktop-govuk,desktop-frogfind --watch 3 --retries 0 --no-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-normal-text-pictures
+          path: out/
+          retention-days: 7
