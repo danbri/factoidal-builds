@@ -1,0 +1,73 @@
+name: Same-origin frame point queries
+on:
+  push:
+    branches: [wip/cssom-frame-point-probe]
+    paths: [.github/workflows/frame-points.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  frame-points:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      SOURCE: 49267f72b206959db776be640a99ea7ca6e2a12a
+      NATIVE_RUN: "45085153217"
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 49267f72b206959db776be640a99ea7ca6e2a12a
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Wait for the exact native artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="repos/$GITHUB_REPOSITORY/actions/runs/$NATIVE_RUN"
+          gh api "$url/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $SOURCE"
+          until gh api "$url/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
+            if [[ $(gh api "$url" --jq .status) == completed ]]; then
+              echo "::error::The selected native build ended without its engine artifact."
+              exit 1
+            fi
+            sleep 30
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45085153217
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: candidate
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Run the two-frame browser regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          test "$tc" = "$(cat candidate/lean-toolchain)"
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
+          export WEB_RENDER_LIB="$PWD/candidate/libweb-render.so"
+          test -s "$WEB_RENDER_LIB"
+          deno test --no-check --no-config --no-npm --node-modules-dir=none --unstable-ffi \
+            --allow-read --allow-ffi --allow-env --allow-write --filter 'each document hits' \
+            core/labs/demos/foafnaut/script_reads_holds_test.ts | tee frame-points.log
+          grep -Eq '1 passed.*0 failed' frame-points.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frame-point-test
+          path: frame-points.log
+          retention-days: 14
