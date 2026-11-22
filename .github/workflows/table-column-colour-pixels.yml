@@ -1,0 +1,186 @@
+name: Table column colour paired reftests
+on:
+  push:
+    branches: [wip/paired-table-column-colours]
+    paths: [.github/workflows/table-column-colour-pixels.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      WPT: 4b26db8978f6024d3184ca483d74afbc354b35de
+      WEB_TAG: build-ef1710ff226d-foafnaut-web
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: a61e3db9392282f608e4f1b3613a7eb5d07dd8d7
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub
+            third_party/fonts
+            tests/browser-wpt
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Wait for the two exact native engine builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pair in 45059938283:4618bea0c1ac3b719b4b58cc6dc9580a9204a980 45059938354:a61e3db9392282f608e4f1b3613a7eb5d07dd8d7; do
+            run=${pair%%:*}
+            sha=${pair#*:}
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
+              grep -Fx "Build libweb-render.so from $sha"
+            until gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
+              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status || true)
+              if [[ $status == completed ]]; then
+                echo "::error::Native build run $run ended without a branch-engine artifact."
+                exit 1
+              fi
+              sleep 30
+            done
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45059938283
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: baseline
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45059938354
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: candidate
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Install the renderer runtime and pinned WPT inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          for role in baseline candidate; do
+            test "$tc" = "$(cat "$role/lean-toolchain")"
+          done
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB_TAG" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz
+          echo 'cb7ef521b7ec41ae27375afba8d7056f75295498419a9f5f976e08323b7353d5  foafnaut-web.tar.gz' | sha256sum -c -
+          mkdir -p web
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          runtime=web/docs/web/hub/html-webgpu/runtime
+          host=core/labs/demos/foafnaut/.build
+          mkdir -p "$host/native-html/runtime" "$host/engines"
+          cp "$runtime"/web-render.{mjs,wasm} "$host/native-html/runtime/"
+          cp "$runtime"/render-plan.{mjs,wasm} "$host/engines/"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: 4b26db8978f6024d3184ca483d74afbc354b35de
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/CSS2/tables
+            fonts
+            common
+      - name: Add table layer and colspan regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p wpt/css/foafnaut-regressions
+          cat > wpt/css/foafnaut-regressions/table-column-colours.html <<'HTML'
+          <!doctype html>
+          <style>
+          body { margin: 0; background: white }
+          table { table-layout: fixed; width: 80px; border-spacing: 0 }
+          td { padding: 0; height: 20px }
+          .first { background-color: rgba(0, 128, 0, .5) }
+          .second { background-color: blue }
+          col.highlight { background-color: red }
+          tr.cover { background-color: yellow }
+          </style>
+          <table>
+            <colgroup class="first" span="2"></colgroup>
+            <colgroup class="second"><col><col class="highlight"></colgroup>
+            <tr><td colspan="2"></td><td colspan="2"></td></tr>
+            <tr class="cover"><td></td><td></td><td></td><td></td></tr>
+            <tr><td colspan="2"></td><td></td><td></td></tr>
+          </table>
+          HTML
+          cat > wpt/css/foafnaut-regressions/table-column-colours-ref.html <<'HTML'
+          <!doctype html>
+          <style>
+          body { margin: 0; background: white }
+          i { display: block; position: absolute; width: 20px; height: 20px }
+          .group { width: 40px; background-color: rgba(0, 128, 0, .5) }
+          </style>
+          <i class="group"></i>
+          <i style="left:40px;width:40px;background:blue"></i>
+          <i style="top:20px;width:80px;background:yellow"></i>
+          <i class="group" style="top:40px"></i>
+          <i style="left:40px;top:40px;background:blue"></i>
+          <i style="left:60px;top:40px;background:red"></i>
+          HTML
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = Path("MANIFEST.json")
+          data = json.loads(manifest.read_text())
+          reftests = data["items"]["reftest"]["css"]
+          reftests["foafnaut-regressions"] = {
+              "table-column-colours.html": ["local", [None, [
+                  ["/css/foafnaut-regressions/table-column-colours-ref.html", "=="]
+              ], {}]]
+          }
+          manifest.write_text(json.dumps(data))
+          PY
+      - name: Compare both engines on pinned WPT and the local table case
+        shell: bash
+        run: |
+          set -euo pipefail
+          local_case=/css/foafnaut-regressions/table-column-colours.html
+          names="$local_case"
+          for borders in bc bs; do
+            for part in cell colgroup column row rowgroup table; do
+              names="$names,/css/CSS2/tables/table-backgrounds-$borders-$part-001.xht"
+            done
+          done
+          for role in baseline candidate; do
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
+              --wpt-root "$PWD/wpt" --native-engine "$PWD/$role/libweb-render.so" --prefix css/ --jobs 1 \
+              --only "$names" --out "$PWD/out/$role"
+          done
+          python3 - "$names" "$local_case" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          from pathlib import Path
+
+          names, local_case = set(sys.argv[1].split(",")), sys.argv[2]
+          for role in ("baseline", "candidate"):
+              data = json.loads(Path(f"out/{role}/results.json").read_text())
+              assert data["valid"] and {row["test"] for row in data["tests"]} == names
+              for row in data["tests"]:
+                  edge, = row["edges"]
+                  print(role, row["test"], row["status"], edge.get("totalPixels"), edge.get("maxDifference"))
+                  assert row["status"] in ("PASS", "FAIL"), row
+                  if row["test"] == local_case:
+                      assert row["status"] == ("PASS" if role == "candidate" else "FAIL"), row
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: table-column-colour-pixels
+          path: out/
+          retention-days: 14
