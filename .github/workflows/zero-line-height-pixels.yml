@@ -1,0 +1,143 @@
+name: Zero line height paired reftests
+on:
+  push:
+    branches: [wip/paired-zero-line-height]
+    paths: [.github/workflows/zero-line-height-pixels.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      WPT: 4b26db8978f6024d3184ca483d74afbc354b35de
+      WEB_TAG: build-ef1710ff226d-foafnaut-web
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 62e1d961d681769e17adf09a577235e7379e1d27
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub
+            third_party/fonts
+            tests/browser-wpt
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - name: Wait for the two exact native engine builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pair in 45064008718:e650d5bd958022e9573a3359feef3240a0cfef60 45064694948:62e1d961d681769e17adf09a577235e7379e1d27; do
+            run=${pair%%:*}
+            sha=${pair#*:}
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
+              grep -Fx "Build libweb-render.so from $sha"
+            until gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
+              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status || true)
+              if [[ $status == completed ]]; then
+                echo "::error::Native build run $run ended without a branch-engine artifact."
+                exit 1
+              fi
+              sleep 30
+            done
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45064008718
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: baseline
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45064694948
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: candidate
+      - id: pins
+        run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Install the renderer runtime and pinned WPT inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < core/formal/lean4/lean-toolchain)
+          for role in baseline candidate; do
+            test "$tc" = "$(cat "$role/lean-toolchain")"
+          done
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB_TAG" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz
+          echo 'cb7ef521b7ec41ae27375afba8d7056f75295498419a9f5f976e08323b7353d5  foafnaut-web.tar.gz' | sha256sum -c -
+          mkdir -p web
+          tar -xzf foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          runtime=web/docs/web/hub/html-webgpu/runtime
+          host=core/labs/demos/foafnaut/.build
+          mkdir -p "$host/native-html/runtime" "$host/engines"
+          cp "$runtime"/web-render.{mjs,wasm} "$host/native-html/runtime/"
+          cp "$runtime"/render-plan.{mjs,wasm} "$host/engines/"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: 4b26db8978f6024d3184ca483d74afbc354b35de
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/CSS2/linebox
+            css/CSS2/support
+            css/support
+            common
+            fonts
+      - name: Compare the entire CSS2 line-height group
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > names.txt
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("MANIFEST.json").read_text())
+          group = data["items"]["reftest"]["css"]["CSS2"]["linebox"]
+          files = sorted(name for name in group if name.startswith("line-height-"))
+          expected = {f"line-height-{n:03}.xht" for n in range(2, 102, 11)}
+          assert expected <= set(files), (len(files), expected - set(files))
+          print(",".join(f"/css/CSS2/linebox/{name}" for name in files))
+          PY
+          names=$(cat names.txt)
+          for role in baseline candidate; do
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json \
+              --wpt-root "$PWD/wpt" --native-engine "$PWD/$role/libweb-render.so" --prefix css/ --jobs 3 \
+              --only "$names" --out "$PWD/out/$role"
+          done
+          python3 - "$names" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          from collections import Counter
+          from pathlib import Path
+
+          names = set(sys.argv[1].split(","))
+          results = {}
+          for role in ("baseline", "candidate"):
+              data = json.loads(Path(f"out/{role}/results.json").read_text())
+              assert data["valid"] and {row["test"] for row in data["tests"]} == names
+              results[role] = {row["test"]: row["status"] for row in data["tests"]}
+              print(role, dict(Counter(results[role].values())))
+          for name in sorted(names):
+              before, after = (results[role][name] for role in ("baseline", "candidate"))
+              if before != after or name.rsplit("/", 1)[-1] in {f"line-height-{n:03}.xht" for n in range(2, 102, 11)}:
+                  print(name, before, after)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zero-line-height-pixels
+          path: out/
+          retention-days: 14
