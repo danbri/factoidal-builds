@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 80
     env:
-      SOURCE: 49267f72b206959db776be640a99ea7ca6e2a12a
-      NATIVE_RUN: "45085153217"
+      SOURCE: 72f5523035f8d1455a1f4953a9018b445ce918cc
+      NATIVE_RUN: "45087168984"
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 49267f72b206959db776be640a99ea7ca6e2a12a
+          ref: 72f5523035f8d1455a1f4953a9018b445ce918cc
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -41,7 +41,7 @@ jobs:
           done
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45085153217
+          run-id: 45087168984
           name: branch-engine
           github-token: ${{ github.token }}
           path: candidate
