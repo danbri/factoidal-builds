@@ -2,33 +2,33 @@
  "schema": "foafnaut-realpages/1",
  "platform": "linux",
  "mode": "offline",
- "release": "build-97b52ad1e4f3-foafnaut-linux-x86_64",
+ "release": "build-c6ab4a4778af-foafnaut-linux-x86_64",
  "engine": {
   "file": "libweb-render.so",
-  "sha256": "d570e356f91251b50577b615ea681afd4062d2e11b18b9cae1a2c7821918e74b"
+  "sha256": "586f357a39de29a09ca09fe05d15aebf2ff85abc5f804c52ffe83a3ec37edb69"
  },
  "host": {
-  "commit": "97b52ad1e4f386a367ca96d240f0487172b5596c",
+  "commit": "c6ab4a4778afd2260714625e2c2492a4f24c70f9",
   "shot_at_end": true,
   "liberal_report": true
  },
- "survey_commit": "97b52ad1e4f386a367ca96d240f0487172b5596c",
+ "survey_commit": "c6ab4a4778afd2260714625e2c2492a4f24c70f9",
  "runner": {
   "os": "linux",
   "arch": "x86_64",
   "deno": "2.9.4"
  },
- "started": "2026-11-23T11:18:27.775Z",
- "finished": "2026-11-23T11:22:08.497Z",
+ "started": "2026-11-23T22:53:29.334Z",
+ "finished": "2026-11-23T23:06:27.978Z",
  "watch_s": 15,
  "timeout_s": 180,
  "totals": {
   "pages": 23,
-  "usable": 12,
-  "slow": 6,
+  "usable": 7,
+  "slow": 8,
   "unusable": 0,
   "blank": 0,
-  "timeout": 0,
+  "timeout": 3,
   "crash": 0,
   "unreachable": 5
  },
@@ -95,17 +95,17 @@
    "mobile": false,
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 2,
-   "load_ms": 1043,
-   "first_layout_ms": 783,
+   "first_frame_s": 2.4,
+   "load_ms": 1386,
+   "first_layout_ms": 867,
    "rows": 80,
    "links": 9,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 1,
-   "rss_peak_mb": 290,
-   "wall_s": 2,
+   "rss_peak_mb": 289,
+   "wall_s": 2.4,
    "refused": null,
    "state": "ok",
    "crashed": false,
@@ -120,17 +120,17 @@
    "snapshot": "wp-stub-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 1.7,
-   "load_ms": 1249,
-   "first_layout_ms": 308,
+   "first_frame_s": 12.8,
+   "load_ms": 1383,
+   "first_layout_ms": 11248,
    "rows": 122,
    "links": 103,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 1,
-   "rss_peak_mb": 277,
-   "wall_s": 1.7,
+   "cpu_s": 12,
+   "rss_peak_mb": 309,
+   "wall_s": 12.8,
    "refused": null,
    "replay": {
     "hits": 29,
@@ -138,8 +138,11 @@
    },
    "state": "ok",
    "crashed": false,
-   "verdict": "usable",
-   "over_budget": []
+   "verdict": "slow",
+   "over_budget": [
+    "first_frame_s 12.8 > 5",
+    "first_layout_ms 11248 > 1000"
+   ]
   },
   {
    "id": "wp-spinal",
@@ -149,17 +152,17 @@
    "snapshot": "wp-spinal-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 6,
-   "load_ms": 1497,
-   "first_layout_ms": 4171,
+   "first_frame_s": 33.7,
+   "load_ms": 1672,
+   "first_layout_ms": 31751,
    "rows": 1275,
    "links": 748,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 6,
-   "rss_peak_mb": 587,
-   "wall_s": 6,
+   "cpu_s": 33,
+   "rss_peak_mb": 517,
+   "wall_s": 33.8,
    "refused": null,
    "replay": {
     "hits": 30,
@@ -167,10 +170,10 @@
    },
    "state": "ok",
    "crashed": false,
-   "verdict": "usable",
+   "verdict": "slow",
    "over_budget": [
-    "first_frame_s 6 > 5",
-    "first_layout_ms 4171 > 1000"
+    "first_frame_s 33.7 > 5",
+    "first_layout_ms 31751 > 1000"
    ]
   },
   {
@@ -180,30 +183,24 @@
    "mobile": false,
    "snapshot": "wp-us-20261115.zip",
    "attempts": 1,
-   "exit_code": 0,
-   "first_frame_s": 62.5,
-   "load_ms": 3181,
-   "first_layout_ms": 58467,
-   "rows": 8497,
-   "links": 4838,
+   "exit_code": 143,
+   "first_frame_s": null,
+   "load_ms": null,
+   "first_layout_ms": null,
+   "rows": null,
+   "links": null,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 63,
-   "rss_peak_mb": 2371,
-   "wall_s": 62.6,
+   "cpu_s": 179,
+   "rss_peak_mb": 1024,
+   "wall_s": 180,
    "refused": null,
-   "replay": {
-    "hits": 75,
-    "misses": 9
-   },
-   "state": "ok",
+   "replay": null,
+   "state": "timeout",
    "crashed": false,
-   "verdict": "slow",
-   "over_budget": [
-    "first_frame_s 62.5 > 10",
-    "first_layout_ms 58467 > 1000"
-   ]
+   "verdict": "timeout",
+   "over_budget": []
   },
   {
    "id": "m-stub",
@@ -213,17 +210,17 @@
    "snapshot": "m-stub-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 2,
-   "load_ms": 1683,
-   "first_layout_ms": 214,
+   "first_frame_s": 9,
+   "load_ms": 6396,
+   "first_layout_ms": 2502,
    "rows": 291,
    "links": 79,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 1,
-   "rss_peak_mb": 287,
-   "wall_s": 2,
+   "cpu_s": 8,
+   "rss_peak_mb": 292,
+   "wall_s": 9,
    "refused": null,
    "replay": {
     "hits": 26,
@@ -232,7 +229,10 @@
    "state": "ok",
    "crashed": false,
    "verdict": "usable",
-   "over_budget": []
+   "over_budget": [
+    "first_frame_s 9 > 5",
+    "first_layout_ms 2502 > 1000"
+   ]
   },
   {
    "id": "m-spinal",
@@ -242,17 +242,17 @@
    "snapshot": "m-spinal-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 14.1,
-   "load_ms": 9837,
-   "first_layout_ms": 4056,
+   "first_frame_s": 39.8,
+   "load_ms": 26970,
+   "first_layout_ms": 12577,
    "rows": 3475,
    "links": 667,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 14,
-   "rss_peak_mb": 581,
-   "wall_s": 14.2,
+   "cpu_s": 39,
+   "rss_peak_mb": 553,
+   "wall_s": 39.9,
    "refused": null,
    "replay": {
     "hits": 27,
@@ -262,8 +262,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 14.1 > 5",
-    "first_layout_ms 4056 > 1000"
+    "first_frame_s 39.8 > 5",
+    "first_layout_ms 12577 > 1000"
    ]
   },
   {
@@ -273,30 +273,24 @@
    "mobile": true,
    "snapshot": "m-us-20261115.zip",
    "attempts": 1,
-   "exit_code": 0,
-   "first_frame_s": 58.2,
-   "load_ms": 3050,
-   "first_layout_ms": 54315,
-   "rows": 23870,
-   "links": 4841,
+   "exit_code": 143,
+   "first_frame_s": null,
+   "load_ms": null,
+   "first_layout_ms": null,
+   "rows": null,
+   "links": null,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 58,
-   "rss_peak_mb": 2142,
-   "wall_s": 58.3,
+   "cpu_s": 179,
+   "rss_peak_mb": 1242,
+   "wall_s": 180,
    "refused": null,
-   "replay": {
-    "hits": 75,
-    "misses": 9
-   },
-   "state": "ok",
+   "replay": null,
+   "state": "timeout",
    "crashed": false,
-   "verdict": "slow",
-   "over_budget": [
-    "first_frame_s 58.2 > 10",
-    "first_layout_ms 54315 > 1000"
-   ]
+   "verdict": "timeout",
+   "over_budget": []
   },
   {
    "id": "m-stub-enm",
@@ -306,17 +300,17 @@
    "snapshot": "m-stub-enm-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 1.6,
-   "load_ms": 1237,
-   "first_layout_ms": 250,
+   "first_frame_s": 10.4,
+   "load_ms": 1402,
+   "first_layout_ms": 8816,
    "rows": 185,
    "links": 88,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 1,
-   "rss_peak_mb": 279,
-   "wall_s": 1.6,
+   "cpu_s": 10,
+   "rss_peak_mb": 281,
+   "wall_s": 10.4,
    "refused": null,
    "replay": {
     "hits": 28,
@@ -324,8 +318,11 @@
    },
    "state": "ok",
    "crashed": false,
-   "verdict": "usable",
-   "over_budget": []
+   "verdict": "slow",
+   "over_budget": [
+    "first_frame_s 10.4 > 5",
+    "first_layout_ms 8816 > 1000"
+   ]
   },
   {
    "id": "news-bbc",
@@ -335,17 +332,17 @@
    "snapshot": "news-bbc-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 13.6,
-   "load_ms": 12474,
-   "first_layout_ms": 1001,
+   "first_frame_s": 52.7,
+   "load_ms": 43301,
+   "first_layout_ms": 9185,
    "rows": 443,
    "links": 39,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 13,
-   "rss_peak_mb": 781,
-   "wall_s": 13.6,
+   "cpu_s": 52,
+   "rss_peak_mb": 771,
+   "wall_s": 52.7,
    "refused": null,
    "replay": {
     "hits": 106,
@@ -355,8 +352,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 13.6 > 5",
-    "first_layout_ms 1001 > 1000"
+    "first_frame_s 52.7 > 5",
+    "first_layout_ms 9185 > 1000"
    ]
   },
   {
@@ -367,17 +364,17 @@
    "snapshot": "news-bbc-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 3.2,
-   "load_ms": 361,
-   "first_layout_ms": 2686,
+   "first_frame_s": 8.6,
+   "load_ms": 404,
+   "first_layout_ms": 8065,
    "rows": 437,
    "links": 42,
    "scripts_off": "--no-scripts",
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 3,
-   "rss_peak_mb": 291,
-   "wall_s": 3.2,
+   "cpu_s": 8,
+   "rss_peak_mb": 280,
+   "wall_s": 8.6,
    "refused": null,
    "replay": {
     "hits": 20,
@@ -387,7 +384,8 @@
    "crashed": false,
    "verdict": "usable",
    "over_budget": [
-    "first_layout_ms 2686 > 1000"
+    "first_frame_s 8.6 > 5",
+    "first_layout_ms 8065 > 1000"
    ]
   },
   {
@@ -398,17 +396,17 @@
    "snapshot": "gh-deno-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 14.7,
-   "load_ms": 2119,
-   "first_layout_ms": 12444,
+   "first_frame_s": 29.3,
+   "load_ms": 2426,
+   "first_layout_ms": 26745,
    "rows": 298,
    "links": 108,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 14,
-   "rss_peak_mb": 378,
-   "wall_s": 14.7,
+   "cpu_s": 29,
+   "rss_peak_mb": 386,
+   "wall_s": 29.4,
    "refused": null,
    "replay": {
     "hits": 39,
@@ -418,8 +416,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 14.7 > 5",
-    "first_layout_ms 12444 > 1000"
+    "first_frame_s 29.3 > 5",
+    "first_layout_ms 26745 > 1000"
    ]
   },
   {
@@ -430,17 +428,17 @@
    "snapshot": "mdn-display-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 7.4,
-   "load_ms": 5414,
-   "first_layout_ms": 1816,
+   "first_frame_s": 14.1,
+   "load_ms": 9955,
+   "first_layout_ms": 3927,
    "rows": 1061,
    "links": 427,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 7,
-   "rss_peak_mb": 440,
-   "wall_s": 7.4,
+   "cpu_s": 14,
+   "rss_peak_mb": 489,
+   "wall_s": 14.1,
    "refused": null,
    "replay": {
     "hits": 29,
@@ -448,10 +446,10 @@
    },
    "state": "ok",
    "crashed": false,
-   "verdict": "usable",
+   "verdict": "slow",
    "over_budget": [
-    "first_frame_s 7.4 > 5",
-    "first_layout_ms 1816 > 1000"
+    "first_frame_s 14.1 > 5",
+    "first_layout_ms 3927 > 1000"
    ]
   },
   {
@@ -462,17 +460,17 @@
    "snapshot": "blog-jvns-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 9.3,
-   "load_ms": 3504,
-   "first_layout_ms": 5615,
+   "first_frame_s": 15.7,
+   "load_ms": 6451,
+   "first_layout_ms": 9020,
    "rows": 875,
    "links": 687,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 9,
-   "rss_peak_mb": 595,
-   "wall_s": 9.3,
+   "cpu_s": 15,
+   "rss_peak_mb": 582,
+   "wall_s": 15.7,
    "refused": null,
    "replay": {
     "hits": 30,
@@ -480,10 +478,10 @@
    },
    "state": "ok",
    "crashed": false,
-   "verdict": "usable",
+   "verdict": "slow",
    "over_budget": [
-    "first_frame_s 9.3 > 5",
-    "first_layout_ms 5615 > 1000"
+    "first_frame_s 15.7 > 5",
+    "first_layout_ms 9020 > 1000"
    ]
   },
   {
@@ -494,17 +492,17 @@
    "snapshot": "hn-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 0.7,
-   "load_ms": 144,
-   "first_layout_ms": 429,
+   "first_frame_s": 1,
+   "load_ms": 165,
+   "first_layout_ms": 682,
    "rows": 99,
    "links": 199,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 0,
-   "rss_peak_mb": 231,
-   "wall_s": 0.7,
+   "rss_peak_mb": 230,
+   "wall_s": 1,
    "refused": null,
    "replay": {
     "hits": 7,
@@ -522,30 +520,24 @@
    "mobile": false,
    "snapshot": "w3c-flexbox-20261115.zip",
    "attempts": 1,
-   "exit_code": 0,
-   "first_frame_s": 15.6,
-   "load_ms": 10265,
-   "first_layout_ms": 4526,
-   "rows": 7813,
-   "links": 6814,
+   "exit_code": 143,
+   "first_frame_s": null,
+   "load_ms": null,
+   "first_layout_ms": null,
+   "rows": null,
+   "links": null,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 16,
-   "rss_peak_mb": 1925,
-   "wall_s": 15.6,
+   "cpu_s": 180,
+   "rss_peak_mb": 527,
+   "wall_s": 180,
    "refused": null,
-   "replay": {
-    "hits": 28,
-    "misses": 0
-   },
-   "state": "ok",
+   "replay": null,
+   "state": "timeout",
    "crashed": false,
-   "verdict": "slow",
-   "over_budget": [
-    "first_frame_s 15.6 > 10",
-    "first_layout_ms 4526 > 1000"
-   ]
+   "verdict": "timeout",
+   "over_budget": []
   },
   {
    "id": "nature-telemetry",
@@ -555,17 +547,17 @@
    "snapshot": "nature-telemetry-20261116.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 6.2,
-   "load_ms": 279,
-   "first_layout_ms": 5799,
+   "first_frame_s": 7,
+   "load_ms": 334,
+   "first_layout_ms": 6472,
    "rows": 58,
    "links": 13,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 6,
-   "rss_peak_mb": 385,
-   "wall_s": 6.2,
+   "rss_peak_mb": 387,
+   "wall_s": 7,
    "refused": null,
    "replay": {
     "hits": 14,
@@ -575,8 +567,8 @@
    "crashed": false,
    "verdict": "usable",
    "over_budget": [
-    "first_frame_s 6.2 > 5",
-    "first_layout_ms 5799 > 1000"
+    "first_frame_s 7 > 5",
+    "first_layout_ms 6472 > 1000"
    ]
   },
   {
@@ -587,17 +579,17 @@
    "snapshot": "infobomb-20261116.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 1.1,
-   "load_ms": 32,
-   "first_layout_ms": 949,
+   "first_frame_s": 1.3,
+   "load_ms": 37,
+   "first_layout_ms": 1118,
    "rows": 63,
    "links": 34,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 1,
-   "rss_peak_mb": 186,
-   "wall_s": 1.1,
+   "rss_peak_mb": 182,
+   "wall_s": 1.3,
    "refused": null,
    "replay": {
     "hits": 5,
@@ -606,7 +598,9 @@
    "state": "ok",
    "crashed": false,
    "verdict": "usable",
-   "over_budget": []
+   "over_budget": [
+    "first_layout_ms 1118 > 1000"
+   ]
   },
   {
    "id": "w3c-maxf",
@@ -616,17 +610,17 @@
    "snapshot": "w3c-maxf-20261116.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 0.3,
-   "load_ms": 9,
-   "first_layout_ms": 236,
+   "first_frame_s": 0.4,
+   "load_ms": 10,
+   "first_layout_ms": 278,
    "rows": 54,
    "links": 32,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 0,
-   "rss_peak_mb": 173,
-   "wall_s": 0.3,
+   "rss_peak_mb": 164,
+   "wall_s": 0.4,
    "refused": null,
    "replay": {
     "hits": 2,
