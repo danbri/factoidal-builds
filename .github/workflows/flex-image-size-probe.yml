@@ -1,0 +1,48 @@
+name: Flex image dimensions
+on:
+  push:
+    branches: [wip/flex-image-size-probe]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  image-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify engine source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45082330976/jobs" --jq '.jobs[] | select(.conclusion == "success") | .name' |
+            grep -Fx 'Build libweb-render.so from 83417351a4dcef722090f05c51ecacd68f6655f3'
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45082330976
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: candidate
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Measure static, cloned, data and held images at load
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < candidate/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
+          curl --retry 3 -fsSL https://raw.githubusercontent.com/web-platform-tests/wpt/4b26db8978f6024d3184ca483d74afbc354b35de/css/css-flexbox/support/solidblue.png -o solidblue.png
+          printf '%s  %s\n' 41fd2e668caeb903f646d15d27574b13f9e698a628356f44995b2b95699b900d solidblue.png | sha256sum -c
+          deno run --no-config --allow-read --allow-ffi --unstable-ffi release-tests/diagnostics/flex-image-probe.ts candidate/libweb-render.so solidblue.png |
+            tee flex-image-probe.ndjson
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flex-image-probe
+          path: flex-image-probe.ndjson
+          retention-days: 14
