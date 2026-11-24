@@ -58,3 +58,36 @@ for old, new in changes:
     assert src.count(old) == 1, old
     src = src.replace(old, new)
 text.write_text(src)
+
+
+doc = text
+src = doc.read_text()
+changes = [
+    ("  const requests: NetWire[] = [], answered = new Set<number>();", """  const requests: NetWire[] = [], answered = new Set<number>();
+  const turnMark = (phase: string, started: number) => console.error(JSON.stringify({
+    type: "wiki-script-settle", phase, ms: Math.round(performance.now()-started),
+    clock: turn.clock, commandCount: turn.commands?.length, nextWake: turn.nextWake,
+    pending: requests.length, pendingWorkerFetches: turn.fetches?.length
+  }));"""),
+    ("""      take(await synced(engine, engine.scriptSession("", { action: "net", session: script.session, results: [await netAnswer(requests.shift()!)] })));""",
+     """      let started = performance.now();
+      const result = await netAnswer(requests.shift()!);
+      turnMark("network-answer", started);
+      started = performance.now();
+      take(await synced(engine, engine.scriptSession("", { action: "net", session: script.session, results: [result] })));
+      turnMark("net-engine", started);"""),
+    ("      const results = await Promise.all(wanted.map", "      let started = performance.now();\n      const results = await Promise.all(wanted.map"),
+    ("""      take(await synced(engine, engine.scriptSession("", { action: "fetched", session: script.session, results })));""",
+     """      turnMark("worker-fetch", started);
+      started = performance.now();
+      take(await synced(engine, engine.scriptSession("", { action: "fetched", session: script.session, results })));
+      turnMark("worker-engine", started);"""),
+    ("""      take(await synced(engine, engine.scriptSession("", { action: "advance", session: script.session, ms })));""",
+     """      const started = performance.now();
+      take(await synced(engine, engine.scriptSession("", { action: "advance", session: script.session, ms })));
+      turnMark("timer-engine", started);"""),
+]
+for old, new in changes:
+    assert src.count(old) == 1, old
+    src = src.replace(old, new)
+doc.write_text(src)

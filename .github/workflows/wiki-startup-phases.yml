@@ -1,4 +1,4 @@
-name: Break down Wikipedia startup on the released Linux renderer
+name: Break down desktop Wikipedia script settling
 on:
   push:
     branches: [wip/wiki-startup-phases]
@@ -59,25 +59,25 @@ jobs:
           lab="$PWD/core/labs/demos/foafnaut"
           bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
           python3 release-tests/wiki-startup-instrument.py "$lab"
-      - name: Alternate scripts on and off at both archived widths
+      - name: Measure each script-settle turn in two desktop replays
         run: |
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
           wiki="$PWD/third_party/realpages/en.wikipedia.org"
-          for page in wp-us m-us; do
+          for page in wp-us; do
             url=https://en.wikipedia.org/wiki/United_States
             cols=160
             if [[ "$page" == m-us ]]; then url="$url?useskin=minerva"; cols=52; fi
             export REALPAGES_REPLAY="$wiki/$page-20261115.zip"
-            for pass in on1 off1 off2 on2; do
+            for pass in on1 on2; do
               extra=()
               if [[ "$pass" == off* ]]; then extra=(--no-scripts); fi
               timeout 200 deno run --no-prompt --preload "$lab/realpages/replay.ts"                 --allow-read --allow-ffi --allow-net --allow-env --import-map="$lab/textnaut/import_map.json"                 "$lab/textnaut/textnaut.ts" --dump --timing --width "$cols" --engine "$ENGINE" "${extra[@]}" "$url"                 > /dev/null 2> "out/$page-$pass.log" || echo "Exit $? during $page-$pass" >> "out/$page-$pass.log"
-              grep -E 'wiki-startup-phase|^timing: engine|^Exit ' "out/$page-$pass.log" || true
+              grep -E 'wiki-script-settle|wiki-startup-phase|^timing: engine|^Exit ' "out/$page-$pass.log" || true
             done
           done
           grep -l '^timing: engine' out/*.log | wc -l > out/completed-render-count.txt
-          test "$(cat out/completed-render-count.txt)" -eq 8
+          test "$(cat out/completed-render-count.txt)" -eq 2
       - uses: actions/upload-artifact@v4
         if: always()
         with:
