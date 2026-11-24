@@ -1,0 +1,92 @@
+name: Check the archived W3C status strip
+on:
+  push:
+    branches: [wip/w3c-background-shorthand-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/w3c-flag-paint.ts
+            third_party/realpages/w3.org/w3c-flexbox-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Get the exact baseline and candidate engines
+        run: |
+          set -euo pipefail
+          for item in 45501736982:baseline 45507371399:candidate; do
+            run=${item%:*}
+            arm=${item#*:}
+            for i in $(seq 1 150); do
+              if gh run download "$run" -R "$GITHUB_REPOSITORY" -n branch-engine -D "$arm"; then break; fi
+              if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status)" == completed ]]; then
+                echo "Missing exact engine from $run" >&2; exit 1
+              fi
+              sleep 20
+            done
+            test -s "$arm/libweb-render.so"
+          done
+      - name: Compare archived pixels and a shorthand control
+        run: |
+          set -euo pipefail
+          mkdir out
+          snapshot=third_party/realpages/w3.org/w3c-flexbox-20261115.zip
+          echo "a01b88268d16a2ab95bdf0a2edf8f56bf5634bf3534fa793d13263166f38d206  $snapshot" | sha256sum -c -
+          sha256sum "$snapshot" baseline/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
+          python3 - "$snapshot" <<'PYTHON'
+          import base64, json, sys, zipfile
+          from pathlib import Path
+
+          base = "https://www.w3.org/StyleSheets/TR/2021/"
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              mapping = {r["url"]: r["body"] for r in json.loads(z.read("manifest.json"))["entries"]}
+              doc = {
+                  "page": z.read(mapping["https://www.w3.org/TR/css-flexbox-1/"]).decode(),
+                  "css": {base + key: z.read(mapping[base + key]).decode()
+                          for key in ["W3C-CRD", "base.css", "dark.css"]},
+                  "images": {base + key: base64.b64encode(z.read(mapping[base + key])).decode()
+                             for key in ["logos/CRD.svg", "logos/W3C"]},
+              }
+          Path("input.json").write_text(json.dumps(doc))
+          PYTHON
+          for arm in baseline candidate; do
+            for mode in reduce archive; do
+              deno run --no-config --allow-read=input.json --allow-ffi release-tests/w3c-flag-paint.ts \
+                "$PWD/$arm/libweb-render.so" input.json "$mode" > "out/$arm-$mode.jsonl"
+            done
+          done
+          python3 - <<'PYTHON' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          def rows(arm, mode):
+              data = [json.loads(l) for l in Path("out", f"{arm}-{mode}.jsonl").read_text().splitlines()]
+              assert all(row["listed"] for row in data)
+              return {r["name"]: r["samples"] for r in data}
+
+          a, b = rows("baseline", "archive"), rows("candidate", "archive")
+          assert a["authored"] != a["explicit"], a
+          assert b["authored"] == b["explicit"], b
+          assert b["authored"][0][1][0] == [26,94,154], b
+          ar, br = rows("baseline", "reduce"), rows("candidate", "reduce")
+          assert ar["shorthand"] != ar["longhands"], ar
+          assert br["shorthand"] == br["longhands"] == ar["longhands"], br
+          print("The archived status strip and the reduced shorthand both match their explicit controls.")
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: w3c-background-shorthand-replay
+          path: out/
+          retention-days: 7
