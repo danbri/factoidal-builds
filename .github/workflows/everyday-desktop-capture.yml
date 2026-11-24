@@ -1,7 +1,7 @@
-name: Freeze Wikipedia and FrogFind desktop acceptance pages
+name: Freeze GOV.UK for complete offline desktop coverage
 on:
   push:
-    branches: [wip/everyday-desktop-capture]
+    branches: [wip/govuk-desktop-capture]
 permissions:
   contents: read
 jobs:
@@ -10,16 +10,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - id: desktop-frogfind
-            domain: frogfind.com
-            title: FrogFind
+          - id: desktop-govuk
+            domain: www.gov.uk
+            title: GOV.UK
     runs-on: macos-15
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: f43b16f155d62addbe5c54380818f0653859d238
+          ref: 99222ad9b1f9121dc17f630bdf4bc81a09cc5f75
           persist-credentials: false
           sparse-checkout: labs/demos/foafnaut/realpages
       - uses: denoland/setup-deno@v2
@@ -50,6 +50,7 @@ jobs:
               assert urllib.parse.urlsplit(url).hostname == sys.argv[2]
               assert title and sys.argv[3] in title.group(1)
               assert len(snapshot.read("reference.png")) > 0
+              assert re.search(r"<form\b", html, re.I), "GOV.UK returned no search form"
               print("HTML form in the received document:", bool(re.search(r"<form\b", html, re.I)))
           PYTHON
       - uses: actions/upload-artifact@v4
