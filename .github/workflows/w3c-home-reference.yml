@@ -13,7 +13,36 @@ env:
   SET: foafnaut-linux-x86_64
   WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
+  capture:
+    runs-on: macos-15
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 5eb100777e590e0ae1d38b0e1344676f01864d59
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Capture W3C at desktop and narrow widths
+        run: |
+          set -euo pipefail
+          jq -n '{defaults:{viewport:"1440x800",licence:"W3C site terms"},pages:[
+            {id:"w3c-home-wide",url:"https://w3.org/",viewport:"1440x800",attribution:"World Wide Web Consortium, W3C homepage"},
+            {id:"w3c-home-narrow",url:"https://w3.org/",viewport:"480x800",attribution:"World Wide Web Consortium, W3C homepage"}]}' > "$RUNNER_TEMP/pages.json"
+          chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          "$chrome" --version
+          deno run -A labs/demos/foafnaut/realpages/snapshot.ts --chrome "$chrome" --pages "$RUNNER_TEMP/pages.json" --out "$RUNNER_TEMP/snapshots"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: w3c-home-snapshots
+          path: ${{ runner.temp }}/snapshots/
+          retention-days: 7
+          if-no-files-found: error
   replay:
+    needs: capture
     runs-on: ubuntu-latest
     timeout-minutes: 28
     steps:
@@ -69,20 +98,19 @@ jobs:
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           "$HOME/.elan/bin/elan" toolchain install "$tc"
           echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
-      - name: Capture and render the actual W3C homepage at two widths
+      - uses: actions/download-artifact@v4
+        with:
+          name: w3c-home-snapshots
+          path: snapshots
+      - name: Render the actual W3C homepage at two widths
         run: |
           set -euo pipefail
           suite=core/labs/demos/foafnaut/realpages
           mkdir -p out
-          jq -n '{defaults:{viewport:"1440x800",licence:"W3C site terms"},pages:[
-            {id:"w3c-home-wide",url:"https://w3.org/",viewport:"1440x800",attribution:"World Wide Web Consortium, W3C homepage"},
-            {id:"w3c-home-narrow",url:"https://w3.org/",viewport:"480x800",attribution:"World Wide Web Consortium, W3C homepage"}]}' > out/pages.json
-          chrome=$(command -v google-chrome)
-          deno run -A "$suite/snapshot.ts" --chrome "$chrome" --pages out/pages.json --out "$RUNNER_TEMP/snapshots"
           sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so | tee out/engines.sha256
           for shape in wide narrow; do
             width=1440; [[ $shape != narrow ]] || width=480
-            zip=$(find "$RUNNER_TEMP/snapshots" -name "w3c-home-$shape-*.zip" -print -quit)
+            zip=$(find "$PWD/snapshots" -name "w3c-home-$shape-*.zip" -print -quit)
             test -s "$zip"
             sha256sum "$zip" >> out/snapshots.sha256
             unzip -p "$zip" reference.png > "out/chrome-$shape.png"
