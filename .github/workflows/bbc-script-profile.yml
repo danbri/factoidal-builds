@@ -1,0 +1,81 @@
+name: Profile BBC module startup on macOS
+on:
+  push:
+    branches: [wip/bbc-script-profile]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+  SET: foafnaut-engine-darwin-arm64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  profile:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            core-diagnostics
+            third_party/realpages/bbc.co.uk
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts/noto-sans
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the pinned engine and desktop host
+        run: |
+          set -euo pipefail
+          mkdir -p engines/base engines/web
+          gh release download "build-${CORE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/base
+          jq -e --arg sha "$CORE" '.source_commit == $sha' engines/base/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/base/build-info.json)
+          echo "$expected  engines/base/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "engines/base/$SET.tar.gz" -C engines/base
+          library=$(find "$PWD/engines/base" -name libweb-render.dylib -print | head -1)
+          window=$(find "$PWD/engines/base" -name libnative-window.dylib -print | head -1)
+          test -s "$library"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
+          echo "ENGINE=$library" >> "$GITHUB_ENV"
+      - name: Sample scripted startup on the frozen BBC article
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          python3 core-diagnostics/bbc-load-phases.py "$lab"
+          export REALPAGES_REPLAY="$PWD/third_party/realpages/bbc.co.uk/news-bbc-20261115.zip"
+          mkdir -p out
+          shasum -a 256 "$ENGINE" "$REALPAGES_REPLAY" > out/inputs.sha256
+          for iteration in 1 2; do
+            deno run --no-prompt --preload "$lab/realpages/replay.ts" --allow-read --allow-ffi --allow-net --allow-env \
+              --import-map="$lab/textnaut/import_map.json" "$lab/textnaut/textnaut.ts" --dump --width 160 --timing \
+              --engine "$ENGINE" https://www.bbc.co.uk/news/articles/cwdr1dmn563do > /dev/null 2> "out/$iteration.phases.ndjson" &
+            pid=$!
+            for i in {1..50}; do
+              grep -q '"phase":"classic-script-join"' "out/$iteration.phases.ndjson" && break
+              sleep 0.10
+            done
+            sudo sample "$pid" 6 2 -file "out/$iteration.sample" > "out/$iteration.sampler.log" 2>&1 || true
+            wait "$pid"
+            grep -q 'Call graph:' "out/$iteration.sample"
+            grep -q '^timing: engine' "out/$iteration.phases.ndjson"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-script-profile
+          path: out/
+          retention-days: 7
