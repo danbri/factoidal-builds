@@ -1,4 +1,4 @@
-name: Replay the complete everyday registry
+name: Compare the current browser on the complete offline registry
 on:
   push:
     branches: [wip/realpages-full-offline]
@@ -7,11 +7,35 @@ permissions:
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  ENGINE_CORE: 472993e362b585c5724f8de9d13115e8383f9f80
+  ENGINE_CORE: 9805833592547e2a23788da403a5e9e36b99f1ec
   ENGINE_SET: foafnaut-engine-darwin-arm64
   WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - name: Wait for the exact native release and paired baseline
+        run: |
+          set -euo pipefail
+          tag="build-${ENGINE_CORE:0:12}-$ENGINE_SET"
+          while ! gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fx "$ENGINE_SET.tar.gz"; do
+            state=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/45434436855" --jq '.status')
+            if [[ "$state" = completed ]]; then
+              echo "::error::Exact Mac engine ended without release $tag"
+              exit 1
+            fi
+            sleep 35
+          done
+          until gh api "repos/$GITHUB_REPOSITORY/actions/runs/45431629535/artifacts" --jq '.artifacts[].name' | grep -Fx complete-offline-survey; do
+            if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/45431629535" --jq '.status')" = completed ]]; then
+              echo "::error::Offline baseline produced no artifact"
+              exit 1
+            fi
+            sleep 35
+          done
   replay:
+    needs: wait-engine
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -62,7 +86,7 @@ jobs:
           45430099580 desktop-govuk-snapshot www.gov.uk desktop-govuk
           45431269816 desktop-w3c-home-snapshot www.w3.org desktop-w3c-home
           SNAPSHOTS
-      - name: Install the recorded baseline engine and matching host
+      - name: Install the exact candidate engine and matching host
         run: |
           set -euo pipefail
           mkdir -p engines/native engines/web
@@ -81,7 +105,7 @@ jobs:
           bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$host" "$PWD/engines/web" "$window"
           echo "ENGINE=$engine" >> "$GITHUB_ENV"
           shasum -a 256 "$engine" "$host/run_html.ts" engines/web/foafnaut-web.tar.gz > out/engine.sha256
-      - name: Run every registered page on the baseline
+      - name: Run every registered page and compare the pinned baseline
         run: |
           set -euo pipefail
           lab=tools/labs/demos/foafnaut/realpages
@@ -107,7 +131,11 @@ jobs:
           assert observed == wanted and len(pages) == len(wanted), (wanted - observed, observed - wanted)
           assert not missing, f"Pages unreachable in the offline dataset: {missing}"
           PYTHON
-          deno run --allow-read --allow-write "$lab/compare.ts" --current out/summary.json --markdown out/table.md
+          gh run download 45431629535 -R "$GITHUB_REPOSITORY" -n complete-offline-survey -D previous
+          cmp out/overlay.sha256 previous/overlay.sha256
+          cp previous/summary.json out/baseline.json
+          deno run --allow-read --allow-write "$lab/compare.ts" --current out/summary.json \
+            --previous out/baseline.json --markdown out/table.md
           cat out/table.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
