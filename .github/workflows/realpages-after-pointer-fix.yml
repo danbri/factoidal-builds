@@ -1,0 +1,155 @@
+name: Replay every registered page on the Mac release with the pointer fix
+on:
+  push:
+    branches: [wip/realpages-after-pointer-fix]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  REQUIRED_CORE: 86d610b0e4c387ba030e3b25903e6395e0af8311
+  ENGINE_SET: foafnaut-darwin-arm64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 170
+    outputs:
+      sha: ${{ steps.version.outputs.sha }}
+    steps:
+      - name: Wait for a published Mac app containing the pointer fix
+        id: version
+        run: |
+          set -euo pipefail
+          pointer="repos/$GITHUB_REPOSITORY/contents/latest/$ENGINE_SET.json"
+          for i in $(seq 1 159); do
+            metadata=$(gh api "$pointer" -H 'Accept: application/vnd.github.raw+json' 2>/dev/null || true)
+            sha=$(jq -r '.source_commit // empty' <<< "$metadata")
+            if [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+              relation=$(gh api "repos/danbri/factoidal-core/compare/$REQUIRED_CORE...$sha" --jq .status 2>/dev/null || true)
+              tag="build-${sha:0:12}-$ENGINE_SET"
+              if [[ "$relation" = ahead || "$relation" = identical ]]; then
+                if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --silent; then
+                  echo "sha=$sha" >> "$GITHUB_OUTPUT"
+                  echo "Released Mac app: $tag"
+                  exit 0
+                fi
+              fi
+            fi
+            sleep 60
+          done
+          echo "::error::No published app containing $REQUIRED_CORE appeared in the wait window"
+          exit 1
+  replay:
+    needs: wait-engine
+    env:
+      ENGINE_CORE: ${{ needs.wait-engine.outputs.sha }}
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          sparse-checkout: third_party/realpages
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.ENGINE_CORE }}
+          path: host
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 99222ad9b1f9121dc17f630bdf4bc81a09cc5f75
+          path: tools
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Collect exact offline captures
+        run: |
+          set -euo pipefail
+          mkdir -p out incoming
+          dataset="$PWD/builds/third_party/realpages"
+          while read -r run artifact site page; do
+            incoming="$PWD/incoming/$page"
+            gh run download "$run" -R "$GITHUB_REPOSITORY" -n "$artifact" -D "$incoming"
+            snapshot=$(find "$incoming" -name "$page-*.zip" -print -quit)
+            test -s "$snapshot"
+            mkdir -p "$dataset/$site"
+            target="$dataset/$site/$(basename "$snapshot")"
+            cp "$snapshot" "$target"
+            printf '%s %s ' "$run" "$artifact" >> out/overlay.sha256
+            (cd "$dataset"; shasum -a 256 "$site/$(basename "$snapshot")") >> out/overlay.sha256
+          done <<'SNAPSHOTS'
+          45408439387 bbc-home-snapshot bbc.co.uk desktop-bbc-news
+          45416936347 desktop-wikipedia-www-snapshot en.wikipedia.org desktop-wikipedia-www
+          45417573057 desktop-frogfind-snapshot frogfind.com desktop-frogfind
+          45430099580 desktop-govuk-snapshot www.gov.uk desktop-govuk
+          45431269816 desktop-w3c-home-snapshot www.w3.org desktop-w3c-home
+          SNAPSHOTS
+      - name: Install the native engine from the verified published app
+        run: |
+          set -euo pipefail
+          mkdir -p engines/native engines/web
+          tag="build-${ENGINE_CORE:0:12}-$ENGINE_SET"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -p "$ENGINE_SET.tar.gz" -p build-info.json -D engines
+          jq -e --arg sha "$ENGINE_CORE" '.source_commit == $sha' engines/build-info.json >/dev/null
+          checksum=$(jq -er --arg archive "$ENGINE_SET.tar.gz" '.artifacts[$archive].sha256' engines/build-info.json)
+          echo "$checksum  engines/$ENGINE_SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "engines/$ENGINE_SET.tar.gz" -C engines/native
+          engine=$(find "$PWD/engines/native" -name libweb-render.dylib -print -quit)
+          window=$(find "$PWD/engines/native" -name libnative-window.dylib -print -quit)
+          test -s "$engine"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          host="$PWD/host/labs/demos/foafnaut"
+          bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$host" "$PWD/engines/web" "$window"
+          echo "ENGINE=$engine" >> "$GITHUB_ENV"
+          shasum -a 256 "$engine" "$host/run_html.ts" engines/web/foafnaut-web.tar.gz > out/engine.sha256
+      - name: Run every registered page and compare the pinned baseline
+        run: |
+          set -euo pipefail
+          lab=tools/labs/demos/foafnaut/realpages
+          deno run -A "$lab/survey.ts" --platform macos --engine "$ENGINE" \
+            --host "$PWD/host/labs/demos/foafnaut" --out "$PWD/out" \
+            --pages "$PWD/host/labs/demos/foafnaut/realpages/pages.json" \
+            --snapshots "$PWD/builds/third_party/realpages" --release "build-${ENGINE_CORE:0:12}-$ENGINE_SET"
+          python3 - "$PWD/host/labs/demos/foafnaut/realpages/pages.json" out/summary.json <<'PYTHON'
+          import collections, json, pathlib, sys
+          registry, report = map(pathlib.Path, sys.argv[1:])
+          wanted = {page["id"] for page in json.loads(registry.read_text())["pages"]}
+          result = json.loads(report.read_text())
+          pages = result["pages"]
+          # The UK replay body and the international Chrome screenshot are different pages.
+          for page in pages:
+              if page["id"] in {"desktop-bbc-news", "desktop-bbc-news-noscripts"}:
+                  page["layout_similarity"] = None
+                  page["chrome_error"] = "UK archive has an international Chrome reference"
+          report.write_text(json.dumps(result, indent=2) + "\n")
+          observed = {page["id"] for page in pages}
+          counts = collections.Counter(page["verdict"] for page in pages)
+          print("Verdicts:", dict(counts))
+          missing = [page["id"] for page in pages if page["verdict"] == "unreachable"]
+          assert observed == wanted and len(pages) == len(wanted), (wanted - observed, observed - wanted)
+          assert not missing, f"Pages unreachable in the offline dataset: {missing}"
+          PYTHON
+          gh run download 45485793671 -R "$GITHUB_REPOSITORY" -n mac-complete-offline-survey -D previous
+          cmp out/overlay.sha256 previous/overlay.sha256
+          cp previous/summary.json out/baseline.json
+          deno run --allow-read --allow-write "$lab/compare.ts" --current out/summary.json \
+            --previous out/baseline.json --markdown out/table.md
+          cat out/table.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-complete-offline-survey
+          path: out/
+          retention-days: 7
+          if-no-files-found: error
