@@ -1,4 +1,4 @@
-name: Responsive sizing geometry
+name: Everyday page sizing geometry
 on:
   push:
     branches: [wip/viewport-size-math-probe]
@@ -9,8 +9,17 @@ jobs:
   geometry:
     runs-on: ubuntu-latest
     timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {id: viewport-size-math, run: 45395480662, source: 0993c228afac0781ed7bf4158300f4310b4d58c8}
+          - {id: replaced-internal-display, run: 45395281797, source: 9dc290c91d4a70a26406ec76e0ac6dcadbe35094}
     env:
       GH_TOKEN: ${{ github.token }}
+      PROBE: ${{ matrix.id }}
+      NATIVE_RUN: ${{ matrix.run }}
+      SOURCE: ${{ matrix.source }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,9 +27,9 @@ jobs:
       - name: Wait for the exact candidate engine
         run: |
           set -euo pipefail
-          run=45394174433
+          run="$NATIVE_RUN"
           uri="repos/$GITHUB_REPOSITORY/actions/runs/$run"
-          gh api "$uri/jobs" --jq '.jobs[].name' | grep -Fx 'Build libweb-render.so from b398c9bb24ca5d8d69b073a913a987ef191290d2'
+          gh api "$uri/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $SOURCE"
           until gh api "$uri/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
             if [[ $(gh api "$uri" --jq .status) == completed ]]; then
               echo "::error::Candidate build did not publish a native engine"
@@ -30,24 +39,24 @@ jobs:
           done
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45394174433
+          run-id: ${{ matrix.run }}
           name: branch-engine
           github-token: ${{ github.token }}
           path: engine
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
-      - name: Read relative and explicit CSS geometry at two viewport widths
+      - name: Read used box geometry and compare with controls
         run: |
           set -euo pipefail
           tc=$(cat engine/lean-toolchain)
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           "$HOME/.elan/bin/elan" toolchain install "$tc"
           export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
-          deno run --no-config --allow-ffi --unstable-ffi release-tests/diagnostics/viewport-size-math.ts engine/libweb-render.so | tee geometry.ndjson
+          deno run --no-config --allow-ffi --unstable-ffi "release-tests/diagnostics/$PROBE.ts" engine/libweb-render.so | tee geometry.ndjson
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: viewport-size-math-geometry
+          name: ${{ matrix.id }}-geometry
           path: geometry.ndjson
           retention-days: 7

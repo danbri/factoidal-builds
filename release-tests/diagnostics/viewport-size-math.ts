@@ -40,7 +40,7 @@ body{margin:0}.header{width:90%;display:flex;align-items:center}
 </style><div class=header><a href="/"><span class=logo id=logo><img class=large id=image
 src="data:image/svg+xml;base64,${picture}"></span></a><div id=nav>Navigation</div></div>`;
 
-for(const [viewport, expected] of [[1280,120],[480,69.9104]]) {
+for(const [viewport, expected] of [[1440,120],[1280,119.4944],[480,69.9104]]) {
   const actual=trace("logo-clamp",logo("clamp(3.75rem, 2.51rem + 6.198vw, 7.5rem)"),viewport);
   const reference=trace("logo-explicit",logo(expected+"px"),viewport);
   for(const id of ["logo","image"]) {
