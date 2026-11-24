@@ -1,15 +1,15 @@
-name: W3C homepage reference renders
+name: BBC inline SVG metadata replay
 on:
   push:
-    branches: [wip/w3c-home-reference]
+    branches: [wip/bbc-svg-category-replay]
 permissions:
   contents: read
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CANDIDATE: 7e81d60454961256eea458720153869f599278ce
-  BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
-  BRANCH_RUN: '45414537051'
+  CANDIDATE: 10142760b61218ac9c5172a1722a065111cb5830
+  BASELINE: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef
+  BRANCH_RUN: '45423050292'
   SET: foafnaut-linux-x86_64
   WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 7e81d60454961256eea458720153869f599278ce
+          ref: 10142760b61218ac9c5172a1722a065111cb5830
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -46,7 +46,7 @@ jobs:
             third_party/fonts
       - uses: actions/download-artifact@v4
         with:
-          run-id: '45414537051'
+          run-id: '45423050292'
           name: branch-engine
           github-token: ${{ github.token }}
           path: engines/candidate
@@ -75,39 +75,35 @@ jobs:
           echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45403312317
+          run-id: 45413803852
           github-token: ${{ github.token }}
-          name: w3c-home-snapshots
+          name: bbc-home-matched-snapshot
           path: snapshots
-      - name: Render the actual W3C homepage at two widths
+      - name: Render the same archived BBC document with both engines
         run: |
           set -euo pipefail
           suite=core/labs/demos/foafnaut/realpages
           mkdir -p out
-          sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so | tee out/engines.sha256
-          for shape in wide narrow; do
-            width=1440; [[ $shape != narrow ]] || width=480
-            zip=$(find "$PWD/snapshots" -name "w3c-home-$shape-*.zip" -print -quit)
-            test -s "$zip"
-            sha256sum "$zip" >> out/snapshots.sha256
-            unzip -p "$zip" reference.png > "out/chrome-$shape.png"
-            test -s "out/chrome-$shape.png"
-            jq -nc --argjson w "$width" --arg name "$shape.png"               '{url:"https://w3.org/",width:$w,height:735,file:$name}' > "$RUNNER_TEMP/job.jsonl"
-            for arm in baseline candidate; do
-              lib=$BASE_ENGINE; [[ $arm != candidate ]] || lib="$PWD/engines/candidate/libweb-render.so"
-              mkdir -p "out/$arm"
-              REALPAGES_REPLAY="$zip" timeout 150s deno run -A --unstable-ffi --preload "$suite/replay.ts"                 core/tests/browser-wpt/reftest-render.ts --list "$RUNNER_TEMP/job.jsonl" --native-engine "$lib" --out "out/$arm"                 2>&1 | tee "out/$arm/$shape.log"
-              test -s "out/$arm/$shape.png"
-              sed -n 's/^__done //p' "out/$arm/$shape.log" | jq -e '.status == "ok"'
-            done
+          zip="$PWD/snapshots/bbc.com/desktop-bbc-news-20261124.zip"
+          test -s "$zip"
+          sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so "$zip" > out/inputs.sha256
+          unzip -p "$zip" reference.png > out/chrome.png
+          printf '%s\n' '{"url":"https://www.bbc.com/news","width":1280,"height":800,"file":"bbc.png"}' > "$RUNNER_TEMP/job.jsonl"
+          for arm in baseline candidate; do
+            lib=$BASE_ENGINE; [[ $arm != candidate ]] || lib="$PWD/engines/candidate/libweb-render.so"
+            mkdir -p "out/$arm"
+            REALPAGES_REPLAY="$zip" timeout 180s deno run -A --unstable-ffi --preload "$suite/replay.ts" \
+              core/tests/browser-wpt/reftest-render.ts --list "$RUNNER_TEMP/job.jsonl" --native-engine "$lib" --out "out/$arm" \
+              2>&1 | tee "out/$arm/render.log"
+            test -s "out/$arm/bbc.png"
+            sed -n 's/^__done //p' "out/$arm/render.log" > "out/$arm/result.json"
+            jq -e '.status == "ok"' "out/$arm/result.json"
           done
-      - name: Check viewport edges against explicit pixels
-        run: |
-          set -euo pipefail
-          deno run --no-config --allow-ffi --unstable-ffi core-diagnostics/viewport-edges.ts engines/candidate/libweb-render.so | tee out/viewport-edge-geometry.ndjson
+          grep -Fq 'unsupported attribute on svg: category' out/baseline/result.json
+          ! grep -Fq 'unsupported attribute on svg: category' out/candidate/result.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: w3c-home-reference
+          name: bbc-svg-category-replay
           path: out/
           retention-days: 7
