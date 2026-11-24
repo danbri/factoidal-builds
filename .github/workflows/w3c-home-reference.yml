@@ -1,0 +1,104 @@
+name: W3C homepage reference renders
+on:
+  push:
+    branches: [wip/w3c-home-reference]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE: 5eb100777e590e0ae1d38b0e1344676f01864d59
+  BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+  BRANCH_RUN: '45397071647'
+  SET: foafnaut-linux-x86_64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - name: Wait for the exact native engine
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$BRANCH_RUN"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CANDIDATE"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fxq branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" = completed ]]; then
+              echo "::error::The candidate engine was not published"
+              exit 1
+            fi
+            sleep 20
+          done
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 5eb100777e590e0ae1d38b0e1344676f01864d59
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45397071647'
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: engines/candidate
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the matched host and baseline
+        run: |
+          set -euo pipefail
+          mkdir -p engines/baseline engines/web
+          gh release download "build-${BASELINE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/baseline
+          jq -e --arg sha "$BASELINE" '.source_commit == $sha' engines/baseline/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/baseline/build-info.json)
+          echo "$expected  engines/baseline/$SET.tar.gz" | sha256sum -c -
+          tar -xzf "engines/baseline/$SET.tar.gz" -C engines/baseline
+          base=$(find "$PWD/engines/baseline" -name libweb-render.so -print -quit)
+          test -s "$base"
+          echo "BASE_ENGINE=$base" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
+          tc=$(cat engines/candidate/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Capture and render the actual W3C homepage at two widths
+        run: |
+          set -euo pipefail
+          suite=core/labs/demos/foafnaut/realpages
+          mkdir -p out
+          jq -n '{defaults:{viewport:"1440x800",licence:"W3C site terms"},pages:[
+            {id:"w3c-home-wide",url:"https://w3.org/",viewport:"1440x800",attribution:"World Wide Web Consortium, W3C homepage"},
+            {id:"w3c-home-narrow",url:"https://w3.org/",viewport:"480x800",attribution:"World Wide Web Consortium, W3C homepage"}]}' > out/pages.json
+          chrome=$(command -v google-chrome)
+          deno run -A "$suite/snapshot.ts" --chrome "$chrome" --pages out/pages.json --out "$RUNNER_TEMP/snapshots"
+          sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so | tee out/engines.sha256
+          for shape in wide narrow; do
+            width=1440; [[ $shape != narrow ]] || width=480
+            zip=$(find "$RUNNER_TEMP/snapshots" -name "w3c-home-$shape-*.zip" -print -quit)
+            test -s "$zip"
+            sha256sum "$zip" >> out/snapshots.sha256
+            unzip -p "$zip" reference.png > "out/chrome-$shape.png"
+            test -s "out/chrome-$shape.png"
+            jq -nc --argjson w "$width" --arg name "$shape.png"               '{url:"https://w3.org/",width:$w,height:735,file:$name}' > "$RUNNER_TEMP/job.jsonl"
+            for arm in baseline candidate; do
+              lib=$BASE_ENGINE; [[ $arm != candidate ]] || lib="$PWD/engines/candidate/libweb-render.so"
+              mkdir -p "out/$arm"
+              REALPAGES_REPLAY="$zip" timeout 150s deno run -A --unstable-ffi --preload "$suite/replay.ts"                 core/tests/browser-wpt/reftest-render.ts --list "$RUNNER_TEMP/job.jsonl" --native-engine "$lib" --out "out/$arm"                 2>&1 | tee "out/$arm/$shape.log"
+              test -s "out/$arm/$shape.png"
+              sed -n 's/^__done //p' "out/$arm/$shape.log" | jq -e '.status == "ok"'
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: w3c-home-reference
+          path: out/
+          retention-days: 7
