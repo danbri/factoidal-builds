@@ -1,0 +1,93 @@
+name: Measure forced-layout cost on desktop Wikipedia with the merged image optimization
+on:
+  push:
+    branches: [wip/wikipedia-layout-timer-comparison]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  WEB: build-05ec0b29ca8a-foafnaut-web
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 36
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/wiki-timer-compare.py
+            third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: d7e315b586ea8416dccb424198fd9711619df94e
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts/noto-sans
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45492658080
+          name: branch-engine
+          path: a
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45492658495
+          name: branch-engine
+          path: b
+          github-token: ${{ github.token }}
+      - name: Prepare pinned host and snapshot
+        run: |
+          set -euo pipefail
+          mkdir -p runtime out
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          digest=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$digest  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          python3 release-tests/wiki-timer-compare.py "$lab"
+          snapshot="$PWD/third_party/realpages/en.wikipedia.org/wp-us-20261115.zip"
+          echo "66ed79b9d470f6d9115b0b2e73de8819d38544956da56c3dd73e854eb2849680  $snapshot" | sha256sum -c -
+          sha256sum "$snapshot" a/libweb-render.so b/libweb-render.so > out/inputs.sha256
+          echo "REALPAGES_REPLAY=$snapshot" >> "$GITHUB_ENV"
+      - name: Compare timings and terminal output in alternating order
+        shell: bash
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          for pass in a1 b1 b2 a2; do
+            timeout 240 deno run --no-prompt --preload "$lab/realpages/replay.ts"               --allow-read --allow-ffi --allow-net --allow-env --import-map="$lab/textnaut/import_map.json"               "$lab/textnaut/textnaut.ts" --dump --timing --width 160 --engine "$PWD/${pass:0:1}/libweb-render.so"               https://en.wikipedia.org/wiki/United_States > "out/$pass.dump" 2> "out/$pass.log"
+            sha256sum "out/$pass.dump" >> out/output.sha256
+            rm "out/$pass.dump"
+          done
+          python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          digest = {line.split()[0] for line in Path("out/output.sha256").read_text().splitlines()}
+          assert len(digest) == 1, digest
+          result = {}
+          for arm in ("a1", "b1", "b2", "a2"):
+              rows = [json.loads(l) for l in Path("out", f"{arm}.log").read_text().splitlines() if l.startswith('{"type":"wiki-script-settle"')]
+              times = [row for row in rows if row["phase"]=="timer-engine" and row.get("layouts",0)>0]
+              assert sum(row["layouts"] for row in times) >= 3, times
+              result[arm] = [{"clock":r["clock"],"ms":r["leanMs"],"layouts":r["layouts"],"readOps":r["readOps"]} for r in times]
+          print(json.dumps(result,indent=2))
+          Path("out/timer-layouts.json").write_text(json.dumps(result,indent=2)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wikipedia-forced-layout-comparison
+          path: out/
+          retention-days: 7
