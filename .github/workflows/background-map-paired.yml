@@ -1,0 +1,108 @@
+name: Paired background image lookup performance
+on:
+  push:
+    branches: [wip/background-map-paired]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE: 730753be6df357304d88a1cc4cb66282ded37bd5
+  BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+  BRANCH_RUN: '45415457589'
+  SET: foafnaut-linux-x86_64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - name: Wait for the exact native engine
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$BRANCH_RUN"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CANDIDATE"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fxq branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" = completed ]]; then
+              echo "::error::The candidate engine was not published"
+              exit 1
+            fi
+            sleep 20
+          done
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: |
+            third_party/realpages/en.wikipedia.org
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 730753be6df357304d88a1cc4cb66282ded37bd5
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45415457589'
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: engines/candidate
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45408439387
+          name: bbc-home-snapshot
+          path: builds/third_party/realpages
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the matched host and baseline
+        run: |
+          set -euo pipefail
+          mkdir -p engines/baseline engines/web
+          gh release download "build-${BASELINE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/baseline
+          jq -e --arg sha "$BASELINE" '.source_commit == $sha' engines/baseline/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/baseline/build-info.json)
+          echo "$expected  engines/baseline/$SET.tar.gz" | sha256sum -c -
+          tar -xzf "engines/baseline/$SET.tar.gz" -C engines/baseline
+          base=$(find "$PWD/engines/baseline" -name libweb-render.so -print -quit)
+          test -s "$base"
+          echo "BASE_ENGINE=$base" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
+          tc=$(cat engines/candidate/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Measure both engines and compare terminal output
+        run: |
+          set -euo pipefail
+          lab=core/labs/demos/foafnaut
+          mkdir -p out
+          sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so builds/third_party/realpages/en.wikipedia.org/m-us-20261115.zip builds/third_party/realpages/bbc.co.uk/desktop-bbc-news-20261124.zip | tee out/inputs.sha256
+          jq '.pages |= map(select(.id == "desktop-bbc-news" or .id == "m-us") | .scripts = false)' "$lab/realpages/pages.json" > out/pages.json
+          for pair in a1 b1 b2 a2; do
+            lib=$BASE_ENGINE; [[ $pair != b* ]] || lib="$PWD/engines/candidate/libweb-render.so"
+            deno run -A "$lab/realpages/survey.ts" --platform linux --host "$PWD/$lab" --engine "$lib" \
+              --snapshots "$PWD/builds/third_party/realpages" --pages "$PWD/out/pages.json" --timeout 165 --retries 0 \
+              --out "$PWD/out/$pair" --release "$pair"
+            jq -r --arg pair "$pair" '.pages[]|[$pair,.id,.state,.first_frame_s,.first_layout_ms,.rss_peak_mb,.rows,.links]|@tsv' \
+              "out/$pair/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+            jq -e '.pages|length == 2 and all(.state == "ok" and .rows > 0)' "out/$pair/summary.json" >/dev/null
+            for page in desktop-bbc-news m-us; do
+              input="out/$pair/logs/$page.textnaut.log"
+              sed -E '/^timing: engine /d; /^\{"type":"realpages-replay/d' "$input" | sha256sum | cut -d' ' -f1 > "out/$pair/$page.sha256"
+              if [[ $pair != a1 ]]; then cmp "out/a1/$page.sha256" "out/$pair/$page.sha256"; fi
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: background-map-paired
+          path: out/
+          retention-days: 7
