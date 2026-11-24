@@ -45,6 +45,37 @@ const resources = inspect.stylesheets.flatMap((entry: {url:string}) =>
   doc.css[entry.url] ? [{...entry, source:doc.css[entry.url]}] : []);
 if (resources.length < 2) throw Error("captured stylesheets are missing");
 const images = Object.entries(doc.images).map(([key, base64]) => ({key, base64}));
+const reduced = `<!doctype html><style>
+body{margin:0;line-height:30px}
+.frame{position:relative}
+.anchor{position:absolute;width:10px;height:8px}
+#next{height:20px}
+</style>
+<div class="frame">
+  <span class="anchor" id="anchor"></span>
+  IN_FLOW
+  <div id="next"></div>
+</div>
+<script>
+const a = document.querySelector("#anchor").getBoundingClientRect();
+const b = document.querySelector("#next").getBoundingClientRect();
+console.log(JSON.stringify({anchor:[a.y,a.width,a.height], next:b.y}));
+</script>`;
+for (const [text, expected] of [["", 0], ["Visible text", 30]] as const) {
+  const start = call(reduced.replace("IN_FLOW", text), {
+    op:"scriptSession", action:"start", engine:"bubblepop", url, width, height,
+  });
+  try {
+    if (start.errors.length) throw Error(JSON.stringify(start.errors));
+    const [result] = start.logs.map(JSON.parse);
+    console.log(JSON.stringify({width,mode:"reduced",text,result}));
+    if (Math.abs(result.next - expected) > 0.1 || String(result.anchor) !== "0,10,8") {
+      throw Error("incorrect height or missing static anchor");
+    }
+  } finally {
+    call("", {op:"scriptSession",action:"close",session:start.session});
+  }
+}
 for (const [mode, rule] of [
   ["original", ""],
   ["skip-absent", ".skip-link{display:none!important}"],
@@ -65,6 +96,10 @@ for (const [mode, rule] of [
       throw Error("missing language navigation geometry");
     }
     console.log(JSON.stringify({width,mode,rows}));
+    if (mode === "original") {
+      const lang = rows.find((row: {selector:string}) => row.selector === "#lang-nav");
+      if (Math.abs(lang.y) > 0.1) throw Error("W3C language bar still has a leading gap");
+    }
   } finally {
     call("", {op:"scriptSession",action:"close",session:start.session});
   }

@@ -1,22 +1,33 @@
-name: Diagnose the extra space before the W3C homepage header
+name: Verify out-of-flow static positions on W3C
 on:
   push:
-    branches: [wip/w3c-header-geometry]
+    branches: [wip/w3c-static-positions]
 permissions:
   contents: read
   actions: read
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 65
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           sparse-checkout: core-diagnostics
+      - name: Wait for the exact candidate engine
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/45425782968"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx 'Build libweb-render.so from 502f03e31682f42df02065917e67b49322a6bbab'
+          while ! gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fxq branch-engine; do
+            test "$(gh api "$endpoint" --jq .status)" != completed
+            sleep 20
+          done
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45414537051
+          run-id: 45425782968
           name: branch-engine
           path: engine
           github-token: ${{ github.token }}
