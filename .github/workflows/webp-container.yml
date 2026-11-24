@@ -69,6 +69,7 @@ jobs:
           set -euo pipefail
           temp="$RUNNER_TEMP/webp-check"
           python3 core-diagnostics/vp8l-literal-fixtures.py "$temp/lossless" > out/lossless-expected.json
+          export ELAN_TOOLCHAIN="$(cat core/formal/lean4/lean-toolchain)"
           export LEAN_PATH="$temp/lib"
           lean --run core-diagnostics/VP8LLiteralProbe.lean "$temp/lossless"/*.webp | tee out/lossless-actual.tsv
           for image in "$temp/lossless"/*.webp; do dwebp "$image" -pam -o "$image.pam"; done
