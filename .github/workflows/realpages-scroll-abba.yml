@@ -1,0 +1,117 @@
+name: Compare startup scroll latency on the Julia Evans blog
+on:
+  push:
+    branches: [wip/realpages-scroll-abba]
+    paths: [.github/workflows/realpages-scroll-abba.yml]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASE: 472993e362b585c5724f8de9d13115e8383f9f80
+  CANDIDATE: 63f74e538d511d1f2fb6ab782623a5850bf58e6e
+  SET: foafnaut-engine-darwin-arm64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  abba:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          sparse-checkout: third_party/realpages
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.BASE }}
+          path: host-a
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          path: host-b
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 99222ad9b1f9121dc17f630bdf4bc81a09cc5f75
+          path: tools
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Install and identify the exact two engines
+        run: |
+          set -euo pipefail
+          mkdir -p engines/a engines/b engines/web out
+          gh release download "build-${BASE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/a
+          gh run download 45440246883 -R "$GITHUB_REPOSITORY" -n "$SET" -D engines/b
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          for slot in a b; do
+            cite="$BASE"
+            [[ "$slot" != b ]] || cite="$CANDIDATE"
+            root="engines/$slot"
+            jq -e --arg sha "$cite" '.source_commit == $sha' "$root/build-info.json" >/dev/null
+            checksum=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' "$root/build-info.json")
+            echo "$checksum  $root/$SET.tar.gz" | shasum -a 256 -c -
+            tar -xzf "$root/$SET.tar.gz" -C "$root"
+            window=$(find "$PWD/$root" -name libnative-window.dylib -print -quit)
+            bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/host-$slot/labs/demos/foafnaut" "$PWD/engines/web" "$window"
+            shasum -a 256 "$(find "$root" -name libweb-render.dylib -print -quit)" "host-$slot/labs/demos/foafnaut/run_html.ts" >> out/inputs.sha256
+          done
+          snapshot=$(find builds/third_party/realpages -name 'blog-jvns-*.zip' -print -quit)
+          shasum -a 256 "$snapshot" >> out/inputs.sha256
+      - name: Repeat normal and settled-start input on each frozen engine
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          for slot in "ab":
+              f=Path(f"host-{slot}/labs/demos/foafnaut/run_html.ts")
+              s=f.read_text()
+              original="      if(commands&&session?.frames&&performance.now()>=stepAt&&(settled||(scrollStep&&!loading"
+              assert s.count(original)==1
+              s=s.replace(original, '''      const firstMeasuredScroll = scrollSweep && commands?.length === 20;
+                const waitForSettledScroll = firstMeasuredScroll &&
+                  Deno.env.get("FOAFNAUT_DIAGNOSTIC_SETTLED_SCROLL") === "1";
+                if(commands&&session?.frames&&performance.now()>=stepAt&&(settled||(scrollStep&&!waitForSettledScroll&&!loading''')
+              original="        const step=commands.shift();"
+              assert s.count(original)==1
+              s=s.replace(original, '''        if (firstMeasuredScroll) console.log(JSON.stringify({type:"diagnostic-scroll-start",
+                  settled, rendering:!!rendering, dirty, msSinceFirst:performance.now()-(firstFrameAt??0),
+                  forcedSettled:waitForSettledScroll}));
+              '''+original)
+              f.write_text(s)
+          PYTHON
+          lab=tools/labs/demos/foafnaut/realpages
+          for mode in normal settled; do
+            export FOAFNAUT_DIAGNOSTIC_SETTLED_SCROLL=0
+            [[ "$mode" != settled ]] || export FOAFNAUT_DIAGNOSTIC_SETTLED_SCROLL=1
+            for pass in a1 b1 b2 a2; do
+              slot="${pass:0:1}"
+              engine=$(find "$PWD/engines/$slot" -name libweb-render.dylib -print -quit)
+              deno run -A "$lab/survey.ts" --platform macos --engine "$engine"                 --host "$PWD/host-$slot/labs/demos/foafnaut" --out "$PWD/out/$mode/$pass"                 --snapshots "$PWD/builds/third_party/realpages" --only blog-jvns --no-chrome
+              jq -c --arg mode "$mode" --arg pass "$pass" '.pages[] |
+                {mode:$mode,pass:$pass,id,verdict,first_frame_s,scroll_latency_p95_ms,scroll_composite_p95_ms}'                 "out/$mode/$pass/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+              rg 'diagnostic-scroll-start' "out/$mode/$pass/logs/blog-jvns.scroll.log" | tee -a "$GITHUB_STEP_SUMMARY"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scroll-abba
+          path: out/
+          retention-days: 7
