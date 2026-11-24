@@ -1,0 +1,112 @@
+name: Paired desktop line-break performance
+on:
+  push:
+    branches: [wip/line-break-desktop-paired]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+  SET: foafnaut-engine-darwin-arm64
+  CANDIDATE: 332259e5b1553c4cce4efcaba5b66de0da8db7bf
+  CANDIDATE_RUN: "45417593777"
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Wait for the native build of the exact candidate
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN"
+          while ! gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fxq "$SET"; do
+            if [[ $(gh api "$endpoint" --jq .status) == completed ]]; then
+              echo "The native candidate was not published as an artifact."
+              exit 1
+            fi
+            sleep 30
+          done
+  profile:
+    needs: candidate
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45416936347
+          name: desktop-wikipedia-www-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45417593777
+          name: foafnaut-engine-darwin-arm64
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the pinned engine and desktop host
+        run: |
+          set -euo pipefail
+          mkdir -p engines/base engines/web
+          gh release download "build-${CORE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/base
+          jq -e --arg sha "$CORE" '.source_commit == $sha' engines/base/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/base/build-info.json)
+          echo "$expected  engines/base/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "engines/base/$SET.tar.gz" -C engines/base
+          library=$(find "$PWD/engines/base" -name libweb-render.dylib -print | head -1)
+          window=$(find "$PWD/engines/base" -name libnative-window.dylib -print | head -1)
+          test -s "$library"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
+          echo "ENGINE=$library" >> "$GITHUB_ENV"
+          jq -e --arg sha "$CANDIDATE" '.source_commit == $sha' engines/candidate/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/candidate/build-info.json)
+          echo "$expected  engines/candidate/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "engines/candidate/$SET.tar.gz" -C engines/candidate
+          lib=$(find "$PWD/engines/candidate" -name libweb-render.dylib -print | head -1)
+          test -s "$lib"
+          echo "NEW_ENGINE=$lib" >> "$GITHUB_ENV"
+      - name: Repeat the matched BBC and Wikipedia desktop comparison
+        run: |
+          set -euo pipefail
+          lab=core/labs/demos/foafnaut
+          mkdir -p out
+          shasum -a 256 "$ENGINE" "$NEW_ENGINE" snapshots/*/*.zip > out/inputs.sha256
+          jq '.pages |= map(select(.id == "desktop-bbc-news" or .id == "desktop-wikipedia-www") |
+            if .id == "desktop-bbc-news" then .url = "https://www.bbc.com/news" else . end)' "$lab/realpages/pages.json" > out/pages.json
+          for arm in a1 b1 b2 a2; do
+            lib=$ENGINE
+            [[ $arm != b* ]] || lib=$NEW_ENGINE
+            deno run -A "$lab/realpages/survey.ts" --platform macos --host "$PWD/$lab" --engine "$lib" \
+              --snapshots "$PWD/snapshots" --pages "$PWD/out/pages.json" --timeout 125 --retries 0 \
+              --watch 8 --out "$PWD/out/$arm" --release "$arm"
+            jq -r --arg arm "$arm" '.pages[]|[$arm,.id,.state,.first_frame_s,.first_layout_ms,.scroll_latency_p95_ms,.layout_similarity]|@tsv' "out/$arm/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: line-break-desktop-paired
+          path: out/
+          retention-days: 7
