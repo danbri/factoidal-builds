@@ -1,0 +1,61 @@
+name: Build the Lean WebP container reader and check archived BBC images
+on:
+  push:
+    branches: [wip/webp-container-bbc]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 89f639796e3ab85aec9725408d88ded778de739c
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            formal/lean4/L4Factoidal/Codec/WebP.lean
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: capture
+          github-token: ${{ github.token }}
+      - name: Install the pinned Lean toolchain
+        run: |
+          set -euo pipefail
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat core/formal/lean4/lean-toolchain)"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Check theorems and re-read real WebP headers
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/out"
+          tmp="$RUNNER_TEMP/webp-check"
+          mkdir -p "$out" "$tmp/lib/L4Factoidal/Codec" "$tmp/photos"
+          lean --version | tee "$out/lean-version.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/WebP.olean" L4Factoidal/Codec/WebP.lean | tee "$out/lean.txt"
+          if grep -q sorryAx "$out/lean.txt"; then exit 1; fi
+          cp "$GITHUB_WORKSPACE/core-diagnostics/WebPProbe.lean" "$tmp/WebPProbe.lean"
+          snap=$(find "$GITHUB_WORKSPACE/capture" -name 'desktop-bbc-news-*.zip' -print -quit)
+          sha256sum "$snap" > "$out/capture.sha256"
+          python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" extract "$snap" "$tmp/photos" > "$out/expected.json"
+          LEAN_PATH="$tmp/lib" lean --run "$tmp/WebPProbe.lean" "$tmp/photos"/*.webp | tee "$out/actual.tsv"
+          python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" compare "$out/expected.json" "$out/actual.tsv"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: webp-container-bbc
+          path: out/
+          retention-days: 7
