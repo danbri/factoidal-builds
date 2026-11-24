@@ -1,0 +1,85 @@
+name: Measure the eager image lookup on archived Wikipedia
+on:
+  push:
+    branches: [wip/desktop-wiki-picture-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/wiki-picture-*
+            third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: d7e315b586ea8416dccb424198fd9711619df94e
+          path: core
+          persist-credentials: false
+          sparse-checkout: third_party/fonts/noto-sans/NotoSans-Regular.ttf
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Download both exact native engines
+        run: |
+          set -euo pipefail
+          for row in "45492658080:a" "45492658495:b"; do
+            run=${row%:*}
+            arm=${row#*:}
+            for i in $(seq 1 130); do
+              if gh run download "$run" -R "$GITHUB_REPOSITORY" -n branch-engine -D "$arm"; then break; fi
+              if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status)" == completed ]]; then
+                echo "Run $run ended without an engine artifact" >&2; exit 1
+              fi
+              sleep 20
+            done
+            test -s "$arm/libweb-render.so"
+          done
+      - name: Alternate fresh layouts against the same document, fonts and images
+        run: |
+          set -euo pipefail
+          archive=third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+          font=core/third_party/fonts/noto-sans/NotoSans-Regular.ttf
+          echo "66ed79b9d470f6d9115b0b2e73de8819d38544956da56c3dd73e854eb2849680  $archive" | sha256sum -c -
+          mkdir out
+          sha256sum "$archive" "$font" a/libweb-render.so b/libweb-render.so > out/inputs.sha256
+          python3 release-tests/wiki-picture-input.py "$archive" input
+          script=release-tests/wiki-picture-replay.ts
+          deno check --no-config --unstable-ffi "$script"
+          for pass in a1 b1 b2 a2; do
+            lib="$PWD/${pass:0:1}/libweb-render.so"
+            deno run --no-config --unstable-ffi --allow-ffi="$lib" --allow-read="input,$font" \
+              "$script" "$lib" input "$font" > "out/$pass.jsonl"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from statistics import median
+
+          arms = {arm: [json.loads(line) for line in Path(f"out/{arm}.jsonl").read_text().splitlines()]
+                  for arm in ("a1", "b1", "b2", "a2")}
+          for key in ("width", "hash", "work", "images", "resources"):
+              expected = [row[key] for row in arms["a1"]]
+              assert all([row[key] for row in rows] == expected for rows in arms.values()), key
+          result = {arm: {"firstMs": round(rows[0]["ms"], 1),
+                          "relayoutMedianMs": round(median(row["ms"] for row in rows[1:]), 1)}
+                    for arm, rows in arms.items()}
+          Path("out/timings.json").write_text(json.dumps(result, indent=2) + "\n")
+          print(result)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wiki-picture-replay
+          path: out/
+          retention-days: 7
