@@ -48,7 +48,15 @@ for(const n of (Deno.env.get("GAP_PREFIXES")??"1,2,9,10,11,12,13,16,168").split(
         else lane.push([y,y]);
       }
     }
-    const head=meta.webRender.glyphRuns.find((x:{source:number;text:string})=>x.source===477&&x.text==="The");
-    console.log(JSON.stringify({n,blue:lane,headingY:head?.glyphs[0][2],ms:Math.round(performance.now()-before)}));
+    const runs=meta.webRender.glyphRuns.filter((x:{source:number})=>x.source===477) as {text:string;glyphs:number[][]}[];
+    const lines=new Map<number,string[]>();
+    for(const run of runs){
+      const y=run.glyphs[0][2];
+      const words=lines.get(y)??[];
+      words.push(run.text);
+      lines.set(y,words);
+    }
+    const headingLines=[...lines.values()].map(words=>words.join(" "));
+    console.log(JSON.stringify({n,blue:lane,headingY:runs[0]?.glyphs[0][2],headingLines,ms:Math.round(performance.now()-before)}));
   }finally{ffi.symbols.web_render_free(ptr);}
 }

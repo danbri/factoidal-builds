@@ -7,7 +7,7 @@ permissions:
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CANDIDATE_RUN: "45491640225"
+  CANDIDATE_RUN: "45498044806"
 jobs:
   compare:
     runs-on: ubuntu-latest
@@ -73,6 +73,8 @@ jobs:
           assert hero[0] - nav[1] - 1 == 40, override
           assert any(start == nav[0] and end >= hero[1] for start, end in natural["blue"]), natural
           assert abs(override["headingY"] - natural["headingY"] - 40) < 0.05, (natural, override)
+          assert natural["headingLines"][-1] == "and information", natural
+          assert len(natural["headingLines"]) == 3, natural
           print("Search toggle default closes the 40px gap; author override restores it.")
           PY
       - uses: actions/upload-artifact@v4
