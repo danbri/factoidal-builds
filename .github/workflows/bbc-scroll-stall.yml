@@ -18,8 +18,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 4a49c914c4ed2c70479a55ddae8a0ffb2d487f93
-          fetch-depth: 2
+          ref: 9b0ec248eb5e17a6909378809a5cce87214aaf1e
+          fetch-depth: 3
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -44,6 +44,12 @@ jobs:
           name: desktop-wikipedia-www-snapshot
           path: snapshots
           github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
@@ -64,7 +70,7 @@ jobs:
           lab=core/labs/demos/foafnaut
           bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
           echo "ENGINE=$library" >> "$GITHUB_ENV"
-      - name: Test the queue and replay three matched pages
+      - name: Test the queue and replay four matched pages
         run: |
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
@@ -72,10 +78,11 @@ jobs:
           git -C core show 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef:labs/demos/foafnaut/run_html.ts > "$lab/replay_baseline.ts"
           mkdir -p out
           shasum -a 256 "$ENGINE" "$lab/run_html.ts" "$lab/replay_baseline.ts" > out/inputs.sha256
-          for case_id in bbc wiki w3c; do
+          for case_id in bbc wiki w3c govuk; do
             case "$case_id" in
               bbc) file=desktop-bbc-news-20261124.zip; url=https://www.bbc.com/news; size=1280x800 ;;
               wiki) file=desktop-wikipedia-www-20261124.zip; url=https://en.wikipedia.org/wiki/World_Wide_Web; size=1280x800 ;;
+              govuk) file='desktop-govuk-*.zip'; url=https://www.gov.uk/; size=1280x800 ;;
               w3c) file=w3c-home-wide-20261124.zip; url=https://w3.org/; size=1440x735 ;;
             esac
             export REALPAGES_REPLAY="$(find "$PWD/snapshots" -name "$file" -print -quit)"
