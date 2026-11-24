@@ -1,4 +1,4 @@
-name: Isolate GOV.UK scripted heading line breaks
+name: Locate the GOV.UK heading change in startup commands
 on:
   push:
     branches: [wip/gov-hero-heading-state]
@@ -47,7 +47,7 @@ jobs:
             sleep 20
           done
           test -s candidate/libweb-render.so
-      - name: Compare mutations, live mode and viewport independently
+      - name: Check ordered startup command prefixes
         run: |
           set -euo pipefail
           snapshot=snapshot/gov.uk/desktop-govuk-20261124.zip
@@ -58,8 +58,8 @@ jobs:
           python3 release-tests/gov-button-input.py "$snapshot" input
           check=release-tests/gov-heading-state.ts
           deno check --no-config --unstable-ffi "$check"
-          for HEADING_STATE in scripted no-live no-shell no-state; do
-            export HEADING_STATE GAP_PREFIXES=168,0
+          for HEADING_STATE in scripted; do
+            export HEADING_STATE GAP_PREFIXES=0,1,2,10,11,12,16,32,64,128,168
             deno run --no-config --unstable-ffi --allow-ffi \
               --allow-read=trace/requests,input/input.json --allow-env=GAP_PREFIXES,GAP_BOX_SIZING,HEADING_STATE \
               "$check" "$PWD/candidate/libweb-render.so" trace/requests input/input.json | tee "out/$HEADING_STATE.jsonl"
