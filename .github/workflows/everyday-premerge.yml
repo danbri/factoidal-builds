@@ -10,8 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {change: embedded BBC SVG metadata, sha: 1c0e831211a375941c237f58a265d9282dea89b0, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
-          - {change: WebP container and prefix reader, sha: f00869e9778c563f84586aab26c30284a1403dfa, base: 8088106e8589f889899d6d07ddea1309ad074063}
+          - {change: VP8 key-frame control, sha: 83deecf596da78bf26228df3f96f40adc8485ee0, base: 074a3e51f45d2acf1c6dd1e2af02264085497649}
     name: Premerge ${{ matrix.change }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
