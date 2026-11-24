@@ -1,4 +1,4 @@
-name: Isolate scripts and layout on the W3C Flexbox specification
+name: Isolate the W3C Flexbox startup work per script
 on:
   push:
     branches: [wip/flexbox-render-perf]
@@ -18,7 +18,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          sparse-checkout: third_party/realpages/w3.org
+          sparse-checkout: |
+            third_party/realpages/w3.org
+            core-diagnostics
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
@@ -49,28 +51,24 @@ jobs:
           lab=core/labs/demos/foafnaut
           bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
           echo "ENGINE=$library" >> "$GITHUB_ENV"
-      - name: Replay a fixed archive with alternating script policy
+      - name: Replay the original and each one-script variant
         run: |
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
-          export REALPAGES_REPLAY="$PWD/third_party/realpages/w3.org/w3c-flexbox-20261115.zip"
+          archive="$PWD/third_party/realpages/w3.org/w3c-flexbox-20261115.zip"
+          variants="$RUNNER_TEMP/script-variants"
           mkdir -p out
-          shasum -a 256 "$ENGINE" "$lab/run_html.ts" "$REALPAGES_REPLAY" > out/inputs.sha256
-          for arm in scripts1 off1 off2 scripts2; do
-            options=()
-            [[ $arm != off* ]] || options+=(--no-scripts)
+          shasum -a 256 "$ENGINE" "$lab/run_html.ts" "$archive" > out/inputs.sha256
+          python3 core-diagnostics/flexbox-script-variants.py "$archive" "$variants" > out/variants.json
+          for arm in baseline1 no-ref-hints no-wpt no-dfn-panel no-fixup baseline2; do
+            export REALPAGES_REPLAY="$archive"
+            [[ $arm = baseline* ]] || export REALPAGES_REPLAY="$variants/$arm.zip"
             /usr/bin/time -l deno run --no-check --no-config --no-npm --node-modules-dir=none \
               --unstable-webgpu --unstable-ffi -A --preload "$lab/realpages/replay.ts" "$lab/run_html.ts" \
               --native-engine "$ENGINE" --offscreen --offscreen-size 1280x800@1 --no-state \
-              --be-liberal-in-what-we-accept --perf-summary --watch-sweep 15 ${options[@]+"${options[@]}"} \
+              --be-liberal-in-what-we-accept --perf-summary --watch-sweep 10 \
               --url https://www.w3.org/TR/css-flexbox-1/ > "out/$arm.watch.log" 2>&1
-            /usr/bin/time -l deno run --no-check --no-config --no-npm --node-modules-dir=none \
-              --unstable-webgpu --unstable-ffi -A --preload "$lab/realpages/replay.ts" "$lab/run_html.ts" \
-              --native-engine "$ENGINE" --offscreen --offscreen-size 1280x800@1 --no-state \
-              --be-liberal-in-what-we-accept --perf-summary --scroll-sweep --idle-checks-only ${options[@]+"${options[@]}"} \
-              --url https://www.w3.org/TR/css-flexbox-1/ > "out/$arm.scroll.log" 2>&1
             grep -q '"type":"native-html-perf-summary"' "out/$arm.watch.log"
-            grep -q '"type":"native-html-perf-summary"' "out/$arm.scroll.log"
           done
       - uses: actions/upload-artifact@v4
         if: always()
