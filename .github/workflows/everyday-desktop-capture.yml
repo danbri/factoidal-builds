@@ -1,0 +1,63 @@
+name: Freeze Wikipedia and FrogFind desktop acceptance pages
+on:
+  push:
+    branches: [wip/everyday-desktop-capture]
+permissions:
+  contents: read
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: desktop-wikipedia-www
+            domain: en.wikipedia.org
+            title: World Wide Web
+          - id: desktop-frogfind
+            domain: frogfind.com
+            title: FrogFind
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: f43b16f155d62addbe5c54380818f0653859d238
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Capture the installed registry URL
+        env:
+          CASE: ${{ matrix.id }}
+          DOMAIN: ${{ matrix.domain }}
+          TITLE: ${{ matrix.title }}
+        run: |
+          set -euo pipefail
+          lab=labs/demos/foafnaut
+          chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          deno run -A "$lab/realpages/snapshot.ts" --chrome "$chrome" --chrome-document --only "$CASE" --out "$RUNNER_TEMP/inputs"
+          zip=$(find "$RUNNER_TEMP/inputs" -name "$CASE-*.zip" -print | head -1)
+          test -s "$zip"
+          python3 - "$zip" "$DOMAIN" "$TITLE" <<'PYTHON'
+          import json, re, sys, urllib.parse, zipfile
+          with zipfile.ZipFile(sys.argv[1]) as snapshot:
+              manifest = json.loads(snapshot.read("manifest.json"))
+              url = manifest["reference"]["document_url"]
+              document = next(e for e in manifest["entries"] if e["url"] == url)
+              html = snapshot.read(document["body"]).decode("utf-8", errors="replace")
+              title = re.search(r"<title(?: [^>]*)?>([^<]*)</title>", html, re.I)
+              print(url, document["status"], len(html), title and title.group(1))
+              assert document["source"] == "chrome" and document["status"] == 200
+              assert urllib.parse.urlsplit(url).hostname == sys.argv[2]
+              assert title and sys.argv[3] in title.group(1)
+              assert len(snapshot.read("reference.png")) > 0
+              assert manifest["id"] != "desktop-frogfind" or re.search(r"<form\b", html, re.I)
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.id }}-snapshot
+          path: ${{ runner.temp }}/inputs/
+          retention-days: 7
+          if-no-files-found: error
