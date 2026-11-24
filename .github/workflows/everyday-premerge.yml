@@ -10,8 +10,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {change: background map, sha: bd3a252636291b0fe5d884488afd1ed07f966267, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
-          - {change: viewport edge script queries, sha: 498c745cacddb96653fab0ffcbd645c4cf440a40, base: b5ff72304208c698ab9d59fd7cdbda908c09029e}
+          - {change: CSS recursion audit, sha: 67f4d21c4dd540894da93d921f68894af38062d2, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
+          - {change: pending scroll priority, sha: 9b0ec248eb5e17a6909378809a5cce87214aaf1e, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
+          - {change: BBC SVG metadata, sha: 10142760b61218ac9c5172a1722a065111cb5830, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
     name: Premerge ${{ matrix.change }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
