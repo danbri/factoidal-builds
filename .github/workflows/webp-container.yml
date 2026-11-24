@@ -1,4 +1,4 @@
-name: Build the Lean WebP container reader and check archived BBC images
+name: Check the Lean WebP container and lossless prefix reader
 on:
   push:
     branches: [wip/webp-container-bbc]
@@ -17,11 +17,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 89f639796e3ab85aec9725408d88ded778de739c
+          ref: 678b68d6d1172a2df751c9093cc3b504ace46887
           path: core
           persist-credentials: false
           sparse-checkout: |
             formal/lean4/L4Factoidal/Codec/WebP.lean
+            formal/lean4/L4Factoidal/Codec/Crc32.lean
+            formal/lean4/L4Factoidal/Codec/Inflate.lean
+            formal/lean4/L4Factoidal/Codec/VP8LPrefix.lean
             formal/lean4/lean-toolchain
           sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v4
@@ -36,6 +39,10 @@ jobs:
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           "$HOME/.elan/bin/elan" toolchain install "$(cat core/formal/lean4/lean-toolchain)"
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Install the reference WebP command
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends webp
       - name: Check theorems and re-read real WebP headers
         working-directory: core/formal/lean4
         shell: bash
@@ -46,6 +53,10 @@ jobs:
           mkdir -p "$out" "$tmp/lib/L4Factoidal/Codec" "$tmp/photos"
           lean --version | tee "$out/lean-version.txt"
           lean -o "$tmp/lib/L4Factoidal/Codec/WebP.olean" L4Factoidal/Codec/WebP.lean | tee "$out/lean.txt"
+          export LEAN_PATH="$tmp/lib"
+          for name in Crc32 Inflate VP8LPrefix; do
+            lean -o "$tmp/lib/L4Factoidal/Codec/$name.olean" "L4Factoidal/Codec/$name.lean" | tee -a "$out/lean.txt"
+          done
           if grep -q sorryAx "$out/lean.txt"; then exit 1; fi
           cp "$GITHUB_WORKSPACE/core-diagnostics/WebPProbe.lean" "$tmp/WebPProbe.lean"
           snap=$(find "$GITHUB_WORKSPACE/capture" -name 'desktop-bbc-news-*.zip' -print -quit)
@@ -53,6 +64,28 @@ jobs:
           python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" extract "$snap" "$tmp/photos" > "$out/expected.json"
           LEAN_PATH="$tmp/lib" lean --run "$tmp/WebPProbe.lean" "$tmp/photos"/*.webp | tee "$out/actual.tsv"
           python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" compare "$out/expected.json" "$out/actual.tsv"
+      - name: Compare hand-built lossless streams with libwebp
+        run: |
+          set -euo pipefail
+          temp="$RUNNER_TEMP/webp-check"
+          python3 core-diagnostics/vp8l-literal-fixtures.py "$temp/lossless" > out/lossless-expected.json
+          export LEAN_PATH="$temp/lib"
+          lean --run core-diagnostics/VP8LLiteralProbe.lean "$temp/lossless"/*.webp | tee out/lossless-actual.tsv
+          for image in "$temp/lossless"/*.webp; do dwebp "$image" -pam -o "$image.pam"; done
+          python3 - "$temp/lossless" <<'PYTHON'
+          import json, sys
+          from pathlib import Path
+          wanted = json.loads(Path("out/lossless-expected.json").read_text())
+          actual = {}
+          for line in Path("out/lossless-actual.tsv").read_text().splitlines():
+              path, pixels = line.split("\t")
+              actual[Path(path).stem] = list(map(int, pixels.split(",")))
+          assert actual == wanted, (actual, wanted)
+          for name, wanted_pixels in wanted.items():
+              head, pixels = (Path(sys.argv[1]) / (name + ".webp.pam")).read_bytes().split(b"ENDHDR\n", 1)
+              assert b"DEPTH 4" in head and list(pixels) == wanted_pixels, name
+          print("Identical RGBA from Lean and libwebp for all synthesized streams")
+          PYTHON
       - uses: actions/upload-artifact@v4
         if: always()
         with:
