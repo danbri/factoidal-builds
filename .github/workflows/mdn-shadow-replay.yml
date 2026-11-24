@@ -1,0 +1,120 @@
+name: Compare closed shadow dropdowns on the archived MDN page
+on:
+  push:
+    branches: [wip/mdn-shadow-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: 9549f28730cfa679d9ca4b73b0e599cf8b2a71da
+  CANDIDATE: 5f110dd3aa7ff4300c8b703506c917732de0b931
+  BASELINE_RUN: '45452542672'
+  CANDIDATE_RUN: '45462278506'
+  SET: foafnaut-engine-darwin-arm64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - name: Wait for the candidate Mac renderer
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN"
+          while ! gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fx "$SET"; do
+            if [[ "$(gh api "$endpoint" --jq .status)" = completed ]]; then
+              echo "::error::Candidate run ended without the Mac renderer"
+              exit 1
+            fi
+            sleep 35
+          done
+  replay:
+    needs: wait-engine
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          ref: 71c271c5a269ddfe6c8da2041626225dfabeedd4
+          path: captures
+          persist-credentials: false
+          sparse-checkout: third_party/realpages/developer.mozilla.org
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Install the native engines and a common host
+        run: |
+          set -euo pipefail
+          mkdir -p engines/a engines/b engines/web out
+          for slot in a b; do
+            cite="$BASELINE"
+            run="$BASELINE_RUN"
+            if [[ "$slot" = b ]]; then
+              cite="$CANDIDATE"
+              run="$CANDIDATE_RUN"
+            fi
+            root="engines/$slot"
+            gh run download "$run" -R "$GITHUB_REPOSITORY" -n "$SET" -D "$root"
+            jq -e --arg sha "$cite" '.source_commit == $sha' "$root/build-info.json" >/dev/null
+            hash=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' "$root/build-info.json")
+            echo "$hash  $root/$SET.tar.gz" | shasum -a 256 -c -
+            tar -xzf "$root/$SET.tar.gz" -C "$root"
+            engine=$(find "$root" -name libweb-render.dylib -print -quit)
+            test -s "$engine"
+            shasum -a 256 "$engine" >> out/inputs.sha256
+            cp "$root/build-info.json" "out/build-$slot.json"
+          done
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          window=$(find "$PWD/engines/a" -name libnative-window.dylib -print -quit)
+          test -s "$window"
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
+          snapshot=captures/third_party/realpages/developer.mozilla.org/mdn-display-20261115.zip
+          echo "ad4cf8f1679fe7f74e74135a3889916e3c5501cb62d5ceab2efb5198a5ce9837  $snapshot" | shasum -a 256 -c -
+          shasum -a 256 "$snapshot" "$window" "$lab/run_html.ts" engines/web/foafnaut-web.tar.gz >> out/inputs.sha256
+          unzip -p "$snapshot" reference.png > out/chrome-capture.png
+      - name: Compare pixels, first frame, and scrolling on the same archive
+        run: |
+          set -euo pipefail
+          lab=core/labs/demos/foafnaut
+          jq '.pages |= (map(select(.id == "mdn-display")) |
+            . + map(.id = "mdn-display-noscripts" | .scripts = false | .snapshot = "mdn-display"))'             "$lab/realpages/pages.json" > out/pages.json
+          for pass in a1 b1; do
+            slot="${pass:0:1}"
+            engine=$(find "$PWD/engines/$slot" -name libweb-render.dylib -print -quit)
+            deno run -A "$lab/realpages/survey.ts" --platform macos --host "$PWD/$lab" --engine "$engine" \
+              --pages "$PWD/out/pages.json" --snapshots "$PWD/captures/third_party/realpages" --no-chrome --watch 5 \
+              --timeout 135 --retries 0 --out "$PWD/out/$pass" --release "$pass"
+            jq -c --arg pass "$pass" '.pages[] | {pass:$pass, id, state, verdict, first_frame_s, first_layout_ms, scroll_latency_p95_ms, layout_similarity, chrome_error}' \
+              "out/$pass/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from hashlib import sha256
+
+          for run in ("a1", "b1"):
+              directory = Path("out") / run
+              report = json.loads((directory / "summary.json").read_text())
+              assert {p["id"] for p in report["pages"]} == {"mdn-display", "mdn-display-noscripts"}
+              for image in sorted((directory / "shots").glob("*.png")):
+                  print(f"{sha256(image.read_bytes()).hexdigest()}  {image}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mdn-shadow-replay
+          path: out/
+          retention-days: 7
