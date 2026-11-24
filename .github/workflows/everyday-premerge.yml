@@ -10,10 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {change: page registry, sha: dd7a5b5a72b4f3fac6f4e2fe94f40ae50ccd6f10, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
-          - {change: viewport sizing, sha: 5eb100777e590e0ae1d38b0e1344676f01864d59, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
-          - {change: replaced controls, sha: 9dc290c91d4a70a26406ec76e0ac6dcadbe35094, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
-          - {change: generated clearance, sha: 51c84234c50580a1d7ddea48528ae23c5bad2219, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
+          - {change: page registry, sha: 0d0193e05ef6192c37fc945bb29932ea1f3e614d, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
     name: Premerge ${{ matrix.change }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -30,6 +27,17 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
+      - name: Install the pinned WABT
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/wabt.tar.gz"
+          curl --retry 3 -fsSL -o "$archive" https://github.com/WebAssembly/wabt/releases/download/1.0.42/wabt-1.0.42-linux-x64.tar.gz
+          echo "84895407a6bbb80e918f33b16b2fb2206021c150b6bc9ff6f761263a745ab131  $archive" | sha256sum -c -
+          mkdir "$RUNNER_TEMP/wabt"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/wabt"
+          wat=$(find "$RUNNER_TEMP/wabt" -name wat2wasm -print -quit)
+          test -x "$wat"
+          dirname "$wat" >> "$GITHUB_PATH"
       - name: Run repository premerge checks
         working-directory: core
         env:
