@@ -1,0 +1,138 @@
+name: GOV.UK search desktop verification
+on:
+  push:
+    branches: [wip/desktop-govuk-candidate]
+permissions:
+  actions: read
+  contents: read
+env:
+  BUILD_RUN: '45397448661'
+  CANDIDATE: 0705604d5b4753b85bdeb09410dad846de738218
+  BASELINE: cfc667991a84ebf24699b4f4c91306fb1c1e9c35
+  WEB: build-4618bea0c1ac-foafnaut-web
+  SET: foafnaut-engine-darwin-arm64
+jobs:
+  artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for the gated Mac engine
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN"
+          while :; do
+            details=$(gh api "$endpoint")
+            if [ "$(jq -r .status <<< "$details")" = completed ]; then
+              jq -e '.conclusion == "success"' <<< "$details" >/dev/null
+              gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fx "$SET"
+              break
+            fi
+            sleep 30
+          done
+  desktop:
+    needs: artifact
+    runs-on: macos-15
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 0705604d5b4753b85bdeb09410dad846de738218
+          path: host
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: dd7a5b5a72b4f3fac6f4e2fe94f40ae50ccd6f10
+          path: tools
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45397448661'
+          name: foafnaut-engine-darwin-arm64
+          github-token: ${{ github.token }}
+          path: pkg/candidate
+      - id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' host/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - name: Set up the same desktop host for both engines
+        run: |
+          set -euo pipefail
+          mkdir -p pkg/baseline pkg/web
+          gh release download "build-${BASELINE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D pkg/baseline
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D pkg/web
+          tar -xzf pkg/web/foafnaut-web.tar.gz -C pkg/web docs/web/hub/html-webgpu/runtime
+          bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/host/labs/demos/foafnaut" "$PWD/pkg/web"
+          for arm in baseline candidate; do
+            exact=$BASELINE; [[ $arm != candidate ]] || exact=$CANDIDATE
+            info="pkg/$arm/build-info.json"
+            jq -e --arg sha "$exact" '.source_commit == $sha' "$info" >/dev/null
+            expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' "$info")
+            actual=$(shasum -a 256 "pkg/$arm/$SET.tar.gz" | cut -d' ' -f1)
+            [[ "$expected" = "$actual" ]]
+            tar -xzf "pkg/$arm/$SET.tar.gz" -C "pkg/$arm"
+            test -s "pkg/$arm/foafnaut/libweb-render.dylib"
+            echo "$arm $exact $actual" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Submit a search with Enter and with the button
+        id: submit
+        run: |
+          set -uo pipefail
+          mkdir -p out
+          for arm in baseline candidate; do
+            code=0
+            deno run -A release-tests/diagnostics/desktop-search-clearance.ts "$PWD/host/labs/demos/foafnaut" \
+              "$PWD/pkg/$arm/foafnaut/libweb-render.dylib" "$PWD/out/form-$arm" | tee -a "$GITHUB_STEP_SUMMARY" || code=$?
+            echo "$arm=$code" >> "$GITHUB_OUTPUT"
+          done
+      - name: Capture a shared replay and survey both engines
+        id: survey
+        run: |
+          set -euo pipefail
+          suite=tools/labs/demos/foafnaut/realpages
+          lab="$PWD/host/labs/demos/foafnaut"
+          chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          pages=desktop-govuk,desktop-w3c-home
+          deno run -A "$suite/snapshot.ts" --chrome "$chrome" --out "$PWD/out/snapshots" --only "$pages" \
+            --engine "$PWD/pkg/candidate/foafnaut/libweb-render.dylib" --host "$lab"
+          for id in desktop-govuk desktop-w3c-home; do
+            snapshot=$(find out/snapshots -name "$id-*.zip" -print -quit)
+            test -s "$snapshot"
+          done
+          for pair in a1 b1 b2 a2; do
+            arm=baseline; [[ $pair != b* ]] || arm=candidate
+            deno run -A "$suite/survey.ts" --platform macos --host "$lab" --only "$pages" \
+              --engine "$PWD/pkg/$arm/foafnaut/libweb-render.dylib" --out "$PWD/out/offline-$pair" --release "$arm" \
+              --snapshots "$PWD/out/snapshots"
+            jq -r --arg arm "offline-$pair" '.pages[] | [$arm,.id,.verdict,.first_frame_s,.scroll_latency_p95_ms,.layout_similarity] | @tsv' \
+              "out/offline-$pair/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          deno run -A "$suite/survey.ts" --platform macos --host "$lab" --only "$pages" \
+            --engine "$PWD/pkg/candidate/foafnaut/libweb-render.dylib" --out "$PWD/out/live" --release "$CANDIDATE" --chrome "$chrome"
+          jq -r '.pages[] | ["live",.id,.verdict,.first_frame_s,.scroll_latency_p95_ms,.layout_similarity] | @tsv' \
+            out/live/summary.json | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: govuk-desktop-evidence
+          path: out/
+          retention-days: 7
+      - name: Require both candidate submissions
+        if: always()
+        env:
+          CANDIDATE_FORM_STATUS: ${{ steps.submit.outputs.candidate }}
+        run: test "$CANDIDATE_FORM_STATUS" = 0
