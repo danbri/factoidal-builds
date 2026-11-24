@@ -1,0 +1,80 @@
+name: BBC replay load phase attribution
+on:
+  push:
+    branches: [wip/bbc-first-frame]
+permissions:
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+  SET: foafnaut-linux-x86_64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            core-diagnostics
+            third_party/realpages/bbc.co.uk
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Load the pinned native engine and host
+        run: |
+          set -euo pipefail
+          mkdir -p engines/baseline engines/web
+          gh release download "build-${BASELINE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/baseline
+          jq -e --arg sha "$BASELINE" '.source_commit == $sha' engines/baseline/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/baseline/build-info.json)
+          echo "$expected  engines/baseline/$SET.tar.gz" | sha256sum -c -
+          tar -xzf "engines/baseline/$SET.tar.gz" -C engines/baseline
+          engine=$(find "$PWD/engines/baseline" -name libweb-render.so -print -quit)
+          test -s "$engine"
+          echo "BASE_ENGINE=$engine" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
+          tc=leanprover/lean4:v4.33.1
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Time the same frozen BBC article with scripts enabled and disabled
+        run: |
+          set -euo pipefail
+          lab=core/labs/demos/foafnaut
+          python3 core-diagnostics/bbc-load-phases.py "$lab"
+          mkdir -p out
+          sha256sum "$BASE_ENGINE" third_party/realpages/bbc.co.uk/news-bbc-20261115.zip | tee out/inputs.sha256
+          jq '.pages |= map(select(.id == "news-bbc" or .id == "news-bbc-noscripts"))' "$lab/realpages/pages.json" > out/pages.json
+          for iteration in 1 2; do
+            deno run -A "$lab/realpages/survey.ts" --platform linux --host "$PWD/$lab" --engine "$BASE_ENGINE" \
+              --snapshots "$PWD/third_party/realpages" --pages "$PWD/out/pages.json" --timeout 120 --retries 0 \
+              --out "$PWD/out/$iteration" --release "$BASELINE"
+            jq -e '.pages|length == 2 and all(.state == "ok" and .rows > 0)' "out/$iteration/summary.json" >/dev/null
+            for page in news-bbc news-bbc-noscripts; do
+              grep -E '^\{"type":"bbc-[a-z]+-probe"' "out/$iteration/logs/$page.textnaut.log" > "out/$iteration/$page.phases.ndjson"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-load-phases
+          path: |
+            out/inputs.sha256
+            out/*/summary.json
+            out/*/*.phases.ndjson
+          retention-days: 7
