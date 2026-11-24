@@ -1,0 +1,98 @@
+--- a/src/dec/vp8_dec.c
++++ b/src/dec/vp8_dec.c
+@@ -1,3 +1,4 @@
++#include <stdio.h>
+ // Copyright 2010 Google Inc. All Rights Reserved.
+ //
+ // Use of this source code is governed by a BSD-style license
+@@ -451,17 +452,28 @@
+ }
+ 
+ // Returns the position of the last non-zero coeff plus one
++static void PrintRawCoefficients(const int raw[16]) {
++  fputs("@coeff", stderr);
++  for (int i = 0; i < 16; ++i) fprintf(stderr, " %d", raw[i]);
++  fputc('\n', stderr);
++}
++
+ static int GetCoeffsFast(VP8BitReader* const br,
+                          const VP8BandProbas* const prob[],
+                          int ctx, const quant_t dq, int n, int16_t* out) {
++  int raw[16] = {0};
+   const uint8_t* p = prob[n]->probas[ctx];
+   for (; n < 16; ++n) {
+     if (!VP8GetBit(br, p[0], "coeffs")) {
++      PrintRawCoefficients(raw);
+       return n;  // previous coeff was last non-zero coeff
+     }
+     while (!VP8GetBit(br, p[1], "coeffs")) {       // sequence of zero coeffs
+       p = prob[++n]->probas[0];
+-      if (n == 16) return 16;
++      if (n == 16) {
++        PrintRawCoefficients(raw);
++        return 16;
++      }
+     }
+     {        // non zero coeff
+       const VP8ProbaArray* const p_ctx = &prob[n + 1]->probas[0];
+@@ -473,9 +485,12 @@
+         v = GetLargeValue(br, p);
+         p = p_ctx[2];
+       }
+-      out[kZigzag[n]] = VP8GetSigned(br, v, "coeffs") * dq[n > 0];
+-    }
+-  }
++      const int signed_value = VP8GetSigned(br, v, "coeffs");
++      raw[kZigzag[n]] = signed_value;
++      out[kZigzag[n]] = signed_value * dq[n > 0];
++    }
++  }
++  PrintRawCoefficients(raw);
+   return 16;
+ }
+ 
+@@ -484,14 +499,19 @@
+ static int GetCoeffsAlt(VP8BitReader* const br,
+                         const VP8BandProbas* const prob[],
+                         int ctx, const quant_t dq, int n, int16_t* out) {
++  int raw[16] = {0};
+   const uint8_t* p = prob[n]->probas[ctx];
+   for (; n < 16; ++n) {
+     if (!VP8GetBitAlt(br, p[0], "coeffs")) {
++      PrintRawCoefficients(raw);
+       return n;  // previous coeff was last non-zero coeff
+     }
+     while (!VP8GetBitAlt(br, p[1], "coeffs")) {       // sequence of zero coeffs
+       p = prob[++n]->probas[0];
+-      if (n == 16) return 16;
++      if (n == 16) {
++        PrintRawCoefficients(raw);
++        return 16;
++      }
+     }
+     {        // non zero coeff
+       const VP8ProbaArray* const p_ctx = &prob[n + 1]->probas[0];
+@@ -503,9 +523,12 @@
+         v = GetLargeValue(br, p);
+         p = p_ctx[2];
+       }
+-      out[kZigzag[n]] = VP8GetSigned(br, v, "coeffs") * dq[n > 0];
+-    }
+-  }
++      const int signed_value = VP8GetSigned(br, v, "coeffs");
++      raw[kZigzag[n]] = signed_value;
++      out[kZigzag[n]] = signed_value * dq[n > 0];
++    }
++  }
++  PrintRawCoefficients(raw);
+   return 16;
+ }
+ 
+@@ -624,6 +647,7 @@
+   VP8MB* const mb = dec->mb_info + dec->mb_x;
+   VP8MBData* const block = dec->mb_data + dec->mb_x;
+   int skip = dec->use_skip_proba ? block->skip : 0;
++  fprintf(stderr, "@position %d %d %d\n", dec->mb_y, dec->mb_x, skip);
+ 
+   if (!skip) {
+     skip = ParseResiduals(dec, mb, token_br);
