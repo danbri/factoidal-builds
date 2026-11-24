@@ -7,7 +7,7 @@ permissions:
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  ENGINE_CORE: 9805833592547e2a23788da403a5e9e36b99f1ec
+  ENGINE_CORE: 63f74e538d511d1f2fb6ab782623a5850bf58e6e
   ENGINE_SET: foafnaut-engine-darwin-arm64
   WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
@@ -15,14 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 100
     steps:
-      - name: Wait for the exact native release and paired baseline
+      - name: Wait for the exact hosted engine and paired baseline
         run: |
           set -euo pipefail
-          tag="build-${ENGINE_CORE:0:12}-$ENGINE_SET"
-          while ! gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fx "$ENGINE_SET.tar.gz"; do
-            state=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/45434436855" --jq '.status')
-            if [[ "$state" = completed ]]; then
-              echo "::error::Exact Mac engine ended without release $tag"
+          engine_run="repos/$GITHUB_REPOSITORY/actions/runs/45440246883"
+          until gh api "$engine_run/artifacts" --jq '.artifacts[].name' | grep -Fx "$ENGINE_SET"; do
+            if [[ "$(gh api "$engine_run" --jq '.status')" = completed ]]; then
+              echo "::error::Exact Mac build ended without its engine artifact"
               exit 1
             fi
             sleep 35
@@ -90,8 +89,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p engines/native engines/web
-          tag="build-${ENGINE_CORE:0:12}-$ENGINE_SET"
-          gh release download "$tag" -R "$GITHUB_REPOSITORY" -p "$ENGINE_SET.tar.gz" -p build-info.json -D engines
+          gh run download 45440246883 -R "$GITHUB_REPOSITORY" -n "$ENGINE_SET" -D engines
           jq -e --arg sha "$ENGINE_CORE" '.source_commit == $sha' engines/build-info.json >/dev/null
           checksum=$(jq -er --arg archive "$ENGINE_SET.tar.gz" '.artifacts[$archive].sha256' engines/build-info.json)
           echo "$checksum  engines/$ENGINE_SET.tar.gz" | shasum -a 256 -c -
