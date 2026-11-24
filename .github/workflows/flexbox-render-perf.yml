@@ -1,4 +1,4 @@
-name: Isolate the W3C Flexbox startup work per script
+name: Isolate the synchronous Flexbox startup geometry read
 on:
   push:
     branches: [wip/flexbox-render-perf]
@@ -51,22 +51,23 @@ jobs:
           lab=core/labs/demos/foafnaut
           bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
           echo "ENGINE=$library" >> "$GITHUB_ENV"
-      - name: Replay the original and each one-script variant
+      - name: Keep every startup script and guard a single unused read
         run: |
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
           archive="$PWD/third_party/realpages/w3.org/w3c-flexbox-20261115.zip"
-          variants="$RUNNER_TEMP/script-variants"
+          guarded="$RUNNER_TEMP/fixup-guarded.zip"
           mkdir -p out
           shasum -a 256 "$ENGINE" "$lab/run_html.ts" "$archive" > out/inputs.sha256
-          python3 core-diagnostics/flexbox-script-variants.py "$archive" "$variants" > out/variants.json
-          for arm in baseline1 no-ref-hints no-wpt no-dfn-panel no-fixup baseline2; do
+          python3 core-diagnostics/flexbox-guard-startup-read.py "$archive" "$guarded" > out/variant.json
+          shasum -a 256 "$guarded" >> out/inputs.sha256
+          for arm in baseline1 guarded1 guarded2 baseline2; do
             export REALPAGES_REPLAY="$archive"
-            [[ $arm = baseline* ]] || export REALPAGES_REPLAY="$variants/$arm.zip"
+            [[ $arm = baseline* ]] || export REALPAGES_REPLAY="$guarded"
             /usr/bin/time -l deno run --no-check --no-config --no-npm --node-modules-dir=none \
               --unstable-webgpu --unstable-ffi -A --preload "$lab/realpages/replay.ts" "$lab/run_html.ts" \
               --native-engine "$ENGINE" --offscreen --offscreen-size 1280x800@1 --no-state \
-              --be-liberal-in-what-we-accept --perf-summary --watch-sweep 10 \
+              --be-liberal-in-what-we-accept --perf-summary --watch-sweep 10 --shot "$PWD/out/$arm.png" --shot-at-end \
               --url https://www.w3.org/TR/css-flexbox-1/ > "out/$arm.watch.log" 2>&1
             grep -q '"type":"native-html-perf-summary"' "out/$arm.watch.log"
           done
