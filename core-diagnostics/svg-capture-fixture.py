@@ -18,9 +18,9 @@ for svg in re.findall(r"<svg\b[^>]*>[\s\S]*?</svg>", html, re.I):
         continue
     icon = re.search(r'\sicon="([^"]+)"', start)
     assert icon is not None
-    without_category = start[:category.start()] + start[category.end():] + svg[len(start):]
+    without_labels = re.sub(r'\s(?:category|icon)="[^"]+"', "", start) + svg[len(start):]
     nodes.append({"category": category.group(1), "icon": icon.group(1),
-                  "original": svg, "control": without_category})
+                  "original": svg, "control": without_labels})
 
 assert len(nodes) == 31, len(nodes)
 print(json.dumps({"url": url, "nodes": nodes}))
