@@ -1,0 +1,89 @@
+name: Replay matched BBC with the requested image variants
+on:
+  push:
+    branches: [wip/bbc-asset-supplement]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+  SET: foafnaut-engine-darwin-arm64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  profile:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45414078311
+          name: bbc-matched-desktop
+          path: existing
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the pinned engine and desktop host
+        run: |
+          set -euo pipefail
+          mkdir -p engines/base engines/web
+          gh release download "build-${CORE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/base
+          jq -e --arg sha "$CORE" '.source_commit == $sha' engines/base/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/base/build-info.json)
+          echo "$expected  engines/base/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "engines/base/$SET.tar.gz" -C engines/base
+          library=$(find "$PWD/engines/base" -name libweb-render.dylib -print | head -1)
+          window=$(find "$PWD/engines/base" -name libnative-window.dylib -print | head -1)
+          test -s "$library"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
+          echo "ENGINE=$library" >> "$GITHUB_ENV"
+      - name: Add missing public image and stylesheet variants
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          source="snapshots/bbc.com/desktop-bbc-news-20261124.zip"
+          target="supplemented/bbc.com/desktop-bbc-news-20261124.zip"
+          python3 core-diagnostics/supplement-snapshot.py "$source" existing/desktop/logs/desktop-bbc-news.watch.log "$target" out/asset-receipts.json
+          diff -q <(unzip -p "$source" reference.png) <(unzip -p "$target" reference.png)
+          shasum -a 256 "$source" "$target" > out/inputs.sha256
+      - name: Measure desktop BBC first frame and scroll independently
+        run: |
+          set -euo pipefail
+          lab=core/labs/demos/foafnaut
+          mkdir -p out
+          jq '.pages |= map(select(.id == "desktop-bbc-news" or .id == "desktop-bbc-news-noscripts") | .url = "https://www.bbc.com/news")' "$lab/realpages/pages.json" > out/pages.json
+          chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          deno run -A "$lab/realpages/survey.ts" --platform macos --host "$PWD/$lab" --engine "$ENGINE" \
+            --snapshots "$PWD/supplemented" --pages "$PWD/out/pages.json" --timeout 105 --retries 0 \
+            --watch 8 --chrome "$chrome" --out "$PWD/out/desktop" --release "$CORE"
+          jq -r '.pages[]|[.id,.state,.first_frame_s,.first_layout_ms,.scroll_latency_p95_ms,.layout_similarity]|@tsv' out/desktop/summary.json | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-asset-supplement
+          path: out/
+          retention-days: 7
