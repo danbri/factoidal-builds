@@ -1,0 +1,85 @@
+name: Verify the GOV.UK heading with the cookie banner visible
+on:
+  push:
+    branches: [wip/gov-hero-balance-after-float]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE_RUN: "45506554058"
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/gov-button-*
+            release-tests/gov-heading-state.ts
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45490403825
+          name: govuk-hero-gap
+          path: trace
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: snapshot
+          github-token: ${{ github.token }}
+      - name: Get the exact candidate engine
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 150); do
+            if gh run download "$CANDIDATE_RUN" -R "$GITHUB_REPOSITORY" -n branch-engine -D candidate; then break; fi
+            if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" --jq .status)" == completed ]]; then
+              echo "Candidate run ended without an engine artifact" >&2
+              exit 1
+            fi
+            sleep 20
+          done
+          test -s candidate/libweb-render.so
+      - name: Check the balanced heading before and after showing cookies
+        run: |
+          set -euo pipefail
+          snapshot=snapshot/gov.uk/desktop-govuk-20261124.zip
+          request=trace/requests/frame-1655-2.json
+          echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  $snapshot" | sha256sum -c -
+          mkdir out
+          sha256sum "$request" "$snapshot" candidate/libweb-render.so > out/inputs.sha256
+          python3 release-tests/gov-button-input.py "$snapshot" input
+          check=release-tests/gov-heading-state.ts
+          deno check --no-config --unstable-ffi "$check"
+          for HEADING_STATE in scripted; do
+            export HEADING_STATE GAP_PREFIXES=0,1,2,168
+            deno run --no-config --unstable-ffi --allow-ffi \
+              --allow-read=trace/requests,input/input.json --allow-env=GAP_PREFIXES,GAP_BOX_SIZING,HEADING_STATE \
+              "$check" "$PWD/candidate/libweb-render.so" trace/requests input/input.json | tee "out/$HEADING_STATE.jsonl"
+          done
+          python3 - <<'PYTHON' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          for path in sorted(Path("out").glob("*.jsonl")):
+              for line in path.read_text().splitlines():
+                  record = json.loads(line)
+                  heading = " ".join(record["headingLines"])
+                  assert heading == "The best place to find government services and information", record
+                  assert record["headingLines"][-1] == "and information", record
+                  assert len(record["headingLines"]) == 3, record
+                  print(record["mode"], record["n"], record["headingLines"], record["headingGlyphs"][0][1:])
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: govuk-heading-state
+          path: out/
+          retention-days: 7
