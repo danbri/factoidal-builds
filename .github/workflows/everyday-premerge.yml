@@ -1,0 +1,42 @@
+name: Everyday page changes premerge
+on:
+  push:
+    branches: [wip/everyday-premerge]
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {change: page registry, sha: dd7a5b5a72b4f3fac6f4e2fe94f40ae50ccd6f10, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
+          - {change: viewport sizing, sha: 5eb100777e590e0ae1d38b0e1344676f01864d59, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
+          - {change: replaced controls, sha: 9dc290c91d4a70a26406ec76e0ac6dcadbe35094, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
+          - {change: generated clearance, sha: 51c84234c50580a1d7ddea48528ae23c5bad2219, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
+    name: Premerge ${{ matrix.change }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ matrix.sha }}
+          fetch-depth: 8
+          persist-credentials: false
+          path: core
+          sparse-checkout: |
+            tools
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Run repository premerge checks
+        working-directory: core
+        env:
+          BASE: ${{ matrix.base }}
+          EXPECTED: ${{ matrix.sha }}
+        run: |
+          set -euo pipefail
+          [[ $(git rev-parse HEAD) = "$EXPECTED" ]]
+          git cat-file -e "$BASE^{commit}"
+          bash tools/premerge.sh --changed --base "$BASE" | tee -a "$GITHUB_STEP_SUMMARY"
