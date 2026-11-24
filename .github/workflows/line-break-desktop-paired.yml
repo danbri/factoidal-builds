@@ -9,8 +9,8 @@ env:
   GH_TOKEN: ${{ github.token }}
   CORE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
   SET: foafnaut-engine-darwin-arm64
-  CANDIDATE: 332259e5b1553c4cce4efcaba5b66de0da8db7bf
-  CANDIDATE_RUN: "45417593777"
+  CANDIDATE: 6bd2cf5a15dd24becf33cc21bfa00bed44f473fd
+  CANDIDATE_RUN: "45419639141"
   WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
   candidate:
@@ -57,7 +57,7 @@ jobs:
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45417593777
+          run-id: 45419639141
           name: foafnaut-engine-darwin-arm64
           path: engines/candidate
           github-token: ${{ github.token }}
