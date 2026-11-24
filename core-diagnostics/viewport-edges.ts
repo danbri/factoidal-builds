@@ -36,11 +36,11 @@ const trace = (name: string, contents: string, width: number, height: number) =>
 };
 
 type Values = { horizontal: string; vertical: string; inset: string };
-const html = ({horizontal, vertical, inset}: Values) => `<style>
+const html = ({horizontal, vertical, inset}: Values, deferred: boolean) => `<style>
 body{margin:0}
-.frame{width:60%;padding-inline:var(--inset)}
-.breakout{position:relative;width:100vw;inset-inline:50%;margin-inline:var(--shift)}
-.tall{width:100px;border:2px solid black;padding:var(--tall) var(--inset)}
+.frame{width:60%;${deferred ? "padding-inline:var(--inset)" : `padding-left:${inset};padding-right:${inset}`}}
+.breakout{position:relative;width:100vw;inset-inline:50%;${deferred ? "margin-inline:var(--shift)" : `margin-left:${horizontal};margin-right:${horizontal}`}}
+.tall{width:100px;border:2px solid black;padding:${deferred ? "var(--tall) var(--inset)" : `${vertical} ${inset}`}}
 #inherited{padding-top:inherit}
 </style><div class=frame id=frame style="--inset:${inset}">
 <div id=breakout class=breakout style="--shift:${horizontal}"><div class=tall id=box style="--tall:${vertical}">
@@ -49,8 +49,8 @@ body{margin:0}
 </div></div></div>`;
 
 for (const [width, height] of [[1440,735], [480,500], [480,735]]) {
-  const actual = trace("viewport",html({horizontal:"-50vw",vertical:"10vh",inset:"5vw"}),width,height);
-  const reference = trace("pixels",html({horizontal:`${-width/2}px`,vertical:`${height/10}px`,inset:`${width/20}px`}),width,height);
+  const actual = trace("viewport",html({horizontal:"-50vw",vertical:"10vh",inset:"5vw"},true),width,height);
+  const reference = trace("pixels",html({horizontal:`${-width/2}px`,vertical:`${height/10}px`,inset:`${width/20}px`},false),width,height);
   for (const id of ["frame","breakout","box","inherited","reset"]) {
     const row = actual.find((item: unknown[]) => item[0] === id);
     const expected = reference.find((item: unknown[]) => item[0] === id);
