@@ -18,7 +18,10 @@ jobs:
         with:
           path: builds
           persist-credentials: false
-          sparse-checkout: release-tests/cold-graphics-layer-compositor.ts
+          sparse-checkout: |
+            release-tests/cold-graphics-layer-compositor.ts
+            release-tests/cold-graphics-session.ts
+            release-tests/cold-graphics-check.py
           sparse-checkout-cone-mode: false
       - uses: actions/checkout@v4
         with:
@@ -57,7 +60,10 @@ jobs:
           cp "$lab/layer_compositor.ts" out/layer-compositor.original.ts
           cp builds/release-tests/cold-graphics-layer-compositor.ts "$lab/layer_compositor.ts"
           diff -u out/layer-compositor.original.ts "$lab/layer_compositor.ts" > out/instrumentation.diff || test "$?" -eq 1
-          sed 's/timeout=90/timeout=170/' "$lab/check-linux-browser.py" > out/check-linux-browser.py
+          cp "$lab/native_html_session.ts" out/native_html_session.original.ts
+          cp builds/release-tests/cold-graphics-session.ts "$lab/native_html_session.ts"
+          diff -u out/native_html_session.original.ts "$lab/native_html_session.ts" > out/session.diff || test "$?" -eq 1
+          cp builds/release-tests/cold-graphics-check.py out/check-linux-browser.py
           driver=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
           test -n "$driver"
           echo "VK_DRIVER_FILES=$driver" >> "$GITHUB_ENV"
@@ -86,10 +92,13 @@ jobs:
             fi
             export XDG_RUNTIME_DIR="$(mktemp -d)"
             mkdir -p "$XDG_CACHE_HOME"
+            if [[ "$arm" == released-cold ]]; then unset FOAFNAUT_DIAGNOSTIC_FIRST_PAINT_ONLY
+            else export FOAFNAUT_DIAGNOSTIC_FIRST_PAINT_ONLY=1
+            fi
             xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 \
               "$PWD/out/check-linux-browser.py" "$binary" "$PWD/out/$arm" || rc=1
             du -ak "$XDG_CACHE_HOME" | sort -n | tail -30 > "out/$arm/cache-kib.txt"
-            jq -Rrc 'fromjson? | select(.type == "native-html-cold-pipeline"
+            jq -Rrc 'fromjson? | select(((.type // "") | startswith("native-html-cold-"))
               or (.type == "native-html-frame" and .frame == 1))' "out/$arm/browser.log" \
               | tee "out/$arm/first-frame.jsonl" >> "$GITHUB_STEP_SUMMARY"
           done

@@ -126,10 +126,12 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
   // Run a Lean plan on one target texture; with check, read it back and hash it.
   async function run(p:RenderPlan,resources:{pipeline:GPURenderPipeline;bindGroup:GPUBindGroup},target:GPUTexture,check:boolean,
     write:()=>void):Promise<PassResult> {
+    const started=performance.now();
     if(check)readback=grow(readback,p.readback!.bytes,bufferUsage(p.readback!.usage));
     device.pushErrorScope("validation");let scoped=true;
     try{
       write();
+      const written=performance.now();
       const interpreter=commandInterpreter(device,p,resources,target.createView(),{texture:target,readback:readback?.buffer});
       const steps:Record<string,number>={};
       for(const command of p.commands){
@@ -143,7 +145,15 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
         if(p.format==="bgra8unorm")for(let i=0;i<pixels.length;i+=4){const b=pixels[i];pixels[i]=pixels[i+2];pixels[i+2]=b;}
         hash=pixelHash(pixels);
       }
-      const error=await device.popErrorScope();scoped=false;if(error)throw new Error(error.message);
+      const scopeStart=performance.now();
+      const validation=device.popErrorScope();
+      const scopeReturned=performance.now();
+      const error=await validation;
+      const scopeDone=performance.now();
+      scoped=false;if(error)throw new Error(error.message);
+      if(scopeDone-started>10)console.log(JSON.stringify({type:"native-html-cold-render-commands",
+        width:p.width,height:p.height,writeMs:written-started,commandsMs:scopeStart-written,
+        scopeCallMs:scopeReturned-scopeStart,scopeAwaitMs:scopeDone-scopeReturned,totalMs:scopeDone-started}));
       return {steps,pixels,hash};
     }catch(error){
       if(scoped)try{await device.popErrorScope();}catch{/* original failure */}
@@ -176,8 +186,11 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
    * bands give the bytes of one draw. */
   type Bands={count:number;between:(units:number)=>Promise<void>};
   async function drawScene(slot:Slot,frame:HTMLArtifact,check:boolean,target?:GPUTexture,bands?:Bands):Promise<PassResult> {
+    const started=performance.now();
     const p=await plan(frame.width,frame.height,frame.data);
+    const planned=performance.now();
     const pipeline=await pipelineFor(p,frame.wgsl);
+    const pipelined=performance.now();
     if(!target){
       const size=`${frame.width}x${frame.height}`;
       if(!slot.texture||slot.size!==size){
@@ -212,6 +225,7 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
     // `units`: the GPU work of this call's last submission (gpu_pacing.ts sceneCost of what was
     // drawn: the rectangles, the last band, or the whole scene), for the session's GPU gate.
     let result:PassResult,units=0;
+    const ready=performance.now();
     if(rects){
       stats.scenesPartial++;units=rects.length?sceneCostIn(frame as never,rects):0;
       result=rects.length?await drawDamage(p,{pipeline,bindGroup:slot.bind},slot.texture!,rects,write):(write(),{steps:{},hash:""});
@@ -228,6 +242,10 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
     }else{stats.scenesFull++;units=sceneCost(frame as never);result=await run(p,{pipeline,bindGroup:slot.bind},target??slot.texture!,check,write);}
     if(!target){slot.drawn=damage?.id;slot.drawnFrame=damage?undefined:frame;}
     if(check&&result.pixels)checkPixels(frame as unknown as Parameters<typeof checkPixels>[0],result.pixels);
+    const finished=performance.now();
+    if(finished-started>10)console.log(JSON.stringify({type:"native-html-cold-layer",
+      width:frame.width,height:frame.height,planMs:planned-started,pipelineMs:pipelined-planned,
+      resourcesMs:ready-pipelined,drawMs:finished-ready,totalMs:finished-started}));
     return {...result,units};
   }
   const chrome:Slot={bindKey:"",size:""},page:Slot={bindKey:"",size:""},single:Slot={bindKey:"",size:""};
