@@ -10,7 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {change: bitmap outlines, sha: 3babee62d591670c2e769376b2d0007a980e8c32, base: 942140c5a8b539e878bf3cdd522bad88e7c2d683}
+          - {change: viewport edges, sha: 6d724fd99caf4a41dceed8fe0688b86e36f0beb5, base: 472993e362b585c5724f8de9d13115e8383f9f80}
+          - {change: JavaScript split limit, sha: 73dc1d668528a339e65847848d693e809df0840a, base: 942140c5a8b539e878bf3cdd522bad88e7c2d683}
     name: Premerge ${{ matrix.change }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
