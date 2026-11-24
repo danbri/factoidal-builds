@@ -1,0 +1,85 @@
+name: Pair exact GOV.UK button WPT engines
+on:
+  push:
+    branches: [wip/gov-button-wpt-pair]
+permissions:
+  contents: read
+  actions: read
+env:
+  CORE_REPO: danbri/factoidal-core
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arm: baseline
+            sha: c919dc1cba6d4dbc615231df8f617d9a4dc629f6
+            engine: 45493128679
+          - arm: candidate
+            sha: 38168746dc41e6178b48a71d4bf99d2cfe61edb2
+            engine: 45498044806
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ matrix.sha }}
+          path: core
+          # docs/web/hub/foafnaut: the engine host imports Hub modules from there (host-trace.mjs
+          # since core 2fcec0287); without them no test runs (WPT runs of 2026-11-16 02:26Z, 04:50Z).
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45498044806
+          github-token: ${{ github.token }}
+          name: branch-inputs
+          path: ${{ runner.temp }}/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ matrix.engine }}
+          github-token: ${{ github.token }}
+          name: branch-engine
+          path: ${{ runner.temp }}/lib
+      - id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: PyYAML and Lean's shared runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat "$RUNNER_TEMP/lib/lean-toolchain")"
+          echo "LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)" >> "$GITHUB_ENV"
+      - name: Run the tests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" "HOME=$HOME" \
+            systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue --uid="$(id -u)" --gid="$(id -g)" -- \
+            "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/inputs" --core core \
+            --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
+            --engine-lib "$RUNNER_TEMP/lib/libweb-render.so" --web-tag "build-867f5658f1e1-foafnaut-web" \
+            --index 0 --shards 1 --platform linux-x86_64 \
+            --script-engine bubblepop --jobs 3 --max-minutes 45 --retry-minutes 10 --pydeps "$RUNNER_TEMP/pydeps"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: button-wpt-${{ matrix.arm }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
