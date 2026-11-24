@@ -106,7 +106,7 @@ jobs:
               deno run -A "$lab/survey.ts" --platform macos --engine "$engine"                 --host "$PWD/host-$slot/labs/demos/foafnaut" --out "$PWD/out/$mode/$pass"                 --snapshots "$PWD/builds/third_party/realpages" --only blog-jvns --no-chrome
               jq -c --arg mode "$mode" --arg pass "$pass" '.pages[] |
                 {mode:$mode,pass:$pass,id,verdict,first_frame_s,scroll_latency_p95_ms,scroll_composite_p95_ms}'                 "out/$mode/$pass/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
-              rg 'diagnostic-scroll-start' "out/$mode/$pass/logs/blog-jvns.scroll.log" | tee -a "$GITHUB_STEP_SUMMARY"
+              grep -F 'diagnostic-scroll-start' "out/$mode/$pass/logs/blog-jvns.scroll.log" | tee -a "$GITHUB_STEP_SUMMARY"
             done
           done
       - uses: actions/upload-artifact@v4
