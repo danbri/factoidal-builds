@@ -6,35 +6,14 @@ permissions:
   actions: read
   contents: read
 env:
-  BUILD_RUN: '45397448661'
   CANDIDATE: 0705604d5b4753b85bdeb09410dad846de738218
   BASELINE: cfc667991a84ebf24699b4f4c91306fb1c1e9c35
   WEB: build-4618bea0c1ac-foafnaut-web
   SET: foafnaut-engine-darwin-arm64
 jobs:
-  artifact:
-    runs-on: ubuntu-latest
-    timeout-minutes: 85
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Wait for the gated Mac engine
-        run: |
-          set -euo pipefail
-          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN"
-          while :; do
-            details=$(gh api "$endpoint")
-            if [ "$(jq -r .status <<< "$details")" = completed ]; then
-              jq -e '.conclusion == "success"' <<< "$details" >/dev/null
-              gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fx "$SET"
-              break
-            fi
-            sleep 30
-          done
   desktop:
-    needs: artifact
     runs-on: macos-15
-    timeout-minutes: 50
+    timeout-minutes: 12
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -99,32 +78,25 @@ jobs:
               "$PWD/pkg/$arm/foafnaut/libweb-render.dylib" "$PWD/out/form-$arm" | tee -a "$GITHUB_STEP_SUMMARY" || code=$?
             echo "$arm=$code" >> "$GITHUB_OUTPUT"
           done
-      - name: Capture a shared replay and survey both engines
-        id: survey
+      - name: Try a public GOV.UK search in a clean browser
+        id: live
+        if: always() && steps.submit.outcome == 'success'
         run: |
-          set -euo pipefail
-          suite=tools/labs/demos/foafnaut/realpages
-          lab="$PWD/host/labs/demos/foafnaut"
-          chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-          pages=desktop-govuk,desktop-w3c-home
-          deno run -A "$suite/snapshot.ts" --chrome "$chrome" --out "$PWD/out/snapshots" --only "$pages" \
-            --engine "$PWD/pkg/candidate/foafnaut/libweb-render.dylib" --host "$lab"
-          for id in desktop-govuk desktop-w3c-home; do
-            snapshot=$(find out/snapshots -name "$id-*.zip" -print -quit)
-            test -s "$snapshot"
+          set -uo pipefail
+          mkdir -p out/live-search
+          lab=host/labs/demos/foafnaut
+          lib="$PWD/pkg/candidate/foafnaut/libweb-render.dylib"
+          for method in enter button; do
+            action='[5,36,0]'
+            [[ $method != button ]] || action='"tap:765,754"'
+            printf '["title=Welcome to GOV.UK","hold","tap:320,754","hold","type:passport",%s,"url:/search/all?keywords=passport"]\n' "$action" > "out/live-search/$method-steps.json"
+            status=0
+            perl -e 'alarm shift; exec @ARGV' 90 deno run --no-check --no-config -A --unstable-ffi --unstable-webgpu \
+              "$lab/run_html.ts" --native-engine "$lib" --offscreen --offscreen-size 1280x1000@1 --no-state \
+              --follow-links --trace-input --url https://www.gov.uk/ --steps "out/live-search/$method-steps.json" \
+              --shot "out/live-search/$method.png" --shot-at-end > "out/live-search/$method.log" 2>&1 || status=$?
+            echo "live $method exit $status" >> "$GITHUB_STEP_SUMMARY"
           done
-          for pair in a1 b1 b2 a2; do
-            arm=baseline; [[ $pair != b* ]] || arm=candidate
-            deno run -A "$suite/survey.ts" --platform macos --host "$lab" --only "$pages" \
-              --engine "$PWD/pkg/$arm/foafnaut/libweb-render.dylib" --out "$PWD/out/offline-$pair" --release "$arm" \
-              --snapshots "$PWD/out/snapshots"
-            jq -r --arg arm "offline-$pair" '.pages[] | [$arm,.id,.verdict,.first_frame_s,.scroll_latency_p95_ms,.layout_similarity] | @tsv' \
-              "out/offline-$pair/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
-          done
-          deno run -A "$suite/survey.ts" --platform macos --host "$lab" --only "$pages" \
-            --engine "$PWD/pkg/candidate/foafnaut/libweb-render.dylib" --out "$PWD/out/live" --release "$CANDIDATE" --chrome "$chrome"
-          jq -r '.pages[] | ["live",.id,.verdict,.first_frame_s,.scroll_latency_p95_ms,.layout_similarity] | @tsv' \
-            out/live/summary.json | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

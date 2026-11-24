@@ -59,7 +59,7 @@ try {
       `${host}/run_html.ts`];
     const child = await new Deno.Command("perl", {args: [
       "-e", "alarm shift; exec @ARGV", "90", ...browser, "--offscreen", "--offscreen-size", "1280x800@1", "--no-state",
-      "--no-scripts", "--follow-links", "--native-engine", engine, "--url",
+      "--trace-input", "--follow-links", "--native-engine", engine, "--url",
       `http://127.0.0.1:${server.addr.port}/search`, "--steps", steps,
       "--shot", `${out}/${name}.png`, "--shot-at-end",
     ]}).output();
