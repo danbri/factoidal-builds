@@ -1,0 +1,138 @@
+name: Verify complete lossless WebP decoding and browser paint
+on:
+  push:
+    branches: [wip/vp8l-browser-verification]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: dd7ba4fe57785abf960e45cb11a933def7c22998
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            formal/lean4/lean-toolchain
+            formal/lean4/L4Factoidal/Codec/Inflate.lean
+            formal/lean4/L4Factoidal/Codec/Crc32.lean
+            formal/lean4/L4Factoidal/Codec/WebP.lean
+            formal/lean4/L4Factoidal/Codec/VP8LPrefix.lean
+            formal/lean4/L4Factoidal/Codec/VP8LPlane.lean
+            formal/lean4/L4Factoidal/Codec/VP8LDecode.lean
+          sparse-checkout-cone-mode: false
+      - name: Install the pinned Lean and reference decoder
+        run: |
+          set -euo pipefail
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat core/formal/lean4/lean-toolchain)"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends webp
+      - name: Compile exact Lean sources and compare complete fixture pixels
+        run: |
+          set -euo pipefail
+          temp="$RUNNER_TEMP/vp8l"
+          mkdir -p out "$temp/lib/L4Factoidal/Codec"
+          export ELAN_TOOLCHAIN="$(cat core/formal/lean4/lean-toolchain)"
+          export LEAN_PATH="$temp/lib"
+          lean --version | tee out/lean-version.txt
+          for name in Crc32 Inflate WebP VP8LPrefix VP8LPlane VP8LDecode; do
+            lean -o "$LEAN_PATH/L4Factoidal/Codec/$name.olean" "core/formal/lean4/L4Factoidal/Codec/$name.lean" | tee -a out/lean.log
+          done
+          ! grep -Fq sorryAx out/lean.log
+          mkdir "$temp/fixtures"
+          python3 core-diagnostics/vp8l-transform-corpus.py "$temp/raw"
+          python3 core-diagnostics/vp8l-explicit-transforms.py "$temp/fixtures"
+          python3 core-diagnostics/vp8l-plane-fixtures.py "$temp/fixtures" > out/synth.json
+          for input in "$temp/raw"/*.pam; do
+            for method in 0 3 6; do
+              target="$temp/fixtures/$(basename "$input" .pam)-$method.webp"
+              cwebp -quiet -lossless -exact -m "$method" "$input" -o "$target"
+            done
+          done
+          for file in "$temp/fixtures"/*.webp; do dwebp -quiet "$file" -pam -o "$file.pam"; done
+          lean --run core-diagnostics/VP8LDecodeProbe.lean "$temp/fixtures"/*.webp | tee out/actual.tsv
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          lines = Path("out/actual.tsv").read_text().splitlines()
+          for line in lines:
+              path, w, h, size = line.split(chr(9))
+              reference = Path(path + ".pam").read_bytes().split(b"ENDHDR" + bytes([10]), 1)[1]
+              pixels = Path(path + ".lean.rgba").read_bytes()
+              assert len(pixels) == int(w)*int(h)*4 == int(size)
+              assert pixels == reference, path
+          assert len(lines) == 59
+          print(f"Identical RGBA for all {len(lines)} complete lossless files")
+          PYTHON
+          if lean --run core-diagnostics/VP8LDecodeProbe.lean "$temp/fixtures/invalid.backref" > out/rejection.log 2>&1; then exit 1; fi
+          grep -F 'VP8L backward reference outside plane' out/rejection.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vp8l-complete-differential
+          path: out
+          retention-days: 7
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CORE: dd7ba4fe57785abf960e45cb11a933def7c22998
+      BUILD: '45445022051'
+    steps:
+      - name: Wait for the exact native browser library
+        run: |
+          set -euo pipefail
+          run="repos/$GITHUB_REPOSITORY/actions/runs/$BUILD"
+          gh api "$run/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CORE"
+          until gh api "$run/artifacts" --jq '.artifacts[].name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$run" --jq '.status')" = completed ]]; then
+              echo "::error::Exact candidate build did not produce an engine"
+              exit 1
+            fi
+            sleep 30
+          done
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45445022051'
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Paint direct HTML, SVG and CSS resources and prepare a tab icon
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          tc=$(cat engine/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends webp
+          python3 core-diagnostics/vp8l-plane-fixtures.py "$RUNNER_TEMP/fixtures" >/dev/null
+          fixture="$RUNNER_TEMP/fixtures/duplicate-singleton.webp"
+          dwebp -quiet "$fixture" -o "$RUNNER_TEMP/pixel.png"
+          sha256sum engine/libweb-render.so "$fixture" "$RUNNER_TEMP/pixel.png" > out/inputs.sha256
+          deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/vp8l-direct-image.ts \
+            "$PWD/engine/libweb-render.so" "$fixture" "$RUNNER_TEMP/pixel.png" | tee out/native.ndjson
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vp8l-native-paint
+          path: out
+          retention-days: 7
