@@ -1,4 +1,4 @@
-name: BBC inline SVG metadata replay
+name: Compare inline SVGs extracted from the archived BBC home page
 on:
   push:
     branches: [wip/bbc-svg-category-replay]
@@ -11,7 +11,6 @@ env:
   BASELINE: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef
   BRANCH_RUN: '45423050292'
   SET: foafnaut-linux-x86_64
-  WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
   replay:
     runs-on: ubuntu-latest
@@ -41,9 +40,6 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             labs/demos/foafnaut
-            docs/web/hub/foafnaut
-            tests/browser-wpt
-            third_party/fonts
       - uses: actions/download-artifact@v4
         with:
           run-id: '45423050292'
@@ -56,7 +52,7 @@ jobs:
       - name: Set up the matched host and baseline
         run: |
           set -euo pipefail
-          mkdir -p engines/baseline engines/web
+          mkdir -p engines/baseline
           gh release download "build-${BASELINE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/baseline
           jq -e --arg sha "$BASELINE" '.source_commit == $sha' engines/baseline/build-info.json >/dev/null
           expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/baseline/build-info.json)
@@ -65,10 +61,6 @@ jobs:
           base=$(find "$PWD/engines/baseline" -name libweb-render.so -print -quit)
           test -s "$base"
           echo "BASE_ENGINE=$base" >> "$GITHUB_ENV"
-          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
-          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
-          lab=core/labs/demos/foafnaut
-          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
           tc=$(cat engines/candidate/lean-toolchain)
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           "$HOME/.elan/bin/elan" toolchain install "$tc"
@@ -79,28 +71,15 @@ jobs:
           github-token: ${{ github.token }}
           name: bbc-home-matched-snapshot
           path: snapshots
-      - name: Render the same archived BBC document with both engines
+      - name: Compare all captured SVG nodes with and without the metadata
         run: |
           set -euo pipefail
-          suite=core/labs/demos/foafnaut/realpages
           mkdir -p out
           zip="$PWD/snapshots/bbc.com/desktop-bbc-news-20261124.zip"
-          test -s "$zip"
           sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so "$zip" > out/inputs.sha256
-          unzip -p "$zip" reference.png > out/chrome.png
-          printf '%s\n' '{"url":"https://www.bbc.com/news","width":1280,"height":800,"file":"bbc.png"}' > "$RUNNER_TEMP/job.jsonl"
-          for arm in baseline candidate; do
-            lib=$BASE_ENGINE; [[ $arm != candidate ]] || lib="$PWD/engines/candidate/libweb-render.so"
-            mkdir -p "out/$arm"
-            REALPAGES_REPLAY="$zip" timeout 180s deno run -A --unstable-ffi --preload "$suite/replay.ts" \
-              core/tests/browser-wpt/reftest-render.ts --list "$RUNNER_TEMP/job.jsonl" --native-engine "$lib" --out "out/$arm" \
-              2>&1 | tee "out/$arm/render.log"
-            test -s "out/$arm/bbc.png"
-            sed -n 's/^__done //p' "out/$arm/render.log" > "out/$arm/result.json"
-            jq -e '.status == "ok"' "out/$arm/result.json"
-          done
-          grep -Fq 'unsupported attribute on svg: category' out/baseline/result.json
-          ! grep -Fq 'unsupported attribute on svg: category' out/candidate/result.json
+          python3 core-diagnostics/svg-capture-fixture.py "$zip" > "$RUNNER_TEMP/fixture.json"
+          deno run --allow-read --allow-ffi --unstable-ffi --no-config core-diagnostics/svg-capture-replay.ts \
+            "$BASE_ENGINE" "$PWD/engines/candidate/libweb-render.so" "$RUNNER_TEMP/fixture.json" | tee out/svg.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
         with:
