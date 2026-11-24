@@ -1,4 +1,4 @@
-name: Freeze GOV.UK for complete offline desktop coverage
+name: Freeze W3C at its registered desktop viewport
 on:
   push:
     branches: [wip/govuk-desktop-capture]
@@ -10,9 +10,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - id: desktop-govuk
-            domain: www.gov.uk
-            title: GOV.UK
+          - id: desktop-w3c-home
+            domain: www.w3.org
+            title: W3C
     runs-on: macos-15
     timeout-minutes: 10
     steps:
@@ -50,8 +50,8 @@ jobs:
               assert urllib.parse.urlsplit(url).hostname == sys.argv[2]
               assert title and sys.argv[3] in title.group(1)
               assert len(snapshot.read("reference.png")) > 0
-              assert re.search(r"<form\b", html, re.I), "GOV.UK returned no search form"
-              print("HTML form in the received document:", bool(re.search(r"<form\b", html, re.I)))
+              assert re.search(r"<h1\b", html, re.I), "W3C returned no main heading"
+
           PYTHON
       - uses: actions/upload-artifact@v4
         with:
