@@ -1,7 +1,7 @@
-name: Verify queued scroll prefetch on everyday pages
+name: Measure pending-scroll priority on BBC and Wikipedia
 on:
   push:
-    branches: [wip/realpages-scroll-prefetch]
+    branches: [wip/scroll-awaiting-band]
 permissions:
   contents: read
   actions: read
@@ -17,6 +17,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
+          sparse-checkout: release-tests
+      - uses: actions/checkout@v4
+        with:
           repository: danbri/factoidal-core
           ref: 4a49c914c4ed2c70479a55ddae8a0ffb2d487f93
           fetch-depth: 2
@@ -30,12 +34,6 @@ jobs:
         with:
           run-id: 45413803852
           name: bbc-home-matched-snapshot
-          path: snapshots
-          github-token: ${{ github.token }}
-      - uses: actions/download-artifact@v4
-        with:
-          run-id: 45403312317
-          name: w3c-home-snapshots
           path: snapshots
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
@@ -72,18 +70,23 @@ jobs:
           git -C core show 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef:labs/demos/foafnaut/run_html.ts > "$lab/replay_baseline.ts"
           mkdir -p out
           shasum -a 256 "$ENGINE" "$lab/run_html.ts" "$lab/replay_baseline.ts" > out/inputs.sha256
-          for case_id in bbc wiki w3c; do
+          cp "$lab/run_html.ts" "$lab/replay_waiting.ts"
+          python3 release-tests/scroll-waiting-edit.py "$lab/replay_waiting.ts"
+          shasum -a 256 "$lab/replay_waiting.ts" >> out/inputs.sha256
+          for case_id in bbc wiki; do
             case "$case_id" in
               bbc) file=desktop-bbc-news-20261124.zip; url=https://www.bbc.com/news; size=1280x800 ;;
               wiki) file=desktop-wikipedia-www-20261124.zip; url=https://en.wikipedia.org/wiki/World_Wide_Web; size=1280x800 ;;
-              w3c) file=w3c-home-wide-20261124.zip; url=https://w3.org/; size=1440x735 ;;
             esac
             export REALPAGES_REPLAY="$(find "$PWD/snapshots" -name "$file" -print -quit)"
             test -s "$REALPAGES_REPLAY"
             shasum -a 256 "$REALPAGES_REPLAY" >> out/inputs.sha256
-            for arm in baseline1 candidate1 candidate2 baseline2; do
-              host="$lab/run_html.ts"
-              if [[ $arm == baseline* ]]; then host="$lab/replay_baseline.ts"; fi
+            for arm in baseline1 queued1 waiting1 waiting2 queued2 baseline2; do
+              case "$arm" in
+                baseline*) host="$lab/replay_baseline.ts" ;;
+                queued*) host="$lab/run_html.ts" ;;
+                waiting*) host="$lab/replay_waiting.ts" ;;
+              esac
               deno run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
                 --preload "$lab/realpages/replay.ts" "$host" \
                 --native-engine "$ENGINE" --offscreen --offscreen-size "$size@1" --no-state \
@@ -95,6 +98,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: realpages-scroll-prefetch
+          name: scroll-awaiting-band
           path: out/
           retention-days: 7
