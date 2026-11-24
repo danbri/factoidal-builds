@@ -16,7 +16,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          sparse-checkout: release-tests/gov-button-*
+          sparse-checkout: |
+            release-tests/gov-button-*
+            release-tests/gov-wrap-archive.ts
+            release-tests/gov-wrap-archive-input.py
           sparse-checkout-cone-mode: false
       - uses: denoland/setup-deno@v2
         with:
@@ -32,6 +35,12 @@ jobs:
           run-id: 45430099580
           name: desktop-govuk-snapshot
           path: snapshot
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45493128679
+          name: branch-engine
+          path: baseline
           github-token: ${{ github.token }}
       - name: Get the exact candidate engine
         run: |
@@ -52,28 +61,43 @@ jobs:
           request=trace/requests/frame-1655-2.json
           echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  $snapshot" | sha256sum -c -
           mkdir out
-          sha256sum "$request" "$snapshot" candidate/libweb-render.so > out/inputs.sha256
+          sha256sum "$request" "$snapshot" baseline/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
           python3 release-tests/gov-button-input.py "$snapshot" input
           check=release-tests/gov-button-replay.ts
           deno check --no-config --unstable-ffi "$check"
           export GAP_PREFIXES=168
-          for arm in default content-box; do
+          for arm in baseline default content-box; do
+            engine=candidate
+            if [[ "$arm" == baseline ]]; then engine=baseline; fi
             if [[ "$arm" == content-box ]]; then export GAP_BOX_SIZING=content-box; fi
             deno run --no-config --unstable-ffi --allow-ffi \
               --allow-read=trace/requests,input/input.json --allow-env=GAP_PREFIXES,GAP_BOX_SIZING \
-              "$check" "$PWD/candidate/libweb-render.so" trace/requests input/input.json > "out/$arm.json"
+              "$check" "$PWD/$engine/libweb-render.so" trace/requests input/input.json > "out/$arm.json"
           done
+          python3 release-tests/gov-wrap-archive-input.py "$snapshot" static
+          deno run --no-config --unstable-ffi --allow-ffi --allow-read=static --allow-write=static \
+            release-tests/gov-wrap-archive.ts "$PWD/candidate/libweb-render.so" static > out/static-heading.json
+          mv static/govuk.ppm out/static-heading.ppm
           python3 - <<'PY'
           import json
           from pathlib import Path
 
+          baseline = json.loads(Path("out/baseline.json").read_text())
           natural = json.loads(Path("out/default.json").read_text())
           override = json.loads(Path("out/content-box.json").read_text())
           nav, hero = override["blue"][:2]
           assert hero[0] - nav[1] - 1 == 40, override
           assert any(start == nav[0] and end >= hero[1] for start, end in natural["blue"]), natural
           assert abs(override["headingY"] - natural["headingY"] - 40) < 0.05, (natural, override)
-          assert natural["headingLines"][-1] == "and information", natural
+          assert baseline["blue"] == override["blue"], (baseline, override)
+          assert baseline["headingLines"] == natural["headingLines"], (baseline, natural)
+          static = json.loads(Path("out/static-heading.json").read_text())
+          assert static["resources"] == 2 and len(static["fontStatus"]) == 2
+          assert all("webFont" in font["result"] for font in static["fontStatus"])
+          lines = {}
+          for word in static["heading"]:
+              lines.setdefault(word["y"], []).append(word["text"])
+          assert len(lines) == 3 and list(lines.values())[-1] == ["and", "information"], lines
           assert len(natural["headingLines"]) == 3, natural
           print("Search toggle default closes the 40px gap; author override restores it.")
           PY
