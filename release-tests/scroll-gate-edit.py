@@ -29,4 +29,6 @@ replace_once("      const sentWidth=width,sentHeight=height;", """      trace("n
         scroll, pending: worker?.pending ?? null, deferredChange: pageChanged !== undefined,
       });
       const sentWidth=width,sentHeight=height;""")
+if len(sys.argv) > 2:
+    replace_once('&&!graphBusy()&&worker.pending===0){', '&&!graphBusy()){')
 path.write_text(s)
