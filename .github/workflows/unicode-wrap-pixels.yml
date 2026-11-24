@@ -1,7 +1,7 @@
-name: Unicode wrapping paired reftests
+name: Line-break cache pixel equivalence
 on:
   push:
-    branches: [wip/paired-unicode-wrap]
+    branches: [wip/line-break-cache-pixels]
     paths: [.github/workflows/unicode-wrap-pixels.yml]
 permissions:
   actions: read
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 88a95707bff2fda02199978307325109187a2fae
+          ref: 6bd2cf5a15dd24becf33cc21bfa00bed44f473fd
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -28,36 +28,25 @@ jobs:
             tests/browser-wpt
             formal/lean4/lean-toolchain
           sparse-checkout-cone-mode: false
-      - name: Wait for the two exact native engine builds
-        shell: bash
-        run: |
-          set -euo pipefail
-          for pair in 45075544023:7444aac0e2dbd8536b9a318ea6af6d59507b7d28 45076662461:88a95707bff2fda02199978307325109187a2fae; do
-            run=${pair%%:*}
-            sha=${pair#*:}
-            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
-              grep -Fx "Build libweb-render.so from $sha"
-            until gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" --jq '.artifacts[].name' | grep -qx branch-engine; do
-              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status || true)
-              if [[ $status == completed ]]; then
-                echo "::error::Native build run $run ended without a branch-engine artifact."
-                exit 1
-              fi
-              sleep 30
-            done
-          done
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45075544023
-          name: branch-engine
-          github-token: ${{ github.token }}
-          path: baseline
-      - uses: actions/download-artifact@v4
-        with:
-          run-id: 45076662461
+          run-id: 45419638623
           name: branch-engine
           github-token: ${{ github.token }}
           path: candidate
+      - name: Fetch the exact baseline engine
+        run: |
+          set -euo pipefail
+          base=51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+          baseline_set=foafnaut-linux-x86_64
+          mkdir -p baseline/archive
+          gh release download "build-${base:0:12}-$baseline_set" -R "$GITHUB_REPOSITORY" -p "$baseline_set.tar.gz" -p build-info.json -D baseline/archive
+          jq -e --arg sha "$base" '.source_commit == $sha' baseline/archive/build-info.json >/dev/null
+          expected=$(jq -er --arg name "$baseline_set.tar.gz" '.artifacts[$name].sha256' baseline/archive/build-info.json)
+          echo "$expected  baseline/archive/$baseline_set.tar.gz" | sha256sum -c -
+          tar -xzf "baseline/archive/$baseline_set.tar.gz" -C baseline/archive
+          cp "$(find baseline/archive -name libweb-render.so -print -quit)" baseline/libweb-render.so
+          curl --retry 3 -fsSL "https://raw.githubusercontent.com/danbri/factoidal-core/$base/formal/lean4/lean-toolchain" -o baseline/lean-toolchain
       - id: pins
         run: echo "deno=v$(sed -n 's/^DENO_VERSION=//p' core/labs/demos/foafnaut/toolchain-versions.env)" >> "$GITHUB_OUTPUT"
       - uses: denoland/setup-deno@v2
@@ -140,6 +129,12 @@ jobs:
               print(role, dict(Counter(row["status"] for row in rows.values())))
           def edges(row):
               return [(e["from"], e["to"], e["relation"], e["fuzzy"]) for e in row["edges"]]
+          paths = [{p.name: p for p in Path(f"out/{role}/pictures").glob("*.png")}
+                   for role in ("baseline", "candidate")]
+          assert paths[0] and paths[0].keys() == paths[1].keys()
+          changed = [name for name, p in paths[0].items() if p.read_bytes() != paths[1][name].read_bytes()]
+          print(len(paths[0]), "rendered PNG files;", len(changed), "binary differences")
+          assert not changed, changed[:20]
           before, after = results
           for name in sorted(expected):
               a, b = before[name], after[name]
@@ -150,6 +145,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: unicode-wrap-pixels
+          name: line-break-cache-pixels
           path: out/
           retention-days: 14
