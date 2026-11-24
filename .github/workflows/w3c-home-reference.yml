@@ -11,6 +11,7 @@ env:
   BASELINE: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef
   BRANCH_RUN: '45423050292'
   SET: foafnaut-linux-x86_64
+  WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
   replay:
     runs-on: ubuntu-latest
@@ -40,6 +41,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             labs/demos/foafnaut
+            docs/web/hub/foafnaut
       - uses: actions/download-artifact@v4
         with:
           run-id: '45423050292'
@@ -52,7 +54,7 @@ jobs:
       - name: Set up the matched host and baseline
         run: |
           set -euo pipefail
-          mkdir -p engines/baseline
+          mkdir -p engines/baseline engines/web
           gh release download "build-${BASELINE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/baseline
           jq -e --arg sha "$BASELINE" '.source_commit == $sha' engines/baseline/build-info.json >/dev/null
           expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/baseline/build-info.json)
@@ -61,6 +63,10 @@ jobs:
           base=$(find "$PWD/engines/baseline" -name libweb-render.so -print -quit)
           test -s "$base"
           echo "BASE_ENGINE=$base" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
           tc=$(cat engines/candidate/lean-toolchain)
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           "$HOME/.elan/bin/elan" toolchain install "$tc"
