@@ -1,0 +1,71 @@
+name: Verify disclosure markers on archived W3C Flexbox
+on:
+  push:
+    branches: [wip/w3c-summary-markers]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            third_party/realpages/w3.org/w3c-flexbox-20261115.zip
+            release-tests/w3c-summary-native.ts
+            release-tests/archived-layout-input.py
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45462157992
+          name: branch-engine
+          path: baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45471038180
+          name: branch-engine
+          path: candidate
+          github-token: ${{ github.token }}
+      - name: Compare the archived specification in both disclosure states
+        run: |
+          set -euo pipefail
+          archive=third_party/realpages/w3.org/w3c-flexbox-20261115.zip
+          echo "a01b88268d16a2ab95bdf0a2edf8f56bf5634bf3534fa793d13263166f38d206  $archive" | sha256sum -c -
+          mkdir -p out
+          unzip -p "$archive" reference.png > out/chrome-archive.png
+          sha256sum "$archive" baseline/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
+          script=release-tests/w3c-summary-native.ts
+          deno check --unstable-ffi "$script"
+          for arm in baseline candidate; do
+            python3 release-tests/archived-layout-input.py "$archive" "$arm/input"
+            for mode in closed open; do
+              deno run --unstable-ffi --allow-ffi --allow-read="$arm/input" --allow-write="$arm/input" \
+                "$script" "$PWD/$arm/libweb-render.so" "$arm/input" "$mode" > "out/$arm-$mode.json"
+              mv "$arm/input/$mode.ppm" "out/$arm-$mode.ppm"
+            done
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for mode, glyph in (("closed", ">"), ("open", "v")):
+              base, new = [json.loads(Path(f"out/{arm}-{mode}.json").read_text())["summary"]
+                           for arm in ("baseline", "candidate")]
+              assert base[2]["text"] == new[2]["text"] == "More"
+              assert base[1]["text"] not in (">", "v", "▸", "▾"), base
+              assert new[1]["text"] == glyph and new[1]["y"] == new[2]["y"], new
+              assert new[2]["x"] > base[2]["x"] and new[1]["x"] < new[2]["x"], new
+              print(f"{mode}: glyph {glyph!r}, label x {base[2]['x']:.2f} -> {new[2]['x']:.2f}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: w3c-summary-markers
+          path: out/
+          retention-days: 7
