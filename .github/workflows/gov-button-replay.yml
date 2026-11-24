@@ -1,0 +1,83 @@
+name: Check GOV.UK search toggle geometry in the archived scripted page
+on:
+  push:
+    branches: [wip/gov-button-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE_RUN: "45491640225"
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/gov-button-*
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45490403825
+          name: govuk-hero-gap
+          path: trace
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: snapshot
+          github-token: ${{ github.token }}
+      - name: Get the exact candidate engine
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 150); do
+            if gh run download "$CANDIDATE_RUN" -R "$GITHUB_REPOSITORY" -n branch-engine -D candidate; then break; fi
+            if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" --jq .status)" == completed ]]; then
+              echo "Candidate run ended without an engine artifact" >&2
+              exit 1
+            fi
+            sleep 20
+          done
+          test -s candidate/libweb-render.so
+      - name: Measure continuous blue and the heading position
+        run: |
+          set -euo pipefail
+          snapshot=snapshot/gov.uk/desktop-govuk-20261124.zip
+          request=trace/requests/frame-1655-2.json
+          echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  $snapshot" | sha256sum -c -
+          mkdir out
+          sha256sum "$request" "$snapshot" candidate/libweb-render.so > out/inputs.sha256
+          python3 release-tests/gov-button-input.py "$snapshot" input
+          check=release-tests/gov-button-replay.ts
+          deno check --no-config --unstable-ffi "$check"
+          export GAP_PREFIXES=168
+          for arm in default content-box; do
+            if [[ "$arm" == content-box ]]; then export GAP_BOX_SIZING=content-box; fi
+            deno run --no-config --unstable-ffi --allow-ffi=candidate/libweb-render.so \
+              --allow-read=trace/requests,input/input.json --allow-env=GAP_PREFIXES,GAP_BOX_SIZING \
+              "$check" candidate/libweb-render.so trace/requests input/input.json > "out/$arm.json"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          natural = json.loads(Path("out/default.json").read_text())
+          override = json.loads(Path("out/content-box.json").read_text())
+          nav, hero = override["blue"][:2]
+          assert hero[0] - nav[1] - 1 == 40, override
+          assert any(start == nav[0] and end >= hero[1] for start, end in natural["blue"]), natural
+          assert abs(override["headingY"] - natural["headingY"] - 40) < 0.05, (natural, override)
+          print("Search toggle default closes the 40px gap; author override restores it.")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gov-button-replay
+          path: out/
+          retention-days: 7
