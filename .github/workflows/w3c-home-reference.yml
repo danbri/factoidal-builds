@@ -7,9 +7,9 @@ permissions:
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CANDIDATE: c59830ff11a7dca23eca5534dce13b628b66b0d6
+  CANDIDATE: 7e81d60454961256eea458720153869f599278ce
   BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
-  BRANCH_RUN: '45408862707'
+  BRANCH_RUN: '45414537051'
   SET: foafnaut-linux-x86_64
   WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: c59830ff11a7dca23eca5534dce13b628b66b0d6
+          ref: 7e81d60454961256eea458720153869f599278ce
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -46,7 +46,7 @@ jobs:
             third_party/fonts
       - uses: actions/download-artifact@v4
         with:
-          run-id: '45408862707'
+          run-id: '45414537051'
           name: branch-engine
           github-token: ${{ github.token }}
           path: engines/candidate

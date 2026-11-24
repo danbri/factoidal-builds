@@ -18,7 +18,8 @@ const geometry = `<script>
 const box = id => {
   const el = document.getElementById(id);
   const b = el.getBoundingClientRect();
-  return [id,b.x,b.y,b.width,b.height,getComputedStyle(el).width];
+  const css = getComputedStyle(el);
+  return [id,b.x,b.y,b.width,b.height,css.width,css.paddingLeft,css.paddingTop,css.marginLeft];
 };
 console.log(JSON.stringify(Array.from(document.querySelectorAll("[id]"), el => box(el.id))));
 </script>`;
@@ -54,7 +55,8 @@ for (const [width, height] of [[1440,735], [480,500], [480,735]]) {
     const row = actual.find((item: unknown[]) => item[0] === id);
     const expected = reference.find((item: unknown[]) => item[0] === id);
     if (!row || !expected || [1,2,3,4].some(i =>
-      !Number.isFinite(row[i]) || !Number.isFinite(expected[i]) || Math.abs(row[i]-expected[i]) > 0.05)) {
+      !Number.isFinite(row[i]) || !Number.isFinite(expected[i]) || Math.abs(row[i]-expected[i]) > 0.05) ||
+      [5,6,7,8].some(i => row[i] !== expected[i])) {
       console.error(id, {width, height, row, expected});
       Deno.exitCode = 1;
     }
