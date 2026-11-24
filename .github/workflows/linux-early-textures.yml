@@ -1,0 +1,122 @@
+name: Compare Linux cold first-frame texture allocation
+on:
+  push:
+    branches: [wip/linux-browser-early-textures]
+permissions:
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: c8fc9549dd5f5635f5a595e24191ceb2883946a6
+  BROWSER_SET: foafnaut-browser-linux-x86_64
+  WEB_SET: foafnaut-web
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/cold-graphics-layer-compositor.ts
+            release-tests/early-texture-layer-compositor.ts
+            release-tests/cold-graphics-session.ts
+            release-tests/cold-graphics-check.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Prepare the exact released software-Vulkan browser
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          mkdir -p browser web out
+          for target in browser web; do
+            if [[ "$target" == browser ]]; then set="$BROWSER_SET"; else set="$WEB_SET"; fi
+            archive="$set.tar.gz"
+            gh release download "build-${CORE:0:12}-$set" -R "$GITHUB_REPOSITORY" -D "$target" -p "$archive" -p build-info.json
+            hash=$(jq -er --arg sha "$CORE" --arg set "$set" --arg name "$archive" \
+              'select(.source_commit==$sha and .set==$set) | .artifacts[$name].sha256' "$target/build-info.json")
+            echo "$hash  $target/$archive" | sha256sum -c -
+            echo "$hash  $target/$archive" >> out/inputs.sha256
+          done
+          tar -xzf "browser/$BROWSER_SET.tar.gz" -C browser
+          package="$PWD/browser/foafnaut-linux-x86_64"
+          tar -xzf "web/$WEB_SET.tar.gz" -C web docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          cp "$package/libnative-window.so" "$lab/.build/native/"
+          cp "$lab/layer_compositor.ts" out/layer-compositor.original.ts
+          diff -u builds/release-tests/cold-graphics-layer-compositor.ts builds/release-tests/early-texture-layer-compositor.ts > out/allocation.diff || test "$?" -eq 1
+          cp "$lab/native_html_session.ts" out/native_html_session.original.ts
+          cp builds/release-tests/cold-graphics-session.ts "$lab/native_html_session.ts"
+          diff -u out/native_html_session.original.ts "$lab/native_html_session.ts" > out/session.diff || test "$?" -eq 1
+          cp builds/release-tests/cold-graphics-check.py out/check-linux-browser.py
+          driver=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -n "$driver"
+          echo "VK_DRIVER_FILES=$driver" >> "$GITHUB_ENV"
+          echo "DIAG_LAB=$lab" >> "$GITHUB_ENV"
+          echo "DIAG_DENO=$(command -v deno)" >> "$GITHUB_ENV"
+          echo "PACKAGE=$package" >> "$GITHUB_ENV"
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/driver-versions.txt
+          cat > "$package/foafnaut-diagnostic" <<'SH'
+          #!/usr/bin/env bash
+          exec "$DIAG_DENO" run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A "$DIAG_LAB/run_html.ts" --wasm-engine "$@"
+          SH
+          chmod +x "$package/foafnaut-diagnostic"
+      - name: Compare alternating cold launches with isolated caches
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SDL_VIDEODRIVER=x11 DENO_WEBGPU_BACKEND=vulkan
+          unset MESA_SHADER_CACHE_DISABLE MESA_SHADER_CACHE_DIR
+          rc=0
+          export FOAFNAUT_DIAGNOSTIC_FIRST_PAINT_ONLY=1
+          for arm in a1 b1 b2 a2; do
+            binary="$PACKAGE/foafnaut-diagnostic"
+            host=builds/release-tests/cold-graphics-layer-compositor.ts
+            if [[ "$arm" == b* ]]; then host=builds/release-tests/early-texture-layer-compositor.ts; fi
+            cp "$host" "$DIAG_LAB/layer_compositor.ts"
+            export XDG_CACHE_HOME="$(mktemp -d)"
+            export XDG_RUNTIME_DIR="$(mktemp -d)"
+            xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 \
+              "$PWD/out/check-linux-browser.py" "$binary" "$PWD/out/$arm" || rc=1
+            du -ak "$XDG_CACHE_HOME" | sort -n | tail -30 > "out/$arm/cache-kib.txt"
+            jq -Rrc 'fromjson? | select(((.type // "") | startswith("native-html-cold-"))
+              or (.type == "native-html-frame" and .frame == 1))' "out/$arm/browser.log" \
+              | tee "out/$arm/first-frame.jsonl" >> "$GITHUB_STEP_SUMMARY"
+          done
+          test "$rc" -eq 0
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import hashlib, json
+          arms = ["a1", "b1", "b2", "a2"]
+          hashes = []
+          for arm in arms:
+              root = Path("out") / arm
+              rec = json.loads((root / "window-smoke.json").read_text())
+              first = rec["firstFrame"]
+              with Image.open(root / "first.png") as im:
+                  hashes.append(hashlib.sha256(im.crop((0, 65, im.width, im.height)).tobytes()).hexdigest())
+              print(arm, rec["pages"][0]["sinceLaunchMs"], first["sessionMs"], hashes[-1])
+          assert len(set(hashes)) == 1, hashes
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-early-texture-comparison
+          path: out/
+          retention-days: 7
