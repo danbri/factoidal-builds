@@ -1,0 +1,39 @@
+name: Capture the BBC News homepage for replay
+on:
+  push:
+    branches: [wip/bbc-home-capture]
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: macos-15
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 472993e362b585c5724f8de9d13115e8383f9f80
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Capture public BBC News and check the document response
+        run: |
+          set -euo pipefail
+          jq '.pages |= map(select(.id == "desktop-bbc-news") | .attribution = "BBC News, https://www.bbc.co.uk/news")' labs/demos/foafnaut/realpages/pages.json > "$RUNNER_TEMP/pages.json"
+          jq -e '.pages|length == 1' "$RUNNER_TEMP/pages.json"
+          chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          "$chrome" --version
+          deno run -A labs/demos/foafnaut/realpages/snapshot.ts --chrome "$chrome" --pages "$RUNNER_TEMP/pages.json" --out "$RUNNER_TEMP/snapshots"
+          zip=$(find "$RUNNER_TEMP/snapshots" -name 'desktop-bbc-news-*.zip' -print | head -1)
+          test -s "$zip"
+          unzip -p "$zip" manifest.json | jq -e '.id == "desktop-bbc-news" and .bytes > 100000 and any(.entries[]; (.url|test("^https://www\\.bbc\\.(co\\.uk|com)/news/?$")) and .status == 200 and .bytes > 20000)'
+          unzip -p "$zip" reference.png > "$RUNNER_TEMP/bbc-reference.png"
+          test -s "$RUNNER_TEMP/bbc-reference.png"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bbc-home-snapshot
+          path: ${{ runner.temp }}/snapshots/
+          retention-days: 7
+          if-no-files-found: error
