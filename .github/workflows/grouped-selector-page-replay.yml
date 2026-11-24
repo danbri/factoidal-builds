@@ -1,0 +1,112 @@
+name: Compare grouped-selector layout on archived everyday pages
+on:
+  push:
+    branches: [wip/grouped-selector-page-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE_RUN: "45488855431"
+  CANDIDATE_RUN: "45488782395"
+  CORE: 37f89212e585af745a8b504884a3d97e532c6cd4
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/gov-wrap-archive-input.py
+            release-tests/grouped-selector-render-metrics.ts
+            third_party/realpages/w3.org/w3c-flexbox-20261115.zip
+            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: third_party/fonts/noto-sans/NotoSans-Regular.ttf
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: captures
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: captures
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Fetch the exact native engine builds
+        run: |
+          set -euo pipefail
+          for row in "$BASELINE_RUN:a" "$CANDIDATE_RUN:b"; do
+            run=${row%:*}
+            arm=${row#*:}
+            for i in $(seq 1 130); do
+              if gh run download "$run" -R "$GITHUB_REPOSITORY" -n branch-engine -D "$arm"; then break; fi
+              if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status)" == completed ]]; then
+                echo "Run $run ended without its exact engine" >&2
+                exit 1
+              fi
+              sleep 25
+            done
+            test -s "$arm/libweb-render.so"
+          done
+      - name: Compare fresh layouts in an alternating run
+        run: |
+          set -euo pipefail
+          mkdir -p out inputs
+          bbc=captures/bbc.com/desktop-bbc-news-20261124.zip
+          gov=captures/gov.uk/desktop-govuk-20261124.zip
+          w3c=builds/third_party/realpages/w3.org/w3c-flexbox-20261115.zip
+          wiki=builds/third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          font="$PWD/core/third_party/fonts/noto-sans/NotoSans-Regular.ttf"
+          echo "2d1f97f2756462b2c4c4c1afb0b1cde66474943d579dcf959b1d57401fcb2ffb  $bbc" | sha256sum -c -
+          echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  $gov" | sha256sum -c -
+          echo "a01b88268d16a2ab95bdf0a2edf8f56bf5634bf3534fa793d13263166f38d206  $w3c" | sha256sum -c -
+          sha256sum "$bbc" "$gov" "$w3c" "$wiki" "$font" {a,b}/libweb-render.so > out/input-sha256.txt
+          script=builds/release-tests/grouped-selector-render-metrics.ts
+          deno check --no-config --unstable-ffi "$script"
+          for sample in "bbc:$bbc" "govuk:$gov" "w3c:$w3c" "wiki:$wiki"; do
+            page=${sample%%:*}
+            archive=${sample#*:}
+            python3 builds/release-tests/gov-wrap-archive-input.py "$archive" "inputs/$page"
+            for pass in a1 b1 b2 a2; do
+              deno run --no-config --unstable-ffi --allow-ffi --allow-read="inputs/$page,$font" \
+                "$script" "$PWD/${pass:0:1}/libweb-render.so" "inputs/$page" "$font" > "out/$page-$pass.jsonl"
+            done
+          done
+          python3 - <<'PY' | tee out/summary.json
+          import json
+          from pathlib import Path
+          from statistics import median
+
+          results = {}
+          for page in ("bbc", "govuk", "w3c", "wiki"):
+              read = lambda arm: list(map(json.loads, Path(f"out/{page}-{arm}.jsonl").read_text().splitlines()))
+              arms = {arm: read(arm) for arm in ("a1", "b1", "b2", "a2")}
+              for key in ("hash", "snapshot", "resources", "misses", "font", "webFonts", "refusedFonts"):
+                  expected = [row[key] for row in arms["a1"]]
+                  assert all([row[key] for row in rows] == expected for rows in arms.values()), (page, key)
+              results[page] = {arm: round(median(row["ms"] for row in rows if not row["warmup"]),1)
+                               for arm,rows in arms.items()}
+          print(json.dumps(results, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grouped-selector-page-replay
+          path: out/
+          retention-days: 7
