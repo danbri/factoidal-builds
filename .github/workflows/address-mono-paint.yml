@@ -1,0 +1,62 @@
+name: Compare native address bar glyphs with Liberation Mono
+on:
+  push:
+    branches: [wip/address-mono-native-check]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  paint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN: '45467308876'
+      CORE: cbe56c453598f1a5d0d4ea5f27c2b1e22aeca3f3
+    steps:
+      - name: Wait for the exact native library
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$RUN"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CORE"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" = completed ]]; then exit 1; fi
+            sleep 20
+          done
+          gh run download "$RUN" -R "$GITHUB_REPOSITORY" -n branch-engine -D engine
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            third_party/fonts/liberation-mono
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Load the host font and compare its painted address with the bitmap
+        run: |
+          set -euo pipefail
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          tc=$(cat engine/lean-toolchain)
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
+          mkdir -p out
+          deno run --allow-ffi --allow-read --allow-write builds/core-diagnostics/address-mono-paint.ts \
+            "$PWD/engine/libweb-render.so" core/third_party/fonts/liberation-mono/LiberationMono-Regular.ttf out \
+            | tee out/receipt.json
+          sha256sum engine/libweb-render.so core/third_party/fonts/liberation-mono/LiberationMono-Regular.ttf > out/inputs.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: address-mono-paint
+          path: out/
+          retention-days: 7
