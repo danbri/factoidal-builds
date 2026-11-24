@@ -1,0 +1,75 @@
+name: Verify the VP8L entropy plane against libwebp
+on:
+  push:
+    branches: [wip/vp8l-plane-differential]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: d36c9abad7d43d1b012e7fd6c5d4d1ab20efc3dd
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            formal/lean4/lean-toolchain
+            formal/lean4/L4Factoidal/Codec/Inflate.lean
+            formal/lean4/L4Factoidal/Codec/Crc32.lean
+            formal/lean4/L4Factoidal/Codec/WebP.lean
+            formal/lean4/L4Factoidal/Codec/VP8LPrefix.lean
+            formal/lean4/L4Factoidal/Codec/VP8LPlane.lean
+          sparse-checkout-cone-mode: false
+      - name: Install the pinned Lean and reference decoder
+        run: |
+          set -euo pipefail
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat core/formal/lean4/lean-toolchain)"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends webp
+      - name: Compile exact Lean sources and compare complete fixture pixels
+        run: |
+          set -euo pipefail
+          temp="$RUNNER_TEMP/vp8l"
+          mkdir -p out "$temp/lib/L4Factoidal/Codec"
+          export ELAN_TOOLCHAIN="$(cat core/formal/lean4/lean-toolchain)"
+          export LEAN_PATH="$temp/lib"
+          lean --version | tee out/lean-version.txt
+          for name in Crc32 Inflate WebP VP8LPrefix VP8LPlane; do
+            lean -o "$LEAN_PATH/L4Factoidal/Codec/$name.olean" "core/formal/lean4/L4Factoidal/Codec/$name.lean" | tee -a out/lean.log
+          done
+          ! grep -Fq sorryAx out/lean.log
+          python3 core-diagnostics/vp8l-plane-fixtures.py "$temp/fixtures" > out/expected.json
+          for f in "$temp/fixtures"/*.webp; do dwebp "$f" -pam -o "$f.pam"; done
+          lean --run core-diagnostics/VP8LPlaneProbe.lean "$temp/fixtures"/*.webp | tee out/actual.tsv
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          expected = json.loads(Path("out/expected.json").read_text())
+          seen = set()
+          for line in Path("out/actual.tsv").read_text().splitlines():
+              path, raw = line.split(chr(9))
+              name = Path(path).stem
+              pixels = list(map(int, raw.split(",")))
+              head, reference = Path(path + ".pam").read_bytes().split(b"ENDHDR" + bytes([10]), 1)
+              assert b"DEPTH 4" in head and pixels == list(reference) == expected[name], name
+              seen.add(name)
+          assert seen == set(expected)
+          print(f"Identical RGBA for all {len(seen)} fixtures")
+          PYTHON
+          if lean --run core-diagnostics/VP8LPlaneProbe.lean "$temp/fixtures/invalid.backref" > out/rejection.log 2>&1; then exit 1; fi
+          grep -F 'VP8L backward reference outside plane' out/rejection.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vp8l-plane-differential
+          path: out
+          retention-days: 7
