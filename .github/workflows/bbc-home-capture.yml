@@ -25,7 +25,7 @@ jobs:
       - name: Capture public BBC News and check the document response
         run: |
           set -euo pipefail
-          jq '.pages |= map(select(.id == "desktop-bbc-news") | .attribution = "BBC News, https://www.bbc.co.uk/news")' labs/demos/foafnaut/realpages/pages.json > "$RUNNER_TEMP/pages.json"
+          jq '.pages |= map(select(.id == "desktop-bbc-news") | .url = "https://www.bbc.com/news" | .attribution = "BBC News, https://www.bbc.com/news")' labs/demos/foafnaut/realpages/pages.json > "$RUNNER_TEMP/pages.json"
           jq -e '.pages|length == 1' "$RUNNER_TEMP/pages.json"
           chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
           "$chrome" --version
