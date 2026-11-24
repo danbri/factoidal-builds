@@ -1,0 +1,104 @@
+name: Compare desktop startup with a single initial compile
+on:
+  push:
+    branches: [wip/desktop-first-compile-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: 7af027dbe528e7329c5643502c495c8f7293541a
+  CANDIDATE: f8cf8cb5aa51bafd006bbdb83dac27c57bbc9e15
+  ENGINE_COMMIT: 5f518d1282b9bb3d6561a71d06f4f885cbbbd2dc
+  ENGINE_RUN: '45459623652'
+  SET: foafnaut-engine-darwin-arm64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  replay:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          fetch-depth: 2
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Pin native engine, window, sources and captures
+        run: |
+          set -euo pipefail
+          mkdir -p engines/native engines/web out host-source
+          gh run download "$ENGINE_RUN" -R "$GITHUB_REPOSITORY" -n "$SET" -D engines/native
+          jq -e --arg sha "$ENGINE_COMMIT" '.source_commit == $sha' engines/native/build-info.json >/dev/null
+          hash=$(jq -er --arg name "$SET.tar.gz" '.artifacts[$name].sha256' engines/native/build-info.json)
+          echo "$hash  engines/native/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "engines/native/$SET.tar.gz" -C engines/native
+          engine=$(find "$PWD/engines/native" -name libweb-render.dylib -print -quit)
+          window=$(find "$PWD/engines/native" -name libnative-window.dylib -print -quit)
+          test -s "$engine"
+          echo "ENGINE=$engine" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
+          test "$(git -C core rev-parse HEAD^)" = "$BASELINE"
+          git -C core show "$BASELINE:labs/demos/foafnaut/run_html.ts" > host-source/a.ts
+          cp "$lab/run_html.ts" host-source/b.ts
+          snapshot="snapshots/bbc.com/desktop-bbc-news-20261124.zip"
+          echo "2d1f97f2756462b2c4c4c1afb0b1cde66474943d579dcf959b1d57401fcb2ffb  $snapshot" | shasum -a 256 -c -
+          govuk=$(find snapshots -name 'desktop-govuk-*.zip' -print -quit)
+          test -s "$govuk"
+          shasum -a 256 "$snapshot" "$govuk" "$engine" host-source/{a,b}.ts >> out/inputs.sha256
+          jq '.pages |= map(select(.id == "desktop-govuk" or .id == "desktop-bbc-news" or .id == "desktop-bbc-news-noscripts") | if (.id | startswith("desktop-bbc-")) then .url = "https://www.bbc.com/news" else . end)' \
+            "$lab/realpages/pages.json" > out/pages.json
+      - name: Check the browser host and CPU-only launch
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          deno check --no-config --unstable-ffi --unstable-webgpu "$lab/run_html.ts" 2>&1 | tee out/typecheck.log
+          printf '<!doctype html><title>First frame</title><p>First frame</p>\n' > out/local-fixture.html
+          deno run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
+            "$lab/run_html.ts" --native-engine "$ENGINE" --no-state --check-engine \
+            --html "$PWD/out/local-fixture.html" > out/cpu-only.log 2>&1
+          grep -F 'Native HTML CPU engine check complete' out/cpu-only.log
+      - name: Compare desktop first paint and screenshots
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          for pass in a1 b1 b2 a2; do
+            slot="${pass:0:1}"
+            cp "host-source/$slot.ts" "$lab/run_html.ts"
+            deno run -A "$lab/realpages/survey.ts" --platform macos --host "$lab" --engine "$ENGINE" \
+              --pages "$PWD/out/pages.json" --snapshots "$PWD/snapshots" --no-chrome --watch 6 \
+              --timeout 125 --retries 0 --out "$PWD/out/$pass" --release "$pass"
+            jq -e '.pages | length == 3 and all(.first_frame_s != null and .crashed == false)' "out/$pass/summary.json"
+            jq -c --arg pass "$pass" '.pages[] | {pass:$pass, id, first_frame_s, first_layout_ms, scroll_latency_p95_ms, layout_similarity, replay}' \
+              "out/$pass/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          find out -name '*.png' -exec shasum -a 256 {} + > out/shot-sha256.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-first-compile-comparison
+          path: out/
+          retention-days: 7
