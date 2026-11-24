@@ -1,0 +1,88 @@
+name: Verify nested inline-blocks on archived BBC News
+on:
+  push:
+    branches: [wip/bbc-nested-inline-replay]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/nested-inline-block-geometry.ts
+            release-tests/bbc-navigation-native.ts
+            release-tests/archived-bbc-layout-input.py
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45464863630
+          name: branch-engine
+          path: baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45473431655
+          name: branch-engine
+          path: candidate
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: snapshot
+          github-token: ${{ github.token }}
+      - name: Compare actual page pixels and measure the reduction
+        run: |
+          set -euo pipefail
+          file=snapshot/bbc.com/desktop-bbc-news-20261124.zip
+          mkdir -p out
+          echo "2d1f97f2756462b2c4c4c1afb0b1cde66474943d579dcf959b1d57401fcb2ffb  $file" | sha256sum -c -
+          sha256sum "$file" baseline/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
+          unzip -p "$file" reference.png > out/chrome-archive.png
+          geometry=release-tests/nested-inline-block-geometry.ts
+          archive=release-tests/bbc-navigation-native.ts
+          deno check --no-config --unstable-ffi "$geometry" "$archive"
+          for arm in baseline candidate; do
+            deno run --no-config --allow-ffi --allow-write=out --unstable-ffi "$geometry" "$PWD/$arm/libweb-render.so" > "out/$arm-reduced.jsonl"
+            python3 release-tests/archived-bbc-layout-input.py "$file" "$arm/input"
+            deno run --no-config --allow-ffi --allow-read="$arm/input" --allow-write="$arm/input" --unstable-ffi \
+              "$archive" "$PWD/$arm/libweb-render.so" "$arm/input" > "out/$arm-archive.json"
+            mv "$arm/input/bbc.ppm" "out/$arm-archive.ppm"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          def boxes(arm):
+              return {row["name"]: {box[0]: box[1:] for box in row["boxes"][0]}
+                      for row in map(json.loads, Path(f"out/{arm}-reduced.jsonl").read_text().splitlines())}
+
+          def padding_delta(rows, with_padding, without):
+              return rows[with_padding]["item1"][2] - rows[without]["item1"][2]
+
+          a, b = boxes("baseline"), boxes("candidate")
+          assert padding_delta(a, "archived", "no-padding") == 0
+          assert a["archived"]["link1"][2] == 0
+          assert abs(padding_delta(b, "archived", "no-padding") - 16) < 0.01
+          assert b["archived"]["link1"][2] > 16
+          assert b["archived"]["item1"][1] == b["archived"]["item2"][1]
+          assert all(rows["outer-block"] == a["outer-block"] for rows in (a, b))
+          for arm in ("baseline", "candidate"):
+              archive = json.loads(Path(f"out/{arm}-archive.json").read_text())
+              assert archive["glyphs"] and archive["links"], archive
+              print(arm, len(archive["links"]), archive["glyphs"])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-nested-inline-replay
+          path: out/
+          retention-days: 7
