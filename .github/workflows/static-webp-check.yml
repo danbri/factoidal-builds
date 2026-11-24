@@ -1,0 +1,214 @@
+name: Verify both static WebP loading paths
+on:
+  push:
+    branches: [wip/static-webp-browser-check]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 8992c2eb3d7e4e6770ccb8deb83b60fdb04ebabe
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            formal/lean4/L4Factoidal/Codec/WebP.lean
+            formal/lean4/L4Factoidal/Codec/VP8Tables.lean
+            formal/lean4/L4Factoidal/Codec/VP8Control.lean
+            formal/lean4/L4Factoidal/Codec/VP8Transform.lean
+            formal/lean4/L4Factoidal/Codec/VP8Intra.lean
+            formal/lean4/L4Factoidal/Codec/VP8Filter.lean
+            formal/lean4/L4Factoidal/Codec/VP8Color.lean
+            formal/lean4/L4Factoidal/Codec/Crc32.lean
+            formal/lean4/L4Factoidal/Codec/Inflate.lean
+            formal/lean4/L4Factoidal/Codec/VP8LPrefix.lean
+            formal/lean4/L4Factoidal/Codec/VP8LPlane.lean
+            formal/lean4/L4Factoidal/Codec/VP8LDecode.lean
+            formal/lean4/L4Factoidal/Codec/VP8Alpha.lean
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: capture
+          github-token: ${{ github.token }}
+      - name: Install the pinned Lean toolchain
+        run: |
+          set -euo pipefail
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat core/formal/lean4/lean-toolchain)"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Install the reference WebP command
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends webp
+      - name: Check theorems and re-read real WebP headers
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/out"
+          tmp="$RUNNER_TEMP/webp-check"
+          mkdir -p "$out" "$tmp/lib/L4Factoidal/Codec" "$tmp/photos"
+          lean --version | tee "$out/lean-version.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/WebP.olean" L4Factoidal/Codec/WebP.lean | tee "$out/lean.txt"
+          export LEAN_PATH="$tmp/lib"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Tables.olean" L4Factoidal/Codec/VP8Tables.lean | tee -a "$out/lean.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Control.olean" L4Factoidal/Codec/VP8Control.lean | tee -a "$out/lean.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Transform.olean" L4Factoidal/Codec/VP8Transform.lean | tee -a "$out/lean.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Intra.olean" L4Factoidal/Codec/VP8Intra.lean | tee -a "$out/lean.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Filter.olean" L4Factoidal/Codec/VP8Filter.lean | tee -a "$out/lean.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Color.olean" L4Factoidal/Codec/VP8Color.lean | tee -a "$out/lean.txt"
+          for module in Crc32 Inflate VP8LPrefix VP8LPlane VP8LDecode VP8Alpha; do
+            lean -o "$tmp/lib/L4Factoidal/Codec/$module.olean" "L4Factoidal/Codec/$module.lean" | tee -a "$out/lean.txt"
+          done
+          if grep -q sorryAx "$out/lean.txt"; then exit 1; fi
+          cp "$GITHUB_WORKSPACE/core-diagnostics/WebPProbe.lean" "$tmp/WebPProbe.lean"
+          snap=$(find "$GITHUB_WORKSPACE/capture" -name 'desktop-bbc-news-*.zip' -print -quit)
+          sha256sum "$snap" > "$out/capture.sha256"
+          python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" extract "$snap" "$tmp/photos" > "$out/expected.json"
+          LEAN_PATH="$tmp/lib" lean --run "$tmp/WebPProbe.lean" "$tmp/photos"/*.webp | tee "$out/actual.tsv"
+          python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" compare "$out/expected.json" "$out/actual.tsv"
+      - name: Compare all BBC controls and a four-partition libvpx frame
+        run: |
+          set -euo pipefail
+          temp="$RUNNER_TEMP/webp-check"
+          command -v ffmpeg >/dev/null || sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -v error -f lavfi -i 'testsrc2=size=64x64:rate=1' -frames:v 1 -pix_fmt yuv420p \
+            -c:v libvpx -slices 4 -f ivf -y "$temp/multiparts.ivf"
+          python3 - "$temp" <<'PYTHON'
+          from pathlib import Path
+          import struct, sys
+          scratch=Path(sys.argv[1])
+          ivf=(scratch/"multiparts.ivf").read_bytes()
+          assert ivf.startswith(b"DKIF") and ivf[8:12]==b"VP80"
+          size=int.from_bytes(ivf[32:36],"little")
+          frame=ivf[44:44+size]
+          assert len(frame)==size
+          riff=b"WEBPVP8 "+struct.pack("<I",size)+frame+bytes(size%2)
+          good=b"RIFF"+struct.pack("<I",len(riff))+riff
+          (scratch/"photos"/"multiparts.webp").write_bytes(good)
+          table=20+10+(int.from_bytes(frame[:3],"little")>>5)
+          bad=bytearray(good)
+          bad[table:table+3]=bytes([255,255,255])
+          (scratch/"bad.webp").write_bytes(bad)
+          PYTHON
+          webpinfo -bitstream_info "$temp/photos/multiparts.webp" | grep -E 'Total partitions: *4'
+          export ELAN_TOOLCHAIN="$(cat core/formal/lean4/lean-toolchain)"
+          export LEAN_PATH="$temp/lib"
+          lean --run core-diagnostics/VP8ControlProbe.lean "$temp/photos"/*.webp | tee out/vp8-controls.jsonl
+          python3 core-diagnostics/compare-vp8-control.py out/vp8-controls.jsonl
+          if lean --run core-diagnostics/VP8ControlProbe.lean "$temp/bad.webp" > out/rejected.log 2>&1; then exit 1; fi
+          grep -F "VP8 partition outside payload" out/rejected.log
+      - name: Compare every RGBA byte with libwebp
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp="$RUNNER_TEMP/webp-check"
+          export ELAN_TOOLCHAIN="$(cat core/formal/lean4/lean-toolchain)"
+          export LEAN_PATH="$temp/lib"
+          ffmpeg -v error -f lavfi -i 'color=black:size=64x64:rate=1' -frames:v 1 -pix_fmt yuv420p \
+            -c:v libvpx -slices 4 -f ivf -y "$temp/flat.ivf"
+          python3 - "$temp" <<'PYTHON'
+          from pathlib import Path
+          from struct import pack
+          import sys
+          temp = Path(sys.argv[1])
+          def webp(frame):
+              body = b"WEBPVP8 " + pack("<I", len(frame)) + frame + bytes(len(frame) % 2)
+              return b"RIFF" + pack("<I", len(body)) + body
+          ivf = (temp / "flat.ivf").read_bytes()
+          size = int.from_bytes(ivf[32:36], "little")
+          (temp / "flat.webp").write_bytes(webp(ivf[44:44+size]))
+          width, height = 37, 29
+          data = bytearray()
+          for y in range(height):
+              for x in range(width):
+                  data += bytes(((17*x+29*y)%256, (x*y*3)%256, (x*11+y*3)%256))
+          (temp / "odd.ppm").write_bytes(f"P6\n{width} {height}\n255\n".encode() + data)
+          PYTHON
+          cwebp -quiet -q 82 "$temp/odd.ppm" -o "$temp/odd.webp"
+          python3 core-diagnostics/synthetic-filter.py "$temp"
+          cwebp -quiet -q 51 -f 84 -sharpness 5 -nostrong "$temp/soft.ppm" -o "$temp/simple.webp"
+          cwebp -quiet -q 51 -f 84 -sharpness 5 -strong "$temp/soft.ppm" -o "$temp/normal.webp"
+          cwebp -quiet -q 51 -f 0 "$temp/soft.ppm" -o "$temp/disabled.webp"
+          python3 core-diagnostics/alpha-fixtures.py "$temp/alpha"
+          cp "$temp/alpha/alpha-expected.raw" "$temp/alpha-expected.raw"
+          python3 core-diagnostics/compare-vp8-static.py core-diagnostics/VP8StaticProbe.lean \
+            "$temp" "$temp/photos/"*.webp "$temp/flat.webp" "$temp/odd.webp" \
+             "$temp/simple.webp" "$temp/normal.webp" "$temp/disabled.webp" \
+            "$temp/alpha"/alpha-compressed-*.webp "$temp/alpha"/alpha-raw-*.webp | tee out/rgba.txt
+          if lean --run core-diagnostics/VP8StaticProbe.lean "$temp/alpha/invalid-alpha.webp" "$temp/bad.rgba" > out/rejected-alpha.log 2>&1; then exit 1; fi
+          grep -F 'invalid WebP alpha compression method' out/rejected-alpha.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-webp-codec-differential
+          path: out/
+          retention-days: 7
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CORE: 8992c2eb3d7e4e6770ccb8deb83b60fdb04ebabe
+      BUILD: '45455126946'
+    steps:
+      - name: Wait for the exact native browser library
+        run: |
+          set -euo pipefail
+          run="repos/$GITHUB_REPOSITORY/actions/runs/$BUILD"
+          gh api "$run/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CORE"
+          until gh api "$run/artifacts" --jq '.artifacts[].name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$run" --jq '.status')" = completed ]]; then
+              echo "::error::Exact candidate build did not produce an engine"
+              exit 1
+            fi
+            sleep 30
+          done
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45455126946'
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Paint direct HTML, SVG and CSS resources and prepare a tab icon
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          tc=$(cat engine/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends webp
+          fixture="$RUNNER_TEMP/alpha.webp"
+          printf %s '524946465a00000057454250565038580a00000010000000010000010000414c504805000000007800b4ff00565038202e000000d001009d012a0200020002003425a00274ba01f80003b000feee0a67fe4172c2eb91affdb43fb071ec1c7ebc0000' | xxd -r -p > "$fixture"
+          dwebp -quiet "$fixture" -o "$RUNNER_TEMP/pixel.png"
+          sha256sum engine/libweb-render.so "$fixture" "$RUNNER_TEMP/pixel.png" > out/inputs.sha256
+          deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/vp8-direct-image.ts \
+            "$PWD/engine/libweb-render.so" "$fixture" "$RUNNER_TEMP/pixel.png" | tee out/native.ndjson
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-webp-native-paint
+          path: out
+          retention-days: 7
