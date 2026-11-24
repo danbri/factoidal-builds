@@ -1,0 +1,87 @@
+name: Desktop web font load overlap
+on:
+  push:
+    branches: [wip/desktop-font-overlap-survey]
+    paths: [.github/workflows/desktop-font-overlap-survey.yml]
+permissions:
+  contents: read
+jobs:
+  paired:
+    runs-on: macos-15
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: build-cfc667991a84-foafnaut-engine-darwin-arm64
+      WEB: build-4618bea0c1ac-foafnaut-web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: cfc667991a84ebf24699b4f4c91306fb1c1e9c35
+          path: host
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: dd7a5b5a72b4f3fac6f4e2fe94f40ae50ccd6f10
+          path: tools
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the released desktop engine
+        run: |
+          set -euo pipefail
+          rel="$RUNNER_TEMP/rel"
+          mkdir -p "$rel/eng" "$rel/web"
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p foafnaut-engine-darwin-arm64.tar.gz -D "$rel"
+          tar -xzf "$rel/foafnaut-engine-darwin-arm64.tar.gz" -C "$rel/eng"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D "$rel"
+          tar -xzf "$rel/foafnaut-web.tar.gz" -C "$rel/web" docs/web/hub/html-webgpu/runtime
+          engine=$(find "$rel/eng" -name libweb-render.dylib | head -1)
+          window=$(find "$rel/eng" -name libnative-window.dylib | head -1)
+          test -s "$engine"
+          bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/host/labs/demos/foafnaut" "$rel/web" "$window"
+          echo "ENGINE=$engine" >> "$GITHUB_ENV"
+      - name: Compare the released host and its font scheduling variant
+        run: |
+          set -euo pipefail
+          printf 'Engine sha256: %s\n' "$(shasum -a 256 "$ENGINE" | cut -d' ' -f1)" >> "$GITHUB_STEP_SUMMARY"
+          file=labs/demos/foafnaut/native_html_document.ts
+          for pair in a1 b1 b2 a2; do
+            git -C host restore -- "$file"
+            if [[ $pair = b* ]]; then
+              python3 - "host/$file" <<'PYEDIT'
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          text = path.read_text()
+          start = "  pageImageBytes.catch(()=>{});"
+          late = "  const webFonts=await loadWebFonts(engine as WebFontEngine,document.url,document.source,resources,signal);"
+          assert text.count(start) == 1 and text.count(late) == 1
+          early = late.replace("webFonts=await ", "webFontsReading=")
+          text = text.replace(start, start + "\n" + early + "\n  webFontsReading.catch(()=>{});")
+          text = text.replace(late, "  const webFonts=await webFontsReading;")
+          path.write_text(text)
+          PYEDIT
+            fi
+            deno run -A tools/labs/demos/foafnaut/realpages/survey.ts \
+              --platform macos --engine "$ENGINE" --host "$PWD/host/labs/demos/foafnaut" \
+              --out "$RUNNER_TEMP/out/$pair" --release "$TAG" \
+              --only desktop-w3c-home,desktop-govuk,hn \
+              --chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+            jq -r --arg pair "$pair" '.pages[] | [$pair,.id,.verdict,.first_frame_s,.first_layout_ms,.scroll_latency_p95_ms,.layout_similarity] | @tsv' \
+              "$RUNNER_TEMP/out/$pair/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-font-overlap-survey
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
