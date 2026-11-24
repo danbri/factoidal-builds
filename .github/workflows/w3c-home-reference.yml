@@ -1,113 +1,56 @@
-name: W3C homepage reference renders
+name: Diagnose the extra space before the W3C homepage header
 on:
   push:
-    branches: [wip/w3c-home-reference]
+    branches: [wip/w3c-header-geometry]
 permissions:
   contents: read
   actions: read
-env:
-  GH_TOKEN: ${{ github.token }}
-  CANDIDATE: 7e81d60454961256eea458720153869f599278ce
-  BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
-  BRANCH_RUN: '45414537051'
-  SET: foafnaut-linux-x86_64
-  WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
-  replay:
+  probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 18
     steps:
-      - name: Wait for the exact native engine
-        run: |
-          set -euo pipefail
-          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$BRANCH_RUN"
-          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CANDIDATE"
-          until gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fxq branch-engine; do
-            if [[ "$(gh api "$endpoint" --jq .status)" = completed ]]; then
-              echo "::error::The candidate engine was not published"
-              exit 1
-            fi
-            sleep 20
-          done
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           sparse-checkout: core-diagnostics
-      - uses: actions/checkout@v4
-        with:
-          repository: danbri/factoidal-core
-          ref: 7e81d60454961256eea458720153869f599278ce
-          path: core
-          persist-credentials: false
-          sparse-checkout: |
-            labs/demos/foafnaut
-            docs/web/hub/foafnaut
-            tests/browser-wpt
-            third_party/fonts
       - uses: actions/download-artifact@v4
         with:
-          run-id: '45414537051'
+          run-id: 45414537051
           name: branch-engine
+          path: engine
           github-token: ${{ github.token }}
-          path: engines/candidate
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.9.4
-      - name: Set up the matched host and baseline
-        run: |
-          set -euo pipefail
-          mkdir -p engines/baseline engines/web
-          gh release download "build-${BASELINE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/baseline
-          jq -e --arg sha "$BASELINE" '.source_commit == $sha' engines/baseline/build-info.json >/dev/null
-          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/baseline/build-info.json)
-          echo "$expected  engines/baseline/$SET.tar.gz" | sha256sum -c -
-          tar -xzf "engines/baseline/$SET.tar.gz" -C engines/baseline
-          base=$(find "$PWD/engines/baseline" -name libweb-render.so -print -quit)
-          test -s "$base"
-          echo "BASE_ENGINE=$base" >> "$GITHUB_ENV"
-          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
-          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
-          lab=core/labs/demos/foafnaut
-          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
-          tc=$(cat engines/candidate/lean-toolchain)
-          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          "$HOME/.elan/bin/elan" toolchain install "$tc"
-          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
           run-id: 45403312317
-          github-token: ${{ github.token }}
           name: w3c-home-snapshots
           path: snapshots
-      - name: Render the actual W3C homepage at two widths
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Install the engine's recorded Lean runtime
         run: |
           set -euo pipefail
-          suite=core/labs/demos/foafnaut/realpages
+          tc=$(cat engine/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Record the header geometry under isolated fixture changes
+        run: |
+          set -euo pipefail
           mkdir -p out
-          sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so | tee out/engines.sha256
-          for shape in wide narrow; do
-            width=1440; [[ $shape != narrow ]] || width=480
+          sha256sum engine/libweb-render.so snapshots/w3.org/*.zip > out/inputs.sha256
+          for shape in narrow wide; do
+            width=480; [[ $shape == narrow ]] || width=1440
             zip=$(find "$PWD/snapshots" -name "w3c-home-$shape-*.zip" -print -quit)
-            test -s "$zip"
-            sha256sum "$zip" >> out/snapshots.sha256
-            unzip -p "$zip" reference.png > "out/chrome-$shape.png"
-            test -s "out/chrome-$shape.png"
-            jq -nc --argjson w "$width" --arg name "$shape.png"               '{url:"https://w3.org/",width:$w,height:735,file:$name}' > "$RUNNER_TEMP/job.jsonl"
-            for arm in baseline candidate; do
-              lib=$BASE_ENGINE; [[ $arm != candidate ]] || lib="$PWD/engines/candidate/libweb-render.so"
-              mkdir -p "out/$arm"
-              REALPAGES_REPLAY="$zip" timeout 150s deno run -A --unstable-ffi --preload "$suite/replay.ts"                 core/tests/browser-wpt/reftest-render.ts --list "$RUNNER_TEMP/job.jsonl" --native-engine "$lib" --out "out/$arm"                 2>&1 | tee "out/$arm/$shape.log"
-              test -s "out/$arm/$shape.png"
-              sed -n 's/^__done //p' "out/$arm/$shape.log" | jq -e '.status == "ok"'
-            done
+            python3 core-diagnostics/w3c-gap-fixture.py "$zip" > "$RUNNER_TEMP/fixture.json"
+            deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/w3c-gap.ts \
+              "$PWD/engine/libweb-render.so" "$RUNNER_TEMP/fixture.json" "$width" | tee "out/$shape.ndjson"
           done
-      - name: Check viewport edges against explicit pixels
-        run: |
-          set -euo pipefail
-          deno run --no-config --allow-ffi --unstable-ffi core-diagnostics/viewport-edges.ts engines/candidate/libweb-render.so | tee out/viewport-edge-geometry.ndjson
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: w3c-home-reference
-          path: out/
+          name: w3c-header-geometry
+          path: out
           retention-days: 7
