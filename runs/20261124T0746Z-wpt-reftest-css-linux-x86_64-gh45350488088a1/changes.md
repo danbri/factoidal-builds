@@ -1,0 +1,611 @@
+### Since 20261122T2013Z-wpt-reftest-css-linux-x86_64-gh45064828959a1 (core a512ab918913, other WPT commit 4b26db8978)
+
+Tests passed 10,205 -> 11,439 (+1,234) DROP
+
+Newly passing: 1,616. Newly not passing: 384.
+
+Newly not passing:
+
+- `/css/CSS2/backgrounds/background-root-015.xht`: FAIL
+- `/css/CSS2/backgrounds/background-root-016.xht`: FAIL
+- `/css/CSS2/backgrounds/background-root-019.xht`: FAIL
+- `/css/CSS2/box-display/block-in-inline-zero-height-margin-collapse.html`: FAIL
+- `/css/CSS2/normal-flow/block-in-inline-first-line-002.html`: FAIL
+- `/css/CSS2/normal-flow/blocks-011.xht`: FAIL
+- `/css/CSS2/normal-flow/blocks-014.xht`: FAIL
+- `/css/CSS2/normal-flow/replaced-intrinsic-002.xht`: FAIL
+- `/css/CSS2/selectors/first-letter-inherit-001.xht`: FAIL
+- `/css/CSS2/tables/border-collapse-offset-001.xht`: FAIL
+- `/css/WOFF2/datatypes-alt-255uint16-001.xht`: FAIL
+- `/css/WOFF2/directory-knowntags-001.xht`: FAIL
+- `/css/WOFF2/header-reserved-001.xht`: FAIL
+- `/css/WOFF2/header-totalsfntsize-001.xht`: FAIL
+- `/css/WOFF2/header-totalsfntsize-002.xht`: FAIL
+- `/css/WOFF2/metadata-noeffect-001.xht`: FAIL
+- `/css/WOFF2/metadata-noeffect-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-authoritative-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-encoding-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-encoding-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-encoding-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-encoding-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-encoding-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-encoding-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-011.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-012.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-013.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-014.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-015.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-016.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-017.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-018.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-019.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-020.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-021.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-022.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-023.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-024.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-025.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-026.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-027.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-028.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-029.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-copyright-030.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credit-011.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credits-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credits-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credits-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credits-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credits-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credits-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-credits-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-011.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-012.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-013.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-014.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-015.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-016.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-017.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-018.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-019.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-020.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-021.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-022.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-023.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-024.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-025.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-026.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-027.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-028.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-029.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-030.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-031.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-description-032.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-011.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-012.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-013.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-014.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-015.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-016.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-017.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-018.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-019.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-020.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-021.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-022.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-023.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-024.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-025.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-026.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-027.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-028.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-029.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-030.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-031.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-032.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-033.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-034.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-035.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-036.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-037.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-038.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-039.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-040.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-041.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-042.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-043.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-044.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-045.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-046.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-047.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-048.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-049.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-extension-050.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-011.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-012.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-013.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-014.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-015.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-016.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-017.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-018.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-019.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-020.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-021.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-022.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-023.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-024.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-025.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-026.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-027.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-028.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-029.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-030.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-031.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-032.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-license-033.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-licensee-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-metadata-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-metadata-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-metadata-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-metadata-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-metadata-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-metadata-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-011.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-012.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-013.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-014.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-015.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-016.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-017.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-018.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-019.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-020.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-021.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-022.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-023.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-024.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-025.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-026.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-027.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-028.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-029.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-trademark-030.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-uniqueid-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-uniqueid-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-uniqueid-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-uniqueid-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-uniqueid-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-uniqueid-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-007.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-008.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-009.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-010.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-011.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-schema-vendor-012.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-well-formed-001.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-well-formed-002.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-well-formed-003.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-well-formed-004.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-well-formed-005.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-well-formed-006.xht`: FAIL
+- `/css/WOFF2/metadatadisplay-well-formed-007.xht`: FAIL
+- `/css/WOFF2/privatedata-noeffect-001.xht`: FAIL
+- `/css/WOFF2/privatedata-noeffect-002.xht`: FAIL
+- `/css/WOFF2/tabledata-glyf-bbox-001.xht`: FAIL
+- `/css/WOFF2/tabledata-glyf-origlength-001.xht`: FAIL
+- `/css/WOFF2/tabledata-glyf-origlength-002.xht`: FAIL
+- `/css/WOFF2/tabledata-glyf-origlength-003.xht`: FAIL
+- `/css/WOFF2/tabledata-recontruct-loca-001.xht`: FAIL
+- `/css/WOFF2/tabledata-transform-hmtx-001.xht`: FAIL
+- `/css/WOFF2/tabledata-transform-hmtx-002.xht`: FAIL
+- `/css/WOFF2/valid-001.xht`: FAIL
+- `/css/WOFF2/valid-002.xht`: FAIL
+- `/css/WOFF2/valid-003.xht`: FAIL
+- `/css/WOFF2/valid-004.xht`: FAIL
+- `/css/WOFF2/valid-005.xht`: FAIL
+- `/css/WOFF2/valid-006.xht`: FAIL
+- `/css/WOFF2/valid-007.xht`: FAIL
+- `/css/WOFF2/valid-008.xht`: FAIL
+- `/css/css-backgrounds/animations/background-color-animation-with-images.html`: FAIL
+- `/css/css-backgrounds/background-attachment-fixed-border-radius-offset.html`: FAIL
+- `/css/css-backgrounds/background-repeat-round-1a.html`: FAIL
+- `/css/css-backgrounds/background-repeat-round-1b.html`: FAIL
+- `/css/css-backgrounds/background-repeat-round-1d.html`: FAIL
+- `/css/css-backgrounds/background-repeat-round-1e.html`: FAIL
+- `/css/css-backgrounds/background-repeat-round-2.html`: FAIL
+- `/css/css-backgrounds/background-repeat-round-3.html`: FAIL
+- `/css/css-backgrounds/background-repeat-round-4.html`: FAIL
+- `/css/css-backgrounds/background-repeat-space-2.html`: FAIL
+- `/css/css-backgrounds/background-size/background-size-near-zero-png.html`: FAIL
+- `/css/css-backgrounds/background-size/background-size-near-zero-svg.html`: FAIL
+- `/css/css-backgrounds/subpixel-repeat-no-repeat-mix.html`: FAIL
+- `/css/css-borders/border-image-displayed-with-transparent-border-color.html`: FAIL
+- `/css/css-color/inline-opacity-float-child.html`: FAIL
+- `/css/css-contain/content-visibility/content-visibility-video.html`: FAIL
+- `/css/css-counter-styles/symbols-function/used-in-counter.html`: FAIL
+- `/css/css-counter-styles/symbols-function/used-in-counters.html`: FAIL
+- `/css/css-fonts/font-synthesis-style-first-letter.html`: FAIL
+- `/css/css-fonts/font-synthesis-weight-first-letter.html`: FAIL
+- `/css/css-grid/alignment/grid-baseline-002.html`: FAIL
+- `/css/css-grid/alignment/grid-baseline-003.html`: FAIL
+- `/css/css-grid/alignment/grid-baseline-align-cycles-001.html`: FAIL
+- `/css/css-grid/grid-model/grid-first-letter-001.html`: FAIL
+- `/css/css-grid/grid-model/grid-first-letter-002.html`: FAIL
+- `/css/css-grid/grid-model/grid-first-line-001.html`: FAIL
+
+Newly passing:
+
+- `/css/CSS2/abspos/abspos-containing-block-initial-004c.xht`
+- `/css/CSS2/abspos/abspos-containing-block-initial-004d.xht`
+- `/css/CSS2/abspos/abspos-containing-block-initial-005b.xht`
+- `/css/CSS2/abspos/abspos-containing-block-initial-005d.xht`
+- `/css/CSS2/abspos/static-inside-float-inside-inline.html`
+- `/css/CSS2/backgrounds/background-003.xht`
+- `/css/CSS2/backgrounds/background-026.xht`
+- `/css/CSS2/backgrounds/background-029.xht`
+- `/css/CSS2/backgrounds/background-038.xht`
+- `/css/CSS2/backgrounds/background-041.xht`
+- `/css/CSS2/backgrounds/background-043.xht`
+- `/css/CSS2/backgrounds/background-048.xht`
+- `/css/CSS2/backgrounds/background-050.xht`
+- `/css/CSS2/backgrounds/background-053.xht`
+- `/css/CSS2/backgrounds/background-055.xht`
+- `/css/CSS2/backgrounds/background-060.xht`
+- `/css/CSS2/backgrounds/background-078.xht`
+- `/css/CSS2/backgrounds/background-081.xht`
+- `/css/CSS2/backgrounds/background-087.xht`
+- `/css/CSS2/backgrounds/background-090.xht`
+- `/css/CSS2/backgrounds/background-093.xht`
+- `/css/CSS2/backgrounds/background-096.xht`
+- `/css/CSS2/backgrounds/background-104.xht`
+- `/css/CSS2/backgrounds/background-106.xht`
+- `/css/CSS2/backgrounds/background-111.xht`
+- `/css/CSS2/backgrounds/background-114.xht`
+- `/css/CSS2/backgrounds/background-117.xht`
+- `/css/CSS2/backgrounds/background-120.xht`
+- `/css/CSS2/backgrounds/background-128.xht`
+- `/css/CSS2/backgrounds/background-130.xht`
+- `/css/CSS2/backgrounds/background-135.xht`
+- `/css/CSS2/backgrounds/background-138.xht`
+- `/css/CSS2/backgrounds/background-141.xht`
+- `/css/CSS2/backgrounds/background-144.xht`
+- `/css/CSS2/backgrounds/background-152.xht`
+- `/css/CSS2/backgrounds/background-154.xht`
+- `/css/CSS2/backgrounds/background-182.xht`
+- `/css/CSS2/backgrounds/background-184.xht`
+- `/css/CSS2/backgrounds/background-188.xht`
+- `/css/CSS2/backgrounds/background-190.xht`
+- `/css/CSS2/backgrounds/background-194.xht`
+- `/css/CSS2/backgrounds/background-196.xht`
+- `/css/CSS2/backgrounds/background-applies-to-005.xht`
+- `/css/CSS2/backgrounds/background-applies-to-006.xht`
+- `/css/CSS2/backgrounds/background-attachment-009.xht`
+- `/css/CSS2/backgrounds/background-color-129.xht`
+- `/css/CSS2/backgrounds/background-color-applies-to-005.xht`
+- `/css/CSS2/backgrounds/background-color-applies-to-006.xht`
+- `/css/CSS2/backgrounds/background-position-152.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-005b.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-005c.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-005d.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-005e.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-006b.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-006c.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-006d.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-006e.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-007.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-009.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-012.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-013.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-013d.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-013e.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-014.xht`
+- `/css/CSS2/backgrounds/background-position-applies-to-015.xht`
+- `/css/CSS2/backgrounds/background-repeat-002.xht`
+- `/css/CSS2/backgrounds/background-repeat-003.xht`
+- `/css/CSS2/backgrounds/background-repeat-004.xht`
+- `/css/CSS2/backgrounds/background-repeat-005.xht`
+- `/css/CSS2/backgrounds/background-root-013b.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-005.xht`
+- `/css/CSS2/bidi-text/direction-applies-to-006.xht`
+- `/css/CSS2/bidi-text/line-breaking-bidi-001.xht`
+- `/css/CSS2/bidi-text/line-breaking-bidi-002.xht`
+- `/css/CSS2/borders/border-001.xht`
+- `/css/CSS2/borders/border-003.xht`
+- `/css/CSS2/borders/border-applies-to-013.xht`
+- `/css/CSS2/borders/border-applies-to-014.xht`
+- `/css/CSS2/borders/border-bottom-applies-to-007.xht`
+- `/css/CSS2/borders/border-bottom-applies-to-013.xht`
+- `/css/CSS2/borders/border-bottom-applies-to-014.xht`
+- `/css/CSS2/borders/border-bottom-color-129.xht`
+- `/css/CSS2/borders/border-bottom-color-174.xht`
+- `/css/CSS2/borders/border-bottom-color-applies-to-007.xht`
+- `/css/CSS2/borders/border-bottom-color-applies-to-013.xht`
+- `/css/CSS2/borders/border-bottom-color-applies-to-014.xht`
+- `/css/CSS2/borders/border-bottom-width-applies-to-007.xht`
+- `/css/CSS2/borders/border-bottom-width-applies-to-013.xht`
+- `/css/CSS2/borders/border-bottom-width-applies-to-014.xht`
+- `/css/CSS2/borders/border-color-005.xht`
+- `/css/CSS2/borders/border-color-applies-to-013.xht`
+- `/css/CSS2/borders/border-color-applies-to-014.xht`
+- `/css/CSS2/borders/border-left-003.xht`
+- `/css/CSS2/borders/border-left-applies-to-007.xht`
+- `/css/CSS2/borders/border-left-applies-to-013.xht`
+- `/css/CSS2/borders/border-left-applies-to-014.xht`
+- `/css/CSS2/borders/border-left-color-129.xht`
+- `/css/CSS2/borders/border-left-color-applies-to-007.xht`
+- `/css/CSS2/borders/border-left-color-applies-to-013.xht`
+- `/css/CSS2/borders/border-left-color-applies-to-014.xht`
+- `/css/CSS2/borders/border-left-width-applies-to-007.xht`
+- `/css/CSS2/borders/border-left-width-applies-to-013.xht`
+- `/css/CSS2/borders/border-left-width-applies-to-014.xht`
+- `/css/CSS2/borders/border-right-003.xht`
+- `/css/CSS2/borders/border-right-applies-to-007.xht`
+- `/css/CSS2/borders/border-right-applies-to-013.xht`
+- `/css/CSS2/borders/border-right-applies-to-014.xht`
+- `/css/CSS2/borders/border-right-color-129.xht`
+- `/css/CSS2/borders/border-right-color-applies-to-007.xht`
+- `/css/CSS2/borders/border-right-color-applies-to-013.xht`
+- `/css/CSS2/borders/border-right-color-applies-to-014.xht`
+- `/css/CSS2/borders/border-right-width-applies-to-007.xht`
+- `/css/CSS2/borders/border-right-width-applies-to-013.xht`
+- `/css/CSS2/borders/border-right-width-applies-to-014.xht`
+- `/css/CSS2/borders/border-shorthands-003.xht`
+- `/css/CSS2/borders/border-top-applies-to-007.xht`
+- `/css/CSS2/borders/border-top-applies-to-013.xht`
+- `/css/CSS2/borders/border-top-applies-to-014.xht`
+- `/css/CSS2/borders/border-top-color-129.xht`
+- `/css/CSS2/borders/border-top-color-174.xht`
+- `/css/CSS2/borders/border-top-color-applies-to-007.xht`
+- `/css/CSS2/borders/border-top-color-applies-to-013.xht`
+- `/css/CSS2/borders/border-top-color-applies-to-014.xht`
+- `/css/CSS2/borders/border-top-width-applies-to-007.xht`
+- `/css/CSS2/borders/border-top-width-applies-to-013.xht`
+- `/css/CSS2/borders/border-top-width-applies-to-014.xht`
+- `/css/CSS2/borders/border-width-005.xht`
+- `/css/CSS2/borders/border-width-006.xht`
+- `/css/CSS2/borders/border-width-007.xht`
+- `/css/CSS2/borders/border-width-008.xht`
+- `/css/CSS2/borders/border-width-014.xht`
+- `/css/CSS2/borders/groove-default.html`
+- `/css/CSS2/borders/ridge-default.html`
+- `/css/CSS2/box-display/block-in-inline-007.xht`
+- `/css/CSS2/box-display/block-in-inline-008.xht`
+- `/css/CSS2/box-display/block-in-inline-followed-by-empty-span.html`
+- `/css/CSS2/box-display/block-in-inline-followed-by-line-break-and-text.html`
+- `/css/CSS2/box-display/block-in-inline-large-margin-bottom.html`
+- `/css/CSS2/box-display/block-in-inline-margin-bottom-with-trailing-block.html`
+- `/css/CSS2/box-display/block-in-inline-margin-collapses-through-intervening-float.html`
+- `/css/CSS2/box-display/block-in-inline-margin-collapses-through-multiple-floats.html`
+- `/css/CSS2/box-display/block-in-inline-margin-collapses-with-parent-bottom.html`
+- `/css/CSS2/box-display/block-in-inline-margin-with-leading-and-trailing-text.html`
+- `/css/CSS2/box-display/block-in-inline-margin-with-leading-text.html`
+- `/css/CSS2/box-display/block-in-inline-margin-with-line-break-then-block-in-inline.html`
+- `/css/CSS2/box-display/block-in-inline-margin-with-multi-line-text-after.html`
+- `/css/CSS2/box-display/block-in-inline-margin-with-multi-line-text-before.html`
+- `/css/CSS2/box-display/block-in-inline-margin-with-text-then-block-in-inline.html`
+- `/css/CSS2/box-display/block-in-inline-margins-collapse-with-trailing-block.html`
+- `/css/CSS2/box-display/block-in-inline-negative-margin-bottom-with-trailing-block.html`
+- `/css/CSS2/box-display/block-in-inline-negative-margin-with-intervening-float.html`
+- `/css/CSS2/box-display/block-in-inline-negative-mb-collapses-with-positive-mt.html`
+- `/css/CSS2/box-display/block-in-inline-vertical-margins-on-span-ignored.html`
+- `/css/CSS2/box-display/block-in-inline-with-padded-parent.html`
+- `/css/CSS2/box-display/block-in-inlines-in-different-spans-margin-collapse.html`
+- `/css/CSS2/box-display/inline-block-after-block-in-inline-with-intervening-float.html`
+- `/css/CSS2/box-display/inline-text-after-block-in-inline-margin.html`
+- `/css/CSS2/box-display/inline-text-after-block-in-inline-with-intervening-float.html`
+- `/css/CSS2/box-display/multiple-block-in-inlines-margins-collapse.html`
+- `/css/CSS2/box-display/three-block-in-inlines-cascading-margins.html`
+- `/css/CSS2/box-display/two-block-in-inlines-with-text-between.html`
+- `/css/CSS2/cascade/cascade-009a.xht`
+- `/css/CSS2/colors/color-129.xht`
+- `/css/CSS2/css1/c412-hz-box-000.xht`
+- `/css/CSS2/css1/c43-rpl-bbx-002.xht`
+- `/css/CSS2/css1/c534-bgre-001.xht`
+- `/css/CSS2/css1/c536-bgpos-000.xht`
+- `/css/CSS2/css1/c536-bgpos-001.xht`
+- `/css/CSS2/css1/c542-letter-sp-001.xht`
+- `/css/CSS2/css1/c547-indent-001.xht`
+- `/css/CSS2/css1/c5501-imrgn-t-000.xht`
+- `/css/CSS2/css1/c5501-mrgn-t-000.xht`
+- `/css/CSS2/css1/c5502-imrgn-r-000.xht`
+- `/css/CSS2/css1/c5502-imrgn-r-001.xht`
+- `/css/CSS2/css1/c5502-imrgn-r-002.xht`
+- `/css/CSS2/css1/c5502-imrgn-r-004.xht`
+- `/css/CSS2/css1/c5502-mrgn-r-000.xht`
+- `/css/CSS2/css1/c5502-mrgn-r-003.xht`
+- `/css/CSS2/css1/c5503-imrgn-b-000.xht`
+- `/css/CSS2/css1/c5503-mrgn-b-000.xht`
+- `/css/CSS2/css1/c5504-imrgn-l-000.xht`
+- `/css/CSS2/css1/c5504-imrgn-l-001.xht`
+- `/css/CSS2/css1/c5504-imrgn-l-004.xht`
+- `/css/CSS2/css1/c5504-mrgn-l-000.xht`
+- `/css/CSS2/css1/c5505-mrgn-000.xht`
+- `/css/CSS2/css1/c5507-ipadn-r-000.xht`
+- `/css/CSS2/css1/c5507-ipadn-r-001.xht`
+- `/css/CSS2/css1/c5507-ipadn-r-002.xht`
+- `/css/CSS2/css1/c5507-padn-r-000.xht`
+- `/css/CSS2/css1/c5507-padn-r-002.xht`
+- `/css/CSS2/css1/c5509-ipadn-l-000.xht`
+- `/css/CSS2/css1/c5509-ipadn-l-001.xht`
+- `/css/CSS2/css1/c5509-padn-l-000.xht`
+- `/css/CSS2/css1/c5509-padn-l-002.xht`
+- `/css/CSS2/css1/c5511-brdr-tw-001.xht`
+- `/css/CSS2/css1/c5511-brdr-tw-003.xht`
+- `/css/CSS2/css1/c5513-brdr-bw-001.xht`
+- `/css/CSS2/css1/c5525-fltwidth-003.xht`
+- `/css/CSS2/css1/c64-uri-000.xht`
+- `/css/CSS2/css1/c71-fwd-parsing-001.xht`
+- `/css/CSS2/css1/c71-fwd-parsing-002.xht`
+- `/css/CSS2/css1/c71-fwd-parsing-004.xht`
+- `/css/CSS2/floats-clear/adjoining-float-nested-forced-clearance-004.html`
+- `/css/CSS2/floats-clear/floats-121.xht`
+- `/css/CSS2/floats-clear/floats-136.xht`
+- `/css/CSS2/floats-clear/floats-147.xht`
+- `/css/CSS2/floats-clear/floats-150.xht`
+- `/css/CSS2/floats-clear/floats-152.xht`
+- `/css/CSS2/floats-clear/floats-clear-multicol-002.html`
+- `/css/CSS2/floats-clear/floats-clear-multicol-003.html`
+- `/css/CSS2/floats-clear/floats-clear-multicol-balancing-002.html`
+- `/css/CSS2/floats-clear/floats-clear-multicol-balancing-003.html`
+- `/css/CSS2/floats/float-in-inline-anonymous-block-with-overflow-hidden.html`
+- `/css/CSS2/floats/floats-placement-002.html`
+- `/css/CSS2/floats/new-fc-relayout.html`
+- `/css/CSS2/fonts/font-size-119.xht`
+- `/css/CSS2/fonts/fonts-010.xht`
+- `/css/CSS2/fonts/fonts-011.xht`
+- `/css/CSS2/generated-content/content-005.xht`
+- `/css/CSS2/generated-content/content-006.xht`
+- `/css/CSS2/generated-content/content-007.xht`
+- `/css/CSS2/generated-content/content-009.xht`
+- `/css/CSS2/generated-content/content-010.xht`
+- `/css/CSS2/generated-content/content-011.xht`
+- `/css/CSS2/generated-content/content-012.xht`
+- `/css/CSS2/generated-content/content-013.xht`
+- `/css/CSS2/generated-content/content-014.xht`
+- `/css/CSS2/generated-content/content-015.xht`
+- `/css/CSS2/generated-content/content-018.xht`
+- `/css/CSS2/generated-content/content-019.xht`
+- `/css/CSS2/generated-content/content-021.xht`
+- `/css/CSS2/generated-content/content-022.xht`
+- `/css/CSS2/generated-content/content-023.xht`
+- `/css/CSS2/generated-content/content-025.xht`
+- `/css/CSS2/generated-content/content-026.xht`
+- `/css/CSS2/generated-content/content-027.xht`
+- `/css/CSS2/generated-content/content-028.xht`
+- `/css/CSS2/generated-content/content-029.xht`
+- `/css/CSS2/generated-content/content-030.xht`
+- `/css/CSS2/generated-content/content-031.xht`
+- `/css/CSS2/generated-content/content-034.xht`
+- `/css/CSS2/generated-content/content-035.xht`
+- `/css/CSS2/generated-content/content-082.xht`
+- `/css/CSS2/generated-content/content-100.xht`
+- `/css/CSS2/generated-content/content-auto-reset-001.xht`
+- `/css/CSS2/generated-content/content-counter-000.xht`
+- `/css/CSS2/generated-content/content-counter-002.xht`
+- `/css/CSS2/generated-content/content-counter-003.xht`
+- `/css/CSS2/generated-content/content-counter-004.xht`
+- `/css/CSS2/generated-content/content-counter-005.xht`
+- `/css/CSS2/generated-content/content-counter-006.xht`
+- `/css/CSS2/generated-content/content-counter-007.xht`
+- `/css/CSS2/generated-content/content-counter-008.xht`
+- `/css/CSS2/generated-content/content-counter-011.xht`
+- `/css/CSS2/generated-content/content-counter-012.xht`
+- `/css/CSS2/generated-content/content-counter-013.xht`
+- `/css/CSS2/generated-content/content-counter-014.xht`
+- `/css/CSS2/generated-content/content-counter-015.xht`
+- `/css/CSS2/generated-content/content-white-space-001.xht`
+- `/css/CSS2/generated-content/counters-hidden-000.xht`
+- `/css/CSS2/generated-content/counters-hidden-001.xht`
+- `/css/CSS2/generated-content/counters-hidden-002.xht`
+- `/css/CSS2/generated-content/counters-multi-000.xht`
+- `/css/CSS2/generated-content/counters-multi-001.xht`
+- `/css/CSS2/generated-content/counters-order-000.xht`
+- `/css/CSS2/inline-svg-margin-padding-border.html`
+- `/css/CSS2/linebox/iframe-in-block-in-inline.html`
+- `/css/CSS2/linebox/leading-001.xht`
+- `/css/CSS2/linebox/line-height-126.xht`
+- `/css/CSS2/linebox/line-height-129.xht`
+- `/css/CSS2/linebox/line-height-bleed-001.xht`
+- `/css/CSS2/linebox/line-height-bleed-002.xht`
+- `/css/CSS2/linebox/vertical-align-baseline-003.xht`
+- `/css/CSS2/lists/counter-increment-005.xht`
+- `/css/CSS2/lists/counter-increment-006.xht`
+- `/css/CSS2/lists/counter-increment-007.xht`
+- `/css/CSS2/lists/counter-increment-008.xht`
+- `/css/CSS2/lists/counter-increment-009.xht`
+- `/css/CSS2/lists/counter-increment-014.xht`
+- `/css/CSS2/lists/counter-increment-018.xht`
+- `/css/CSS2/lists/counter-increment-019.xht`
+- `/css/CSS2/lists/counter-increment-020.xht`
+- `/css/CSS2/lists/counter-increment-021.xht`
+- `/css/CSS2/lists/counter-increment-022.xht`
+- `/css/CSS2/lists/counter-increment-027.xht`
+- `/css/CSS2/lists/counter-increment-031.xht`
+- `/css/CSS2/lists/counter-increment-032.xht`
+- `/css/CSS2/lists/counter-increment-033.xht`
+- `/css/CSS2/lists/counter-increment-034.xht`
+- `/css/CSS2/lists/counter-increment-035.xht`
+- `/css/CSS2/lists/counter-increment-040.xht`
+- `/css/CSS2/lists/counter-increment-044.xht`
+- `/css/CSS2/lists/counter-increment-045.xht`
+- `/css/CSS2/lists/counter-increment-046.xht`
+- `/css/CSS2/lists/counter-increment-047.xht`
+- `/css/CSS2/lists/counter-increment-048.xht`
+- `/css/CSS2/lists/counter-increment-053.xht`
+- `/css/CSS2/lists/counter-increment-055.xht`
+- `/css/CSS2/lists/counter-increment-applies-to-001.xht`
+- `/css/CSS2/lists/counter-increment-applies-to-002.xht`
