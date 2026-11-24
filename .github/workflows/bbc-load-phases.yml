@@ -1,9 +1,10 @@
-name: BBC replay load phase attribution
+name: BBC homepage replay load phase attribution
 on:
   push:
     branches: [wip/bbc-first-frame]
 permissions:
   contents: read
+  actions: read
 env:
   GH_TOKEN: ${{ github.token }}
   BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
@@ -19,7 +20,6 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             core-diagnostics
-            third_party/realpages/bbc.co.uk
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
@@ -52,20 +52,26 @@ jobs:
           curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           "$HOME/.elan/bin/elan" toolchain install "$tc"
           echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
-      - name: Time the same frozen BBC article with scripts enabled and disabled
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45408439387
+          name: bbc-home-snapshot
+          path: snapshots/www.bbc.co.uk
+          github-token: ${{ github.token }}
+      - name: Time the same frozen BBC homepage with scripts enabled and disabled
         run: |
           set -euo pipefail
           lab=core/labs/demos/foafnaut
           python3 core-diagnostics/bbc-load-phases.py "$lab"
           mkdir -p out
-          sha256sum "$BASE_ENGINE" third_party/realpages/bbc.co.uk/news-bbc-20261115.zip | tee out/inputs.sha256
-          jq '.pages |= map(select(.id == "news-bbc" or .id == "news-bbc-noscripts"))' "$lab/realpages/pages.json" > out/pages.json
+          sha256sum "$BASE_ENGINE" "$PWD"/snapshots/www.bbc.co.uk/desktop-bbc-news-*.zip | tee out/inputs.sha256
+          jq '.pages |= map(select(.id == "desktop-bbc-news" or .id == "desktop-bbc-news-noscripts"))' "$lab/realpages/pages.json" > out/pages.json
           for iteration in 1 2; do
             deno run -A "$lab/realpages/survey.ts" --platform linux --host "$PWD/$lab" --engine "$BASE_ENGINE" \
-              --snapshots "$PWD/third_party/realpages" --pages "$PWD/out/pages.json" --timeout 120 --retries 0 \
+              --snapshots "$PWD/snapshots" --pages "$PWD/out/pages.json" --timeout 120 --retries 0 \
               --out "$PWD/out/$iteration" --release "$BASELINE"
             jq -e '.pages|length == 2 and all(.state == "ok" and .rows > 0)' "out/$iteration/summary.json" >/dev/null
-            for page in news-bbc news-bbc-noscripts; do
+            for page in desktop-bbc-news desktop-bbc-news-noscripts; do
               grep -E '^\{"type":"bbc-[a-z]+-probe"' "out/$iteration/logs/$page.textnaut.log" > "out/$iteration/$page.phases.ndjson"
             done
           done
