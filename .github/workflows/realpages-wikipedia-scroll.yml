@@ -1,0 +1,142 @@
+name: Compare immediate and delayed scrolling on archived Wikipedia
+on:
+  push:
+    branches: [wip/realpages-wikipedia-scroll]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  ENGINE_CORE: 05ec0b29ca8ad75ef2dfca91a4f06cf16ed58067
+  BASE_CORE: 63f74e538d511d1f2fb6ab782623a5850bf58e6e
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  replay:
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          sparse-checkout: third_party/realpages/en.wikipedia.org
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.BASE_CORE }}
+          path: host-a
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.ENGINE_CORE }}
+          path: host-b
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 99222ad9b1f9121dc17f630bdf4bc81a09cc5f75
+          path: tools
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the two native engines and pinned replay inputs
+        run: |
+          set -euo pipefail
+          mkdir -p engines/{a,b,web} out
+          gh run download 45440246883 -R "$GITHUB_REPOSITORY" -n foafnaut-engine-darwin-arm64 -D engines/a
+          gh release download "build-${ENGINE_CORE:0:12}-foafnaut-darwin-arm64" -R "$GITHUB_REPOSITORY" -p foafnaut-darwin-arm64.tar.gz -p build-info.json -D engines/b
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          for slot in a b; do
+            root="engines/$slot"
+            sha="$BASE_CORE"
+            archive=foafnaut-engine-darwin-arm64.tar.gz
+            if [[ "$slot" = b ]]; then
+              sha="$ENGINE_CORE"
+              archive=foafnaut-darwin-arm64.tar.gz
+            fi
+            jq -e --arg sha "$sha" '.source_commit == $sha' "$root/build-info.json" >/dev/null
+            checksum=$(jq -er --arg archive "$archive" '.artifacts[$archive].sha256' "$root/build-info.json")
+            echo "$checksum  $root/$archive" | shasum -a 256 -c -
+            tar -xzf "$root/$archive" -C "$root"
+            engine=$(find "$PWD/$root" -name libweb-render.dylib -print -quit)
+            window=$(find "$PWD/$root" -name libnative-window.dylib -print -quit)
+            host="$PWD/host-$slot/labs/demos/foafnaut"
+            bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$host" "$PWD/engines/web" "$window"
+            shasum -a 256 "$engine" "$host/run_html.ts" >> out/inputs.sha256
+          done
+          shasum -a 256 builds/third_party/realpages/en.wikipedia.org/{m-us,wp-us}-20261115.zip >> out/inputs.sha256
+      - name: Repeat both input schedules on the same Mac runner
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          from pathlib import Path
+
+          for slot in 'ab':
+              path = Path(f'host-{slot}/labs/demos/foafnaut/run_html.ts')
+              source = path.read_text()
+              line = next(line for line in source.splitlines() if line.startswith('      if(commands') and 'scrollStep' in line)
+              timing_guard = 'performance.now()>=stepAt&&'
+              assert line.count(timing_guard) == 1
+              scheduled = '''
+                const firstMeasuredScroll = scrollSweep && commands?.length === 20;
+                const diagnosticDelay = Number(Deno.env.get("FOAFNAUT_SCROLL_DELAY_MS") ?? 0);
+                const inputDue = !firstMeasuredScroll || (firstFrameAt !== undefined &&
+                  performance.now() - firstFrameAt >= diagnosticDelay);
+              '''
+              old = '        const step=commands.shift();'
+              assert source.count(old) == 1
+              source = source.replace(line, scheduled + line.replace(timing_guard, timing_guard + 'inputDue&&'), 1)
+              source = source.replace(old, '''        if (firstMeasuredScroll) console.log(JSON.stringify({
+                  type: "diagnostic-scroll-start", diagnosticDelay, settled, rendering: !!rendering,
+                  dirty, msSinceFirst: performance.now() - (firstFrameAt ?? 0)
+                }));
+              ''' + old, 1)
+              path.write_text(source)
+          PYTHON
+          lab=tools/labs/demos/foafnaut/realpages
+          for spec in immediate:a1 delayed:a1 delayed:b1 immediate:b1 immediate:b2 delayed:b2 delayed:a2 immediate:a2; do
+            mode=${spec%:*}
+            pass=${spec#*:}
+            slot=${pass:0:1}
+            export FOAFNAUT_SCROLL_DELAY_MS=0
+            if [[ "$mode" = delayed ]]; then export FOAFNAUT_SCROLL_DELAY_MS=25000; fi
+            engine=$(find "$PWD/engines/$slot" -name libweb-render.dylib -print -quit)
+            deno run -A "$lab/survey.ts" --platform macos --engine "$engine" \
+              --host "$PWD/host-$slot/labs/demos/foafnaut" --out "$PWD/out/$mode/$pass" \
+              --snapshots "$PWD/builds/third_party/realpages" --only wp-us,m-us --no-chrome --timeout 180
+            python3 - "$mode" "$pass" <<'PYTHON' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, sys
+          from pathlib import Path
+
+          mode, arm = sys.argv[1:]
+          root = Path('out', mode, arm)
+          pages = json.loads((root / 'summary.json').read_text())['pages']
+          assert {page['id'] for page in pages} == {'wp-us', 'm-us'}
+          for page in pages:
+              log = (root / 'logs' / (page['id'] + '.scroll.log')).read_text().splitlines()
+              trace = [json.loads(line) for line in log if line.startswith('{"type":"diagnostic-scroll-start"')]
+              assert len(trace) == 1, (mode, arm, page['id'], trace)
+              assert trace[0]['msSinceFirst'] >= trace[0]['diagnosticDelay'], trace
+              assert page.get('scroll_latency_p95_ms') is not None, page
+              print(json.dumps(dict(mode=mode, arm=arm, page=page['id'],
+                  scroll_p95_ms=page['scroll_latency_p95_ms'], start=trace[0])))
+          PYTHON
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wikipedia-scroll-timing-comparison
+          path: out/
+          retention-days: 7
