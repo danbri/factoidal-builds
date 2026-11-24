@@ -14,8 +14,13 @@ for file in files:
     start = time.monotonic()
     result = subprocess.run(['lean', '--run', probe, file], check=True,
                             capture_output=True, text=True, env=os.environ)
-    reference_result = subprocess.run([reference, file, '-o', os.devnull], check=True,
-                                      capture_output=True, text=True)
+    reference_result = subprocess.run([reference, file, '-ppm', '-o', '-'],
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                                      text=True)
+    if reference_result.returncode:
+        diagnostics = '\n'.join(line for line in reference_result.stderr.splitlines()
+                                if not line.startswith('@'))
+        raise SystemExit(f'{file}: libwebp exited {reference_result.returncode}\n{diagnostics}')
     actual = result.stdout.splitlines()
     expected = [line for line in reference_result.stderr.splitlines() if line.startswith('@')]
     if actual != expected:
