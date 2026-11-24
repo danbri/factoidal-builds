@@ -1,0 +1,81 @@
+name: Measure nested inline-block navigation geometry
+on:
+  push:
+    branches: [wip/nested-inline-block-reference]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/nested-inline-block-geometry.ts
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45462157992
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - name: Measure the same reduction in Chromium and Foafnaut
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          google-chrome --version | tee out/chrome-version.txt
+          deno run --allow-ffi --allow-write=out --unstable-ffi release-tests/nested-inline-block-geometry.ts \
+            "$PWD/engine/libweb-render.so" > out/foafnaut.jsonl
+          for mode in archived no-padding outer-block outer-block-no-padding; do
+            google-chrome --headless --no-sandbox --disable-gpu --no-first-run --disable-background-networking \
+              --user-data-dir="$RUNNER_TEMP/geometry-chrome-$mode" --dump-dom "file://$PWD/out/$mode.html" \
+              > "out/chrome-$mode.html" 2>"out/chrome-$mode.stderr"
+          done
+          python3 - <<'PY'
+          import json
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Measurement(HTMLParser):
+              boxes = None
+              def handle_starttag(self, tag, attrs):
+                  if tag == "body":
+                      data = dict(attrs).get("data-boxes")
+                      if data:
+                          self.boxes = json.loads(data)
+
+          native = {r["name"]:r["boxes"][0] for r in map(json.loads, Path("out/foafnaut.jsonl").read_text().splitlines())}
+          chrome = {}
+          for path in Path("out").glob("chrome-*.html"):
+              parser = Measurement()
+              parser.feed(path.read_text())
+              assert parser.boxes is not None, path
+              chrome[path.stem.removeprefix("chrome-")] = parser.boxes
+
+          def get(boxes, name, id, field):
+              return next(b[field] for b in boxes[name] if b[0] == id)
+
+          def item_delta(boxes, name, control):
+              return get(boxes, name, "item1", 3) - get(boxes, control, "item1", 3)
+
+          print(json.dumps({"chrome":chrome, "foafnaut":native}, indent=2))
+          assert item_delta(chrome, "archived", "no-padding") == 16
+          assert item_delta(chrome, "outer-block", "outer-block-no-padding") == 16
+          assert get(chrome, "archived", "link1", 3) > 16
+          assert get(chrome, "archived", "item1", 2) == get(chrome, "archived", "item2", 2)
+          assert item_delta(native, "archived", "no-padding") == 0
+          assert abs(item_delta(native, "outer-block", "outer-block-no-padding") - 16) < 0.01
+          assert get(native, "archived", "link1", 3) == 0
+          assert get(native, "outer-block", "link1", 3) > 16
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nested-inline-block-geometry
+          path: out/
+          retention-days: 7
