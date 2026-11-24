@@ -1,0 +1,82 @@
+name: Check compact CSS bitmap repetition on the archived Julia Evans homepage
+on:
+  push:
+    branches: [wip/compact-background-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/compact-background-*
+            third_party/realpages/jvns.ca/blog-jvns-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Get exact baseline and candidate engines
+        run: |
+          set -euo pipefail
+          for item in "45492658080:baseline" "45494244013:candidate"; do
+            run=${item%:*}
+            arm=${item#*:}
+            for i in $(seq 1 145); do
+              if gh run download "$run" -R "$GITHUB_REPOSITORY" -n branch-engine -D "$arm"; then break; fi
+              if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" --jq .status)" == completed ]]; then
+                echo "No engine from $run" >&2
+                exit 1
+              fi
+              sleep 20
+            done
+            test -s "$arm/libweb-render.so"
+          done
+      - name: Check the archived bitmap texture and each repeat axis
+        run: |
+          set -euo pipefail
+          archive=third_party/realpages/jvns.ca/blog-jvns-20261115.zip
+          echo "dc64ae6142c3c4463634a5e73d60b7c05918c66b0d193f94f2cdcd2e375b3f3c  $archive" | sha256sum -c -
+          mkdir out
+          sha256sum "$archive" {baseline,candidate}/libweb-render.so > out/inputs.sha256
+          python3 release-tests/compact-background-input.py "$archive" input
+          probe=release-tests/compact-background-measure.ts
+          deno check --no-config --unstable-ffi "$probe"
+          for arm in baseline candidate; do
+            lib="$PWD/$arm/libweb-render.so"
+            deno run --no-config --unstable-ffi --allow-read=input --allow-ffi="$lib" "$probe" \
+              "$lib" input > "out/$arm.jsonl"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          def read(arm):
+              return {d["name"]: d for line in Path(f"out/{arm}.jsonl").read_text().splitlines()
+                      for d in [json.loads(line)]}
+          def tile_limit(result):
+              return any(d.get("limit") == "maxBackgroundTiles" for d in result["diagnostics"])
+          a, b = read("baseline"), read("candidate")
+          assert tile_limit(a["jvns"])
+          assert not tile_limit(b["jvns"])
+          assert set(map(tuple, a["jvns"]["colors"])) == {(130, 134, 142)}
+          assert len(set(map(tuple, b["jvns"]["colors"]))) >= 10
+          assert tile_limit(a["repeat"])
+          red, blue, white = [255,0,0], [0,0,255], [255,255,255]
+          assert b["repeat"]["colors"] == [red,blue,red,red,red,white], b["repeat"]
+          for key in ("repeat-x", "repeat-y", "no-repeat"):
+              assert b[key]["colors"] == a[key]["colors"], key
+          print("Archived background texture and all four repeat cases passed.")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compact-css-background-replay
+          path: out
+          retention-days: 7
