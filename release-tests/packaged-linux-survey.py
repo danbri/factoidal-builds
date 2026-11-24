@@ -23,7 +23,13 @@ def xdotool(*args):
 
 def window_image(window):
     size = window.get_geometry()
-    raster = window.get_image(0, 0, size.width, size.height, X.ZPixmap, 0xffffffff)
+    root = connection.screen().root
+    position = root.translate_coords(window, 0, 0)
+    screen = root.get_geometry()
+    if (position.x < 0 or position.y < 0 or
+            position.x + size.width > screen.width or position.y + size.height > screen.height):
+        raise RuntimeError(f"Window outside the capture screen at {position.x},{position.y} ({size.width}x{size.height})")
+    raster = root.get_image(position.x, position.y, size.width, size.height, X.ZPixmap, 0xffffffff)
     if raster.depth != 24 or len(raster.data) != size.width * size.height * 4:
         raise RuntimeError("Expected 24-bit X11 pixels")
     return Image.frombytes("RGB", (size.width, size.height), raster.data, "raw", "BGRX")
@@ -77,7 +83,8 @@ def capture(spec):
                     if found:
                         window = connection.create_resource_object("window", int(found[0]))
                         xdotool("windowfocus", "--sync", window.id)
-                        xdotool("windowsize", "--sync", window.id, width, height)
+                        xdotool("windowmove", "--sync", window.id, 0, 0).check_returncode()
+                        xdotool("windowsize", "--sync", window.id, width, height).check_returncode()
                         row["windowMs"] = round((time.monotonic()-start)*1000)
                 for trace in read_traces(reader):
                     kind = trace.get("type")
