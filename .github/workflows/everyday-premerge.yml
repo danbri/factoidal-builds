@@ -10,8 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {change: W3C out-of-flow line height, sha: e77159d41903a3102f844671e3ab822d9e7c1fba, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
-          - {change: FrogFind legacy font, sha: 50d9c022443679514b4b8b1894ab22d300e6f801, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
+          - {change: embedded BBC SVG metadata, sha: 1c0e831211a375941c237f58a265d9282dea89b0, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
+          - {change: WebP container and prefix reader, sha: f00869e9778c563f84586aab26c30284a1403dfa, base: 8088106e8589f889899d6d07ddea1309ad074063}
     name: Premerge ${{ matrix.change }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
