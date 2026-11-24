@@ -1,0 +1,88 @@
+name: Compare Linux software-Vulkan cold shader optimization
+on:
+  push:
+    branches: [wip/linux-gallivm-cold-start]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/gallivm-cold-window.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45490174499
+          name: foafnaut-browser-linux-x86_64-candidate
+          path: package
+          github-token: ${{ github.token }}
+      - name: Alternate the Mesa optimization setting with fresh driver caches
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir out
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          tar -xzf "${archives[0]}" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          echo "6b3a63b85bf0edac24026b37f3cd49a75ac5743614c2c29daa6946647c8d3fa6  $binary" | sha256sum -c -
+          (cd "$(dirname "$binary")"; sha256sum -c SHA256SUMS)
+          sha256sum "${archives[0]}" "$binary" > out/inputs.sha256
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/driver-versions.txt
+          export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)"
+          test -f "$VK_DRIVER_FILES"
+          unset MESA_SHADER_CACHE_DISABLE MESA_SHADER_CACHE_DIR FOAFNAUT_SCENE_MODE FOAFNAUT_DIAGNOSTIC_FIRST_PAINT_ONLY
+          rc=0
+          for pass in a1 b1 b2 a2; do
+            unset GALLIVM_PERF
+            if [[ "$pass" == b* ]]; then export GALLIVM_PERF=nopt; fi
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$pass"
+            export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$pass"
+            install -d -m 700 "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+            mkdir "out/$pass"
+            xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 release-tests/gallivm-cold-window.py               "$binary" "$PWD/out/$pass" || rc=1
+          done
+          test "$rc" = 0
+          /usr/bin/python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import hashlib, json
+          from pathlib import Path
+          from PIL import Image
+
+          print("| Pass | Layout ms | Graphics session ms | Draw ms | Visible frame ms |")
+          print("| --- | --- | --- | --- | --- |")
+          hashes = {}
+          for arm in ("a1", "b1", "b2", "a2"):
+              root = Path("out", arm)
+              rec = json.loads((root/"window-smoke.json").read_text())
+              frame = rec["firstFrame"]
+              assert rec["status"] == "pass" and rec["pages"][0]["matchedPixels"] > 1500
+              assert frame.get("layers"), (arm, frame)
+              assert rec["sourceCommit"] == "384c4b6196120e4ff8ed831f98903c436d1e1307", rec
+              assert len(rec["pages"]) == 3 and rec["live"]["documentInkPixels"] > 0, rec
+              with Image.open(root/"first.png") as image:
+                  assert image.size == (800, 500)
+              for name in ("first", "second", "back"):
+                  with Image.open(root/(name+".png")) as image:
+                      content = image.crop((0, frame["layers"]["top"], image.width, image.height)).tobytes()
+                      hashes.setdefault(name,set()).add(hashlib.sha256(content).hexdigest())
+              print("|", arm, "|", frame["layoutMs"], "|", frame["sessionMs"], "|",
+                    frame["drawMs"], "|", rec["pages"][0]["sinceLaunchMs"], "|")
+          print("Distinct below-toolbar pixel hashes by fixture:", {k: len(v) for k,v in hashes.items()})
+          assert all(len(v) == 1 for v in hashes.values()), hashes
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gallivm-cold-window
+          path: out/
+          retention-days: 7
