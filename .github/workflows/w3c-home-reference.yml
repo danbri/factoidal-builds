@@ -7,44 +7,15 @@ permissions:
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CANDIDATE: 5eb100777e590e0ae1d38b0e1344676f01864d59
+  CANDIDATE: aafe57fe0fdd7d9a409c3d17271b44ea46f25bea
   BASELINE: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
-  BRANCH_RUN: '45397071647'
+  BRANCH_RUN: '45404694862'
   SET: foafnaut-linux-x86_64
   WEB: build-4618bea0c1ac-foafnaut-web
 jobs:
-  capture:
-    runs-on: macos-15
-    timeout-minutes: 8
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: danbri/factoidal-core
-          ref: 5eb100777e590e0ae1d38b0e1344676f01864d59
-          persist-credentials: false
-          sparse-checkout: labs/demos/foafnaut/realpages
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.9.4
-      - name: Capture W3C at desktop and narrow widths
-        run: |
-          set -euo pipefail
-          jq -n '{defaults:{viewport:"1440x800",licence:"W3C site terms"},pages:[
-            {id:"w3c-home-wide",url:"https://w3.org/",viewport:"1440x800",attribution:"World Wide Web Consortium, W3C homepage"},
-            {id:"w3c-home-narrow",url:"https://w3.org/",viewport:"480x800",attribution:"World Wide Web Consortium, W3C homepage"}]}' > "$RUNNER_TEMP/pages.json"
-          chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-          "$chrome" --version
-          deno run -A labs/demos/foafnaut/realpages/snapshot.ts --chrome "$chrome" --pages "$RUNNER_TEMP/pages.json" --out "$RUNNER_TEMP/snapshots"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: w3c-home-snapshots
-          path: ${{ runner.temp }}/snapshots/
-          retention-days: 7
-          if-no-files-found: error
   replay:
-    needs: capture
     runs-on: ubuntu-latest
-    timeout-minutes: 28
+    timeout-minutes: 60
     steps:
       - name: Wait for the exact native engine
         run: |
@@ -60,8 +31,12 @@ jobs:
           done
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
           repository: danbri/factoidal-core
-          ref: 5eb100777e590e0ae1d38b0e1344676f01864d59
+          ref: aafe57fe0fdd7d9a409c3d17271b44ea46f25bea
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -71,7 +46,7 @@ jobs:
             third_party/fonts
       - uses: actions/download-artifact@v4
         with:
-          run-id: '45397071647'
+          run-id: '45404694862'
           name: branch-engine
           github-token: ${{ github.token }}
           path: engines/candidate
@@ -100,6 +75,8 @@ jobs:
           echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
+          run-id: 45403312317
+          github-token: ${{ github.token }}
           name: w3c-home-snapshots
           path: snapshots
       - name: Render the actual W3C homepage at two widths
@@ -124,6 +101,9 @@ jobs:
               sed -n 's/^__done //p' "out/$arm/$shape.log" | jq -e '.status == "ok"'
             done
           done
+      - name: Check border-box logo geometry
+        shell: bash
+        run: deno run --no-config --allow-ffi --unstable-ffi core-diagnostics/border-box-logo.ts engines/candidate/libweb-render.so | tee out/border-box-geometry.ndjson
       - uses: actions/upload-artifact@v4
         if: always()
         with:
