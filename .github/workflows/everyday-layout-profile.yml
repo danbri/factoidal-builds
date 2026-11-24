@@ -68,13 +68,14 @@ jobs:
           test -s "$font"
           for page in bbc wiki; do
             for family in bitmap noto; do
-              args=()
-              [[ $family != noto ]] || args=("$font")
+              font_arg=""
+              [[ $family != noto ]] || font_arg="$font"
               out="$PWD/out/$page-$family"
-              deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/layout-profile.ts "$ENGINE" "$RUNNER_TEMP/documents/$page" sample "${args[@]}" > "$out.ndjson" 2>"$out.probe.log" &
+              deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/layout-profile.ts "$ENGINE" "$RUNNER_TEMP/documents/$page" sample "$font_arg" > "$out.ndjson" 2>"$out.probe.log" &
               pid=$!
               for i in {1..30}; do
-                grep -q '"stage":"layout"' "$out.ndjson" && break
+                grep -qs '"stage":"layout"' "$out.ndjson" && break
+                kill -0 "$pid" 2>/dev/null || break
                 sleep 0.10
               done
               sudo sample "$pid" 5 2 -file "$out.sample" >"$out.sampler.log" 2>&1 || true
