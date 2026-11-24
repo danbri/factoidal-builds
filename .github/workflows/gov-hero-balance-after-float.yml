@@ -7,7 +7,7 @@ permissions:
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CANDIDATE_RUN: "45506554058"
+  CANDIDATE_RUN: "45511526258"
 jobs:
   compare:
     runs-on: ubuntu-latest
@@ -75,6 +75,8 @@ jobs:
                   assert heading == "The best place to find government services and information", record
                   assert record["headingLines"][-1] == "and information", record
                   assert len(record["headingLines"]) == 3, record
+                  if record["n"] == 168:
+                      assert record["blue"] == [[389,799]], record
                   print(record["mode"], record["n"], record["headingLines"], record["headingGlyphs"][0][1:])
           PYTHON
       - uses: actions/upload-artifact@v4
