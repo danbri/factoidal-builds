@@ -1,13 +1,14 @@
-name: Verify the embedded SVG author cascade reference cases
+name: Compare embedded SVG paint on the exact candidate
 on:
   push:
     branches: [wip/svg-author-cascade-fixtures]
 permissions:
   contents: read
+  actions: read
 jobs:
   compare:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 95
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,28 +41,63 @@ jobs:
           print(json.dumps(results, indent=2))
           assert all(r["actual"] == r["want"] for r in results)
           PYTHON
-      - name: Measure the existing native browser
+      - name: Wait for the exact candidate's native build
         env:
           GH_TOKEN: ${{ github.token }}
-          CORE: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef
-          SET: foafnaut-linux-x86_64
+          CORE: 663a60a7309b479dc04515a538475643c9bcff23
+          BUILD: '45436424819'
         run: |
           set -euo pipefail
-          mkdir -p out engine
-          tag="build-${CORE:0:12}-$SET"
-          for attempt in 1 2 3; do
-            if gh release download "$tag" -R "$GITHUB_REPOSITORY" --clobber -p "$SET.tar.gz" -p build-info.json -D engine; then break; fi
-            [[ $attempt != 3 ]] || exit 1
-            sleep 10
+          run="repos/$GITHUB_REPOSITORY/actions/runs/$BUILD"
+          gh api "$run/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CORE"
+          until gh api "$run/artifacts" --jq '.artifacts[].name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$run" --jq '.status')" == completed ]]; then
+              echo "::error::Exact candidate build did not produce an engine"
+              exit 1
+            fi
+            sleep 30
           done
-          jq -e --arg sha "$CORE" '.source_commit == $sha' engine/build-info.json >/dev/null
-          sha=$(jq -er --arg filename "$SET.tar.gz" '.artifacts[$filename].sha256' engine/build-info.json)
-          echo "$sha  engine/$SET.tar.gz" | sha256sum -c -
-          tar -xzf "engine/$SET.tar.gz" -C engine
-          library=$(find "$PWD/engine" -name libweb-render.so -print -quit)
-          test -s "$library"
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45436424819'
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45430099580'
+          name: desktop-govuk-snapshot
+          path: snapshot
+          github-token: ${{ github.token }}
+      - name: Check all fixture paints and the archived GOV.UK markup
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          toolchain=$(cat engine/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$toolchain"
+          export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$toolchain" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
+          lib="$PWD/engine/libweb-render.so"
+          zip=$(find "$PWD/snapshot" -name 'desktop-govuk-*.zip' -print -quit)
+          sha256sum "$lib" "$zip" > out/inputs.sha256
+          python3 - "$zip" "$RUNNER_TEMP/govuk.html" <<'PYTHON'
+          import json, pathlib, sys, zipfile
+          with zipfile.ZipFile(sys.argv[1]) as snapshot:
+              manifest = json.loads(snapshot.read("manifest.json"))
+              url = manifest["reference"]["document_url"]
+              assert url == "https://www.gov.uk/"
+              source = next(e for e in manifest["entries"] if e["url"] == url)
+              assert source["source"] == "chrome"
+              pathlib.Path(sys.argv[2]).write_bytes(snapshot.read(source["body"]))
+          PYTHON
+          deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/govuk-icon-probe.ts \
+            "$lib" "$RUNNER_TEMP/govuk.html" | tee out/govuk-icon.ndjson
+          jq -se '
+            any(.[]; .label == "external-descendant" and .sky > 1500 and .black > 50 and .black < 300)
+            and any(.[]; .label == "no-css" and .sky == 0 and .black > 1500)
+          ' out/govuk-icon.ndjson
           deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/cascade-native.ts \
-            "$library" "$RUNNER_TEMP/fixtures" | tee out/native-results.ndjson
+            "$lib" "$RUNNER_TEMP/fixtures" require-pass | tee out/native-results.ndjson
       - uses: actions/upload-artifact@v4
         if: always()
         with:
