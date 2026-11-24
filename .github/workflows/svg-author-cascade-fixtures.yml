@@ -44,8 +44,8 @@ jobs:
       - name: Wait for the exact candidate's native build
         env:
           GH_TOKEN: ${{ github.token }}
-          CORE: c89d60d58066fd0c74c2550f418c139aa49ebfd6
-          BUILD: '45449964342'
+          CORE: d63fc25a98e65872d31b1513c2ab066599b1b62e
+          BUILD: '45456514571'
         run: |
           set -euo pipefail
           run="repos/$GITHUB_REPOSITORY/actions/runs/$BUILD"
@@ -59,7 +59,7 @@ jobs:
           done
       - uses: actions/download-artifact@v4
         with:
-          run-id: '45449964342'
+          run-id: '45456514571'
           name: branch-engine
           path: engine
           github-token: ${{ github.token }}
