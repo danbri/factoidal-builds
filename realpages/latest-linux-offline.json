@@ -2,35 +2,35 @@
  "schema": "foafnaut-realpages/1",
  "platform": "linux",
  "mode": "offline",
- "release": "build-51f7ce6af97b-foafnaut-linux-x86_64",
+ "release": "build-ce375e25bbf6-foafnaut-linux-x86_64",
  "engine": {
   "file": "libweb-render.so",
-  "sha256": "564446d7b91154b4090927517bacd8d4a64d3d7e391de911424276cfcf375f32"
+  "sha256": "52315b1f3f8a3f5e17124a7e18a3b664015ab392268628bbf91f53826f4c1653"
  },
  "host": {
-  "commit": "51f7ce6af97b0d17aa7b7f337238b6835d81c8fe",
+  "commit": "ce375e25bbf6c2b6c1f8a577be9e99c47b1a0fd8",
   "shot_at_end": true,
   "liberal_report": true
  },
- "survey_commit": "51f7ce6af97b0d17aa7b7f337238b6835d81c8fe",
+ "survey_commit": "472993e362b585c5724f8de9d13115e8383f9f80",
  "runner": {
   "os": "linux",
   "arch": "x86_64",
   "deno": "2.9.4"
  },
- "started": "2026-11-24T12:47:16.287Z",
- "finished": "2026-11-24T12:52:55.685Z",
+ "started": "2026-11-24T13:50:10.019Z",
+ "finished": "2026-11-24T13:57:25.138Z",
  "watch_s": 15,
  "timeout_s": 180,
  "totals": {
-  "pages": 23,
-  "usable": 11,
-  "slow": 6,
+  "pages": 24,
+  "usable": 10,
+  "slow": 7,
   "unusable": 0,
   "blank": 0,
   "timeout": 1,
   "crash": 0,
-  "unreachable": 5
+  "unreachable": 6
  },
  "pages": [
   {
@@ -78,6 +78,17 @@
    "over_budget": []
   },
   {
+   "id": "desktop-w3c-home",
+   "url": "https://w3.org/",
+   "viewport": "1280x800",
+   "mobile": false,
+   "state": "unreachable",
+   "unreachable_reason": "no snapshot",
+   "crashed": false,
+   "verdict": "unreachable",
+   "over_budget": []
+  },
+  {
    "id": "desktop-frogfind",
    "url": "https://frogfind.com/",
    "viewport": "1280x800",
@@ -95,22 +106,24 @@
    "mobile": false,
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 2.7,
-   "load_ms": 1947,
-   "first_layout_ms": 638,
+   "first_frame_s": 2.2,
+   "load_ms": 993,
+   "first_layout_ms": 1001,
    "rows": 80,
    "links": 9,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 0,
-   "rss_peak_mb": 291,
-   "wall_s": 2.7,
+   "cpu_s": 1,
+   "rss_peak_mb": 283,
+   "wall_s": 2.2,
    "refused": null,
    "state": "ok",
    "crashed": false,
    "verdict": "usable",
-   "over_budget": []
+   "over_budget": [
+    "first_layout_ms 1001 > 1000"
+   ]
   },
   {
    "id": "wp-stub",
@@ -120,17 +133,17 @@
    "snapshot": "wp-stub-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 5.1,
-   "load_ms": 4682,
-   "first_layout_ms": 353,
+   "first_frame_s": 8.5,
+   "load_ms": 7787,
+   "first_layout_ms": 536,
    "rows": 130,
    "links": 103,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 4,
-   "rss_peak_mb": 350,
-   "wall_s": 5.2,
+   "cpu_s": 8,
+   "rss_peak_mb": 348,
+   "wall_s": 8.5,
    "refused": null,
    "replay": {
     "hits": 33,
@@ -140,7 +153,7 @@
    "crashed": false,
    "verdict": "usable",
    "over_budget": [
-    "first_frame_s 5.1 > 5"
+    "first_frame_s 8.5 > 5"
    ]
   },
   {
@@ -151,17 +164,17 @@
    "snapshot": "wp-spinal-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 20.5,
-   "load_ms": 16140,
-   "first_layout_ms": 4111,
+   "first_frame_s": 33.5,
+   "load_ms": 26377,
+   "first_layout_ms": 6671,
    "rows": 1269,
    "links": 714,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 20,
-   "rss_peak_mb": 704,
-   "wall_s": 20.5,
+   "cpu_s": 33,
+   "rss_peak_mb": 689,
+   "wall_s": 33.5,
    "refused": null,
    "replay": {
     "hits": 34,
@@ -171,8 +184,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 20.5 > 5",
-    "first_layout_ms 4111 > 1000"
+    "first_frame_s 33.5 > 5",
+    "first_layout_ms 6671 > 1000"
    ]
   },
   {
@@ -192,16 +205,14 @@
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 180,
-   "rss_peak_mb": 3055,
+   "rss_peak_mb": 2471,
    "wall_s": 180.1,
    "refused": null,
    "replay": null,
    "state": "timeout",
    "crashed": false,
    "verdict": "timeout",
-   "over_budget": [
-    "rss_peak_mb 3055 > 2500"
-   ]
+   "over_budget": []
   },
   {
    "id": "m-stub",
@@ -211,17 +222,17 @@
    "snapshot": "m-stub-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 1,
-   "load_ms": 761,
-   "first_layout_ms": 163,
+   "first_frame_s": 1.7,
+   "load_ms": 1245,
+   "first_layout_ms": 286,
    "rows": 291,
    "links": 79,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 1,
-   "rss_peak_mb": 248,
-   "wall_s": 1,
+   "rss_peak_mb": 218,
+   "wall_s": 1.7,
    "refused": null,
    "replay": {
     "hits": 24,
@@ -240,17 +251,17 @@
    "snapshot": "m-spinal-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 4.6,
-   "load_ms": 985,
-   "first_layout_ms": 3402,
+   "first_frame_s": 7.6,
+   "load_ms": 1669,
+   "first_layout_ms": 5567,
    "rows": 3473,
    "links": 667,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 4,
-   "rss_peak_mb": 557,
-   "wall_s": 4.7,
+   "cpu_s": 7,
+   "rss_peak_mb": 530,
+   "wall_s": 7.7,
    "refused": null,
    "replay": {
     "hits": 25,
@@ -260,7 +271,8 @@
    "crashed": false,
    "verdict": "usable",
    "over_budget": [
-    "first_layout_ms 3402 > 1000"
+    "first_frame_s 7.6 > 5",
+    "first_layout_ms 5567 > 1000"
    ]
   },
   {
@@ -271,17 +283,17 @@
    "snapshot": "m-us-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 54.3,
-   "load_ms": 2886,
-   "first_layout_ms": 50493,
+   "first_frame_s": 81.4,
+   "load_ms": 4498,
+   "first_layout_ms": 75742,
    "rows": 23857,
    "links": 4841,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 55,
-   "rss_peak_mb": 2173,
-   "wall_s": 54.4,
+   "cpu_s": 82,
+   "rss_peak_mb": 2276,
+   "wall_s": 81.5,
    "refused": null,
    "replay": {
     "hits": 76,
@@ -291,8 +303,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 54.3 > 10",
-    "first_layout_ms 50493 > 1000"
+    "first_frame_s 81.4 > 10",
+    "first_layout_ms 75742 > 1000"
    ]
   },
   {
@@ -303,17 +315,17 @@
    "snapshot": "m-stub-enm-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 1.3,
-   "load_ms": 916,
-   "first_layout_ms": 223,
+   "first_frame_s": 2.1,
+   "load_ms": 1575,
+   "first_layout_ms": 369,
    "rows": 181,
    "links": 88,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 1,
-   "rss_peak_mb": 225,
-   "wall_s": 1.3,
+   "cpu_s": 2,
+   "rss_peak_mb": 241,
+   "wall_s": 2.1,
    "refused": null,
    "replay": {
     "hits": 24,
@@ -332,17 +344,17 @@
    "snapshot": "news-bbc-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 15.6,
-   "load_ms": 13209,
-   "first_layout_ms": 2254,
+   "first_frame_s": 24.8,
+   "load_ms": 21039,
+   "first_layout_ms": 3610,
    "rows": 324,
    "links": 39,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 15,
-   "rss_peak_mb": 788,
-   "wall_s": 15.6,
+   "cpu_s": 24,
+   "rss_peak_mb": 776,
+   "wall_s": 24.9,
    "refused": null,
    "replay": {
     "hits": 109,
@@ -352,8 +364,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 15.6 > 5",
-    "first_layout_ms 2254 > 1000"
+    "first_frame_s 24.8 > 5",
+    "first_layout_ms 3610 > 1000"
    ]
   },
   {
@@ -364,17 +376,17 @@
    "snapshot": "news-bbc-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 3.4,
-   "load_ms": 413,
-   "first_layout_ms": 2895,
+   "first_frame_s": 5.8,
+   "load_ms": 713,
+   "first_layout_ms": 4864,
    "rows": 312,
    "links": 42,
    "scripts_off": "--no-scripts",
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 3,
+   "cpu_s": 5,
    "rss_peak_mb": 335,
-   "wall_s": 3.4,
+   "wall_s": 5.8,
    "refused": null,
    "replay": {
     "hits": 23,
@@ -384,7 +396,8 @@
    "crashed": false,
    "verdict": "usable",
    "over_budget": [
-    "first_layout_ms 2895 > 1000"
+    "first_frame_s 5.8 > 5",
+    "first_layout_ms 4864 > 1000"
    ]
   },
   {
@@ -395,17 +408,17 @@
    "snapshot": "gh-deno-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 11.2,
-   "load_ms": 1869,
-   "first_layout_ms": 9227,
+   "first_frame_s": 21.5,
+   "load_ms": 3063,
+   "first_layout_ms": 18182,
    "rows": 213,
    "links": 108,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 11,
-   "rss_peak_mb": 396,
-   "wall_s": 11.3,
+   "cpu_s": 21,
+   "rss_peak_mb": 386,
+   "wall_s": 21.5,
    "refused": null,
    "replay": {
     "hits": 39,
@@ -415,8 +428,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 11.2 > 5",
-    "first_layout_ms 9227 > 1000"
+    "first_frame_s 21.5 > 5",
+    "first_layout_ms 18182 > 1000"
    ]
   },
   {
@@ -427,17 +440,17 @@
    "snapshot": "mdn-display-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 11.1,
-   "load_ms": 8315,
-   "first_layout_ms": 2662,
+   "first_frame_s": 18.5,
+   "load_ms": 13745,
+   "first_layout_ms": 4539,
    "rows": 923,
    "links": 427,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 11,
-   "rss_peak_mb": 559,
-   "wall_s": 11.2,
+   "cpu_s": 18,
+   "rss_peak_mb": 546,
+   "wall_s": 18.6,
    "refused": null,
    "replay": {
     "hits": 31,
@@ -447,8 +460,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 11.1 > 5",
-    "first_layout_ms 2662 > 1000"
+    "first_frame_s 18.5 > 5",
+    "first_layout_ms 4539 > 1000"
    ]
   },
   {
@@ -459,17 +472,17 @@
    "snapshot": "blog-jvns-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 7.4,
-   "load_ms": 2924,
-   "first_layout_ms": 4223,
+   "first_frame_s": 12.8,
+   "load_ms": 5131,
+   "first_layout_ms": 7415,
    "rows": 875,
    "links": 687,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 7,
-   "rss_peak_mb": 585,
-   "wall_s": 7.4,
+   "cpu_s": 12,
+   "rss_peak_mb": 582,
+   "wall_s": 12.9,
    "refused": null,
    "replay": {
     "hits": 30,
@@ -477,10 +490,10 @@
    },
    "state": "ok",
    "crashed": false,
-   "verdict": "usable",
+   "verdict": "slow",
    "over_budget": [
-    "first_frame_s 7.4 > 5",
-    "first_layout_ms 4223 > 1000"
+    "first_frame_s 12.8 > 5",
+    "first_layout_ms 7415 > 1000"
    ]
   },
   {
@@ -491,17 +504,17 @@
    "snapshot": "hn-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 0.6,
-   "load_ms": 123,
-   "first_layout_ms": 411,
+   "first_frame_s": 1.1,
+   "load_ms": 225,
+   "first_layout_ms": 675,
    "rows": 69,
    "links": 229,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 0,
-   "rss_peak_mb": 236,
-   "wall_s": 0.6,
+   "cpu_s": 1,
+   "rss_peak_mb": 256,
+   "wall_s": 1.1,
    "refused": null,
    "replay": {
     "hits": 7,
@@ -520,17 +533,17 @@
    "snapshot": "w3c-flexbox-20261115.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 13.7,
-   "load_ms": 8901,
-   "first_layout_ms": 3981,
+   "first_frame_s": 23,
+   "load_ms": 15130,
+   "first_layout_ms": 6806,
    "rows": 7737,
    "links": 6814,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 14,
-   "rss_peak_mb": 2168,
-   "wall_s": 13.7,
+   "cpu_s": 23,
+   "rss_peak_mb": 2204,
+   "wall_s": 23.1,
    "refused": null,
    "replay": {
     "hits": 28,
@@ -540,8 +553,8 @@
    "crashed": false,
    "verdict": "slow",
    "over_budget": [
-    "first_frame_s 13.7 > 10",
-    "first_layout_ms 3981 > 1000"
+    "first_frame_s 23 > 10",
+    "first_layout_ms 6806 > 1000"
    ]
   },
   {
@@ -552,17 +565,17 @@
    "snapshot": "nature-telemetry-20261116.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 4.8,
-   "load_ms": 230,
-   "first_layout_ms": 4434,
+   "first_frame_s": 7.7,
+   "load_ms": 393,
+   "first_layout_ms": 7124,
    "rows": 58,
    "links": 13,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 4,
-   "rss_peak_mb": 395,
-   "wall_s": 4.8,
+   "cpu_s": 7,
+   "rss_peak_mb": 385,
+   "wall_s": 7.7,
    "refused": null,
    "replay": {
     "hits": 14,
@@ -572,7 +585,8 @@
    "crashed": false,
    "verdict": "usable",
    "over_budget": [
-    "first_layout_ms 4434 > 1000"
+    "first_frame_s 7.7 > 5",
+    "first_layout_ms 7124 > 1000"
    ]
   },
   {
@@ -583,17 +597,17 @@
    "snapshot": "infobomb-20261116.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 0.9,
-   "load_ms": 28,
-   "first_layout_ms": 746,
+   "first_frame_s": 1.5,
+   "load_ms": 45,
+   "first_layout_ms": 1302,
    "rows": 63,
    "links": 34,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
-   "cpu_s": 0,
+   "cpu_s": 1,
    "rss_peak_mb": 184,
-   "wall_s": 0.9,
+   "wall_s": 1.5,
    "refused": null,
    "replay": {
     "hits": 5,
@@ -602,7 +616,9 @@
    "state": "ok",
    "crashed": false,
    "verdict": "usable",
-   "over_budget": []
+   "over_budget": [
+    "first_layout_ms 1302 > 1000"
+   ]
   },
   {
    "id": "w3c-maxf",
@@ -612,17 +628,17 @@
    "snapshot": "w3c-maxf-20261116.zip",
    "attempts": 1,
    "exit_code": 0,
-   "first_frame_s": 0.3,
-   "load_ms": 19,
-   "first_layout_ms": 212,
+   "first_frame_s": 0.5,
+   "load_ms": 12,
+   "first_layout_ms": 296,
    "rows": 54,
    "links": 32,
    "scripts_off": null,
    "log_floods": 0,
    "log_flood_top": null,
    "cpu_s": 0,
-   "rss_peak_mb": 175,
-   "wall_s": 0.4,
+   "rss_peak_mb": 168,
+   "wall_s": 0.5,
    "refused": null,
    "replay": {
     "hits": 2,
