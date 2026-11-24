@@ -78,9 +78,9 @@ jobs:
           gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
           tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
           lab=core/labs/demos/foafnaut
-          window=$(find "$PWD/engines/a" -name libnative-window.dylib -print -quit)
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
+          window="$PWD/$lab/.build/native/libnative-window.dylib"
           test -s "$window"
-          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
           snapshot=snapshots/bbc.com/desktop-bbc-news-20261124.zip
           echo "2d1f97f2756462b2c4c4c1afb0b1cde66474943d579dcf959b1d57401fcb2ffb  $snapshot" | shasum -a 256 -c -
           shasum -a 256 "$snapshot" "$window" "$lab/run_html.ts" engines/web/foafnaut-web.tar.gz >> out/inputs.sha256
