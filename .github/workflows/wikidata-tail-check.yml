@@ -1,0 +1,35 @@
+name: Check Wikidata stack audit repair
+on:
+  push:
+    branches: [wip/wikidata-tail-check]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 317dd59acf0cb4dda6263626c6ca6d763f1b0881
+          path: core
+          persist-credentials: false
+      - run: bash builds/scripts/install-elan.sh
+      - uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-wikidata-tail
+          restore-keys: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Compile and run the Wikidata rewrite guards
+        working-directory: core/formal/lean4
+        run: lake build +L4Factoidal.Wikidata.RewriteTests
+      - name: Print the axioms used by the splice equivalence proof
+        working-directory: core/formal/lean4
+        run: |
+          printf '\n#print axioms L4Factoidal.Wikidata.splice_eq\n' >> L4Factoidal/Wikidata/Source.lean
+          lake env lean L4Factoidal/Wikidata/Source.lean
