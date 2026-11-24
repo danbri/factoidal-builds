@@ -1,5 +1,6 @@
 from pathlib import Path
 import hashlib
+import re
 import subprocess
 import sys
 import time
@@ -12,6 +13,14 @@ for file in files:
     start = time.monotonic()
     subprocess.run(['lean', '--run', probe, file, str(actual_path)], check=True)
     reference = subprocess.check_output(['dwebp', '-quiet', '-nofilter', '-yuv', file, '-o', '-'])
+    info = subprocess.check_output(['webpinfo', file], text=True)
+    width = int(re.search(r'(?m)^  Width: (\d+)$', info)[1])
+    height = int(re.search(r'(?m)^  Height: (\d+)$', info)[1])
+    yuv_size = width * height + 2 * ((width+1)//2) * ((height+1)//2)
+    alpha_size = width * height if re.search(r'(?m)^Chunk ALPH ', info) else 0
+    assert len(reference) == yuv_size + alpha_size, (file, len(reference), yuv_size, alpha_size)
+    # The CLI writes planar alpha after V. The intra decoder returns YUV only.
+    reference = reference[:yuv_size]
     actual = actual_path.read_bytes()
     if actual != reference:
         first = next((i for i, (a,b) in enumerate(zip(actual, reference)) if a != b),
