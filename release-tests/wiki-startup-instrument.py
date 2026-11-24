@@ -67,7 +67,10 @@ changes = [
   const turnMark = (phase: string, started: number) => console.error(JSON.stringify({
     type: "wiki-script-settle", phase, ms: Math.round(performance.now()-started),
     clock: turn.clock, commandCount: turn.commands?.length, nextWake: turn.nextWake,
-    pending: requests.length, pendingWorkerFetches: turn.fetches?.length
+    pending: requests.length, pendingWorkerFetches: turn.fetches?.length,
+    leanMs: Math.round(turn.ns / 1e6), instructions: turn.instructions,
+    tasks: turn.tasks, jobs: turn.jobs, layouts: turn.layouts, reads: turn.reads,
+    readOps: turn.readOps
   }));"""),
     ("""      take(await synced(engine, engine.scriptSession("", { action: "net", session: script.session, results: [await netAnswer(requests.shift()!)] })));""",
      """      let started = performance.now();
