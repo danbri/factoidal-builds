@@ -1,0 +1,66 @@
+name: Verify GOV.UK chevron painting in the native renderer
+on:
+  push:
+    branches: [wip/govuk-chevron-pixels]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  paint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/govuk-chevron-pixels.ts
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45462157992
+          name: branch-engine
+          path: engine-a
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45464863630
+          name: branch-engine
+          path: engine-b
+          github-token: ${{ github.token }}
+      - name: Compare the unchanged and transformed pixels in both renderers
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          probe=release-tests/govuk-chevron-pixels.ts
+          deno check --unstable-ffi "$probe"
+          sha256sum engine-{a,b}/libweb-render.so > out/engine-sha256.txt
+          for arm in a b; do
+            deno run --allow-ffi --unstable-ffi "$probe" "$PWD/engine-$arm/libweb-render.so" > "out/$arm.jsonl"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          old, new = [
+              {(row["kind"], row["trial"]): row for row in map(json.loads, Path(f"out/{arm}.jsonl").read_text().splitlines())}
+              for arm in ("a", "b")
+          ]
+          assert old.keys() == new.keys() and len(new) == 10
+          for key, result in new.items():
+              before = old[key]
+              kind = result["kind"]
+              assert result["changed"] > 0 and not result["byteIdentical"], result
+              if kind == "block":
+                  assert result == before, (before, result)
+              else:
+                  assert before["byteIdentical"] and before["changed"] == 0, before
+              print(f"{kind}, {result['trial']}: {before['changed']} -> {result['changed']} changed pixels")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: govuk-chevron-pixels
+          path: out/
+          retention-days: 7
