@@ -1,0 +1,109 @@
+name: Compare balanced wrapping on archived GOV.UK
+on:
+  push:
+    branches: [wip/gov-hero-wrap-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE_RUN: "45484366707"
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/gov-wrap-archive.ts
+            release-tests/gov-wrap-archive-input.py
+            release-tests/text-wrap-probe.ts
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45473431655
+          name: branch-engine
+          path: baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: snapshot
+          github-token: ${{ github.token }}
+      - name: Get the exact candidate engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 95); do
+            if gh run download "$CANDIDATE_RUN" -R "$GITHUB_REPOSITORY" -n branch-engine -D candidate; then break; fi
+            if [[ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" --jq .status)" == completed ]]; then
+              echo "Candidate run ended without an engine artifact" >&2
+              exit 1
+            fi
+            sleep 20
+          done
+          test -s candidate/libweb-render.so
+      - name: Measure line occupancy in the same archived heading
+        run: |
+          set -euo pipefail
+          dir=snapshot/gov.uk/desktop-govuk-20261124.zip
+          echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  $dir" | sha256sum -c -
+          mkdir out
+          unzip -p "$dir" reference.png > out/reference.png
+          sha256sum "$dir" baseline/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
+          script=release-tests/gov-wrap-archive.ts
+          reduced=release-tests/text-wrap-probe.ts
+          deno check --no-config --unstable-ffi "$script" "$reduced"
+          for arm in baseline candidate; do
+            python3 release-tests/gov-wrap-archive-input.py "$dir" "$arm/input"
+            deno run --no-config --unstable-ffi --allow-ffi --allow-read="$arm/input" --allow-write="$arm/input" \
+              "$script" "$PWD/$arm/libweb-render.so" "$arm/input" > "out/$arm.json"
+            mv "$arm/input/govuk.ppm" "out/$arm.ppm"
+            for mode in wrap balance; do
+              deno run --no-config --unstable-ffi --allow-ffi --allow-env=REFERENCE_OUT \
+                "$reduced" "$PWD/$arm/libweb-render.so" "$mode" > "out/$arm-$mode.json"
+            done
+          done
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          def read(name):
+              return json.loads(Path("out", f"{name}.json").read_text())
+
+          def lines(data):
+              groups = {}
+              for word in data["heading"]:
+                  groups.setdefault(word["y"], []).append(word["text"])
+              return [" ".join(groups[y]) for y in sorted(groups)]
+
+          a, b = read("baseline"), read("candidate")
+          for data in (a, b):
+              assert data["resources"] == 2
+              assert len(data["fontStatus"]) == 2 and all("webFont" in x["result"] for x in data["fontStatus"])
+          print("GOV.UK before:", lines(a))
+          print("GOV.UK after:", lines(b))
+          assert len(lines(a)) == len(lines(b)), (lines(a), lines(b))
+          assert lines(a)[-1] == "information", lines(a)
+          assert lines(b)[-1] == "and information", lines(b)
+
+          for case in ("baseline-wrap", "candidate-wrap", "candidate-balance"):
+              boxes = read(case)["boxes"]
+              counts = Counter(box[2] for box in boxes)
+              observed = [counts[y] for y in sorted(counts)]
+              expected = [3,3] if case == "candidate-balance" else [4,2]
+              assert observed == expected, (case, observed, expected)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gov-hero-wrap-replay
+          path: out/
+          retention-days: 7
