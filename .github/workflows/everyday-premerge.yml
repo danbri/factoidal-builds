@@ -10,8 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {change: viewport edges, sha: c59830ff11a7dca23eca5534dce13b628b66b0d6, base: 472993e362b585c5724f8de9d13115e8383f9f80}
-          - {change: responsive W3C logo, sha: aafe57fe0fdd7d9a409c3d17271b44ea46f25bea, base: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe}
+          - {change: viewport edges and CSSOM, sha: 7e81d60454961256eea458720153869f599278ce, base: b5ff72304208c698ab9d59fd7cdbda908c09029e}
+          - {change: matched capture, sha: 0664b9d1768ebe5459537781f46d72eeb53ef538, base: b5ff72304208c698ab9d59fd7cdbda908c09029e}
     name: Premerge ${{ matrix.change }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
