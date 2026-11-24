@@ -1,0 +1,140 @@
+name: Compare VP8 inverse transforms with libwebp
+on:
+  push:
+    branches: [wip/vp8-residual-transforms-check]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: e503655255137311ece832f74120ec29e7842a72
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            formal/lean4/L4Factoidal/Codec/WebP.lean
+            formal/lean4/L4Factoidal/Codec/VP8Tables.lean
+            formal/lean4/L4Factoidal/Codec/VP8Control.lean
+            formal/lean4/L4Factoidal/Codec/VP8Transform.lean
+            formal/lean4/lean-toolchain
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: capture
+          github-token: ${{ github.token }}
+      - name: Install the pinned Lean toolchain
+        run: |
+          set -euo pipefail
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat core/formal/lean4/lean-toolchain)"
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Install the reference WebP command
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends webp
+      - name: Check theorems and re-read real WebP headers
+        working-directory: core/formal/lean4
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/out"
+          tmp="$RUNNER_TEMP/webp-check"
+          mkdir -p "$out" "$tmp/lib/L4Factoidal/Codec" "$tmp/photos"
+          lean --version | tee "$out/lean-version.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/WebP.olean" L4Factoidal/Codec/WebP.lean | tee "$out/lean.txt"
+          export LEAN_PATH="$tmp/lib"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Tables.olean" L4Factoidal/Codec/VP8Tables.lean | tee -a "$out/lean.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Control.olean" L4Factoidal/Codec/VP8Control.lean | tee -a "$out/lean.txt"
+          lean -o "$tmp/lib/L4Factoidal/Codec/VP8Transform.olean" L4Factoidal/Codec/VP8Transform.lean | tee -a "$out/lean.txt"
+          if grep -q sorryAx "$out/lean.txt"; then exit 1; fi
+          cp "$GITHUB_WORKSPACE/core-diagnostics/WebPProbe.lean" "$tmp/WebPProbe.lean"
+          snap=$(find "$GITHUB_WORKSPACE/capture" -name 'desktop-bbc-news-*.zip' -print -quit)
+          sha256sum "$snap" > "$out/capture.sha256"
+          python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" extract "$snap" "$tmp/photos" > "$out/expected.json"
+          LEAN_PATH="$tmp/lib" lean --run "$tmp/WebPProbe.lean" "$tmp/photos"/*.webp | tee "$out/actual.tsv"
+          python3 "$GITHUB_WORKSPACE/core-diagnostics/webp-probe.py" compare "$out/expected.json" "$out/actual.tsv"
+      - name: Compare all BBC controls and a four-partition libvpx frame
+        run: |
+          set -euo pipefail
+          temp="$RUNNER_TEMP/webp-check"
+          command -v ffmpeg >/dev/null || sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -v error -f lavfi -i 'testsrc2=size=64x64:rate=1' -frames:v 1 -pix_fmt yuv420p \
+            -c:v libvpx -slices 4 -f ivf -y "$temp/multiparts.ivf"
+          python3 - "$temp" <<'PYTHON'
+          from pathlib import Path
+          import struct, sys
+          scratch=Path(sys.argv[1])
+          ivf=(scratch/"multiparts.ivf").read_bytes()
+          assert ivf.startswith(b"DKIF") and ivf[8:12]==b"VP80"
+          size=int.from_bytes(ivf[32:36],"little")
+          frame=ivf[44:44+size]
+          assert len(frame)==size
+          riff=b"WEBPVP8 "+struct.pack("<I",size)+frame+bytes(size%2)
+          good=b"RIFF"+struct.pack("<I",len(riff))+riff
+          (scratch/"photos"/"multiparts.webp").write_bytes(good)
+          table=20+10+(int.from_bytes(frame[:3],"little")>>5)
+          bad=bytearray(good)
+          bad[table:table+3]=bytes([255,255,255])
+          (scratch/"bad.webp").write_bytes(bad)
+          PYTHON
+          webpinfo -bitstream_info "$temp/photos/multiparts.webp" | grep -E 'Total partitions: *4'
+          export ELAN_TOOLCHAIN="$(cat core/formal/lean4/lean-toolchain)"
+          export LEAN_PATH="$temp/lib"
+          lean --run core-diagnostics/VP8ControlProbe.lean "$temp/photos"/*.webp | tee out/vp8-controls.jsonl
+          python3 core-diagnostics/compare-vp8-control.py out/vp8-controls.jsonl
+          if lean --run core-diagnostics/VP8ControlProbe.lean "$temp/bad.webp" > out/rejected.log 2>&1; then exit 1; fi
+          grep -F "VP8 partition outside payload" out/rejected.log
+      - name: Compare every signed spatial residual sample with libwebp 1.6.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp="$RUNNER_TEMP/webp-check"
+          export ELAN_TOOLCHAIN="$(cat core/formal/lean4/lean-toolchain)"
+          export LEAN_PATH="$temp/lib"
+          archive="$temp/libwebp-1.6.0.tar.gz"
+          curl --retry 3 -fsSL https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.6.0.tar.gz -o "$archive"
+          printf '%s  %s\n' e4ab7009bf0629fd11982d4c2aa83964cf244cffba7347ecd39019a9e38c4564 "$archive" | sha256sum -c
+          tar -xzf "$archive" -C "$temp"
+          src="$temp/libwebp-1.6.0"
+          patch --directory "$src" -p1 < core-diagnostics/vp8-transform-reference.patch
+          cmake -S "$src" -B "$temp/reference" -DWEBP_ENABLE_SIMD=OFF -DWEBP_BUILD_CWEBP=OFF -DWEBP_BUILD_GIF2WEBP=OFF -DWEBP_BUILD_IMG2WEBP=OFF -DWEBP_BUILD_VWEBP=OFF -DWEBP_BUILD_WEBPINFO=OFF -DWEBP_BUILD_WEBPMUX=OFF -DWEBP_BUILD_EXTRAS=OFF > out/reference-config.txt
+          cmake --build "$temp/reference" --target dwebp --parallel 2 > out/reference-build.txt
+          ffmpeg -v error -f lavfi -i 'color=black:size=64x64:rate=1' -frames:v 1 -pix_fmt yuv420p \
+            -c:v libvpx -slices 4 -f ivf -y "$temp/flat.ivf"
+          python3 - "$temp" <<'PYTHON'
+          from pathlib import Path
+          from struct import pack
+          import sys
+          temp = Path(sys.argv[1])
+          def webp(frame):
+              body = b"WEBPVP8 " + pack("<I", len(frame)) + frame + bytes(len(frame) % 2)
+              return b"RIFF" + pack("<I", len(body)) + body
+          ivf = (temp / "flat.ivf").read_bytes()
+          size = int.from_bytes(ivf[32:36], "little")
+          (temp / "flat.webp").write_bytes(webp(ivf[44:44+size]))
+          raw = (temp / "photos" / "0013.webp").read_bytes()
+          assert raw[12:16] == b"VP8 "
+          cut = 10 + (int.from_bytes(raw[20:23], "little") >> 5) + 3
+          (temp / "truncated.webp").write_bytes(webp(raw[20:20+cut]))
+          PYTHON
+          python3 core-diagnostics/compare-vp8-transform.py "$temp/reference/dwebp" \
+            core-diagnostics/VP8TransformProbe.lean "$temp/photos/"*.webp "$temp/flat.webp" | tee out/residuals.txt
+          if lean --run core-diagnostics/VP8TransformProbe.lean "$temp/truncated.webp" > out/truncated.log 2>&1; then exit 1; fi
+          grep -E 'truncated VP8 (arithmetic|coefficient) partition' out/truncated.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vp8-residual-transforms-check
+          path: out/
+          retention-days: 7
