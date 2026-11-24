@@ -1,7 +1,7 @@
-name: Measure queueing scroll prefetch behind script work
+name: Verify queued scroll prefetch on everyday pages
 on:
   push:
-    branches: [wip/bbc-scroll-queued-prefetch]
+    branches: [wip/realpages-scroll-prefetch]
 permissions:
   contents: read
   actions: read
@@ -13,16 +13,13 @@ env:
 jobs:
   profile:
     runs-on: macos-15
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
-          sparse-checkout: release-tests
-      - uses: actions/checkout@v4
-        with:
           repository: danbri/factoidal-core
-          ref: 51f7ce6af97b0d17aa7b7f337238b6835d81c8fe
+          ref: 4a49c914c4ed2c70479a55ddae8a0ffb2d487f93
+          fetch-depth: 2
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -33,6 +30,18 @@ jobs:
         with:
           run-id: 45413803852
           name: bbc-home-matched-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45403312317
+          name: w3c-home-snapshots
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45416936347
+          name: desktop-wikipedia-www-snapshot
           path: snapshots
           github-token: ${{ github.token }}
       - uses: denoland/setup-deno@v2
@@ -55,34 +64,37 @@ jobs:
           lab=core/labs/demos/foafnaut
           bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
           echo "ENGINE=$library" >> "$GITHUB_ENV"
-      - name: Trace the native scheduling gates across a scroll band
+      - name: Test the queue and replay three matched pages
         run: |
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
-          export REALPAGES_REPLAY="$PWD/snapshots/bbc.com/desktop-bbc-news-20261124.zip"
-          test -s "$REALPAGES_REPLAY"
+          deno test --no-config "$lab/native_html_queue_test.ts" "$lab/scroll_prefetch_test.ts"
+          git -C core show 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef:labs/demos/foafnaut/run_html.ts > "$lab/replay_baseline.ts"
           mkdir -p out
-          shasum -a 256 "$ENGINE" "$REALPAGES_REPLAY" "$lab/run_html.ts" > out/inputs.sha256
-          cp "$lab/run_html.ts" "$RUNNER_TEMP/run_html.original"
-          for arm in default1 queued1 queued2 default2; do
-            cp "$RUNNER_TEMP/run_html.original" "$lab/run_html.ts"
-            case "$arm" in
-              default*) python3 release-tests/scroll-gate-edit.py "$lab/run_html.ts" ;;
-              queued*) python3 release-tests/scroll-gate-edit.py "$lab/run_html.ts" queued ;;
+          shasum -a 256 "$ENGINE" "$lab/run_html.ts" "$lab/replay_baseline.ts" > out/inputs.sha256
+          for case_id in bbc wiki w3c; do
+            case "$case_id" in
+              bbc) file=desktop-bbc-news-20261124.zip; url=https://www.bbc.com/news; size=1280x800 ;;
+              wiki) file=desktop-wikipedia-www-20261124.zip; url=https://en.wikipedia.org/wiki/World_Wide_Web; size=1280x800 ;;
+              w3c) file=w3c-home-wide-20261124.zip; url=https://w3.org/; size=1440x735 ;;
             esac
-            deno run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
-              --preload "$lab/realpages/replay.ts" "$lab/run_html.ts" \
-              --native-engine "$ENGINE" --offscreen --offscreen-size 1280x800@1 --no-state \
-              --be-liberal-in-what-we-accept --perf-summary --scroll-sweep --idle-checks-only \
-              --url https://www.bbc.com/news > "out/$arm.log" 2>&1
-            grep -q '"type":"native-html-perf-summary"' "out/$arm.log"
-            grep -E '"type":"native-html-(scroll-gate|scroll-diagnostic-frame|prefetch|scroll|frame)"' \
-              "out/$arm.log" > "out/$arm.jsonl"
-            grep -q '"type":"native-html-scroll-gate"' "out/$arm.jsonl"
+            export REALPAGES_REPLAY="$(find "$PWD/snapshots" -name "$file" -print -quit)"
+            test -s "$REALPAGES_REPLAY"
+            shasum -a 256 "$REALPAGES_REPLAY" >> out/inputs.sha256
+            for arm in baseline1 candidate1 candidate2 baseline2; do
+              host="$lab/run_html.ts"
+              if [[ $arm == baseline* ]]; then host="$lab/replay_baseline.ts"; fi
+              deno run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
+                --preload "$lab/realpages/replay.ts" "$host" \
+                --native-engine "$ENGINE" --offscreen --offscreen-size "$size@1" --no-state \
+                --be-liberal-in-what-we-accept --perf-summary --scroll-sweep --idle-checks-only \
+                --url "$url" > "out/$case_id-$arm.log" 2>&1
+              grep -q '"type":"native-html-perf-summary"' "out/$case_id-$arm.log"
+            done
           done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: bbc-scroll-queued-prefetch
+          name: realpages-scroll-prefetch
           path: out/
           retention-days: 7
