@@ -58,7 +58,7 @@ jobs:
           deno check --no-config --unstable-ffi "$script"
           for pass in a1 b1 b2 a2; do
             lib="$PWD/${pass:0:1}/libweb-render.so"
-            deno run --no-config --unstable-ffi --allow-ffi="$lib" --allow-read="input,$font" \
+            deno run --no-config --unstable-ffi --allow-ffi --allow-read="input,$font" \
               "$script" "$lib" input "$font" > "out/$pass.jsonl"
           done
           python3 - <<'PY'
