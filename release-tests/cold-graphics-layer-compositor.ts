@@ -198,6 +198,7 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
         slot.texture=device.createTexture({size:[frame.width,frame.height],format:p.format,usage:LAYER_USAGE()});slot.size=size;slot.drawn=undefined;slot.drawnFrame=undefined;
       }
     }
+    const textureReady=performance.now();
     const damage=(frame as unknown as {damage?:Damage}).damage;
     // The same answer already in the slot's texture: nothing to do.
     if(!target&&!check&&damage&&slot.drawn===damage.id){stats.scenesKept++;return {steps:{},hash:"",units:0};}
@@ -209,12 +210,14 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
     const before=[slot.uniform?.buffer,slot.tiles?.buffer];
     slot.uniform=grow(slot.uniform,uniformBytes,bufferUsage(p.uniform.usage));
     if(tileWords)slot.tiles=grow(slot.tiles,tileBytes,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST);
+    const buffersReady=performance.now();
     const want=`${uniformBytes}|${tileBytes}|${JSON.stringify(p.pipeline)}`;
     if(!slot.bind||slot.bindKey!==want||slot.uniform.buffer!==before[0]||slot.tiles?.buffer!==before[1]){
       const entries:GPUBindGroupEntry[]=[{binding:p.bindGroup.binding,resource:{buffer:slot.uniform.buffer,offset:0,size:uniformBytes}}];
       if(tileWords)entries.push({binding:p.bindGroup.binding+1,resource:{buffer:slot.tiles!.buffer,offset:0,size:tileBytes}});
       slot.bind=device.createBindGroup({layout:pipeline.getBindGroupLayout(p.bindGroup.layoutIndex),entries});slot.bindKey=want;stats.bindGroups++;
     }
+    const bindReady=performance.now();
     const write=()=>{
       device.queue.writeBuffer(slot.uniform!.buffer,p.uniform.offset,(frame.data instanceof Float32Array?frame.data:new Float32Array(frame.data)) as Float32Array<ArrayBuffer>);
       if(tileWords)device.queue.writeBuffer(slot.tiles!.buffer,0,new Uint32Array(tileWords));
@@ -245,7 +248,9 @@ export function createLayerRenderer(device:GPUDevice,format:GPUTextureFormat,lim
     const finished=performance.now();
     if(finished-started>10)console.log(JSON.stringify({type:"native-html-cold-layer",
       width:frame.width,height:frame.height,planMs:planned-started,pipelineMs:pipelined-planned,
-      resourcesMs:ready-pipelined,drawMs:finished-ready,totalMs:finished-started}));
+      textureMs:textureReady-pipelined,buffersMs:buffersReady-textureReady,
+      bindMs:bindReady-buffersReady,tailMs:ready-bindReady,resourcesMs:ready-pipelined,
+      drawMs:finished-ready,totalMs:finished-started}));
     return {...result,units};
   }
   const chrome:Slot={bindKey:"",size:""},page:Slot={bindKey:"",size:""},single:Slot={bindKey:"",size:""};
