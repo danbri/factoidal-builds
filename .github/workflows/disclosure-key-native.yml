@@ -1,0 +1,48 @@
+name: Verify trusted disclosure Space activation
+on:
+  push:
+    branches: [wip/disclosure-native-key-checks]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/disclosure-key-native.ts
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45473431655
+          name: branch-engine
+          path: baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45481198054
+          name: branch-engine
+          path: candidate
+          github-token: ${{ github.token }}
+      - name: Exercise trusted keyboard dispatch and event cancellation
+        run: |
+          set -euo pipefail
+          mkdir out
+          script=release-tests/disclosure-key-native.ts
+          deno check --no-config --unstable-ffi "$script"
+          sha256sum baseline/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
+          for arm in baseline candidate; do
+            deno run --no-config --unstable-ffi --allow-ffi "$script" "$PWD/$arm/libweb-render.so" "$arm" | tee "out/$arm.jsonl"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: disclosure-space
+          path: out/
+          retention-days: 7
