@@ -40,7 +40,9 @@ new = """  let waits = 0, readMs = 0, engineMs = 0;
     const fetched = performance.now();
     turn = engine.scriptSession("", { action: "syncAnswer", session: turn.session, answer });
     readMs += fetched - before;
-    engineMs += performance.now() - fetched;
+    const duration = performance.now() - fetched;
+    engineMs += duration;
+    console.error(JSON.stringify({type:"bbc-sync-answer",index:i+1,ms:Math.round(duration),continues:!!turn.netSync}));
     waits++;
   }
   if (waits) console.error(JSON.stringify({type:"bbc-sync-probe",waits,readMs:Math.round(readMs),engineMs:Math.round(engineMs)}));"""
