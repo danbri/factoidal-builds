@@ -50,7 +50,7 @@ jobs:
 
           base = "https://www.w3.org/StyleSheets/TR/2021/"
           with zipfile.ZipFile(sys.argv[1]) as z:
-              mapping = {r["url"]: r["body"] for r in json.loads(z.read("manifest.json"))["entries"]}
+              mapping = {r["url"]: r["body"] for r in json.loads(z.read("manifest.json"))["entries"] if r.get("body")}
               doc = {
                   "page": z.read(mapping["https://www.w3.org/TR/css-flexbox-1/"]).decode(),
                   "css": {base + key: z.read(mapping[base + key]).decode()
