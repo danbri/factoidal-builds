@@ -1,0 +1,81 @@
+name: Verify mobile Wikipedia in the exact Linux package
+on:
+  push:
+    branches: [wip/mobile-wikipedia-packaged]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  survey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/packaged-linux-survey.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 2a69ebffd8ed7de14afde70c6da3937483b00202
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut/realpages
+            labs/demos/foafnaut/pages
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45499020466
+          name: foafnaut-browser-linux-x86_64-candidate
+          path: package
+          github-token: ${{ github.token }}
+      - name: Check the exact package and install the X11 and Vulkan runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          tar -xzf "${archives[0]}" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          echo "5eaa19d30649b23d9e3a8849346ef7756b154ca3495842f1ca8831e19ffe8dd3  $binary" | sha256sum -c -
+          jq -e '.commitFull=="2a69ebffd8ed7de14afde70c6da3937483b00202"' "$(dirname "$binary")/BUILD-INFO.json"
+          package_dir=$(dirname "$binary")
+          (cd "$package_dir"; sha256sum -c SHA256SUMS)
+          echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
+      - name: Capture first visible frames and send a native scroll event
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          page=$(jq -er '.pages | to_entries[] | select(.value.id=="m-us") | .key' "$lab/realpages/pages.json")
+          count=$(jq -er '.pages | length' "$lab/realpages/pages.json")
+          xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/packaged-linux-survey.py \
+            "$FOAFNAUT_BINARY" "$lab" "$PWD/out" "$page" "$count"
+          python3 - <<'PYTHON' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          row, = json.loads(Path("out/summary.json").read_text())
+          assert row["id"] == "m-us" and row["state"] == "presented", row
+          assert row["scrollChangesPixels"] and row["scrollTrace"]["scroll"] > 0, row
+          assert row["loaded"]["links"] > 10000, row
+          assert "link regions: input exceeds" not in Path("out/m-us.log").read_text()
+          print("Target viewport first frame and wheel trace verified in the packaged browser.")
+          print(row["loaded"]["links"], row["presentedMs"], row["scrollObservedMs"])
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-wikipedia-packaged-window
+          path: out/
+          retention-days: 7
