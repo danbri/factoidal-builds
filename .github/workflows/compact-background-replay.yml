@@ -50,7 +50,7 @@ jobs:
           deno check --no-config --unstable-ffi "$probe"
           for arm in baseline candidate; do
             lib="$PWD/$arm/libweb-render.so"
-            deno run --no-config --unstable-ffi --allow-read=input --allow-ffi="$lib" "$probe" \
+            deno run --no-config --unstable-ffi --allow-read=input --allow-ffi "$probe" \
               "$lib" input > "out/$arm.jsonl"
           done
           python3 - <<'PY'
