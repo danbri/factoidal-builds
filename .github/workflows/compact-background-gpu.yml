@@ -59,7 +59,7 @@ jobs:
           install -d -m 700 "$XDG_RUNTIME_DIR"
           for arm in baseline candidate; do
             lib="$PWD/$arm/libweb-render.so"
-            deno run --no-config --unstable-ffi --unstable-webgpu --allow-read=input --allow-ffi="$lib" "$probe" \
+            deno run --no-config --unstable-ffi --unstable-webgpu --allow-read=input --allow-ffi "$probe" \
               "$lib" input --gpu > "out/$arm.jsonl"
           done
           python3 - <<'PY'
