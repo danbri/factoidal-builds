@@ -59,9 +59,9 @@ jobs:
           export GAP_PREFIXES=168
           for arm in default content-box; do
             if [[ "$arm" == content-box ]]; then export GAP_BOX_SIZING=content-box; fi
-            deno run --no-config --unstable-ffi --allow-ffi=candidate/libweb-render.so \
+            deno run --no-config --unstable-ffi --allow-ffi="$PWD/candidate/libweb-render.so" \
               --allow-read=trace/requests,input/input.json --allow-env=GAP_PREFIXES,GAP_BOX_SIZING \
-              "$check" candidate/libweb-render.so trace/requests input/input.json > "out/$arm.json"
+              "$check" "$PWD/candidate/libweb-render.so" trace/requests input/input.json > "out/$arm.json"
           done
           python3 - <<'PY'
           import json
