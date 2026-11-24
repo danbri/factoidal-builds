@@ -1,0 +1,80 @@
+name: Measure balanced heading wrapping in Chrome and Foafnaut
+on:
+  push:
+    branches: [wip/gov-hero-wrap-reference]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/text-wrap-probe.ts
+          sparse-checkout-cone-mode: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45473431655
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - name: Compare the CSSOM values and line occupancy
+        run: |
+          set -euo pipefail
+          mkdir out
+          deno check --no-config --unstable-ffi release-tests/text-wrap-probe.ts
+          google-chrome --version | tee out/chrome-version.txt
+          sha256sum engine/libweb-render.so > out/engine.sha256
+          for mode in wrap balance; do
+            REFERENCE_OUT="out/$mode.html" deno run --no-config --allow-env=REFERENCE_OUT --allow-write=out --allow-ffi --unstable-ffi \
+              release-tests/text-wrap-probe.ts "$PWD/engine/libweb-render.so" "$mode" > "out/foafnaut-$mode.json"
+            google-chrome --headless --no-sandbox --disable-gpu --no-first-run --disable-background-networking \
+              --user-data-dir="$RUNNER_TEMP/wrap-chrome-$mode" --dump-dom "file://$PWD/out/$mode.html" \
+              > "out/chrome-$mode.html" 2>"out/chrome-$mode.stderr"
+          done
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Measurement(HTMLParser):
+              layout = None
+              def handle_starttag(self, tag, attrs):
+                  if tag == "body" and "data-layout" in dict(attrs):
+                      self.layout = json.loads(dict(attrs)["data-layout"])
+
+          def occupancy(data):
+              counts = Counter(box[2] for box in data["boxes"])
+              return [counts[y] for y in sorted(counts)]
+
+          for browser in ("chrome", "foafnaut"):
+              layouts = {}
+              for mode, style in (("wrap", "auto"), ("balance", "balance")):
+                  if browser == "chrome":
+                      h = Measurement()
+                      h.feed(Path(f"out/chrome-{mode}.html").read_text())
+                      data = h.layout
+                  else:
+                      data = json.loads(Path(f"out/foafnaut-{mode}.json").read_text())
+                  assert data and data["style"] == style and data["mode"] == "wrap", data
+                  layouts[mode] = occupancy(data)
+              print(browser, layouts)
+              if browser == "chrome":
+                  assert layouts["balance"] == [3, 3]
+                  assert len(layouts["wrap"]) == 2 and layouts["wrap"] != layouts["balance"]
+              else:
+                  assert layouts == {"wrap": [4, 2], "balance": [4, 2]}
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: text-wrap-reference
+          path: out/
+          retention-days: 7
