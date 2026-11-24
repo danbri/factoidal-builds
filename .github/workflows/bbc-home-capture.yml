@@ -12,12 +12,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 472993e362b585c5724f8de9d13115e8383f9f80
+          ref: 0664b9d1768ebe5459537781f46d72eeb53ef538
           persist-credentials: false
           sparse-checkout: labs/demos/foafnaut/realpages
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
+      - name: Verify a user-agent-dependent redirect
+        env:
+          CHROME: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+        run: deno test -A labs/demos/foafnaut/realpages/snapshot_test.ts
       - name: Capture public BBC News and check the document response
         run: |
           set -euo pipefail
@@ -25,15 +29,15 @@ jobs:
           jq -e '.pages|length == 1' "$RUNNER_TEMP/pages.json"
           chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
           "$chrome" --version
-          deno run -A labs/demos/foafnaut/realpages/snapshot.ts --chrome "$chrome" --pages "$RUNNER_TEMP/pages.json" --out "$RUNNER_TEMP/snapshots"
+          deno run -A labs/demos/foafnaut/realpages/snapshot.ts --chrome "$chrome" --chrome-document --pages "$RUNNER_TEMP/pages.json" --out "$RUNNER_TEMP/snapshots"
           zip=$(find "$RUNNER_TEMP/snapshots" -name 'desktop-bbc-news-*.zip' -print | head -1)
           test -s "$zip"
-          unzip -p "$zip" manifest.json | jq -e '.id == "desktop-bbc-news" and .bytes > 100000 and any(.entries[]; (.url|test("^https://www\\.bbc\\.(co\\.uk|com)/news/?$")) and .status == 200 and .bytes > 20000)'
+          unzip -p "$zip" manifest.json | jq -e '.reference.document_url as $url | .id == "desktop-bbc-news" and .bytes > 100000 and any(.entries[]; .url == $url and .source == "chrome" and (.url|test("^https://www\\.bbc\\.(co\\.uk|com)/news/?$")) and .status == 200 and .bytes > 20000)'
           unzip -p "$zip" reference.png > "$RUNNER_TEMP/bbc-reference.png"
           test -s "$RUNNER_TEMP/bbc-reference.png"
       - uses: actions/upload-artifact@v4
         with:
-          name: bbc-home-snapshot
+          name: bbc-home-matched-snapshot
           path: ${{ runner.temp }}/snapshots/
           retention-days: 7
           if-no-files-found: error
