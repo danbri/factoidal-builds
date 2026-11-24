@@ -10,7 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {change: measured Wasm budget, sha: 1dd937c6e92e7abf7df5a77d26d2e72b5b6ea06b, base: f43b16f155d62addbe5c54380818f0653859d238}
+          - {change: background map, sha: bd3a252636291b0fe5d884488afd1ed07f966267, base: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef}
+          - {change: viewport edge script queries, sha: 498c745cacddb96653fab0ffcbd645c4cf440a40, base: b5ff72304208c698ab9d59fd7cdbda908c09029e}
     name: Premerge ${{ matrix.change }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
