@@ -1,0 +1,96 @@
+name: Measure Mesa cold shader optimization on live everyday pages
+on:
+  push:
+    branches: [wip/linux-gallivm-everyday-pages]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  survey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 32
+    strategy:
+      fail-fast: false
+      matrix:
+        page: [desktop-w3c-home, desktop-govuk, desktop-bbc-news, m-us]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/packaged-linux-survey.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 2a69ebffd8ed7de14afde70c6da3937483b00202
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut/realpages
+            labs/demos/foafnaut/pages
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45499020466
+          name: foafnaut-browser-linux-x86_64-candidate
+          path: package
+          github-token: ${{ github.token }}
+      - name: Check the exact package and install the X11 and Vulkan runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          tar -xzf "${archives[0]}" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          echo "5eaa19d30649b23d9e3a8849346ef7756b154ca3495842f1ca8831e19ffe8dd3  $binary" | sha256sum -c -
+          jq -e '.commitFull=="2a69ebffd8ed7de14afde70c6da3937483b00202"' "$(dirname "$binary")/BUILD-INFO.json"
+          package_dir=$(dirname "$binary")
+          (cd "$package_dir"; sha256sum -c SHA256SUMS)
+          echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
+          mkdir -p out
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/driver-versions.txt
+      - name: Compare first graphics preparation and native scroll
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          PAGE_ID: ${{ matrix.page }}
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          page=$(jq -er --arg id "$PAGE_ID" '.pages | to_entries[] | select(.value.id==$id) | .key' "$lab/realpages/pages.json")
+          count=$(jq -er '.pages | length' "$lab/realpages/pages.json")
+          unset MESA_SHADER_CACHE_DISABLE MESA_SHADER_CACHE_DIR
+          for pass in a1 b1 b2 a2; do
+            unset GALLIVM_PERF
+            if [[ "$pass" == b* ]]; then export GALLIVM_PERF=nopt; fi
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$pass"
+            export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$pass"
+            install -d -m 700 "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+            xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/packaged-linux-survey.py \
+              "$FOAFNAUT_BINARY" "$lab" "$PWD/out/$pass" "$page" "$count"
+          done
+          python3 - <<'PYTHON' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          print("| Arm | Page | State | Initial graphics ms | Target viewport first frame ms | Wheel observed ms | Wheel changed pixels |")
+          print("| --- | --- | --- | ---: | ---: | ---: | --- |")
+          for arm in ("a1", "b1", "b2", "a2"):
+              row, = json.loads(Path("out", arm, "summary.json").read_text())
+              initial = row.get("initialFrame", {}).get("sessionMs")
+              print("|", arm, "|", row["id"], "|", row["state"], "|", initial, "|",
+                    row.get("presentedMs"), "|", row.get("scrollObservedMs"), "|", row.get("scrollChangesPixels"), "|")
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gallivm-live-${{ matrix.page }}
+          path: out/
+          retention-days: 7
