@@ -1,0 +1,70 @@
+name: Verify the embedded SVG author cascade reference cases
+on:
+  push:
+    branches: [wip/svg-author-cascade-fixtures]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: core-diagnostics
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the 13 expected computed paints in Chrome
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 core-diagnostics/cascade-cases.py "$RUNNER_TEMP/fixtures"
+          cd "$RUNNER_TEMP/fixtures"
+          for page in *.html; do
+            google-chrome --headless=new --no-sandbox --no-first-run --disable-gpu \
+              --user-data-dir="$RUNNER_TEMP/chrome-cascade" --virtual-time-budget=1500 \
+              --dump-dom "file://$PWD/$page" > "$GITHUB_WORKSPACE/out/$page"
+          done
+          python3 - "$GITHUB_WORKSPACE/out" <<'PYTHON' | tee "$GITHUB_WORKSPACE/out/chrome-results.json"
+          import json, pathlib, re, sys
+          output = pathlib.Path(sys.argv[1])
+          results = []
+          for case in json.loads(pathlib.Path("cases.json").read_text()):
+              actual = re.search(r'<output id="result">rgb\((\d+), (\d+), (\d+)\)</output>',
+                                 (output / (case["id"] + ".html")).read_text())
+              assert actual, case["id"]
+              pixel = "#" + "".join(f"{int(value):02x}" for value in actual.groups())
+              results.append({**case, "actual": pixel})
+          print(json.dumps(results, indent=2))
+          assert all(r["actual"] == r["want"] for r in results)
+          PYTHON
+      - name: Measure the existing native browser
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CORE: 44f71d2e63f689635afcb1f4e0cbf7fc2142ddef
+          SET: foafnaut-linux-x86_64
+        run: |
+          set -euo pipefail
+          mkdir -p out engine
+          tag="build-${CORE:0:12}-$SET"
+          for attempt in 1 2 3; do
+            if gh release download "$tag" -R "$GITHUB_REPOSITORY" --clobber -p "$SET.tar.gz" -p build-info.json -D engine; then break; fi
+            [[ $attempt != 3 ]] || exit 1
+            sleep 10
+          done
+          jq -e --arg sha "$CORE" '.source_commit == $sha' engine/build-info.json >/dev/null
+          sha=$(jq -er --arg filename "$SET.tar.gz" '.artifacts[$filename].sha256' engine/build-info.json)
+          echo "$sha  engine/$SET.tar.gz" | sha256sum -c -
+          tar -xzf "engine/$SET.tar.gz" -C engine
+          library=$(find "$PWD/engine" -name libweb-render.so -print -quit)
+          test -s "$library"
+          deno run --no-config --allow-read --allow-ffi --unstable-ffi core-diagnostics/cascade-native.ts \
+            "$library" "$RUNNER_TEMP/fixtures" | tee out/native-results.ndjson
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: embedded-svg-author-cascade
+          path: out/
+          retention-days: 7
