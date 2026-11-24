@@ -89,7 +89,7 @@ jobs:
           for method in enter button; do
             action='[5,36,0]'
             [[ $method != button ]] || action='"tap:765,754"'
-            printf '["title=Welcome to GOV.UK","hold","tap:320,754","hold","type:passport",%s,"url:/search/all?keywords=passport"]\n' "$action" > "out/live-search/$method-steps.json"
+            printf '["title=Welcome to GOV.UK","hold","tap:320,754","hold","type:passport","hold","hold",%s,"title=passport - Search - GOV.UK","url:/search/all?keywords=passport"]\n' "$action" > "out/live-search/$method-steps.json"
             status=0
             perl -e 'alarm shift; exec @ARGV' 90 deno run --no-check --no-config -A --unstable-ffi --unstable-webgpu \
               "$lab/run_html.ts" --native-engine "$lib" --offscreen --offscreen-size 1280x1000@1 --no-state \
