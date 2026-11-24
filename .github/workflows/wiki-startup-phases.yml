@@ -1,0 +1,86 @@
+name: Break down Wikipedia startup on the released Linux renderer
+on:
+  push:
+    branches: [wip/wiki-startup-phases]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 9b554985b5383ed9235754e34f977ec5269ddfbf
+  WEB: 05ec0b29ca8ad75ef2dfca91a4f06cf16ed58067
+  SET: foafnaut-linux-x86_64
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/wiki-startup-instrument.py
+            third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 9b554985b5383ed9235754e34f977ec5269ddfbf
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts/noto-sans
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Prepare the engine and the pinned offline inputs
+        run: |
+          set -euo pipefail
+          mkdir runtime native out
+          for arm in native runtime; do
+            rev="$CORE"; base="$SET"
+            if [[ "$arm" == runtime ]]; then rev="$WEB"; base=foafnaut-web; fi
+            asset="$base.tar.gz"
+            gh release download "build-${rev:0:12}-$base" -R "$GITHUB_REPOSITORY" -D "$arm" -p build-info.json -p "$asset"
+            digest=$(jq -er --arg rev "$rev" --arg asset "$asset"               'select(.source_commit==$rev) | .artifacts[$asset].sha256' "$arm/build-info.json")
+            echo "$digest  $arm/$asset" | sha256sum -c -
+            echo "$digest  $arm/$asset" >> out/inputs.sha256
+            tar -xzf "$arm/$asset" -C "$arm"
+          done
+          lib=$(find "$PWD/native" -name libweb-render.so -print -quit)
+          echo "29e95192ff22df972a665b0360b2e0f332ef394e5bcfa7035887688eac6c6cd8  $lib" | sha256sum -c -
+          echo "ENGINE=$lib" >> "$GITHUB_ENV"
+          wiki=third_party/realpages/en.wikipedia.org
+          echo "66ed79b9d470f6d9115b0b2e73de8819d38544956da56c3dd73e854eb2849680  $wiki/wp-us-20261115.zip" | sha256sum -c -
+          echo "8801911e887d74487d0f43358aed2506751cbabbcd9ecca11209b5eb2792195c  $wiki/m-us-20261115.zip" | sha256sum -c -
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          python3 release-tests/wiki-startup-instrument.py "$lab"
+      - name: Alternate scripts on and off at both archived widths
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          wiki="$PWD/third_party/realpages/en.wikipedia.org"
+          for page in wp-us m-us; do
+            url=https://en.wikipedia.org/wiki/United_States
+            cols=160
+            if [[ "$page" == m-us ]]; then url="$url?useskin=minerva"; cols=52; fi
+            export REALPAGES_REPLAY="$wiki/$page-20261115.zip"
+            for pass in on1 off1 off2 on2; do
+              extra=()
+              if [[ "$pass" == off* ]]; then extra=(--no-scripts); fi
+              timeout 200 deno run --no-prompt --preload "$lab/realpages/replay.ts"                 --allow-read --allow-ffi --allow-net --allow-env --import-map="$lab/textnaut/import_map.json"                 "$lab/textnaut/textnaut.ts" --dump --timing --width "$cols" --engine "$ENGINE" "${extra[@]}" "$url"                 > /dev/null 2> "out/$page-$pass.log" || echo "Exit $? during $page-$pass" >> "out/$page-$pass.log"
+              grep -E 'wiki-startup-phase|^timing: engine|^Exit ' "out/$page-$pass.log" || true
+            done
+          done
+          grep -l '^timing: engine' out/*.log | wc -l > out/completed-render-count.txt
+          test "$(cat out/completed-render-count.txt)" -eq 8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wikipedia-startup-phases
+          path: out/
+          retention-days: 7
