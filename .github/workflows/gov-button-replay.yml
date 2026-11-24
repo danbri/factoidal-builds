@@ -59,7 +59,7 @@ jobs:
           export GAP_PREFIXES=168
           for arm in default content-box; do
             if [[ "$arm" == content-box ]]; then export GAP_BOX_SIZING=content-box; fi
-            deno run --no-config --unstable-ffi --allow-ffi="$PWD/candidate/libweb-render.so" \
+            deno run --no-config --unstable-ffi --allow-ffi \
               --allow-read=trace/requests,input/input.json --allow-env=GAP_PREFIXES,GAP_BOX_SIZING \
               "$check" "$PWD/candidate/libweb-render.so" trace/requests input/input.json > "out/$arm.json"
           done
