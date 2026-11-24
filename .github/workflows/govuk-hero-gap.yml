@@ -1,0 +1,86 @@
+name: Capture the GOV.UK header and hero render inputs
+on:
+  push:
+    branches: [wip/govuk-hero-gap]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  HOST: d5d23ce670cab352fccb08ab28ef19197128cd8f
+  ENGINE: 5f518d1282b9bb3d6561a71d06f4f885cbbbd2dc
+  ENGINE_RUN: "45459623652"
+  SET: foafnaut-engine-darwin-arm64
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  trace:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/gov-header-worker.ts
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.HOST }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify and install the common browser inputs
+        run: |
+          set -euo pipefail
+          mkdir -p native web out/requests
+          gh run download "$ENGINE_RUN" -R "$GITHUB_REPOSITORY" -n "$SET" -D native
+          hash=$(jq -er --arg sha "$ENGINE" --arg archive "$SET.tar.gz" \
+            'select(.source_commit==$sha) | .artifacts[$archive].sha256' native/build-info.json)
+          echo "$hash  native/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "native/$SET.tar.gz" -C native
+          lib=$(find "$PWD/native" -name libweb-render.dylib -print -quit)
+          test -s "$lib"
+          echo "LIBRARY=$lib" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D web
+          tar -xzf web/foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          window=$(find "$PWD/native" -name libnative-window.dylib -print -quit)
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web" "$window"
+          echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  snapshots/gov.uk/desktop-govuk-20261124.zip" | shasum -a 256 -c -
+          cp "$lab/native_html_worker.ts" out/original-worker.ts
+          cp builds/release-tests/gov-header-worker.ts "$lab/native_html_worker.ts"
+          diff -u out/original-worker.ts "$lab/native_html_worker.ts" > out/worker.patch || test "$?" -eq 1
+          shasum -a 256 "$lib" "$lab/run_html.ts" "$lab/native_html_worker.ts" snapshots/*/*.zip > out/inputs.sha256
+          deno check --no-config --unstable-ffi --unstable-webgpu "$lab/native_html_worker.ts"
+      - name: Record the actual GOV.UK scene inputs
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          jq '.pages |= map(select(.id == "desktop-govuk"))' "$lab/realpages/pages.json" > out/pages.json
+          export GOV_TRACE_DIR="$PWD/out/requests"
+          deno run -A "$lab/realpages/survey.ts" --platform macos --host "$lab" --engine "$LIBRARY" \
+            --pages "$PWD/out/pages.json" --snapshots "$PWD/snapshots" --no-chrome --watch 8 \
+            --timeout 90 --retries 0 --out "$PWD/out/results" --release trace
+          jq -e '.pages | length == 1 and all(.first_frame_s != null)' out/results/summary.json
+          jq -c '{id,width,height,head,layers,commandCount:(.options.commands|length)}' out/requests/frame-*.json > out/heading.jsonl
+          jq -se 'any(.commandCount > 1) and any(.head | length > 0)' out/heading.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: govuk-hero-gap
+          path: out/
+          retention-days: 7
