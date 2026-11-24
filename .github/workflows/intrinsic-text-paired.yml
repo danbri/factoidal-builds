@@ -1,0 +1,111 @@
+name: Compare intrinsic word paint on the same input
+on:
+  push:
+    branches: [wip/intrinsic-text-paired]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE: fd5505c92a659c34d82a94a77e0e1724a446a1db
+  BASELINE: 9805833592547e2a23788da403a5e9e36b99f1ec
+  BRANCH_RUN: '45438905781'
+  BASE_RUN: '45439003695'
+  WEB: build-4618bea0c1ac-foafnaut-web
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Wait for the exact native engine
+        run: |
+          set -euo pipefail
+          for arm in candidate baseline; do
+            if [[ $arm == candidate ]]; then
+              run=$BRANCH_RUN; sha=$CANDIDATE
+            else
+              run=$BASE_RUN; sha=$BASELINE
+            fi
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $sha"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[].name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq '.status')" = completed ]]; then
+                echo "::error::No engine for $sha"
+                exit 1
+              fi
+              sleep 25
+            done
+          done
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: |
+            third_party/realpages/w3.org
+            third_party/realpages/en.wikipedia.org
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: fd5505c92a659c34d82a94a77e0e1724a446a1db
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45438905781'
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: engines/candidate
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '45439003695'
+          name: branch-engine
+          github-token: ${{ github.token }}
+          path: engines/baseline
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the matched host and baseline
+        run: |
+          set -euo pipefail
+          mkdir -p engines/web
+          cmp engines/baseline/lean-toolchain engines/candidate/lean-toolchain
+          test -s "$PWD/engines/baseline/libweb-render.so"
+          echo "BASE_ENGINE=$PWD/engines/baseline/libweb-render.so" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web"
+          tc=$(cat engines/candidate/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+      - name: Measure both engines and compare terminal output
+        run: |
+          set -euo pipefail
+          lab=core/labs/demos/foafnaut
+          mkdir -p out
+          sha256sum "$BASE_ENGINE" engines/candidate/libweb-render.so builds/third_party/realpages/{w3.org/w3c-flexbox,en.wikipedia.org/m-us}-20261115.zip | tee out/inputs.sha256
+          jq '.pages |= map(select(.id == "w3c-flexbox" or .id == "m-us") | .scripts = false)' "$lab/realpages/pages.json" > out/pages.json
+          for pair in a1 b1 b2 a2; do
+            lib=$BASE_ENGINE; [[ $pair != b* ]] || lib="$PWD/engines/candidate/libweb-render.so"
+            deno run -A "$lab/realpages/survey.ts" --platform linux --host "$PWD/$lab" --engine "$lib" \
+              --snapshots "$PWD/builds/third_party/realpages" --pages "$PWD/out/pages.json" --timeout 110 --retries 0 \
+              --out "$PWD/out/$pair" --release "$pair"
+            jq -r --arg pair "$pair" '.pages[]|[$pair,.id,.state,.first_frame_s,.first_layout_ms,.rss_peak_mb,.rows,.links]|@tsv' \
+              "out/$pair/summary.json" | tee -a "$GITHUB_STEP_SUMMARY"
+            jq -e '.pages|length == 2 and all(.state == "ok" and .rows > 0)' "out/$pair/summary.json" >/dev/null
+            for page in w3c-flexbox m-us; do
+              input="out/$pair/logs/$page.textnaut.log"
+              sed -E '/^timing: engine /d; /^\{"type":"realpages-replay/d' "$input" | sha256sum | cut -d' ' -f1 > "out/$pair/$page.sha256"
+              if [[ $pair != a1 ]]; then cmp "out/a1/$page.sha256" "out/$pair/$page.sha256"; fi
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: intrinsic-text-paired
+          path: out/
+          retention-days: 7
