@@ -1,0 +1,89 @@
+name: Check absolute children during percentage-grid layout
+on:
+  push:
+    branches: [wip/1051-grid-absolute-descendant]
+permissions:
+  actions: read
+  contents: read
+env:
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  BASE: 839dc27f0d873bbef749fc6ad36ecb2bf6e95316
+  CANDIDATE: 9d3c843103e78dd854de2cfcd3bd773d107ad200
+  BASE_RUN: "45649724924"
+  CANDIDATE_RUN: "45649679340"
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for the exact engine builds
+        run: |
+          set -euo pipefail
+          for tuple in "$BASE_RUN:$BASE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${tuple%:*}"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from ${tuple#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+  geometry:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/grid-absolute-descendant
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASE_RUN }}
+          name: branch-engine
+          path: baseline-engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: candidate-engine
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Compare positive percentage padding inside an absolute child
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          mkdir runtime out
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sudo apt-get update
+          sudo apt-get install -y python3-pil
+          sha256sum *-engine/libweb-render.so > out/inputs.sha256
+          google-chrome --version > out/chrome-version.txt
+          /usr/bin/python3 experiments/grid-absolute-descendant/probe.py | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: absolute-grid-descendant-comparison
+          path: out/
+          retention-days: 7
