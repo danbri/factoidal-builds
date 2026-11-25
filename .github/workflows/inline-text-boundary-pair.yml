@@ -1,0 +1,124 @@
+name: Compare inline wrapping on WPT and narrow W3C
+on:
+  push:
+    branches: [wip/inline-text-boundary-pair]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE_RUN: "45522279585"
+  CANDIDATE_RUN: "45522117314"
+  BASELINE: d38eaddb33bbdda0a14f9f4b6703f456235855fd
+  CANDIDATE: 102942a002c6a327a5a3171d42d0e4c23cb0cbe3
+  WPT: 056c528ccb5844b01628e0cd667520535dee16cc
+  WEB: build-05ec0b29ca8a-foafnaut-web
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Wait for both exact native engine artifacts
+        run: |
+          set -euo pipefail
+          for pair in "$BASELINE_RUN:$BASELINE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            run=${pair%:*}
+            sha=${pair#*:}
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+                echo "No native engine artifact in $run" >&2
+                exit 1
+              fi
+              sleep 25
+            done
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $sha"
+          done
+  replay:
+    needs: wait-engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: d38eaddb33bbdda0a14f9f4b6703f456235855fd
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the engine archives and replay inputs
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          mkdir -p runtime out snapshots
+          cmp engines/{baseline,candidate}/lean-toolchain
+          tc=$(cat engines/baseline/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          gh run download 45431269816 -R "$GITHUB_REPOSITORY" -n desktop-w3c-home-snapshot -D inputs
+          snapshot=$(find inputs -name '*.zip' -print -quit)
+          echo "359b431764ad4eb9debb4e5dc2e4571d968cd95447b52fe767f9933145f4a388  $snapshot" | sha256sum -c -
+          cp "$snapshot" snapshots/desktop-w3c-home.zip
+          sha256sum engines/*/libweb-render.so snapshots/*.zip > out/inputs.sha256
+      - name: Compare line-breaking reftests and capture narrow W3C
+        run: |
+          set -euo pipefail
+          d=css/css-text/line-breaking
+          mkdir -p "wpt/$d/reference"
+          paths=()
+          for n in 015 016 017; do
+            for p in "$d/line-breaking-$n.html" "$d/reference/line-breaking-$n-ref.html"; do
+              curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$p" -o "wpt/$p"
+            done
+            paths+=("/$d/line-breaking-$n.html")
+          done
+          only=$(IFS=,; echo "${paths[*]}")
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+          lab="$PWD/core/labs/demos/foafnaut"
+          for role in baseline candidate; do
+            lib="$PWD/engines/$role/libweb-render.so"
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json --wpt-root "$PWD/wpt" \
+              --native-engine "$lib" --prefix "$d/" --jobs 1 --only "$only" --out "$PWD/out/$role"
+            jq -e '.valid and (.tests | length == 3)' "out/$role/results.json"
+            jq -r --arg role "$role" '.tests[] | [$role,.test,.status,([.edges[].totalPixels // 0] | add)] | @tsv' \
+              "out/$role/results.json" | tee -a "$GITHUB_STEP_SUMMARY"
+            jq -nc --arg file "w3c-$role.png" '{url:"https://www.w3.org/",width:480,height:735,file:$file}' > "$RUNNER_TEMP/w3c.jsonl"
+            REALPAGES_REPLAY="$PWD/snapshots/desktop-w3c-home.zip" REFTEST_TIME=1 \
+              deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
+              core/tests/browser-wpt/reftest-render.ts --native-engine "$lib" --list "$RUNNER_TEMP/w3c.jsonl" \
+                --out "$PWD/out" > "out/w3c-$role.log" 2>&1
+            test -s "out/w3c-$role.png"
+            sed -n 's/^__done //p' "out/w3c-$role.log" | jq -e '.status == "ok"' >/dev/null
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: inline-text-boundary-pair
+          path: out/
+          retention-days: 7
