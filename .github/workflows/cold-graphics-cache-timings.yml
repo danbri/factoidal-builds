@@ -6,7 +6,7 @@ permissions:
   contents: read
 env:
   CORE_SHA: e4445d14752cc3ec75da7bf2fc1797263d02efbf
-  HOST_SHA: 88d72bcd81d5a32b0b36b3f5b6b420e9b031dc8b
+  HOST_SHA: dcd13e13685fbd08c07018fa83e77d2a1ec92d09
   WEB: build-dd387abb389e-foafnaut-web
 jobs:
   timings:
@@ -121,6 +121,7 @@ jobs:
           print("| Launch | Visible frame ms | Graphics ms | Pipelines built | Pipeline creation ms | Validation wait ms |")
           print("| --- | ---: | ---: | ---: | ---: | ---: |")
           hashes = set()
+          misses = set()
           for name in ("first-cold", "first-reused", "second-cold", "second-reused"):
               directory = Path("out") / name
               row, = json.loads((directory / "summary.json").read_text())
@@ -131,13 +132,22 @@ jobs:
               steps = frame["steps"]
               assert any(key.endswith(".createRenderPipeline") for key in steps), steps
               assert any(key.endswith(".validation") for key in steps), steps
-              assert any("realpages-replay" in line for line in (directory / "m-us.log").read_text().splitlines())
+              phases = ("layers.draw", "chrome.resolvePlan", "chrome.prepareResources", "chrome.uploadBuffers",
+                        "page.resolvePlan", "page.prepareResources", "page.uploadBuffers", "surface.resolvePlan",
+                        "surface.configure", "surface.acquire", "surface.present")
+              assert all(phase in steps and steps[phase] >= 0 for phase in phases), steps
+              events = [line for line in (directory / "m-us.log").read_text().splitlines()
+                        if line.startswith('{"type":"realpages-replay-miss"')]
+              assert events, row["id"]
+              misses.add(tuple(sorted(events)))
+              print(name, "phases in ms", json.dumps({phase: steps[phase] for phase in phases}))
               with Image.open(directory / "m-us.png") as image:
                   hashes.add(hashlib.sha256(image.crop((0, frame["layers"]["top"], image.width, image.height)).tobytes()).hexdigest())
               build = sum(value for key, value in steps.items() if key.endswith(".createRenderPipeline"))
               validation = sum(value for key, value in steps.items() if key.endswith(".validation"))
               print(f"| {name} | {row['presentedMs']} | {frame['sessionMs']} | {frame['pipelineBuilds']} | {build:.1f} | {validation:.1f} |")
           assert len(hashes) == 1, hashes
+          assert len(misses) == 1, misses
           PY
       - uses: actions/upload-artifact@v4
         if: always()
