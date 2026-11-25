@@ -1,15 +1,15 @@
-name: Replay every registered page on the Mac release with the pointer fix
+name: Replay every registered page on the rounded-border Mac release
 on:
   push:
-    branches: [wip/realpages-after-pointer-fix]
+    branches: [wip/realpages-e4445-macos]
 permissions:
   contents: read
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  REQUIRED_CORE: 86d610b0e4c387ba030e3b25903e6395e0af8311
+  REQUIRED_CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
   ENGINE_SET: foafnaut-darwin-arm64
-  WEB: build-4618bea0c1ac-foafnaut-web
+  WEB: build-e4445d14752c-foafnaut-web
 jobs:
   wait-engine:
     runs-on: ubuntu-latest
@@ -17,28 +17,20 @@ jobs:
     outputs:
       sha: ${{ steps.version.outputs.sha }}
     steps:
-      - name: Wait for a published Mac app containing the pointer fix
+      - name: Wait for the exact published Mac app and its web runtime
         id: version
         run: |
           set -euo pipefail
-          pointer="repos/$GITHUB_REPOSITORY/contents/latest/$ENGINE_SET.json"
-          for i in $(seq 1 159); do
-            metadata=$(gh api "$pointer" -H 'Accept: application/vnd.github.raw+json' 2>/dev/null || true)
-            sha=$(jq -r '.source_commit // empty' <<< "$metadata")
-            if [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
-              relation=$(gh api "repos/danbri/factoidal-core/compare/$REQUIRED_CORE...$sha" --jq .status 2>/dev/null || true)
-              tag="build-${sha:0:12}-$ENGINE_SET"
-              if [[ "$relation" = ahead || "$relation" = identical ]]; then
-                if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --silent; then
-                  echo "sha=$sha" >> "$GITHUB_OUTPUT"
-                  echo "Released Mac app: $tag"
-                  exit 0
-                fi
-              fi
+          tag="build-${REQUIRED_CORE:0:12}-$ENGINE_SET"
+          for attempt in $(seq 1 159); do
+            if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '.assets[].name' 2>/dev/null | grep -Fx "$ENGINE_SET.tar.gz" &&
+                gh api "repos/$GITHUB_REPOSITORY/releases/tags/$WEB" --jq '.assets[].name' 2>/dev/null | grep -Fx foafnaut-web.tar.gz; then
+              echo "sha=$REQUIRED_CORE" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
             sleep 60
           done
-          echo "::error::No published app containing $REQUIRED_CORE appeared in the wait window"
+          echo "::error::The exact Mac app and web runtime did not publish within the wait window"
           exit 1
   replay:
     needs: wait-engine
@@ -107,7 +99,9 @@ jobs:
           engine=$(find "$PWD/engines/native" -name libweb-render.dylib -print -quit)
           window=$(find "$PWD/engines/native" -name libnative-window.dylib -print -quit)
           test -s "$engine"
-          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -D engines/web
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -p build-info.json -D engines/web
+          web_checksum=$(jq -er --arg sha "$ENGINE_CORE" 'select(.source_commit == $sha) | .artifacts["foafnaut-web.tar.gz"].sha256' engines/web/build-info.json)
+          echo "$web_checksum  engines/web/foafnaut-web.tar.gz" | shasum -a 256 -c -
           tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
           host="$PWD/host/labs/demos/foafnaut"
           bash tools/labs/demos/foafnaut/realpages/setup-host.sh "$host" "$PWD/engines/web" "$window"
@@ -140,7 +134,7 @@ jobs:
           assert observed == wanted and len(pages) == len(wanted), (wanted - observed, observed - wanted)
           assert not missing, f"Pages unreachable in the offline dataset: {missing}"
           PYTHON
-          gh run download 45485793671 -R "$GITHUB_REPOSITORY" -n mac-complete-offline-survey -D previous
+          gh run download 45508266230 -R "$GITHUB_REPOSITORY" -n mac-complete-offline-survey -D previous
           cmp out/overlay.sha256 previous/overlay.sha256
           cp previous/summary.json out/baseline.json
           deno run --allow-read --allow-write "$lab/compare.ts" --current out/summary.json \
