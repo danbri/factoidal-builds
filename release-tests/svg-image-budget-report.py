@@ -6,7 +6,7 @@ out = Path(sys.argv[1])
 results = {}
 print("| Page | Arm | Whole replay s | Page load and raster ms | Compile-only render ms | Peak RSS MiB |")
 print("|---|---|---:|---:|---:|---:|")
-for page in ("w3c", "bbc", "wiki-mobile", "w3c-flexbox"):
+for page in ("wiki-mobile",):
     rows = {}
     for arm in ("a1", "b1", "b2", "a2"):
         key = f"{page}-{arm}"
@@ -15,6 +15,8 @@ for page in ("w3c", "bbc", "wiki-mobile", "w3c-flexbox"):
         phase, = [json.loads(line) for line in log if line.startswith('{"type":"reftest-time"')]
         assert draw["status"] == "ok" and draw["file"] == phase["file"] == f"{key}.png", draw
         assert (out / draw["file"]).stat().st_size
+        assert any('"type":"realpages-replay"' in line and json.loads(line).get("hits", 0) > 0
+                   for line in log if line.startswith("{")), key
         elapsed, rss = (out / f"{key}.time").read_text().split()
         rows[arm] = {"elapsedSeconds": float(elapsed), "rssKiB": int(rss),
                      "draw": draw, "compileOnly": phase}

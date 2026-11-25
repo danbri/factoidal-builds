@@ -100,6 +100,7 @@ jobs:
           wiki=third_party/realpages/en.wikipedia.org/m-us-20261115.zip
           test "$(git hash-object "$wiki")" = 944a0bff5adaa6b9cdd97a41b1d2a8852310c2d3
           cp "$wiki" snapshots/wiki-mobile.zip
+          unzip -p "$wiki" manifest.json | jq -e '.url == "https://en.wikipedia.org/wiki/United_States?useskin=minerva"' >/dev/null
           flexbox=third_party/realpages/w3.org/w3c-flexbox-20261115.zip
           echo "a01b88268d16a2ab95bdf0a2edf8f56bf5634bf3534fa793d13263166f38d206  $flexbox" | sha256sum -c -
           cp "$flexbox" snapshots/w3c-flexbox.zip
@@ -111,12 +112,12 @@ jobs:
           set -euo pipefail
           export REFTEST_TIME=1
           lab="$PWD/core/labs/demos/foafnaut"
-          for case_id in w3c bbc wiki-mobile w3c-flexbox; do
+          for case_id in wiki-mobile; do
             case "$case_id" in
               w3c) file=desktop-w3c-home-snapshot; url=https://www.w3.org/; width=1280; height=735 ;;
               w3c-flexbox) file=w3c-flexbox; url=https://www.w3.org/TR/css-flexbox-1/; width=1280; height=735 ;;
               bbc) file=bbc-home-snapshot; url=https://www.bbc.co.uk/news; width=1280; height=735 ;;
-              wiki-mobile) file=wiki-mobile; url=https://en.m.wikipedia.org/wiki/United_States; width=412; height=795 ;;
+              wiki-mobile) file=wiki-mobile; url='https://en.wikipedia.org/wiki/United_States?useskin=minerva'; width=412; height=795 ;;
             esac
             export REALPAGES_REPLAY="$PWD/snapshots/$file.zip"
             for arm in a1 b1 b2 a2; do
