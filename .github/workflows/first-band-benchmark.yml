@@ -34,6 +34,10 @@ jobs:
     needs: wait-engine
     runs-on: ubuntu-latest
     timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [wiki-mobile, govuk, w3c, hn-static]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -129,6 +133,7 @@ jobs:
           DENO_WEBGPU_BACKEND: vulkan
           SDL_VIDEODRIVER: x11
           GALLIVM_PERF: nopt
+          BENCHMARK_CASE: ${{ matrix.case }}
         run: |
           set -euo pipefail
           xvfb-run -a -s '-screen 0 1440x1100x24' python3 release-tests/first-band-benchmark.py \
@@ -138,7 +143,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: first-band-everyday-benchmark
+          name: first-band-everyday-benchmark-${{ matrix.case }}
           path: |
             out/*.txt
             out/*.json
