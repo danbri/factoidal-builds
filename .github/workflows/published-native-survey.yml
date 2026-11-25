@@ -1,13 +1,13 @@
 name: Survey the released Linux browser with the native worker
 on:
   push:
-    branches: [wip/published-4a0c-native-survey]
+    branches: [wip/published-e4445-native-survey]
 permissions:
   contents: read
   actions: read
 env:
-  CORE_SHA: 4a0c174b706690a21d66e23463a9da355f4271fa
-  RELEASE_RUN: "45543448538"
+  CORE_SHA: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  RELEASE_RUN: "45613857797"
 jobs:
   wait-release:
     runs-on: ubuntu-latest
@@ -123,10 +123,12 @@ jobs:
           rows = [row for path in Path("results").glob("*/summary.json") for row in json.loads(path.read_text())]
           Path("published-linux-survey.json").write_text(json.dumps(rows, indent=2)+"\n")
           assert len(rows) == len({r["id"] for r in rows}) == 24
-          print("Published 4a0c174b7066 browser, Ubuntu 24.04 X11 and stock software Vulkan, live URLs")
+          previous = {"desktop-govuk":14153,"wp-stub":4618,"m-spinal":8032,"news-bbc-noscripts":6549,"hn":3595,"w3c-maxf":2359,"desktop-bbc-news":28200,"desktop-w3c-home":6836,"wp-spinal":9004,"m-us":25532,"gh-deno":1944,"w3c-flexbox":21065,"desktop-wikipedia-www":29362,"spinal-showcase":2750,"m-stub":3662,"news-bbc":9770,"blog-jvns":7423,"infobomb":3164,"desktop-bbc-news-noscripts":86432,"desktop-frogfind":2610,"wp-us":33673,"m-stub-enm":5374,"mdn-display":11499,"nature-telemetry":4227}
+          assert set(previous) == {r["id"] for r in rows}
+          print("Published e4445d14752c browser, Ubuntu 24.04 X11 and stock software Vulkan, live URLs")
           print()
-          print("| Page | State | Target viewport frame ms | Wheel to scroll trace ms |")
-          print("| --- | --- | ---: | ---: |")
+          print("| Page | State | Target viewport frame ms | Wheel to scroll trace ms | Previous live first frame ms |")
+          print("| --- | --- | ---: | ---: | ---: |")
           for row in sorted(rows,key=lambda r:r["id"]):
               frame = row.get("presentedMs")
               state = row["state"]
@@ -134,8 +136,9 @@ jobs:
                   state = "uniform document pixels"
               elif frame is not None and frame > row["budget"]["first_frame_s"]*1000:
                   state = "over first-frame budget"
-              print(f'| {row["id"]} | {state} | {frame if frame is not None else ""} | {row.get("scrollObservedMs","")} |')
+              print(f'| {row["id"]} | {state} | {frame if frame is not None else ""} | {row.get("scrollObservedMs","")} | {previous[row["id"]]} |')
           print()
+          print("Previous live observations are from a separate hosted X11 run on 4a0c174b7066.")
           print(dict(collections.Counter(r["state"] for r in rows)))
           print("First-frame budget met:", sum(r.get("presentedMs") is not None and r["presentedMs"] <= r["budget"]["first_frame_s"] * 1000 for r in rows))
           print("Wheel changed content pixels:", sum(r.get("scrollChangesPixels") is True for r in rows))
