@@ -1,0 +1,127 @@
+name: Run the Foafnaut A/B gate for percentage-grid layout
+on:
+  push:
+    branches: [wip/1051-grid-integrated-ab]
+permissions:
+  contents: read
+  actions: read
+env:
+  BASE: 839dc27f0d873bbef749fc6ad36ecb2bf6e95316
+  CANDIDATE: 9d3c843103e78dd854de2cfcd3bd773d107ad200
+  BASE_RUN: "45649724924"
+  CANDIDATE_RUN: "45649679340"
+  WPT: 056c528ccb5844b01628e0cd667520535dee16cc
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for both pinned engines
+        run: |
+          set -euo pipefail
+          for entry in "$BASE_RUN:$BASE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${entry%:*}"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from ${entry#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+  gate:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 160
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: third_party/realpages
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          fetch-depth: 2
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+            tools
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: ${{ env.WPT }}
+          path: wpt
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASE_RUN }}
+          name: branch-engine
+          path: artifacts/base
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: artifacts/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Install the pinned native engines and current released host runtime
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CANDIDATE"
+          git -C core merge-base --is-ancestor "$BASE" "$CANDIDATE"
+          test "$(git -C wpt rev-parse HEAD)" = "$WPT"
+          mkdir -p out/lib runtime
+          cp artifacts/base/libweb-render.so "out/lib/$BASE.so"
+          cp artifacts/candidate/libweb-render.so "out/lib/$CANDIDATE.so"
+          tag=build-e4445d14752c-foafnaut-web
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          bash core/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/core/labs/demos/foafnaut" "$PWD/runtime"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+          sha256sum out/lib/*.so MANIFEST.json > out/inputs.sha256
+          find third_party/realpages -name '*.zip' -type f -print0 | sort -z | xargs -0 -r sha256sum > out/archives.sha256
+          test -s out/archives.sha256
+      - name: Run seven CSS references and the recorded page comparisons
+        run: |
+          set -uo pipefail
+          unset LD_LIBRARY_PATH
+          args=(--cache "$PWD/out" --manifest "$PWD/MANIFEST.json" --wpt "$PWD/wpt" --realpages "$PWD/third_party/realpages")
+          css=0
+          python3 core/tools/foafnaut-ab.py "${args[@]}" suites "$BASE" | tee out/baseline.log || css=1
+          python3 core/tools/foafnaut-ab.py "${args[@]}" suites "$CANDIDATE" | tee out/candidate.log || css=1
+          python3 core/tools/foafnaut-ab.py "${args[@]}" compare "$BASE" "$CANDIDATE" | tee out/css-report.txt || css=1
+          pages=0
+          python3 core/tools/foafnaut-ab.py "${args[@]}" pages "$BASE" "$CANDIDATE" | tee out/pages-report.txt || pages=1
+          cat out/css-report.txt out/pages-report.txt >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          logs = list(Path("out/suites").glob("*/css_*/results.json"))
+          assert len(logs) == 14, len(logs)
+          for path in logs:
+              data = json.loads(path.read_text())
+              assert data["valid"], (str(path), data.get("invalidReason"))
+          PY
+          validity=$?
+          test $((css+pages+validity)) -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grid-integrated-ab
+          path: |
+            out/*.txt
+            out/*.sha256
+            out/*.log
+            out/suites/**/*.json
+            out/suites/**/*.log
+            out/pages/
+          retention-days: 7
