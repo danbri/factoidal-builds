@@ -1,0 +1,66 @@
+name: Compare Wikipedia menu, mask and logo paint reductions
+on:
+  push:
+    branches: [wip/712-wikipedia-ui-reductions]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  NATIVE_RUN: "45613857797"
+jobs:
+  pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/wikipedia-ui/probe.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.NATIVE_RUN }}
+          name: foafnaut-linux-native-worker
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify engine and runtime and compare synthetic fixtures
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          (cd engine && grep -Fx "$CORE" source-commit.txt && sha256sum -c SHA256SUMS)
+          mkdir out runtime
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sudo apt-get update
+          sudo apt-get install -y python3-pil
+          google-chrome --version > out/chrome.txt
+          sha256sum engine/libweb-render.so experiments/wikipedia-ui/probe.py > out/inputs.sha256
+          /usr/bin/python3 experiments/wikipedia-ui/probe.py | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wikipedia-ui-pixel-reductions
+          path: out/
+          retention-days: 7
