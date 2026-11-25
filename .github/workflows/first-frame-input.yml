@@ -7,9 +7,9 @@ on:
         type: string
         default: e4445d14752cc3ec75da7bf2fc1797263d02efbf
       max_click_delivery_ms:
-        description: Maximum time from X11 injection to SDL receipt, or 0 to report only
+        description: Maximum ms from X11 injection to observing the SDL button trace (0 reports only)
         type: number
-        default: 100
+        default: 0
   push:
     branches: [wip/first-frame-x11-input]
 permissions:

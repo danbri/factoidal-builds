@@ -73,7 +73,7 @@ def run(label, url, cache):
                 raise RuntimeError(f"browser exited {proc.returncode} before target paint")
             while not events.empty():
                 stamp, line = events.get_nowait()
-                if line.startswith("Input SDL kind=2") and sent is not None:
+                if line.startswith("Input SDL kind=2 ") and sent is not None and dispatched is None:
                     dispatched = stamp
                 if not line.startswith("{"):
                     continue
@@ -126,7 +126,7 @@ def run(label, url, cache):
         result["dropped"] = summary["inputEventsDropped"]
         asks = [json.loads(line) for line in gate.read_text().splitlines()]
         host_click_ms = first_host_ms + (sent - first_frame) * 1000
-        result["observedClickDuringAskMs"] = max((ask["blocked"] for ask in asks
+        result["estimatedOverlappingAskBlockedMs"] = max((ask["blocked"] for ask in asks
             if ask.get("ev") == "ask" and ask["asked"] <= host_click_ms <= ask["asked"] + ask["blocked"]), default=0)
         # The released gate allows three light submissions or one heavy submission.
         if not 1 <= result["maxInFlight"] <= 3:
@@ -146,7 +146,7 @@ def run(label, url, cache):
                       frameLogToInjectionMs=ms(first_frame, sent), clickToSDLLogMs=ms(sent, dispatched),
                       clickToResultPixelsMs=ms(sent, visible))
         if latency_budget > 0 and result["clickToSDLLogMs"] is not None and result["clickToSDLLogMs"] > latency_budget:
-            result.setdefault("error", f"SDL button delivery exceeded {latency_budget:g} ms")
+            result.setdefault("error", f"observed SDL button trace exceeded {latency_budget:g} ms")
         (out / f"{label}.json").write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result), flush=True)
     return result
