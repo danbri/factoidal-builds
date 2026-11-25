@@ -1,0 +1,127 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261125T1534Z-l4-vc_di_ecdsa_vectors-linux-x86_64-gh45646537074a1",
+  "started_utc": "2026-11-25T15:37:19Z",
+  "finished_utc": "2026-11-25T15:37:36Z",
+  "trigger": "factoidal-release",
+  "suite": "l4-vc_di_ecdsa_vectors",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "96324ab327dbb00315238fe42683fd866d32c30d",
+  "commit_utc": "2026-11-25T14:35:42Z",
+  "snapshot_branch": "",
+  "release_tag": "build-96324ab327db-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 18,
+  "names_run": 18,
+  "passed": 18,
+  "denominator": 18,
+  "share_pct": "100.0000",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 0,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45646537074",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261125T1534Z-l4-vc_di_ecdsa_vectors-linux-x86_64-gh45646537074a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-25T15:34:46Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45646537074",
+  "trigger": "factoidal-release",
+  "core_commit": "96324ab327dbb00315238fe42683fd866d32c30d",
+  "core_short": "96324ab327db",
+  "on_main": true,
+  "commit_author_utc": "2026-11-25T14:35:42Z",
+  "commit_committer_utc": "2026-11-25T14:35:42Z",
+  "commit_subject": "Record the measured raw Foafnaut Wasm size after interop fixes (#1046)",
+  "release_sets": {
+   "linux-x86_64": {
+    "tag": "build-96324ab327db-linux-x86_64",
+    "published_at": "2026-11-25T15:31:04Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-96324ab327db-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-96324ab327db-web",
+    "published_at": "2026-11-25T15:31:22Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-96324ab327db-web"
+   },
+   "foafnaut-web": {
+    "tag": "build-e4445d14752c-foafnaut-web",
+    "published_at": "2026-11-25T13:15:31Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-e4445d14752c-foafnaut-web",
+    "note": "of core e4445d14752c, not of this commit: the Wasm module is loaded, not used, by a native run"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-25T15:34:51Z",
+  "candidate_why": "published by build run 45635806516",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": false,
+  "suites": true,
+  "platforms": [],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "command": [
+   "tools/lean-scoreboard.sh",
+   "--only",
+   "l4shacl-core10,l4shacl-sparql10,l4shacl-core12,l4shacl-sparql12,l4shacl-nodeexpr,l4shacl-rules,l4shex,l4shexc,l4rif,l4csvw-rdf,l4csvw-json,l4csvw-validate,l4xmlconf,l4xslt,l4schematron,l4mathml,l4jsonschema,l4jsonld-probe,l4jsonld-api,l4jsonld-frame,l4rml,l4vc-probe,l4rdf-semantics,l4owl-probe-species"
+  ],
+  "started_utc": "2026-11-25T15:37:19Z",
+  "exit": 1,
+  "seconds": 18,
+  "finished_utc": "2026-11-25T15:37:36Z"
+ },
+ "scoreboard_row": {
+  "spec_area": "VC / DID / Data Integrity",
+  "label": "vc-di-ecdsa-spec-vectors",
+  "runner": "l4vc-probe",
+  "job": "l4vc-probe",
+  "status": "ok",
+  "pass": 18,
+  "fail": 0,
+  "other": 0,
+  "total": 18,
+  "parse": true,
+  "note": "",
+  "command": "formal/lean4/.lake/build/bin/l4vc-probe",
+  "log": "/home/runner/work/_temp/suite-out/semweb/logs/l4vc-probe.log",
+  "seconds": 0,
+  "exit_code": "0",
+  "raw_summary_line": "vc-di-ecdsa-spec-vectors: 18 pass, 0 fail (out of 18)",
+  "detail": ""
+ },
+ "continues_fstar_suite": "",
+ "group": "lean-semweb",
+ "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
