@@ -542,7 +542,8 @@ class WorkflowSplitTests(unittest.TestCase):
         self.assertFalse([s for s in linux if 'darwin' in s])
 
     def test_linux_browser_publishes_after_a_separate_window_check_and_linux_gates(self):
-        self.assertEqual(self.needs('foafnaut-browser-linux'), {'resolve', 'foafnaut-engines'})
+        self.assertEqual(self.needs('foafnaut-browser-linux'),
+                         {'resolve', 'foafnaut-engines', 'foafnaut-linux-native-worker'})
         self.assertEqual(self.needs('foafnaut-browser-linux-check'), {'resolve', 'foafnaut-browser-linux'})
         self.assertEqual(self.needs('publish-linux-browser'), {'resolve', 'lean', 'foafnaut-host-tests',
                                                                'foafnaut-browser-linux-check'})
