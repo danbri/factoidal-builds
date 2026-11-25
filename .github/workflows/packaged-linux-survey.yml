@@ -22,29 +22,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 05ec0b29ca8ad75ef2dfca91a4f06cf16ed58067
+          ref: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
           path: core
           persist-credentials: false
           sparse-checkout: |
             labs/demos/foafnaut/realpages
             labs/demos/foafnaut/pages
-      - uses: actions/download-artifact@v4
-        with:
-          run-id: 45464645924
-          name: foafnaut-browser-linux-x86_64-candidate
-          path: package
-          github-token: ${{ github.token }}
+      - name: Download the published Linux release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=build-aa2c4b775740-foafnaut-browser-linux-x86_64
+          mkdir -p package
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D package \
+            -p foafnaut-browser-linux-x86_64.tar.gz -p build-info.json -p window-smoke.json
       - name: Check the exact package and install the X11 and Vulkan runtime
         shell: bash
         run: |
           set -euo pipefail
           mapfile -t archives < <(find package -name '*.tar.gz')
           test "${#archives[@]}" -eq 1
-          echo "76e2d22ed3e6a52ef8e79d347bae491a19f486799d7873644619645fb948ed4e  ${archives[0]}" | sha256sum -c -
+          echo "6e12ebd78d447c6836e8f5bced9892d8a309586740604089b5f7369afa5a6684  ${archives[0]}" | sha256sum -c -
           tar -xzf "${archives[0]}" -C package
           binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
-          echo "f13f8bf61fa7f760d37308b70ad7d4d55c89a707b969ec5a7fad44eaf7f59e0c  $binary" | sha256sum -c -
-          jq -e '.commitFull=="05ec0b29ca8ad75ef2dfca91a4f06cf16ed58067"' "$(dirname "$binary")/BUILD-INFO.json"
+          (cd "$(dirname "$binary")" && sha256sum -c SHA256SUMS)
+          jq -e '.commitFull=="aa2c4b775740efbf644ea59fe3d9b0bf881cae38"' "$(dirname "$binary")/BUILD-INFO.json"
           echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
           sudo apt-get update
           sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
@@ -52,6 +55,9 @@ jobs:
           test -f "$icd"
           echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
           echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          mkdir -p out
+          sha256sum package/*.json "${archives[0]}" "$binary" core/labs/demos/foafnaut/realpages/pages.json > out/inputs.sha256
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
           install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
       - name: Capture first visible frames and send a native scroll event
         env:
@@ -83,7 +89,7 @@ jobs:
 
           rows = [row for path in Path("results").glob("*/summary.json") for row in json.loads(path.read_text())]
           assert len(rows) == len({r["id"] for r in rows}) == 24
-          print("Linux X11 / software Vulkan once per registered URL")
+          print("Published aa2c4b775740 browser, Linux X11 with software Vulkan, live URLs")
           print()
           print("| Page | State | Target viewport frame ms | Wheel to scroll trace ms |")
           print("| --- | --- | ---: | ---: |")
