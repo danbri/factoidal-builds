@@ -1,7 +1,7 @@
 name: Compare large SVG image sharpness and page cost on frozen captures
 on:
   push:
-    branches: [wip/svg-image-budget-replay]
+    branches: [wip/svg-image-budget-flexbox-replay]
 permissions:
   actions: read
   contents: read
@@ -43,7 +43,6 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             release-tests/svg-image-budget-report.py
-            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
             third_party/realpages/w3.org/w3c-flexbox-20261115.zip
           sparse-checkout-cone-mode: false
       - uses: actions/checkout@v4
@@ -88,37 +87,17 @@ jobs:
           tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
           lab="$PWD/core/labs/demos/foafnaut"
           bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
-          while read -r run name digest; do
-            gh run download "$run" -R "$GITHUB_REPOSITORY" -n "$name" -D "inputs/$name"
-            snapshot=$(find "inputs/$name" -name '*.zip' -print -quit)
-            echo "$digest  $snapshot" | sha256sum -c -
-            cp "$snapshot" "snapshots/$name.zip"
-          done <<'SNAPSHOTS'
-          45431269816 desktop-w3c-home-snapshot 359b431764ad4eb9debb4e5dc2e4571d968cd95447b52fe767f9933145f4a388
-          45408439387 bbc-home-snapshot b32f0d193c4041b5703c13a2e8e5b6669223a33d9c3e216ed6d886fbfd9fe3f8
-          SNAPSHOTS
-          wiki=third_party/realpages/en.wikipedia.org/m-us-20261115.zip
-          test "$(git hash-object "$wiki")" = 944a0bff5adaa6b9cdd97a41b1d2a8852310c2d3
-          cp "$wiki" snapshots/wiki-mobile.zip
-          unzip -p "$wiki" manifest.json | jq -e '.url == "https://en.wikipedia.org/wiki/United_States?useskin=minerva"' >/dev/null
           flexbox=third_party/realpages/w3.org/w3c-flexbox-20261115.zip
           echo "a01b88268d16a2ab95bdf0a2edf8f56bf5634bf3534fa793d13263166f38d206  $flexbox" | sha256sum -c -
           cp "$flexbox" snapshots/w3c-flexbox.zip
           sha256sum engines/*/libweb-render.so snapshots/*.zip > out/inputs.sha256
-          unzip -p snapshots/desktop-w3c-home-snapshot.zip reference.png > out/w3c-chrome.png
-          test -s out/w3c-chrome.png
       - name: Replay the same pages in baseline, candidate, candidate, baseline order
         run: |
           set -euo pipefail
           export REFTEST_TIME=1
           lab="$PWD/core/labs/demos/foafnaut"
-          for case_id in wiki-mobile; do
-            case "$case_id" in
-              w3c) file=desktop-w3c-home-snapshot; url=https://www.w3.org/; width=1280; height=735 ;;
-              w3c-flexbox) file=w3c-flexbox; url=https://www.w3.org/TR/css-flexbox-1/; width=1280; height=735 ;;
-              bbc) file=bbc-home-snapshot; url=https://www.bbc.co.uk/news; width=1280; height=735 ;;
-              wiki-mobile) file=wiki-mobile; url='https://en.wikipedia.org/wiki/United_States?useskin=minerva'; width=412; height=795 ;;
-            esac
+          for case_id in w3c-flexbox; do
+            file=w3c-flexbox; url=https://www.w3.org/TR/css-flexbox-1/; width=1280; height=735
             export REALPAGES_REPLAY="$PWD/snapshots/$file.zip"
             for arm in a1 b1 b2 a2; do
               engine=baseline; if [[ "$arm" == b* ]]; then engine=candidate; fi
