@@ -1,0 +1,143 @@
+name: Compare exact dashed SVG coverage on both Wikipedia layouts
+on:
+  push:
+    branches: [wip/svg-edge-hoist-wikipedia]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE_RUN: "45546215635"
+  CANDIDATE_RUN: "45546215862"
+  BASELINE: 01edc5a42f1e83ad51af930d028be2871e9b24ea
+  CANDIDATE: e6eaf9639f1264a33a814ce03e918f1ce6e23d90
+  WEB: build-1b851ac72fdf-foafnaut-web
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Wait for both exact native engine artifacts
+        run: |
+          set -euo pipefail
+          for run in "$BASELINE_RUN" "$CANDIDATE_RUN"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+                echo "No native engine artifact in $run" >&2
+                exit 1
+              fi
+              sleep 30
+            done
+          done
+  replay:
+    needs: wait-engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [wp-us, m-us]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            experiments/svg-edge-hoist/compare.py
+            third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 01edc5a42f1e83ad51af930d028be2871e9b24ea
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45530401313
+          name: foafnaut-browser-linux-x86_64-candidate
+          path: package
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify and install the pinned inputs
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          mkdir -p runtime out
+          for pair in "$BASELINE_RUN:$BASELINE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            run=${pair%:*}
+            sha=${pair#*:}
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" --jq '.jobs[].name' |
+              grep -Fx "Build libweb-render.so from $sha"
+          done
+          cmp engines/{baseline,candidate}/lean-toolchain
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat engines/baseline/lean-toolchain)"
+          echo "LD_LIBRARY_PATH=$(ls -d "$HOME/.elan/toolchains/"*/lib/lean | head -1)" >> "$GITHUB_ENV"
+
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          echo "86b24b714ad09d2f89295720eba01ca4f90ac423fcc6a94c8d282282360be58b  ${archives[0]}" | sha256sum -c -
+          tar -xzf "${archives[0]}" -C package
+          window=$(find "$PWD/package" -name libnative-window.so -print -quit)
+          test -s "$window"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          cp "$window" "$lab/.build/native/libnative-window.so"
+
+          snapshot="$PWD/third_party/realpages/en.wikipedia.org/${{ matrix.case }}-20261115.zip"
+          case "${{ matrix.case }}" in
+            wp-us) digest=66ed79b9d470f6d9115b0b2e73de8819d38544956da56c3dd73e854eb2849680 ;;
+            m-us) digest=8801911e887d74487d0f43358aed2506751cbabbcd9ecca11209b5eb2792195c ;;
+            *) exit 1 ;;
+          esac
+          echo "$digest  $snapshot" | sha256sum -c -
+          sha256sum engines/*/libweb-render.so "$window" "$lab/run_html.ts" "$snapshot" > out/inputs.sha256
+          echo "REALPAGES_REPLAY=$snapshot" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth time
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/driver-versions.txt
+      - name: Compare first layout in baseline, candidate, candidate, baseline order
+        env:
+          DENO_WEBGPU_BACKEND: vulkan
+          SDL_VIDEODRIVER: x11
+          GALLIVM_PERF: nopt
+          BENCHMARK_CASE: ${{ matrix.case }}
+        run: |
+          set -euo pipefail
+          xvfb-run -a -s '-screen 0 1440x1100x24' python3 experiments/svg-edge-hoist/compare.py \
+            "$PWD/core/labs/demos/foafnaut" "$PWD/engines/baseline/libweb-render.so" \
+            "$PWD/engines/candidate/libweb-render.so" "$PWD/out" "$BENCHMARK_CASE" |
+            tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: svg-edge-hoist-wikipedia-${{ matrix.case }}
+          path: out/
+          retention-days: 7
