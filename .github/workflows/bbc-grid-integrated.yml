@@ -1,0 +1,109 @@
+name: Verify the integrated BBC grid fix on the recovered photos
+on:
+  push:
+    branches: [wip/1051-bbc-grid-integrated]
+permissions:
+  actions: read
+  contents: read
+env:
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  BASE: 839dc27f0d873bbef749fc6ad36ecb2bf6e95316
+  CANDIDATE: 9d3c843103e78dd854de2cfcd3bd773d107ad200
+  BASE_RUN: "45649724924"
+  CANDIDATE_RUN: "45649679340"
+  ARCHIVE_SHA: 32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for the exact engine builds
+        run: |
+          set -euo pipefail
+          for tuple in "$BASE_RUN:$BASE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${tuple%:*}"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from ${tuple#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+  bbc:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/bbc-grid-integrated
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASE_RUN }}
+          name: branch-engine
+          path: baseline-engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: candidate-engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45638334817"
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45642673643"
+          name: bbc-uk-chrome-geometry
+          path: reference
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Run both engines on the same recovered BBC page
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          echo "$ARCHIVE_SHA  capture/bbc-uk-with-photos.zip" | sha256sum -c -
+          mkdir -p runtime out/baseline out/candidate
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sha256sum *-engine/libweb-render.so capture/bbc-uk-with-photos.zip reference/chrome.json > out/inputs.sha256
+          python3 experiments/bbc-grid-integrated/instrument.py
+          printf '%s\n' '{"url":"https://www.bbc.co.uk/news","width":1280,"height":735,"file":"foafnaut.png"}' > out/jobs.jsonl
+          export REALPAGES_REPLAY="$PWD/capture/bbc-uk-with-photos.zip"
+          for role in baseline candidate; do
+            deno run --no-config --no-npm --unstable-ffi -A --preload "$lab/realpages/replay.ts" \
+              core/tests/browser-wpt/reftest-render.ts --native-engine "$PWD/$role-engine/libweb-render.so" \
+              --list out/jobs.jsonl --out "out/$role" 2>&1 | tee "out/$role/foafnaut.log"
+            grep -F '"status":"ok"' "out/$role/foafnaut.log"
+          done
+          python3 experiments/bbc-grid-integrated/geometry.py | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-integrated-grid-comparison
+          path: out/
+          retention-days: 7
