@@ -1,0 +1,112 @@
+name: Measure UK BBC photo geometry from the same archived responses
+on:
+  push:
+    branches: [wip/712-bbc-matched-geometry]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  ARCHIVE_SHA: 32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46
+jobs:
+  chrome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/bbc-matched-geometry
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/realpages
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45638334817"
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Serve archived responses to headless Chrome
+        run: |
+          set -euo pipefail
+          echo "$ARCHIVE_SHA  capture/bbc-uk-with-photos.zip" | sha256sum -c -
+          mkdir out
+          cp core/labs/demos/foafnaut/realpages/zip.ts experiments/bbc-matched-geometry/
+          google-chrome --version > out/chrome-version.txt
+          deno run --no-config -A experiments/bbc-matched-geometry/probe.ts             capture/bbc-uk-with-photos.zip out "$(command -v google-chrome)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-uk-chrome-geometry
+          path: out/
+          retention-days: 7
+  foafnaut:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/bbc-matched-geometry
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45627403020"
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45638334817"
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Extract layout boxes from the exact HTML renderer
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45627403020/jobs" --jq '.jobs[].name' |
+            grep -Fx "Build libweb-render.so from 308be7db6741ba1c19d580ffe0ed456d22a7e75b"
+          echo "$ARCHIVE_SHA  capture/bbc-uk-with-photos.zip" | sha256sum -c -
+          mkdir runtime out
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sha256sum engine/libweb-render.so capture/bbc-uk-with-photos.zip > out/inputs.sha256
+          python3 experiments/bbc-matched-geometry/instrument.py
+          printf '%s\n' '{"url":"https://www.bbc.co.uk/news","width":1280,"height":735,"file":"foafnaut.png"}' > out/jobs.jsonl
+          REALPAGES_REPLAY="$PWD/capture/bbc-uk-with-photos.zip"             deno run --no-config --no-npm --unstable-ffi -A --preload "$lab/realpages/replay.ts"             core/tests/browser-wpt/reftest-render.ts --native-engine "$PWD/engine/libweb-render.so"             --list out/jobs.jsonl --out out 2>&1 | tee out/foafnaut.log
+          grep -F '"status":"ok"' out/foafnaut.log
+          test -s out/foafnaut-geometry.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-uk-foafnaut-geometry
+          path: out/
+          retention-days: 7
