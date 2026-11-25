@@ -1,0 +1,117 @@
+name: Measure native worker startup without an unused Wasm engine
+on:
+  push:
+    branches: [wip/native-worker-without-wasm-experiment]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/native-worker-startup
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts/noto-sans
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45524300796
+          name: branch-engine
+          path: native
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify exact sources and instrument Wasm instantiation
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45524300796/jobs" --jq '.jobs[].name' |
+            grep -Fx "Build libweb-render.so from $CORE"
+          test "$(git hash-object core/labs/demos/foafnaut/native_html_engine.ts)" = 2d9ec03eedf182e8da88db1dcbfa939667707867
+          mkdir -p web out
+          gh release download "build-${CORE:0:12}-foafnaut-web" -R "$GITHUB_REPOSITORY" -D web -p foafnaut-web.tar.gz
+          echo 'bd25336995c144135a50f0bef8a6e608153277110500826db7b9ecfa132858f9  web/foafnaut-web.tar.gz' | sha256sum -c -
+          tar -xzf web/foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          install -m 644 "$lab/native_html_engine.ts" "$RUNNER_TEMP/baseline.ts"
+          cp experiments/native-worker-startup/probe.ts "$lab/"
+          cp experiments/native-worker-startup/native_html_engine.ts "$lab/"
+          deno check --no-config --no-npm --unstable-ffi "$lab/probe.ts" > out/typecheck.txt 2>&1
+          runtime="$lab/.build/native-html/runtime"
+          mv "$runtime/web-render.mjs" "$runtime/web-render-original.mjs"
+          cat > "$runtime/web-render.mjs" <<'JS'
+          import createModule from "./web-render-original.mjs";
+          export default async (...args) => {
+            const start = performance.now();
+            const result = await createModule(...args);
+            console.log(JSON.stringify({mode:"wasm-instantiated",ms:performance.now()-start}));
+            return result;
+          };
+          JS
+          nm -D --defined-only native/libweb-render.so | grep -E ' web_render_hit$'
+          sha256sum native/libweb-render.so web/foafnaut-web.tar.gz "$RUNNER_TEMP/baseline.ts" "$lab/native_html_engine.ts" > out/inputs.sha256
+      - name: Compare worker startup and exercise both link pickers
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          lab="$PWD/core/labs/demos/foafnaut"
+          lib="$PWD/native/libweb-render.so"
+          font="$PWD/core/third_party/fonts/noto-sans/NotoSans-Regular.ttf"
+          for arm in a1 b1 b2 a2 a3 b3 b4 a4; do
+            source="$RUNNER_TEMP/baseline.ts"
+            [[ "$arm" != b* ]] || source=experiments/native-worker-startup/native_html_engine.ts
+            cp "$source" "$lab/native_html_engine.ts"
+            deno run -A --no-check --no-config --no-npm --unstable-ffi "$lab/probe.ts" worker "$lib" "$font" > "out/$arm.jsonl"
+          done
+          cp experiments/native-worker-startup/native_html_engine.ts "$lab/native_html_engine.ts"
+          deno run -A --no-check --no-config --no-npm --unstable-ffi "$lab/probe.ts" hit "$lib" "$font" > out/native-hit.jsonl
+          deno run -A --no-check --no-config --no-npm --unstable-ffi "$lab/probe.ts" hit wasm "$font" > out/wasm-hit.jsonl
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, statistics
+          from pathlib import Path
+          summaries=[]
+          hits=[]
+          anchor=None
+          for group in ("a","b"):
+              items=[]
+              for i in range(1,5):
+                  rows=list(map(json.loads,Path(f"out/{group}{i}.jsonl").read_text().splitlines()))
+                  init=[r for r in rows if r["mode"]=="wasm-instantiated"]
+                  assert len(init)==(1 if group=="a" else 0), rows
+                  [worker]=[r for r in rows if r["mode"]=="worker"]
+                  rendered=(worker["primitiveCount"],worker["links"])
+                  if anchor is None: anchor=rendered
+                  assert anchor==rendered, rows
+                  items.append(worker)
+              summary={key:statistics.median([row[key] for row in items]) for key in ("ready","total","rss")}
+              summaries.append(summary)
+              print(group,summary)
+          for label in ("native","wasm"):
+              rows=list(map(json.loads,Path(f"out/{label}-hit.jsonl").read_text().splitlines()))
+              assert sum(r["mode"]=="wasm-instantiated" for r in rows)==(label=="wasm"), rows
+              hits.append(next(r for r in rows if r["mode"]=="hit"))
+          assert hits[0]==hits[1],hits
+          Path("out/report.json").write_text(json.dumps({"medians":summaries,"hit":hits[0]},indent=2)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-worker-startup
+          path: out/
+          retention-days: 7
