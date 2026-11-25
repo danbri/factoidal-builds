@@ -1,0 +1,123 @@
+### Since 20261125T0126Z-wpt-reftest-css-linux-x86_64-gh45525656736a1 (core 11c6771daaac)
+
+Tests passed 12,173 -> 12,157 (-16) DROP
+
+Newly passing: 48. Newly not passing: 64.
+
+Newly not passing:
+
+- `/css/css-backgrounds/background-origin/origin-padding-box_with_radius.html`: FAIL
+- `/css/css-borders/border-radius-012.html`: FAIL
+- `/css/css-borders/border-radius-clipping-with-transform-001.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-ignore-radius.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-auto-forms.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-auto-with-border.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-auto.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-dashed.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-dotted.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-double-shape.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-with-border-double-ellipse.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-with-border-ellipse.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-outline-with-border.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-overflow-solid-background.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-shadow-blur.html`: FAIL
+- `/css/css-borders/border-shape/border-shape-shadow-inset-blur.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-ancestor-clip-dynamic.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-opposite-scale-convex-inert.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-opposite-scale-elliptical.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-opposite-scale-mixed.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-opposite-scale-notch.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-opposite-scale-scoop.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-opposite-scale-superellipse.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-outline-negative-offset-notch002.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-overflow-clip-margin.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-square.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-superellipse-concave.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shape-superellipse-convex.html`: FAIL
+- `/css/css-borders/corner-shape/corner-shorthand-rendering.html`: FAIL
+- `/css/css-borders/tentative/border-radius-side-shorthands/border-radius-side-shorthands-001.html`: FAIL
+- `/css/css-borders/tentative/border-radius-side-shorthands/border-radius-side-shorthands-002.html`: FAIL
+- `/css/css-borders/ttwf-reftest-borderRadius.html`: FAIL
+- `/css/css-grid/grid-lanes/intrinsic-sizing/grid-lanes-contain-intrinsic-size-015.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-circle-001.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-circle-002.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-circle-003.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-circle-004.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-circle-005.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-circle-006.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-circle-010.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-ellipse-003.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-ellipse-006.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-ellipse-007.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-ellipse-008.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-polygon-014.html`: FAIL
+- `/css/css-masking/clip-path/clip-path-url-reference-external.html`: FAIL
+- `/css/css-text/line-break/line-break-loose-013.xht`: FAIL
+- `/css/css-text/line-break/line-break-loose-016a.xht`: FAIL
+- `/css/css-text/line-break/line-break-loose-016b.xht`: FAIL
+- `/css/css-text/line-break/line-break-loose-017a.xht`: FAIL
+- `/css/css-text/line-break/line-break-loose-017b.xht`: FAIL
+- `/css/css-text/line-break/line-break-loose-018.xht`: FAIL
+- `/css/css-text/line-break/line-break-normal-013.xht`: FAIL
+- `/css/css-text/overflow-wrap/overflow-wrap-anywhere-inline-001.html`: FAIL
+- `/css/css-text/overflow-wrap/overflow-wrap-anywhere-inline-003.tentative.html`: FAIL
+- `/css/css-text/overflow-wrap/overflow-wrap-min-content-size-003.html`: FAIL
+- `/css/css-text/overflow-wrap/overflow-wrap-min-content-size-007.html`: FAIL
+- `/css/css-text/white-space/white-space-trim-wrap.html`: FAIL
+- `/css/css-text/word-break/word-break-break-all-inline-004.tentative.html`: FAIL
+- `/css/css-text/word-break/word-break-break-all-inline-010.tentative.html`: FAIL
+- `/css/css-text/word-break/word-break-min-content-002.html`: FAIL
+- `/css/css-text/word-break/word-break-min-content-004.html`: FAIL
+- `/css/filter-effects/blur-clip-border-radius.html`: FAIL
+- `/css/filter-effects/grayscale-clip-border-radius.html`: FAIL
+
+Newly passing:
+
+- `/css/CSS2/generated-content/content-177.xht`
+- `/css/CSS2/linebox/vertical-align-baseline-009.xht`
+- `/css/CSS2/lists/list-style-applies-to-017.html`
+- `/css/CSS2/lists/list-style-image-applies-to-017.html`
+- `/css/CSS2/lists/list-style-type-applies-to-017.html`
+- `/css/CSS2/text/text-align-white-space-001.xht`
+- `/css/CSS2/text/white-space-processing-049.xht`
+- `/css/CSS2/ui/overflow-applies-to-009.xht`
+- `/css/css-backgrounds/background-rounded-image-clip-001.html`
+- `/css/css-borders/css-border-radius-001.html`
+- `/css/css-lists/counter-list-item-slot-order.html`
+- `/css/css-lists/counter-order-display-contents.html`
+- `/css/css-lists/counter-reset-increment-set-display-contents.html`
+- `/css/css-lists/counter-slot-order-scoping.html`
+- `/css/css-lists/counter-slot-order.html`
+- `/css/css-multicol/multicol-dynamic-change-inside-break-inside-avoid-001.html`
+- `/css/css-pseudo/first-line-font-relative-units-001.html`
+- `/css/css-text-decor/text-emphasis-punctuation-1.html`
+- `/css/css-text/hyphens/hyphens-span-001.html`
+- `/css/css-text/hyphens/hyphens-span-002.html`
+- `/css/css-text/line-break/line-break-normal-014.xht`
+- `/css/css-text/line-break/line-break-normal-015a.xht`
+- `/css/css-text/line-break/line-break-normal-015b.xht`
+- `/css/css-text/line-break/line-break-normal-016a.xht`
+- `/css/css-text/line-break/line-break-normal-016b.xht`
+- `/css/css-text/line-break/line-break-normal-017a.xht`
+- `/css/css-text/line-break/line-break-normal-017b.xht`
+- `/css/css-text/line-break/line-break-normal-018.xht`
+- `/css/css-text/line-break/line-break-strict-011.xht`
+- `/css/css-text/line-break/line-break-strict-012.xht`
+- `/css/css-text/line-break/line-break-strict-013.xht`
+- `/css/css-text/line-break/line-break-strict-014.xht`
+- `/css/css-text/line-break/line-break-strict-015a.xht`
+- `/css/css-text/line-break/line-break-strict-015b.xht`
+- `/css/css-text/line-break/line-break-strict-016a.xht`
+- `/css/css-text/line-break/line-break-strict-016b.xht`
+- `/css/css-text/line-break/line-break-strict-017a.xht`
+- `/css/css-text/line-break/line-break-strict-017b.xht`
+- `/css/css-text/line-break/line-break-strict-018.xht`
+- `/css/css-text/line-breaking/line-breaking-015.html`
+- `/css/css-text/line-breaking/line-breaking-016.html`
+- `/css/css-text/overflow-wrap/overflow-wrap-min-content-size-008.html`
+- `/css/css-text/white-space/trailing-ideographic-space-012.html`
+- `/css/css-text/white-space/trailing-ideographic-space-013.html`
+- `/css/css-text/white-space/trailing-ideographic-space-014.html`
+- `/css/css-text/word-break/auto-phrase/word-break-auto-phrase-002.html`
+- `/css/css-text/word-break/word-break-break-all-inline-008.html`
+- `/css/css-text/word-break/word-break-min-content-003.html`
