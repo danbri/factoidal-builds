@@ -15,7 +15,7 @@ env:
   WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
 jobs:
   compare:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -115,6 +115,8 @@ jobs:
             test "$(grep -c '"status":"ok"' "out/$arm.log")" -eq 17
           done
           /usr/bin/python3 experiments/responsive-image-density/report.py out fixtures | tee -a "$GITHUB_STEP_SUMMARY"
+          cp experiments/responsive-image-density/script-box.ts core/tests/browser-wpt/density-script-box.ts
+          deno run --no-config --no-npm --unstable-ffi -A core/tests/browser-wpt/density-script-box.ts "$PWD/engines/control/libweb-render.so" "$PWD/wpt/images/green-256x256.png" | tee out/script-box.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
