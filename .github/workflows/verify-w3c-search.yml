@@ -7,18 +7,11 @@ permissions:
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
-  HOST: 4a0c174b706690a21d66e23463a9da355f4271fa
-  PACKAGE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
-  ENGINE: 7f67fb2e2cd1c6dc47e1727b3354193e890623ce
-  ENGINE_RUN: "45535114460"
+  HOST: 98cf12b45124a964363520bda0d84a543a19094d
 jobs:
   search:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [enter, button]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,18 +27,6 @@ jobs:
             labs/demos/foafnaut
             docs/web/hub/foafnaut
             third_party/fonts
-      - uses: actions/download-artifact@v4
-        with:
-          run-id: 45530401313
-          name: foafnaut-browser-linux-x86_64-candidate
-          path: package
-          github-token: ${{ github.token }}
-      - uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ env.ENGINE_RUN }}
-          name: branch-engine
-          path: engine
-          github-token: ${{ github.token }}
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
@@ -54,42 +35,37 @@ jobs:
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
           test "$(git -C core rev-parse HEAD)" = "$HOST"
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ENGINE_RUN/jobs" --jq '.jobs[] | select(.conclusion=="success") | .name' |
-            grep -Fx "Build libweb-render.so from $ENGINE"
-          test -s engine/libweb-render.so
-          mkdir -p web out
-          mapfile -t archives < <(find package -name '*.tar.gz')
-          test "${#archives[@]}" -eq 1
-          echo "86b24b714ad09d2f89295720eba01ca4f90ac423fcc6a94c8d282282360be58b  ${archives[0]}" | sha256sum -c -
-          tar -xzf "${archives[0]}" -C package
+          mkdir -p package web out
+          gh release download "build-${HOST:0:12}-foafnaut-browser-linux-x86_64" -R "$GITHUB_REPOSITORY" \
+            -D package -p foafnaut-browser-linux-x86_64.tar.gz
+          archive=package/foafnaut-browser-linux-x86_64.tar.gz
+          echo "923339230618fd52361e0d54c4e6eaf6a28a68eb2badb33d41bcb78628e269e3  $archive" | sha256sum -c -
+          tar -xzf "$archive" -C package
           browser=$(find "$PWD/package" -type f -name foafnaut -print -quit)
           directory=$(dirname "$browser")
           (cd "$directory" && sha256sum -c SHA256SUMS)
-          jq -e --arg sha "$PACKAGE" '.commitFull==$sha' "$directory/BUILD-INFO.json"
-          gh release download "build-${PACKAGE:0:12}-foafnaut-web" -R "$GITHUB_REPOSITORY" -D web -p foafnaut-web.tar.gz -p build-info.json
+          jq -e --arg sha "$HOST" '.commitFull==$sha' "$directory/BUILD-INFO.json"
+          engine=$(find "$directory" -name libweb-render.so -type f -print -quit)
+          test -s "$engine"
+          gh release download "build-${HOST:0:12}-foafnaut-web" -R "$GITHUB_REPOSITORY" -D web -p foafnaut-web.tar.gz -p build-info.json
           expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' web/build-info.json)
           echo "$expected  web/foafnaut-web.tar.gz" | sha256sum -c -
           tar -xzf web/foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
           bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
           cp "$directory/libnative-window.so" "$lab/.build/native/"
-          pin=$(cat engine/lean-toolchain)
-          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
-          "$HOME/.elan/bin/elan" toolchain install "$pin"
-          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$pin" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
           echo "LAB=$lab" >> "$GITHUB_ENV"
           echo "DENO_BIN=$(command -v deno)" >> "$GITHUB_ENV"
-          echo "NATIVE_LIB=$PWD/engine/libweb-render.so" >> "$GITHUB_ENV"
+          echo "NATIVE_LIB=$engine" >> "$GITHUB_ENV"
           echo "OBSERVE=$PWD/experiments/w3c-search/observe.ts" >> "$GITHUB_ENV"
-          sha256sum "${archives[0]}" web/foafnaut-web.tar.gz engine/libweb-render.so "$lab/run_html.ts" > out/inputs.sha256
+          sha256sum "$archive" web/foafnaut-web.tar.gz "$engine" "$lab/run_html.ts" > out/inputs.sha256
           deno check --no-config --no-npm experiments/w3c-search/observe.ts
-          deno run --no-config --no-npm --unstable-ffi -A experiments/w3c-search/height.ts "$PWD/engine/libweb-render.so" |
+          deno run --no-config --no-npm --unstable-ffi -A experiments/w3c-search/height.ts "$engine" |
             tee out/form-height.jsonl
       - name: Type and submit through the native window
         env:
           SDL_VIDEODRIVER: x11
           DENO_WEBGPU_BACKEND: vulkan
           GALLIVM_PERF: nopt
-          MODE: ${{ matrix.mode }}
         run: |
           set -euo pipefail
           sudo apt-get update -q
@@ -103,12 +79,17 @@ jobs:
           exec "$DENO_BIN" run --no-check --no-config --no-npm --node-modules-dir=none             --unstable-webgpu --unstable-ffi -A --preload "$OBSERVE" "$LAB/run_html.ts"             --follow-links --log-all --native-engine "$NATIVE_LIB" "$@"
           BASH
           chmod +x "$RUNNER_TEMP/host"
-          xvfb-run -a -s '-screen 0 1440x1000x24' /usr/bin/python3 experiments/w3c-search/probe.py             "$LAB/check-linux-browser.py" "$RUNNER_TEMP/host" "$PWD/out/$MODE" "$MODE"
-          jq -e '.status=="handoff-pass"' "out/$MODE/receipt.json"
-          jq . "out/$MODE/receipt.json" | tee "$GITHUB_STEP_SUMMARY"
+          failed=0
+          for mode in enter button; do
+            xvfb-run -a -s '-screen 0 1440x1000x24' /usr/bin/python3 experiments/w3c-search/probe.py \
+              "$LAB/check-linux-browser.py" "$RUNNER_TEMP/host" "$PWD/out/$mode" "$mode" || failed=1
+            jq . "out/$mode/receipt.json" >> "$GITHUB_STEP_SUMMARY" || failed=1
+            jq -e '.status=="handoff-pass" and .typedPixelsObserved' "out/$mode/receipt.json" || failed=1
+          done
+          exit "$failed"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: w3c-search-${{ matrix.mode }}
+          name: w3c-search-released-native
           path: out/
           retention-days: 7
