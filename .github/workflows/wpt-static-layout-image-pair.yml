@@ -1,0 +1,121 @@
+name: Replay WPT layout with and without static image inputs
+on:
+  push:
+    branches: [codex/wpt-static-layout-image-pair]
+    paths: [.github/workflows/wpt-static-layout-image-pair.yml]
+permissions:
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  SOURCE: 127eb129d825eb6d4d1a5b4fe307db625414c510
+  ENGINE: dc102cae43cb7f0a2a457da339dee1ec18295da8
+  RUNTIME: 41789954b17aae0057e4f5a5adee434f35facafa
+  WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
+jobs:
+  compare:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.SOURCE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: ${{ env.WPT }}
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/css-sizing/aspect-ratio
+            html/semantics/embedded-content/the-img-element
+            html/interaction/focus/sequential-focus-navigation-and-the-tabindex-attribute
+            resources
+            images
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify and install the shared published inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$SOURCE"
+          test "$(git -C wpt rev-parse HEAD)" = "$WPT"
+          mkdir -p out engine runtime
+          for record in "engine:$ENGINE:foafnaut-linux-x86_64" "runtime:$RUNTIME:foafnaut-web"; do
+            dest=${record%%:*}
+            pair=${record#*:}
+            sha=${pair%%:*}
+            set=${pair#*:}
+            gh release download "build-${sha:0:12}-$set" -R "$GITHUB_REPOSITORY" -D "$dest" -p build-info.json -p "$set.tar.gz"
+            expected=$(jq -er --arg sha "$sha" --arg file "$set.tar.gz" \
+              'select(.source_commit == $sha) | .artifacts[$file].sha256' "$dest/build-info.json")
+            echo "$expected  $dest/$set.tar.gz" | sha256sum -c -
+            if [[ $dest == runtime ]]; then
+              tar -xzf "$dest/$set.tar.gz" -C "$dest" docs/web/hub/html-webgpu/runtime
+            else
+              tar -xzf "$dest/$set.tar.gz" -C "$dest" foafnaut/libweb-render.so
+            fi
+          done
+          engine="$PWD/engine/foafnaut/libweb-render.so"
+          sum=$(jq -er '.artifacts["foafnaut-linux-x86_64.tar.gz"].files["foafnaut/libweb-render.so"].sha256' engine/build-info.json)
+          echo "$sum  $engine" | sha256sum -c -
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sha256sum core/tests/browser-wpt/testharness-run.ts "$engine" > out/inputs.sha256
+      - name: Compare the same selected native tests in both modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > out/names.txt <<'WPT_NAMES'
+          /css/css-sizing/aspect-ratio/box-sizing-dimensions.html
+          /css/css-sizing/aspect-ratio/box-sizing-squashed.html
+          /html/semantics/embedded-content/the-img-element/current-pixel-density/basic.html
+          /html/semantics/embedded-content/the-img-element/current-pixel-density/error.html
+          /html/interaction/focus/sequential-focus-navigation-and-the-tabindex-attribute/tabindex-getter.html
+          WPT_NAMES
+          for arm in baseline loaded; do
+            flags=()
+            if [[ $arm == loaded ]]; then flags=(--diagnostic-layout-images); fi
+            deno run --no-check --no-config --no-npm --unstable-ffi -A core/tests/browser-wpt/testharness-run.ts \
+              --script-engine bubblepop --native-engine "$PWD/engine/foafnaut/libweb-render.so" \
+              --wpt-root "$PWD/wpt" --wpt-commit "$WPT" --list "$PWD/out/names.txt" \
+              --out "$PWD/out/$arm.json" "${flags[@]}" | tee "out/$arm.log"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          def results(arm):
+              cases = json.loads(Path(f"out/{arm}.json").read_text())["cases"]
+              assert len(cases) == 5 and all(case["harness"] == "OK" for case in cases)
+              return {(case["file"], test["name"]): test["status"]
+                      for case in cases for test in case["subtests"]}
+
+          before, after = results("baseline"), results("loaded")
+          assert before.keys() == after.keys(), "test assertions changed"
+          changes = [(file, name, before[file, name], status)
+                     for (file, name), status in after.items() if before[file, name] != status]
+          Path("out/changes.json").write_text(json.dumps(changes, indent=2) + "\n")
+          for file, name, old, new in changes:
+              print(file, name, old, "->", new)
+          assert changes, "static image data did not change any results"
+          assert any(file.startswith("css/css-sizing/aspect-ratio/") and new == "PASS"
+                     for file, name, old, new in changes)
+          assert all(old != "PASS" for file, name, old, new in changes), "a previous pass was lost"
+          assert all(not file.endswith(("error.html", "tabindex-getter.html"))
+                     for file, name, old, new in changes), "a control test changed"
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-static-image-layout-comparison
+          path: out/
+          retention-days: 7
