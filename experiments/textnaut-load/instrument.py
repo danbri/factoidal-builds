@@ -48,3 +48,10 @@ replace(
 replace('if (parsed.timing) {', '''if (parsed.timing) {
       console.error(JSON.stringify({ type: "textnaut-load-phases", ...rendered.ms, phases }));''')
 p.write_text(source)
+
+# Deno adds Node timer types through the survey imports. Keep the same timer at runtime.
+input_file = p.with_name("input.ts")
+input_source = input_file.read_text()
+timer = "let timer: number | undefined;"
+assert input_source.count(timer) == 1, timer
+input_file.write_text(input_source.replace(timer, "let timer: ReturnType<typeof setTimeout> | undefined;"))
