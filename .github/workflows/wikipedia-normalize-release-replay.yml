@@ -1,0 +1,59 @@
+name: Wikipedia normalization on released Linux engines
+on:
+  push:
+    branches: [wip/wikipedia-normalize-release-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: 9fa1d855822cc14462d55602dcab7d622094e16b
+  SUCCESSOR: af32b113cc3e05fbf219aaa9d382a6c30faedeb1
+  EXPECTED_ENGINE_RUN: https://github.com/danbri/factoidal-builds/actions/runs/45720005954
+jobs:
+  page:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - site: wikipedia
+            run: "45416936347"
+            artifact: desktop-wikipedia-www-snapshot
+            archive: en.wikipedia.org/desktop-wikipedia-www-20261124.zip
+    timeout-minutes: 14
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ matrix.run }}
+          name: ${{ matrix.artifact }}
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Get the scratch harness and image tooling
+        run: |
+          set -euo pipefail
+          mkdir -p harness
+          base="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/experiments/wikipedia-normalize-release-replay"
+          for file in host.sha256 fixtures.json materialize.py inspect_inputs.py capture_geometry.py compare.py run.sh; do
+            curl -fsSL --retry 3 --output "harness/$file" "$base/$file"
+          done
+          if ! /usr/bin/python3 -c 'import PIL'; then
+            sudo apt-get update -q
+            sudo apt-get install -qy python3-pil
+          fi
+      - name: Replay the archived page using each published native worker
+        env:
+          SITE: ${{ matrix.site }}
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          export CAPTURE="$PWD/capture/$ARCHIVE"
+          bash harness/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wikipedia-normalize-release-replay-${{ matrix.site }}
+          path: out/
+          retention-days: 7
