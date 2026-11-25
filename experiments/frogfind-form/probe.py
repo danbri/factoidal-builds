@@ -95,18 +95,23 @@ with TemporaryDirectory() as cwd, log_path.open("w") as log:
 
         click(field)
         xdotool("type","--clearmodifiers","--delay","50",QUERY)
-        def typed():
-            image = window_image(window)
-            return image if image.crop(field).tobytes() != before.crop(field).tobytes() else None
+        def painted_full_edit():
+            edits, frames = [], []
+            for row in trace_records(log_path):
+                if row["type"] == "native-html-script" and row.get("cause") == "key" and row.get("changed"):
+                    edits.append(row["t"])
+                if row["type"] == "native-html-frame" and row.get("presented"):
+                    frames.append(row)
+            if len(edits) < len(QUERY):
+                return None
+            return next((frame for frame in frames
+                         if frame["t"] - frame["totalMs"] >= edits[-1] - 2), None)
+
+        paint = wait_for(browser,"frame rendered after all input characters",painted_full_edit,timeout=15)
+        record["editedFrame"] = paint["frame"]
         before = image
-        try:
-            after_type = wait_for(browser,"input repaint after typing",typed,timeout=5)
-            record["typedPixelsChanged"] = True
-        except RuntimeError:
-            if browser.poll() is not None:
-                raise
-            after_type = window_image(window)
-            record["typedPixelsChanged"] = False
+        after_type = window_image(window)
+        record["typedPixelsChanged"] = after_type.crop(field).tobytes() != before.crop(field).tobytes()
         dark = lambda source: sum(max(rgb) < 140 for rgb in source.crop(field).getdata())
         record["inputDarkPixelsAdded"] = dark(after_type) - dark(before)
         after_type.save(OUT/"typed.png")
