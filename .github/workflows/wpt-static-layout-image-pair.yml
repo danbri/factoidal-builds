@@ -61,12 +61,15 @@ jobs:
             if [[ $dest == runtime ]]; then
               tar -xzf "$dest/$set.tar.gz" -C "$dest" docs/web/hub/html-webgpu/runtime
             else
-              tar -xzf "$dest/$set.tar.gz" -C "$dest" foafnaut/libweb-render.so
+              member=$(tar -tzf "$dest/$set.tar.gz" | grep -E '(^|/)libweb-render\.so$')
+              test "$(printf '%s\n' "$member" | wc -l)" -eq 1
+              actual=$(jq -er --arg file "$set.tar.gz" --arg member "${member#./}" \
+                '.artifacts[$file].files | to_entries[] | select((.key | ltrimstr("./")) == $member) | .value.sha256' "$dest/build-info.json")
+              tar -xOzf "$dest/$set.tar.gz" "$member" > "$dest/libweb-render.so"
+              echo "$actual  $dest/libweb-render.so" | sha256sum -c -
             fi
           done
-          engine="$PWD/engine/foafnaut/libweb-render.so"
-          sum=$(jq -er '.artifacts["foafnaut-linux-x86_64.tar.gz"].files["foafnaut/libweb-render.so"].sha256' engine/build-info.json)
-          echo "$sum  $engine" | sha256sum -c -
+          engine="$PWD/engine/libweb-render.so"
           lab="$PWD/core/labs/demos/foafnaut"
           bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
           sha256sum core/tests/browser-wpt/testharness-run.ts "$engine" > out/inputs.sha256
@@ -85,7 +88,7 @@ jobs:
             flags=()
             if [[ $arm == loaded ]]; then flags=(--diagnostic-layout-images); fi
             deno run --no-check --no-config --no-npm --unstable-ffi -A core/tests/browser-wpt/testharness-run.ts \
-              --script-engine bubblepop --native-engine "$PWD/engine/foafnaut/libweb-render.so" \
+              --script-engine bubblepop --native-engine "$PWD/engine/libweb-render.so" \
               --wpt-root "$PWD/wpt" --wpt-commit "$WPT" --list "$PWD/out/names.txt" \
               --out "$PWD/out/$arm.json" "${flags[@]}" | tee "out/$arm.log"
           done
