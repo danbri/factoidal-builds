@@ -99,12 +99,20 @@ with TemporaryDirectory() as cwd, log_path.open("w") as log:
             image = window_image(window)
             return image if image.crop(field).tobytes() != before.crop(field).tobytes() else None
         before = image
-        wait_for(browser,"input repaint after typing",typed).save(OUT/"typed.png")
+        try:
+            after_type = wait_for(browser,"input repaint after typing",typed,timeout=5)
+            record["typedPixelsChanged"] = True
+        except RuntimeError:
+            if browser.poll() is not None:
+                raise
+            after_type = window_image(window)
+            record["typedPixelsChanged"] = False
+        after_type.save(OUT/"typed.png")
         if CASE == "enter":
             xdotool("key","--clearmodifiers","Return")
         else:
             click(button)
-        wait_for(browser,"submitted query",lambda:server.queries)
+        wait_for(browser,"submitted query",lambda:server.queries,timeout=25)
         assert len(server.queries) == 1 and server.queries[0]["args"] == {"q":[QUERY]}, server.queries
 
         def outcome():
