@@ -1,14 +1,15 @@
-name: Measure scoped HTTPS reuse for web fonts
+name: Verify exact Foafnaut font transfer reuse
 on:
   push:
-    branches: [wip/web-font-pinned-https]
+    branches: [wip/web-font-pinned-https-production]
 permissions:
   contents: read
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
   CORE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
-  HOST: 1af5b0d8feda428f2ce4885e28ec767dfbc5f525
+  HOST: 32cfe068005e4e04b869504e4683c6088302a2bd
+  BASELINE: 44e1a39cf589523ce77242fd7a9bc0e1355f23be
 jobs:
   profile:
     runs-on: ubuntu-24.04
@@ -51,7 +52,7 @@ jobs:
           test "$(git -C core rev-parse HEAD)" = "$HOST"
           echo "LAB=$lab" >> "$GITHUB_ENV"
           test "$(git hash-object "$lab/run_html.ts")" = bc18426ee268de6015fa9ee62d92a7a03caeae27
-          test "$(git hash-object "$lab/native_html_document.ts")" = 2a77fbe11902ff9aa8e38faba929c4ef13a5b926
+          test "$(git hash-object "$lab/native_html_document.ts")" = f53d73c7fcab5b27a2d2a985a1d117f195fc41e8
           mapfile -t archives < <(find package -name '*.tar.gz')
           test "${#archives[@]}" -eq 1
           echo "86b24b714ad09d2f89295720eba01ca4f90ac423fcc6a94c8d282282360be58b  ${archives[0]}" | sha256sum -c -
@@ -72,13 +73,20 @@ jobs:
           sha256sum "$lab/realpages/pages.json" >> out/inputs.sha256
           variant="$RUNNER_TEMP/font-variants"
           mkdir -p "$variant"/{a,b}
-          test "$(git hash-object "$lab/native_net.ts")" = cbdd9e095c9ad57f46312fc40649570739f3de61
-          for role in a b; do
-            cp "$lab"/{native_html_document.ts,native_net.ts} "$variant/$role/"
-            python3 experiments/web-font-timing/doc-phases.py "$variant/$role"
-            python3 experiments/web-font-timing/fonts.py "$variant/$role/native_html_document.ts" baseline
+          test "$(git hash-object "$lab/native_net.ts")" = 73f722704596898ad4d914a6deb8848cdae7542a
+          deno check --no-config --no-npm --unstable-ffi --unstable-webgpu "$lab/run_html.ts"
+          deno test --no-config --no-npm --allow-net --allow-read --allow-write --allow-run=openssl "$lab/native_net_test.ts"
+          cp "$lab"/{native_html_document.ts,native_net.ts} "$variant/b/"
+          for name in native_html_document.ts native_net.ts; do
+            gh api "repos/danbri/factoidal-core/contents/labs/demos/foafnaut/$name?ref=$BASELINE" --jq .content |
+              base64 --decode > "$variant/a/$name"
           done
-          python3 experiments/font-transport/apply.py "$variant/b"
+          test "$(git hash-object "$variant/a/native_html_document.ts")" = bdfbb5d937c9e42344d7028f4813683e3a21c06d
+          test "$(git hash-object "$variant/a/native_net.ts")" = cbdd9e095c9ad57f46312fc40649570739f3de61
+          for role in a b; do
+            python3 experiments/web-font-timing/doc-phases.py "$variant/$role"
+            python3 experiments/font-transport/fonts-exact.py "$variant/$role/native_html_document.ts" "$role"
+          done
           sha256sum "$variant"/*/*.ts >> out/inputs.sha256
           for role in a b; do
             cp "$variant/$role/"*.ts "$lab/"
@@ -115,9 +123,10 @@ jobs:
           done
           python3 experiments/web-font-timing/report.py "$PWD/out" "$CASE" | tee "$GITHUB_STEP_SUMMARY"
           jq -e '.identicalFonts' out/pair.json
+          if grep -qF 'Bad resource ID' out/*/*.log; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: web-font-pinned-https-${{ matrix.case }}
+          name: exact-web-font-pinned-https-${{ matrix.case }}
           path: out/
           retention-days: 7
