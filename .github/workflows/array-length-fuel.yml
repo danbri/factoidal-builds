@@ -1,0 +1,55 @@
+name: Verify ArraySetLength fuel monotonicity
+on:
+  push:
+    branches: [wip/general-array-set-length-fuel]
+permissions:
+  contents: read
+env:
+  CORE: f5f6b8cb159a43b93308cbec5a87728d81a44d5c
+jobs:
+  fuel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: scripts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: f5f6b8cb159a43b93308cbec5a87728d81a44d5c
+          path: core
+          persist-credentials: false
+      - name: Install the release Lean toolchain
+        run: bash builds/scripts/install-elan.sh
+      - uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Compile the exact release fuel target and print axioms
+        working-directory: core/formal/lean4
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CORE"
+          lake build JSFuelMono 2>&1 | tee "$RUNNER_TEMP/fuel-mono.log"
+          cat > "$RUNNER_TEMP/axioms.lean" <<'LEAN'
+          import L4Factoidal.JS.FuelMonoAll
+          #print axioms L4Factoidal.JS.FuelMono.Le.generalArrayLength
+          #print axioms L4Factoidal.JS.FuelMono.putV_step
+          #print axioms L4Factoidal.JS.FuelMono.defineOwnProp_step
+          #print axioms L4Factoidal.JS.FuelMono.IH_all
+          LEAN
+          lake env lean "$RUNNER_TEMP/axioms.lean" | tee "$RUNNER_TEMP/axioms.txt"
+          if grep -Eq 'sorryAx|failed' "$RUNNER_TEMP/axioms.txt"; then exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: general-array-length-fuel-proof
+          path: |
+            ${{ runner.temp }}/fuel-mono.log
+            ${{ runner.temp }}/axioms.txt
+          retention-days: 7
