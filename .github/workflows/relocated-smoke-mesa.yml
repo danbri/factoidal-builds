@@ -1,0 +1,97 @@
+name: Compare cold Mesa settings on the relocated Linux browser smoke
+on:
+  push:
+    branches: [wip/981-relocated-smoke-mesa]
+permissions:
+  actions: read
+  contents: read
+env:
+  CORE_SHA: 96324ab327dbb00315238fe42683fd866d32c30d
+  SET: foafnaut-browser-linux-x86_64
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE_SHA }}
+          path: core
+          sparse-checkout: labs/demos/foafnaut/check-linux-browser.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45635806516"
+          name: foafnaut-browser-linux-x86_64-candidate
+          path: candidate
+          github-token: ${{ github.token }}
+      - name: Install the same X11 and Vulkan runtime as release smoke
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+      - name: Run the exact smoke with fresh per-launch shader caches
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE_SHA"
+          archive="$SET.tar.gz"
+          expected=$(jq -er --arg sha "$CORE_SHA" --arg set "$SET" --arg archive "$archive" \
+            'select(.source_commit == $sha and .set == $set) | .artifacts[$archive].sha256' candidate/build-info.json)
+          echo "$expected  candidate/$archive" | sha256sum -c -
+          mkdir out relocated
+          tar -xzf "candidate/$archive" -C relocated
+          browser="$PWD/relocated/foafnaut-linux-x86_64/foafnaut"
+          (cd "$(dirname "$browser")" && sha256sum -c SHA256SUMS)
+          export PATH=/usr/bin:/bin SDL_VIDEODRIVER=x11 DENO_WEBGPU_BACKEND=vulkan
+          export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)"
+          test -s "$VK_DRIVER_FILES"
+          tester="$PWD/core/labs/demos/foafnaut/check-linux-browser.py"
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/versions.txt
+          printf '%s\n' "$expected" > out/archive.sha256
+          unset LD_LIBRARY_PATH MESA_SHADER_CACHE_DISABLE
+          export MESA_SHADER_CACHE_MAX_SIZE=32M
+          sample=0
+          for mode in stock nopt nopt stock; do
+            sample=$((sample+1))
+            evidence="$PWD/out/$sample-$mode"
+            mkdir -p "$evidence"
+            export XDG_RUNTIME_DIR="$(mktemp -d "$RUNNER_TEMP/run.XXXXXX")"
+            export MESA_SHADER_CACHE_DIR="$(mktemp -d "$RUNNER_TEMP/shaders.XXXXXX")"
+            unset GALLIVM_PERF
+            if [[ "$mode" = nopt ]]; then export GALLIVM_PERF=nopt; fi
+            status=0
+            (cd relocated && xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 "$tester" "$browser" "$evidence") \
+              > "$evidence/check.log" 2>&1 || status=$?
+            printf '%s\n' "$status" > "$evidence/exit.txt"
+            test -s "$evidence/window-smoke.json"
+            du -sk "$MESA_SHADER_CACHE_DIR" > "$evidence/cache-size.txt"
+          done
+          python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          report = []
+          for run in sorted(Path("out").glob("[1-4]-*")):
+              receipt = json.loads((run/"window-smoke.json").read_text())
+              frames = []
+              for line in (run/"browser.log").read_text(errors="replace").splitlines():
+                  if not line.startswith('{"type":"native-html-frame"'):
+                      continue
+                  frame = json.loads(line)
+                  if frame.get("presented"):
+                      frames.append({k: frame.get(k) for k in ("t", "layoutMs", "totalMs", "steps")})
+              report.append(dict(run=run.name, exit=int((run/"exit.txt").read_text()),
+                                 receipt=receipt, firstFrame=frames[0] if frames else None))
+          assert len(report) == 4
+          Path("out/summary.json").write_text(json.dumps(report, indent=2)+"\n")
+          for row in report:
+              frame = row["firstFrame"] or {}
+              print(f'- {row["run"]} returned {row["exit"]}, first present {frame.get("t")}, page texture '
+                    f'{frame.get("steps", {}).get("page.allocateTexture")} ms')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: relocated-smoke-mesa-ab
+          path: out/
+          retention-days: 7
