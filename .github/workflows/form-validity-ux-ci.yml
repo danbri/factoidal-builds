@@ -1,0 +1,104 @@
+name: Check native required-field validity while typing
+on:
+  push:
+    branches: [wip/1081-required-field-validity-ux]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 912ef31bb6c4239510279a6291437118a52c5286
+  ENGINE_RUN: '45661887462'
+  RUNTIME: e4445d14752c
+jobs:
+  required-field:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/form-validity-ux-ci.ts
+            release-tests/form-validity-ux-pixels.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: release-tests/source
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - name: Verify the source and engine build
+        run: |
+          set -euo pipefail
+          [[ "$CORE" =~ ^[0-9a-f]{40}$ && "$ENGINE_RUN" =~ ^[0-9]+$ ]]
+          test "$(git -C release-tests/source rev-parse HEAD)" = "$CORE"
+          mkdir -p out
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ENGINE_RUN/jobs?per_page=100" |
+            jq -e --arg sha "$CORE" '.jobs[] | select(.name == ("Build libweb-render.so from " + $sha) and .conclusion == "success") | {id,name,html_url,conclusion}' > out/engine-build.json
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.ENGINE_RUN }}
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the published runtime and software display
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth python3-pil
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          toolchain=$(cat engine/lean-toolchain)
+          "$HOME/.elan/bin/elan" toolchain install "$toolchain"
+          lib=$("$HOME/.elan/bin/elan" run "$toolchain" lean --print-prefix)/lib/lean
+          test -d "$lib"
+          echo "LD_LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+          mkdir -p web bundle
+          for set in foafnaut-web foafnaut-browser-linux-x86_64; do
+            dest=web
+            if [ "$set" != foafnaut-web ]; then dest=bundle; fi
+            gh release download "build-$RUNTIME-$set" -R "$GITHUB_REPOSITORY" -D "$dest" -p "$set.tar.gz" -p build-info.json
+            sha=$(jq -er --arg file "$set.tar.gz" '.artifacts[$file].sha256' "$dest/build-info.json")
+            echo "$sha  $dest/$set.tar.gz" | sha256sum -c -
+            tar -xzf "$dest/$set.tar.gz" -C "$dest"
+          done
+          lab="$PWD/release-tests/source/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          window=$(find bundle -name libnative-window.so -print -quit)
+          guest="$PWD/web/docs/web/hub/wasm-guests/qjs-wasmvm.wasm"
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$window" && test -s "$guest" && test -f "$icd"
+          install -m 755 "$window" "$lab/.build/native/libnative-window.so"
+          echo "NATIVE_ENGINE=$PWD/engine/libweb-render.so" >> "$GITHUB_ENV"
+          echo "QUICKJS_GUEST=$guest" >> "$GITHUB_ENV"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          sha256sum engine/libweb-render.so "$guest" "$lab/run_html.ts" "$window" > out/inputs.sha256
+      - name: Type into a required field and check its validity
+        env:
+          DENO_WEBGPU_BACKEND: vulkan
+          SDL_VIDEODRIVER: x11
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime"
+          xvfb-run -a -s '-screen 0 1024x768x24' deno run --no-config -A release-tests/form-validity-ux-ci.ts \
+            "$NATIVE_ENGINE" "$QUICKJS_GUEST" "$PWD/out" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Measure the red-to-green control border
+        if: ${{ !cancelled() && hashFiles('out/before.png') != '' && hashFiles('out/after.png') != '' }}
+        run: |
+          set -euo pipefail
+          /usr/bin/python3 release-tests/form-validity-ux-pixels.py out | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-required-field-validity-ux
+          path: out/
+          retention-days: 7
