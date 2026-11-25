@@ -1,0 +1,44 @@
+name: Diagnose ArraySetLength interpreter theorem build
+on:
+  push:
+    branches: [wip/array-set-length-invariant-check]
+permissions:
+  contents: read
+env:
+  CORE: ebfcea522460297c0298d29998a92f2cc1ea3226
+jobs:
+  fuel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+          sparse-checkout: scripts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ebfcea522460297c0298d29998a92f2cc1ea3226
+          path: core
+          persist-credentials: false
+      - name: Install the release Lean toolchain
+        run: bash builds/scripts/install-elan.sh
+      - uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Compile the interpreter invariants target and retain its diagnostics
+        working-directory: core/formal/lean4
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CORE"
+          lake build +L4Factoidal.JS.Theorems 2>&1 | tee "$RUNNER_TEMP/theorems.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: array-length-interpreter-theorems
+          path: ${{ runner.temp }}/theorems.log
+          retention-days: 7
