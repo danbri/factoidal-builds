@@ -1,21 +1,37 @@
-name: Check real keyboard and button submission for a FrogFind-shaped GET form
+name: Compare typed FrogFind field pixels and GET submission
 on:
   push:
-    branches: [wip/frogfind-form-window-check]
+    branches: [wip/frogfind-edited-value-pair]
 permissions:
   actions: read
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
   CORE: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
+  PARENT_ENGINE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
+  CANDIDATE: 7f67fb2e2cd1c6dc47e1727b3354193e890623ce
+  CANDIDATE_RUN: "45535114460"
 jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Wait for the exact candidate renderer
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+            sleep 25
+          done
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CANDIDATE"
   form:
+    needs: wait-engine
     runs-on: ubuntu-24.04
     timeout-minutes: 16
     strategy:
       fail-fast: false
       matrix:
-        backend: [wasm, native]
         submission: [enter, button]
     steps:
       - uses: actions/checkout@v4
@@ -32,9 +48,15 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45524300796
+          run-id: 45530401313
+          name: foafnaut-linux-native-worker
+          path: native/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
           name: branch-engine
-          path: native
+          path: native/candidate
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
         with:
@@ -51,13 +73,8 @@ jobs:
           echo '6e12ebd78d447c6836e8f5bced9892d8a309586740604089b5f7369afa5a6684  package/foafnaut-browser-linux-x86_64.tar.gz' | sha256sum -c -
           tar -xzf package/foafnaut-browser-linux-x86_64.tar.gz -C package
           (cd package/foafnaut-linux-x86_64 && sha256sum -c SHA256SUMS)
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45524300796/jobs" --jq '.jobs[].name' |
-            grep -Fx "Build libweb-render.so from $CORE"
-          curl --retry 3 -fsSL https://raw.githubusercontent.com/ActionRetro/FrogFind/d70edb9f2e6c098db3f44943cd671ddcf3088ff9/index.php -o "$RUNNER_TEMP/frogfind-upstream.php"
-          grep -F '<form action="/" method="get">' "$RUNNER_TEMP/frogfind-upstream.php"
-          grep -F '<input type="text" size="30" name="q"' "$RUNNER_TEMP/frogfind-upstream.php"
-          grep -F '<input type="submit"' "$RUNNER_TEMP/frogfind-upstream.php"
-          sha256sum package/*.tar.gz native/libweb-render.so "$RUNNER_TEMP/frogfind-upstream.php" > out/inputs.sha256
+          (cd native/baseline && grep -Fx "$PARENT_ENGINE" source-commit.txt && sha256sum -c SHA256SUMS)
+          sha256sum package/*.tar.gz native/*/libweb-render.so snapshot/live.html > out/inputs.sha256
           sudo apt-get update -q
           sudo apt-get install -y -q libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
       - name: Click the field, type, and wait for the submitted results
@@ -65,7 +82,6 @@ jobs:
           SDL_VIDEODRIVER: x11
           DENO_WEBGPU_BACKEND: vulkan
           GALLIVM_PERF: nopt
-          BACKEND: ${{ matrix.backend }}
           SUBMISSION: ${{ matrix.submission }}
         run: |
           set -euo pipefail
@@ -73,13 +89,18 @@ jobs:
           export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)"
           export XDG_RUNTIME_DIR="$(mktemp -d)"
           test -n "$VK_DRIVER_FILES"
-          xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 experiments/frogfind-form/probe.py \
-            "$PWD/core/labs/demos/foafnaut" "$PWD/package/foafnaut-linux-x86_64/foafnaut" \
-            "$PWD/native/libweb-render.so" "$PWD/out" "$BACKEND" "$SUBMISSION" "$PWD/snapshot/live.html"
-          jq -e '.status=="pass" and (.queries|length)==1' out/receipt.json | tee -a "$GITHUB_STEP_SUMMARY"
+          for role in baseline candidate; do
+            xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 experiments/frogfind-form/probe.py \
+              "$PWD/core/labs/demos/foafnaut" "$PWD/package/foafnaut-linux-x86_64/foafnaut" \
+              "$PWD/native/$role/libweb-render.so" "$PWD/out/$role" native "$SUBMISSION" "$PWD/snapshot/live.html"
+            jq . "out/$role/receipt.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          jq -e '.status=="pass" and (.typedPixelsChanged | not)' out/baseline/receipt.json
+          jq -e '.status=="pass" and .typedPixelsChanged and .inputDarkPixelsAdded >= 25' out/candidate/receipt.json
+          diff -u <(jq .queries out/baseline/receipt.json) <(jq .queries out/candidate/receipt.json)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: frogfind-form-${{ matrix.backend }}-${{ matrix.submission }}
+          name: frogfind-edited-value-${{ matrix.submission }}
           path: out/
           retention-days: 7

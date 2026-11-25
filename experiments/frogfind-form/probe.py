@@ -107,6 +107,8 @@ with TemporaryDirectory() as cwd, log_path.open("w") as log:
                 raise
             after_type = window_image(window)
             record["typedPixelsChanged"] = False
+        dark = lambda source: sum(max(rgb) < 140 for rgb in source.crop(field).getdata())
+        record["inputDarkPixelsAdded"] = dark(after_type) - dark(before)
         after_type.save(OUT/"typed.png")
         if CASE == "enter":
             xdotool("key","--clearmodifiers","Return")
