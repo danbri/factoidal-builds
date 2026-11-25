@@ -26,7 +26,7 @@ command = [
     str(textnaut),'--dump','--timing','--width','160','--engine',str(engine),
     'https://en.wikipedia.org/wiki/United_States',
 ]
-def capture(arm, profile):
+def capture(arm, profile_targets):
     log_path, output = out / f'{arm}.log', out / f'{arm}.dump'
     samplers = {}
     timing = {}
@@ -41,7 +41,7 @@ def capture(arm, profile):
             clock = row['targetClock']
             if row['type'] == 'wiki-profile-end':
                 timing[clock] = row
-            elif profile and clock in {7852, 7856}:
+            elif clock in profile_targets:
                 assert clock not in samplers
                 file = out / f'turn-{clock}.sample'
                 with (out / f'turn-{clock}.sampler.log').open('w') as capture_log:
@@ -56,16 +56,25 @@ def capture(arm, profile):
     output.unlink()
     return result,timing,samplers
 
-baseline, controls, _ = capture('control', False)
-profiled, timings, samplers = capture('profile', True)
+baseline, controls, _ = capture('control', set())
+expected = {7852: (2,117), 7856: (1,3)}
+targets = {r['targetClock']: r['actualClock'] for r in controls.values()
+           if (r['layouts'], r['reads']) == expected.get(r['actualClock'])}
+assert len(targets) == 2 and set(targets.values()) == set(expected), controls
+profiled, timings, samplers = capture('profile', set(targets))
 assert baseline == profiled, (baseline, profiled)
-assert set(samplers) == {7852,7856}, timings
-assert all(timings[t]['elapsed'] > 6000 and timings[t]['layouts'] > 0 for t in samplers), timings
+assert set(samplers) == set(targets), timings
+for target, actual in targets.items():
+    row = timings[target]
+    assert row['actualClock'] == actual and (row['layouts'], row['reads']) == expected[actual], row
+    assert row['elapsed'] > 6000, row
 
 categories = {
     'layout': ('L4Factoidal_Rendering_Layout_',),
-    'cascade': ('Rendering_Generated_styled','Rendering_CSS_computeAll'),
-    'matching': ('Rendering_CSS_matchEntry','Rendering_CSS_matchGroupedEntry','DOM_Selectors'),
+    'cascade': ('Rendering_Generated_styled','Rendering_CSS_compute'),
+    'matching': ('matchEntry','matchGroupedEntry','DOM_Selectors'),
+    'SVG raster': ('SVGRaster','rasterFast','vectorPicture','redrawnPictures'),
+    'image store': ('pageStore','storeIn','decodeWith'),
     'style application': ('Rendering_CSS_apply',),
     'text shaping': ('SfntShape_','WebDocument_shapeKept','bitmapOutline'),
     'visited URL state': ('WebDocument_elementState',),
@@ -98,6 +107,7 @@ def counts(path):
     assert tally['layout'] or tally['cascade'], path
     return dict(tally)
 report = {'sha256':baseline,'control':controls, 'profiled':timings,
-          'inclusiveSamples':{t:counts(out / f'turn-{t}.sample') for t in samplers}}
+          'requestedToReturnedClock':targets,
+          'inclusiveSamples':{targets[t]:counts(out / f'turn-{t}.sample') for t in samplers}}
 (out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))
