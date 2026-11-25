@@ -33,21 +33,26 @@ def marker(path):
 root = Path.cwd()
 fixtures = root / "out/fixtures"
 fixtures.mkdir(parents=True)
-cases = ("block", "grid", "nested")
+cases = ("block", "grid", "nested", "nested-grid", "fixed")
 for case in cases:
     style = """
         html, body { margin: 0; background: white; }
         main { width: 320px; height: 180px; position: relative; }
         main.grid { display: grid; grid-template-columns: repeat(2, 160px); }
         .item { position: relative; }
+        .item.nested-grid { display: grid; grid-template-columns: 160px; }
+        .panel.fixed { position: fixed; }
         .panel { position: absolute; top: 0; left: 0; width: 160px; }
         .pad { padding-top: 50%; }
         .marker { height: 20px; background: #0080ff; }
     """
-    panel = '<div class="panel"><div class="pad"><div class="marker"></div></div></div>'
-    item = f'<div class="item">{panel if case == "nested" else ""}</div>'
+    nested = case in ("nested", "nested-grid")
+    fixed_class = " fixed" if case == "fixed" else ""
+    panel = f'<div class="panel{fixed_class}"><div class="pad"><div class="marker"></div></div></div>'
+    item_class = " nested-grid" if case == "nested-grid" else ""
+    item = f'<div class="item{item_class}">{panel if nested else ""}</div>'
     document = f"""<!doctype html><meta charset="utf-8"><style>{style}</style>
-        <main class="{"block" if case == "block" else "grid"}">{item}{"" if case == "nested" else panel}</main>"""
+        <main class="{"block" if case == "block" else "grid"}">{item}{"" if nested else panel}</main>"""
     (fixtures / f"{case}.html").write_text(document)
 
 rows = {}
