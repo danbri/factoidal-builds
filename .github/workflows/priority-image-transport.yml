@@ -1,0 +1,120 @@
+name: Compare per-worker image connection reuse on priority pages
+on:
+  push:
+    branches: [wip/priority-image-transport]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
+  HOST: 4a0c174b706690a21d66e23463a9da355f4271fa
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [desktop-bbc-news, desktop-govuk, desktop-w3c-home]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            experiments/bbc-linux-startup
+            experiments/web-font-timing
+            experiments/image-transport
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.HOST }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45530401313
+          name: foafnaut-browser-linux-x86_64-candidate
+          path: package
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the host and package inputs
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          test "$(git -C core rev-parse HEAD)" = "$HOST"
+          echo "LAB=$lab" >> "$GITHUB_ENV"
+          test "$(git hash-object "$lab/run_html.ts")" = bc18426ee268de6015fa9ee62d92a7a03caeae27
+          test "$(git hash-object "$lab/native_html_document.ts")" = f53d73c7fcab5b27a2d2a985a1d117f195fc41e8
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          echo "86b24b714ad09d2f89295720eba01ca4f90ac423fcc6a94c8d282282360be58b  ${archives[0]}" | sha256sum -c -
+          tar -xzf "${archives[0]}" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          directory=$(dirname "$binary")
+          (cd "$directory" && sha256sum -c SHA256SUMS)
+          jq -e --arg commit "$CORE" '.commitFull==$commit' "$directory/BUILD-INFO.json"
+          echo "NATIVE_LIB=$directory/libweb-render.so" >> "$GITHUB_ENV"
+          mkdir -p web out
+          gh release download "build-${CORE:0:12}-foafnaut-web" -R "$GITHUB_REPOSITORY" -D web -p foafnaut-web.tar.gz -p build-info.json
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' web/build-info.json)
+          echo "$expected  web/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf web/foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          cp "$directory/libnative-window.so" "$lab/.build/native/"
+          sha256sum "${archives[0]}" web/foafnaut-web.tar.gz "$lab/run_html.ts" "$lab/native_html_document.ts" > out/inputs.sha256
+          sha256sum "$lab/realpages/pages.json" >> out/inputs.sha256
+          variant="$RUNNER_TEMP/image-variants"
+          mkdir -p "$variant"/{a,b}
+          test "$(git hash-object "$lab/native_net.ts")" = 73f722704596898ad4d914a6deb8848cdae7542a
+          python3 experiments/web-font-timing/doc-phases.py "$lab"
+          python3 experiments/image-transport/variant.py "$lab/native_html_document.ts" \
+            "$variant/a/native_html_document.ts" "$variant/b/native_html_document.ts"
+          sha256sum "$lab/native_net.ts" "$variant"/*/*.ts >> out/inputs.sha256
+          for role in a b; do
+            cp "$variant/$role/native_html_document.ts" "$lab/"
+            deno check --no-config --no-npm --unstable-ffi --unstable-webgpu "$lab/run_html.ts" 2>&1 | tee -a out/typecheck.log
+          done
+      - name: Alternate fresh and reused image connections
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          GALLIVM_PERF: nopt
+          CASE: ${{ matrix.case }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
+          export VK_DRIVER_FILES=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$VK_DRIVER_FILES"
+          export DENO_BIN=$(command -v deno)
+          cat > "$RUNNER_TEMP/host" <<'BASH'
+          #!/bin/bash
+          preload=()
+          if [[ -n ${REALPAGES_REPLAY:-} ]]; then preload+=(--preload "$LAB/realpages/replay.ts"); fi
+          exec "$DENO_BIN" run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
+            "${preload[@]}" "$LAB/run_html.ts" --follow-links --log-all --native-engine "$NATIVE_LIB" "$@"
+          BASH
+          chmod +x "$RUNNER_TEMP/host"
+          for rep in a1 b1 b2 a2; do
+            cp "$RUNNER_TEMP/image-variants/${rep:0:1}/"*.ts "$LAB/"
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$rep" XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$rep"
+            install -d -m 700 "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+            xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 experiments/bbc-linux-startup/probe.py \
+              "$RUNNER_TEMP/host" "$LAB" "$PWD/out/$rep" "$CASE" "$rep" ""
+          done
+          python3 experiments/image-transport/report.py "$PWD/out" "$CASE" | tee "$GITHUB_STEP_SUMMARY"
+          if grep -qF 'Bad resource ID' out/*/*.log; then exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: priority-image-transport-${{ matrix.case }}
+          path: out/
+          retention-days: 7
