@@ -1,6 +1,7 @@
 import functools
 import http.server
 import json
+import os
 from pathlib import Path
 import subprocess
 import threading
@@ -120,6 +121,9 @@ def main():
         }
         print(name, result[name], flush=True)
     (OUT / "pixels.json").write_text(json.dumps(result, indent=2) + "\n")
+    if os.environ.get("REQUIRE_TRANSPARENT_PAINT") == "1":
+        for case in ("opaque-checkbox", "transparent-checkbox", "transparent-group"):
+            assert result[case]["changedPixels"] == 0, (case, result[case])
 
 
 if __name__ == "__main__":
