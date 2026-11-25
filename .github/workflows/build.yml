@@ -776,8 +776,101 @@ jobs:
     with:
       core_sha: ${{ needs.resolve.outputs.sha }}
 
+  # Build the document worker from the same source as the Wasm fallback. Keep
+  # the worker independent of the web and Mac package jobs.
+  foafnaut-linux-native-worker:
+    needs: resolve
+    if: needs.resolve.outputs.foafnaut_linux_browser == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: core
+          persist-credentials: false
+      - name: Install elan and native build dependencies
+        run: |
+          set -euo pipefail
+          bash builds/scripts/install-elan.sh
+          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+          sudo apt-get update -q
+          sudo apt-get install -y -q libuv1-dev libc++-dev libc++abi-dev
+      - name: Restore Linux Lake cache
+        if: ${{ !inputs.cold }}
+        id: lake
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Rebuild modules that include_str non-Lean files
+        if: steps.lake.outputs.cache-hit != 'true'
+        run: |
+          if [ -d core/formal/lean4/.lake/build ]; then
+            find core/formal/lean4/.lake/build -path '*WasmVM/Hosts/LeanJS*' -delete
+          fi
+      - name: Restore the native C object cache
+        if: ${{ !inputs.cold }}
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Compile and stage the self-contained worker
+        env:
+          CORE_SHA: ${{ needs.resolve.outputs.sha }}
+          COLD: ${{ inputs.cold }}
+        run: |
+          set -euo pipefail
+          git -C core rev-parse HEAD | grep -Fx "$CORE_SHA"
+          if [[ "$COLD" != true ]]; then
+            export LEANC_REAL="$(cd core/formal/lean4 && elan which leanc)"
+            export LEANC_CACHE="$HOME/leanc-cache"
+            export LEANC_ID="$(tr -d ' \n' < core/formal/lean4/lean-toolchain) x86_64"
+            mkdir -p "$HOME/leanc-shim" "$LEANC_CACHE"
+            install -m 755 builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"
+            export PATH="$HOME/leanc-shim:$PATH"
+          fi
+          bash core/labs/demos/foafnaut/build-web-render.sh --native 2>&1 | tee "$RUNNER_TEMP/native-worker.log"
+          lib=core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so
+          test -s "$lib"
+          readelf -dW "$lib" > "$RUNNER_TEMP/native-worker-dynamic.txt"
+          if grep -E 'RPATH|RUNPATH' "$RUNNER_TEMP/native-worker-dynamic.txt"; then exit 1; fi
+          grep -F 'SELF_CONTAINED libweb-render.so: NEEDED ' "$RUNNER_TEMP/native-worker.log"
+          install -D -m 644 "$lib" "$RUNNER_TEMP/native-worker/libweb-render.so"
+          (
+            cd "$RUNNER_TEMP/native-worker"
+            printf '%s\n' "$CORE_SHA" > source-commit.txt
+            sha256sum libweb-render.so > SHA256SUMS
+          )
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foafnaut-native-worker-log
+          path: |
+            ${{ runner.temp }}/native-worker.log
+            ${{ runner.temp }}/native-worker-dynamic.txt
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foafnaut-linux-native-worker
+          path: ${{ runner.temp }}/native-worker/
+          if-no-files-found: error
+          retention-days: 7
+
   foafnaut-browser-linux:
-    needs: [resolve, foafnaut-engines]
+    needs: [resolve, foafnaut-engines, foafnaut-linux-native-worker]
     if: needs.resolve.outputs.foafnaut_linux_browser == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -807,6 +900,10 @@ jobs:
         with:
           name: foafnaut-engines
           path: core/labs/demos/foafnaut/.build
+      - uses: actions/download-artifact@v4
+        with:
+          name: foafnaut-linux-native-worker
+          path: ${{ runner.temp }}/native-worker
       - name: Install native window build dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libsdl2-dev
       - name: Build and archive the Linux browser
@@ -818,7 +915,13 @@ jobs:
           set -euo pipefail
           [ "$(uname -m)" = x86_64 ]
           stage="$RUNNER_TEMP/package"
+          worker="$RUNNER_TEMP/native-worker"
+          git -C core rev-parse HEAD | grep -Fx "$CORE_SHA"
+          grep -Fx "$CORE_SHA" "$worker/source-commit.txt"
+          (cd "$worker" && sha256sum -c SHA256SUMS)
+          install -m 644 "$worker/libweb-render.so" core/labs/demos/foafnaut/.build/web-render/engines/
           bash core/labs/demos/foafnaut/build-linux-browser.sh "$stage/foafnaut-linux-x86_64"
+          cmp "$worker/libweb-render.so" "$stage/foafnaut-linux-x86_64/libweb-render.so"
           python3 - core/labs/demos/foafnaut/.build/tool-versions.txt "$RUNNER_TEMP/toolchains.json" <<'PY'
           import json, pathlib, subprocess, sys
           def first_line(*command):
@@ -884,6 +987,11 @@ jobs:
           tar -xzf "$candidate/$archive" -C "$relocated"
           browser="$relocated/foafnaut-linux-x86_64/foafnaut"
           test -x "$browser"
+          (cd "$(dirname "$browser")" && sha256sum -c SHA256SUMS)
+          test -s "$(dirname "$browser")/libweb-render.so"
+          env -u LD_LIBRARY_PATH "$browser" --version --wasm-engine > "$evidence/wasm-version.txt"
+          grep -F "$CORE_SHA" "$evidence/wasm-version.txt"
+          if grep -F 'does not match' "$evidence/wasm-version.txt"; then exit 1; fi
           driver=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
           test -n "$driver"
           export PATH=/usr/bin:/bin SDL_VIDEODRIVER=x11 DENO_WEBGPU_BACKEND=vulkan
@@ -892,7 +1000,7 @@ jobs:
           xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 \
             "$GITHUB_WORKSPACE/core/labs/demos/foafnaut/check-linux-browser.py" "$browser" "$evidence"
           jq -e --arg sha "$CORE_SHA" --arg digest "$expected" \
-            'select(.format == "foafnaut-linux-window-smoke-v1" and .status == "pass" and .sourceCommit == $sha) | .archive_sha256 = $digest' \
+            'select(.format == "foafnaut-linux-window-smoke-v1" and .status == "pass" and .worker == "native" and .sourceCommit == $sha) | .archive_sha256 = $digest' \
             "$evidence/window-smoke.json" > "$verified/window-smoke.json"
           printf 'Linux browser GUI smoke passed on Xvfb using Mesa software Vulkan. [Download the checked archive](%s).\n' "$ARCHIVE_URL" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
