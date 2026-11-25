@@ -164,8 +164,8 @@ jobs:
           export LEANC_REAL=$(ls "$HOME"/.elan/toolchains/*/bin/leanc | head -1) LEANC_CACHE="$HOME/leanc-cache"
           export LEANC_ID="$(tr -d ' \n' < core/formal/lean4/lean-toolchain) x86_64"
           T0=$(date +%s)
-          PATH="$HOME/leanc-shim:$PATH" bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
-          RC=$?
+          RC=0
+          PATH="$HOME/leanc-shim:$PATH" bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1 || RC=$?
           HITS=$(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null || echo 0); MISSES=$(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null || echo 0)
           echo "misses=$MISSES" >> "$GITHUB_OUTPUT"
           T1=$(date +%s)
@@ -185,14 +185,14 @@ jobs:
             {
               echo "**The branch did not build.** First errors:"
               echo '```'
-              grep -n -E -A6 ': error: |^error: |^✖ |build refused' "$LOG" | head -80 | cut -c1-400
+              grep -n -E -A6 ': error: |^error: |^✖ |build refused' "$LOG" | sed -n '1,80p' | cut -c1-400 || true
               echo '```'
               echo "Last lines:"
               echo '```'
               tail -25 "$LOG" | cut -c1-400
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            grep -m5 -E ': error: |^error: ' "$LOG" | cut -c1-300 | sed "s|$GITHUB_WORKSPACE/core/||" | while IFS= read -r line; do echo "::error::$line"; done
+            grep -m5 -E ': error: |^error: ' "$LOG" | cut -c1-300 | sed "s|$GITHUB_WORKSPACE/core/||" | while IFS= read -r line; do echo "::error::$line"; done || true
             exit 1
           fi
           # Keep only the objects this build used.
