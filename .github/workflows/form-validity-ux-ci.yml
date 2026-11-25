@@ -1,4 +1,4 @@
-name: Check native required-field validity while typing
+name: Check native custom form validity while typing
 on:
   push:
     branches: [wip/1081-required-field-validity-ux]
@@ -7,8 +7,8 @@ permissions:
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CORE: 912ef31bb6c4239510279a6291437118a52c5286
-  ENGINE_RUN: '45661887462'
+  CORE: 6435dc2a12bb9bbfd47d6affd160e1282eccd876
+  ENGINE_RUN: '45674695140'
   RUNTIME: e4445d14752c
 jobs:
   required-field:
@@ -80,7 +80,7 @@ jobs:
           echo "QUICKJS_GUEST=$guest" >> "$GITHUB_ENV"
           echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
           sha256sum engine/libweb-render.so "$guest" "$lab/run_html.ts" "$window" > out/inputs.sha256
-      - name: Type into a required field and check its validity
+      - name: Check custom validity while entering and completing a name
         env:
           DENO_WEBGPU_BACKEND: vulkan
           SDL_VIDEODRIVER: x11
@@ -99,6 +99,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-required-field-validity-ux
+          name: native-custom-form-validity-ux
           path: out/
           retention-days: 7

@@ -26,13 +26,17 @@ const fixture = `<!doctype html>
   function report(phase) {
     const validity = field.validity;
     console.log("validity-ux-dom " + JSON.stringify({
-      phase, value: field.value, willValidate: field.willValidate,
+      phase, value: field.value, willValidate: field.willValidate, customError: validity.customError,
       valueMissing: validity.valueMissing, valid: validity.valid,
       matchesInvalid: field.matches(":invalid"), matchesValid: field.matches(":valid")
     }));
   }
   report("initial");
-  field.addEventListener("input", () => report("input"));
+  field.addEventListener("input", () => {
+    const tooShort = field.value.length === 1;
+    field.setCustomValidity(tooShort ? "Name needs two letters" : "");
+    report(tooShort ? "customError" : "cleared");
+  });
 </script>`;
 
 const server = Deno.serve({ hostname: "127.0.0.1", port: 0, onListen() {} }, (request) =>
@@ -43,12 +47,16 @@ const server = Deno.serve({ hostname: "127.0.0.1", port: 0, onListen() {} }, (re
 const url = `http://127.0.0.1:${server.addr.port}/fixture`;
 
 const initial = {
-  phase: "initial", value: "", willValidate: true, valueMissing: true, valid: false,
+  phase: "initial", value: "", willValidate: true, customError: false, valueMissing: true, valid: false,
   matchesInvalid: true, matchesValid: false,
 };
-const edited = {
-  phase: "input", value: "a", willValidate: true, valueMissing: false, valid: true,
-  matchesInvalid: false, matchesValid: true,
+const customError = {
+  phase: "customError", value: "a", willValidate: true, customError: true, valueMissing: false,
+  valid: false, matchesInvalid: true, matchesValid: false,
+};
+const cleared = {
+  phase: "cleared", value: "ab", willValidate: true, customError: false, valueMissing: false,
+  valid: true, matchesInvalid: false, matchesValid: true,
 };
 type Event = {
   type?: string;
@@ -68,8 +76,8 @@ try {
   await Deno.writeTextFile(`${out}/fixture.html`, fixture);
   for (const [name, type] of [["before", false], ["after", true]] as const) {
     const path = `${out}/${name}`;
-    const steps = [`title=${title}`, "hold", "tap:100,90", "hold"];
-    if (type) steps.push("type:a", "hold");
+    const steps = [`title=${title}`, "hold", "tap:100,90", "hold", "type:a", "hold"];
+    if (type) steps.push("type:b", "hold");
     await Deno.writeTextFile(path + ".json", JSON.stringify(steps));
     const result = await new Deno.Command("timeout", {
       args: [
@@ -98,7 +106,7 @@ try {
     const opened = events.some((event) => event.type === "native-html-test-title" &&
       event.ok && event.title === title && event.url === url);
     const shot = events.some((event) => event.type === "native-html-shot");
-    const stateMatches = JSON.stringify(dom) === JSON.stringify(type ? [initial, edited] : [initial]);
+    const stateMatches = JSON.stringify(dom) === JSON.stringify(type ? [initial, customError, cleared] : [initial, customError]);
     const pass = result.code === 0 && browser && scripts && opened && shot && stateMatches;
     const row = { name, pass, exit: result.code, browser, scripts, opened, shot, stateMatches, dom };
     rows.push(row);
