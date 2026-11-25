@@ -1,0 +1,159 @@
+name: Verify pooled synchronous fetch during BBC startup
+on:
+  push:
+    branches: [wip/1031-startup-fetch-regression]
+permissions:
+  contents: read
+env:
+  CORE_SHA: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  BASE_HOST: 691df9021f19914716fa3da3c5e3082e15b857ca
+  POOL_HOST: 57720c73ed44575973e18b4993661b404e1e40d7
+  WEB: build-e4445d14752c-foafnaut-web
+jobs:
+  timings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        page: [desktop-bbc-news, news-bbc]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/native-worker-survey.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.BASE_HOST }}
+          path: baseline
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.POOL_HOST }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - name: Download the published browser and its checked receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir package
+          tag="build-${CORE_SHA:0:12}-foafnaut-browser-linux-x86_64"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D package \
+            -p foafnaut-browser-linux-x86_64.tar.gz -p build-info.json -p window-smoke.json
+      - name: Check the exact package and install the X11 and Vulkan runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          archive="${archives[0]}"
+          digest=$(sha256sum "$archive" | cut -d' ' -f1)
+          jq -e --arg sha "$CORE_SHA" --arg digest "$digest" --arg file "$(basename "$archive")" \
+            '.source_commit == $sha and .artifacts[$file].sha256 == $digest' package/build-info.json
+          jq -e --arg sha "$CORE_SHA" --arg digest "$digest" \
+            '.sourceCommit == $sha and .archive_sha256 == $digest and .worker == "native" and .status == "pass"' package/window-smoke.json
+          tar -xzf "$archive" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          (cd "$(dirname "$binary")" && sha256sum -c SHA256SUMS)
+          test -s "$(dirname "$binary")/libweb-render.so"
+          jq -e --arg sha "$CORE_SHA" '.commitFull == $sha' "$(dirname "$binary")/BUILD-INFO.json"
+          echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          mkdir -p out
+          sha256sum package/*.json "${archives[0]}" "$binary" core/labs/demos/foafnaut/realpages/pages.json > out/inputs.sha256
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
+          install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Compare first page presentation and script fetch time
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          MESA_SHADER_CACHE_MAX_SIZE: 32M
+          PAGE: ${{ matrix.page }}
+        run: |
+          set -euo pipefail
+          test "$(git -C baseline rev-parse HEAD)" = "$BASE_HOST"
+          test "$(git -C core rev-parse HEAD)" = "$POOL_HOST"
+          mkdir runtime
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          export BENCH_ENGINE="$(dirname "$FOAFNAUT_BINARY")/libweb-render.so"
+          for role in baseline core; do
+            lab="$PWD/$role/labs/demos/foafnaut"
+            bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+            cp "$(dirname "$FOAFNAUT_BINARY")/libnative-window.so" "$lab/.build/native/libnative-window.so"
+            jq --arg id "$PAGE" '.pages |= map(select(.id == $id)) | select(.pages | length == 1)' \
+              "$lab/realpages/pages.json" > "$RUNNER_TEMP/pages.json"
+            test -s "$RUNNER_TEMP/pages.json"
+            cp "$RUNNER_TEMP/pages.json" "$lab/realpages/pages.json"
+            cat > "$lab/benchmark-browser" <<'SH'
+          #!/bin/bash
+          exec deno run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
+            "$(dirname "$0")/run_html.ts" --native-engine "$BENCH_ENGINE" --liberal-report json "$@"
+          SH
+            chmod +x "$lab/benchmark-browser"
+            sha256sum "$lab/run_html.ts" "$lab/native_net.ts" "$lab/realpages/pages.json" >> out/inputs.sha256
+          done
+          cmp baseline/labs/demos/foafnaut/realpages/pages.json core/labs/demos/foafnaut/realpages/pages.json
+          unset LD_LIBRARY_PATH GALLIVM_PERF MESA_SHADER_CACHE_DISABLE
+          export MESA_SHADER_CACHE_DIR="$RUNNER_TEMP/cache"
+          mkdir "$MESA_SHADER_CACHE_DIR"
+          for entry in baseline:warm baseline:a1 core:b1 core:b2 baseline:a2; do
+            lab="$PWD/${entry%:*}/labs/demos/foafnaut"
+            xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/native-worker-survey.py \
+              "$lab/benchmark-browser" "$lab" "$PWD/out/${entry#*:}" 0 1
+          done
+          /usr/bin/python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          from pathlib import Path
+
+          page=os.environ["PAGE"]
+          print("| Arm | Visible frame ms | Worker ms | Graphics ms | Observed scroll ms | Sync script requests | Fetch time ms |")
+          print("| --- | ---: | ---: | ---: | ---: | ---: | ---: |")
+          for name in ("a1","b1","b2","a2"):
+              directory=Path("out") / name
+              row,=json.loads((directory / "summary.json").read_text())
+              assert row["id"] == page and row.get("documentEngine") == "native", row
+              frame=row.get("firstFrame", {})
+              lines=(directory / f"{page}.log").read_text().splitlines()
+              sync=[json.loads(line) for line in lines if line.startswith('{"type":"native-html-sync"')]
+              count=sum(event["requests"] for event in sync)
+              fetch=sum(event["fetchMs"] for event in sync)
+              assert row["state"] == "presented" and row.get("scrollChangesPixels") is True, row
+              if name.startswith("b"):
+                  assert count > 0 and any('"cause":"start"' in line and '"engine":"bubblepop"' in line for line in lines), directory
+                  assert not any("Cannot access" in line and "before initialization" in line for line in lines), directory
+              else:
+                  assert any("before initialization" in line and "document" in line for line in lines), directory
+              print(f"| {name} | {row.get('presentedMs')} | {frame.get('workerMs')} | {frame.get('sessionMs')} | {row.get('scrollObservedMs')} | {count} | {fetch} |")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: startup-fetch-regression-${{ matrix.page }}
+          path: out/
+          retention-days: 7
