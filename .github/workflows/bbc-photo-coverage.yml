@@ -95,7 +95,7 @@ jobs:
           for role in baseline candidate; do
             deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
               core/tests/browser-wpt/reftest-render.ts --native-engine "$PWD/engines/$role/libweb-render.so" \
-              --list "$PWD/out/jobs.jsonl" --out "$PWD/out/$role" | tee "out/$role.log"
+              --list "$PWD/out/jobs.jsonl" --out "$PWD/out/$role" 2>&1 | tee "out/$role.log"
             test -s "out/$role/bbc-uk.png"
             grep -F '"status":"ok"' "out/$role.log"
             if grep -F 'b4847f4c70af2b11c1a494690c790b12b93c50be8e1e23054683c75c35902dac' "out/$role.log"; then
