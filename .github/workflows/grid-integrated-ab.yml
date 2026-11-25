@@ -7,9 +7,9 @@ permissions:
   actions: read
 env:
   BASE: 839dc27f0d873bbef749fc6ad36ecb2bf6e95316
-  CANDIDATE: 9d3c843103e78dd854de2cfcd3bd773d107ad200
+  CANDIDATE: f8d8a077688dfc8651e10dbcb8ae6381d6d2b626
   BASE_RUN: "45649724924"
-  CANDIDATE_RUN: "45649679340"
+  CANDIDATE_RUN: "45657670341"
   WPT: 056c528ccb5844b01628e0cd667520535dee16cc
   GH_TOKEN: ${{ github.token }}
 jobs:
@@ -41,7 +41,7 @@ jobs:
         with:
           repository: danbri/factoidal-core
           ref: ${{ env.CANDIDATE }}
-          fetch-depth: 2
+          fetch-depth: 3
           path: core
           persist-credentials: false
           sparse-checkout: |
