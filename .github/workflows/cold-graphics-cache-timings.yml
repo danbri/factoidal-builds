@@ -6,7 +6,7 @@ permissions:
   contents: read
 env:
   CORE_SHA: e4445d14752cc3ec75da7bf2fc1797263d02efbf
-  HOST_SHA: dcd13e13685fbd08c07018fa83e77d2a1ec92d09
+  HOST_SHA: 818585a366838716a92388cece3910f08ff5dddc
   WEB: build-dd387abb389e-foafnaut-web
 jobs:
   timings:
@@ -133,7 +133,9 @@ jobs:
               assert any(key.endswith(".createRenderPipeline") for key in steps), steps
               assert any(key.endswith(".validation") for key in steps), steps
               phases = ("layers.draw", "chrome.resolvePlan", "chrome.prepareResources", "chrome.uploadBuffers",
-                        "page.resolvePlan", "page.prepareResources", "page.uploadBuffers", "surface.resolvePlan",
+                        "page.resolvePlan", "page.prepareResources", "page.uploadBuffers",
+                        "page.allocateTexture", "page.prepareBuffers", "page.resolveBindingLayout", "page.createBindGroup",
+                        "surface.resolvePlan",
                         "surface.configure", "surface.acquire", "surface.present")
               assert all(phase in steps and steps[phase] >= 0 for phase in phases), steps
               events = [line for line in (directory / "m-us.log").read_text().splitlines()
