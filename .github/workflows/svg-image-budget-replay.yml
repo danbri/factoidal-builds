@@ -1,0 +1,135 @@
+name: Compare large SVG image sharpness and page cost on frozen captures
+on:
+  push:
+    branches: [wip/svg-image-budget-replay]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE_RUN: "45513142327"
+  CANDIDATE_RUN: "45514450102"
+  BASELINE: 8f560793c59f0b8c3afc69646861954b85d9e3fd
+  CANDIDATE: 5cd7bef634a5d81f9b9e470a8e4ddcd73e095f89
+  WEB: build-05ec0b29ca8a-foafnaut-web
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Wait for both exact native engine artifacts
+        run: |
+          set -euo pipefail
+          for pair in "$BASELINE_RUN:$BASELINE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            run=${pair%:*}
+            sha=${pair#*:}
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+                echo "No native engine artifact in $run" >&2
+                exit 1
+              fi
+              sleep 25
+            done
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $sha"
+          done
+  replay:
+    needs: wait-engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/svg-image-budget-report.py
+            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 8f560793c59f0b8c3afc69646861954b85d9e3fd
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the engine archives and replay inputs
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          mkdir -p runtime out snapshots
+          cmp engines/{baseline,candidate}/lean-toolchain
+          tc=$(cat engines/baseline/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          while read -r run name digest; do
+            gh run download "$run" -R "$GITHUB_REPOSITORY" -n "$name" -D "inputs/$name"
+            snapshot=$(find "inputs/$name" -name '*.zip' -print -quit)
+            echo "$digest  $snapshot" | sha256sum -c -
+            cp "$snapshot" "snapshots/$name.zip"
+          done <<'SNAPSHOTS'
+          45431269816 desktop-w3c-home-snapshot 359b431764ad4eb9debb4e5dc2e4571d968cd95447b52fe767f9933145f4a388
+          45408439387 bbc-home-snapshot b32f0d193c4041b5703c13a2e8e5b6669223a33d9c3e216ed6d886fbfd9fe3f8
+          SNAPSHOTS
+          wiki=third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          test "$(git hash-object "$wiki")" = 944a0bff5adaa6b9cdd97a41b1d2a8852310c2d3
+          cp "$wiki" snapshots/wiki-mobile.zip
+          sha256sum engines/*/libweb-render.so snapshots/*.zip > out/inputs.sha256
+          unzip -p snapshots/desktop-w3c-home-snapshot.zip reference.png > out/w3c-chrome.png
+          test -s out/w3c-chrome.png
+      - name: Replay the same pages in baseline, candidate, candidate, baseline order
+        run: |
+          set -euo pipefail
+          export REFTEST_TIME=1
+          lab="$PWD/core/labs/demos/foafnaut"
+          for case_id in w3c bbc wiki-mobile; do
+            case "$case_id" in
+              w3c) file=desktop-w3c-home-snapshot; url=https://www.w3.org/; width=1280; height=735 ;;
+              bbc) file=bbc-home-snapshot; url=https://www.bbc.co.uk/news; width=1280; height=735 ;;
+              wiki-mobile) file=wiki-mobile; url=https://en.m.wikipedia.org/wiki/United_States; width=412; height=795 ;;
+            esac
+            export REALPAGES_REPLAY="$PWD/snapshots/$file.zip"
+            for arm in a1 b1 b2 a2; do
+              engine=baseline; if [[ "$arm" == b* ]]; then engine=candidate; fi
+              key="$case_id-$arm"
+              jq -nc --arg url "$url" --arg file "$key.png" --argjson width "$width" --argjson height "$height" \
+                '{url:$url,width:$width,height:$height,file:$file}' > "$RUNNER_TEMP/job.jsonl"
+              /usr/bin/time -f '%e %M' -o "out/$key.time" timeout 230s deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
+                core/tests/browser-wpt/reftest-render.ts --list "$RUNNER_TEMP/job.jsonl" \
+                --native-engine "$PWD/engines/$engine/libweb-render.so" --out "$PWD/out" > "out/$key.log" 2>&1
+              test -s "out/$key.png"
+              sed -n 's/^__done //p' "out/$key.log" | jq -e '.status == "ok"' >/dev/null
+            done
+          done
+          python3 release-tests/svg-image-budget-report.py out | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: svg-image-budget-replay
+          path: out/
+          retention-days: 7
