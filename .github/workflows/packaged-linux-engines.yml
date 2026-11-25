@@ -1,0 +1,174 @@
+name: Compare the native and Wasm document engines in the Linux browser
+on:
+  push:
+    branches: [wip/linux-packaged-document-engines]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
+  ENGINE_RUN: "45524300796"
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - name: Wait for the native engine from the same source
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$ENGINE_RUN"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CORE"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+              echo "No native engine artifact in $ENGINE_RUN" >&2
+              exit 1
+            fi
+            sleep 25
+          done
+  compare:
+    needs: wait-engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [fixture, desktop-bbc-news-noscripts, desktop-govuk, desktop-w3c-home, m-us]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/packaged-linux-engines.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut/realpages
+            labs/demos/foafnaut/pages
+      - name: Download the published Linux release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=build-aa2c4b775740-foafnaut-browser-linux-x86_64
+          mkdir -p package
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D package \
+            -p foafnaut-browser-linux-x86_64.tar.gz -p build-info.json -p window-smoke.json
+      - name: Check the exact package and install the X11 and Vulkan runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          echo "6e12ebd78d447c6836e8f5bced9892d8a309586740604089b5f7369afa5a6684  ${archives[0]}" | sha256sum -c -
+          tar -xzf "${archives[0]}" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          (cd "$(dirname "$binary")" && sha256sum -c SHA256SUMS)
+          jq -e '.commitFull=="aa2c4b775740efbf644ea59fe3d9b0bf881cae38"' "$(dirname "$binary")/BUILD-INFO.json"
+          echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          mkdir -p out
+          sha256sum package/*.json "${archives[0]}" "$binary" core/labs/demos/foafnaut/realpages/pages.json > out/inputs.sha256
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
+          install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.ENGINE_RUN }}
+          name: branch-engine
+          path: native
+          github-token: ${{ github.token }}
+      - name: Verify the two engine identities
+        run: |
+          set -euo pipefail
+          tc=$(tr -d '[:space:]' < native/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          export LD_LIBRARY_PATH="$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean"
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          lib="$PWD/native/libweb-render.so"
+          ldd "$lib" > out/native-ldd.txt
+          if grep -Fq 'not found' out/native-ldd.txt; then exit 1; fi
+          "$FOAFNAUT_BINARY" --version --wasm-engine | tee out/wasm-version.txt
+          "$FOAFNAUT_BINARY" --version --native-engine "$lib" | tee out/native-version.txt
+          for report in out/*-version.txt; do
+            grep -F "$CORE" "$report"
+            if grep -Fq 'does not match' "$report"; then exit 1; fi
+          done
+          sha256sum "$lib" >> out/inputs.sha256
+          cat > "$RUNNER_TEMP/fixture.html" <<'HTML'
+          <!doctype html><title>Browser engine comparison</title>
+          <style>body{margin:0;color:#ffffff;background:#152239}h1{background:#41617a;padding:60px;margin:0}
+          article{height:260px;padding:36px;background:#92ac4f;color:#172113}article:nth-child(2n){background:#4b77bd;color:#fff}</style>
+          <h1 id=title>Engine comparison</h1><main id=rows></main>
+          <script>
+          document.getElementById('title').append(' with JavaScript');
+          for(let i=0;i<14;i++){const row=document.createElement('article');row.textContent='Section '+i;document.getElementById('rows').append(row);}
+          </script>
+          HTML
+      - name: Alternate Wasm and native rendering with clean driver caches
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          GALLIVM_PERF: nopt
+          CASE: ${{ matrix.case }}
+        run: |
+          set -euo pipefail
+          rc=0
+          for pass in a1 b1 b2 a2; do
+            engine=wasm
+            if [[ "$pass" == b* ]]; then engine="$PWD/native/libweb-render.so"; fi
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$pass"
+            export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$pass"
+            install -d -m 700 "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+            xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/packaged-linux-engines.py \
+              "$FOAFNAUT_BINARY" "$PWD/core/labs/demos/foafnaut" "$PWD/out/$pass" "$CASE" "$engine" \
+              "$RUNNER_TEMP/fixture.html" || rc=1
+          done
+          test "$rc" = 0
+          /usr/bin/python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          from pathlib import Path
+          from PIL import Image
+          import hashlib,json,os
+          output=Path("out")
+          case=os.environ["CASE"]
+          reports={}
+          print("| Pass | Document engine | First frame ms | Layout ms | Graphics prep ms | Wheel changes pixels |")
+          print("| --- | --- | ---: | ---: | ---: | --- |")
+          for arm in ("a1","b1","b2","a2"):
+              row=json.loads((output/arm/"summary.json").read_text())[0]
+              reports[arm]=row
+              assert row["state"]=="presented" and row["documentColorsAtLeast"]>=2,row
+              want="native" if arm.startswith("b") else "wasm"
+              first=row["initialFrame"]
+              target=row["firstFrame"]
+              assert first["engine"]["backend"]==target["engine"]["backend"]==want,row
+              t=target["t"]
+              print(f"| {arm} | {want} | {t} | {target['layoutMs']} | {target['sessionMs']} | {row.get('scrollChangesPixels')} |")
+          if case=="fixture":
+              assert all(row.get("scrollChangesPixels") is True for row in reports.values()), reports
+              for name in ("fixture.png","fixture-scroll.png"):
+                  hashes=set()
+                  for arm,row in reports.items():
+                      with Image.open(output/arm/name) as image:
+                          top=row["firstFrame"]["layers"]["top"]
+                          pixels=image.crop((0,top,image.width,image.height)).tobytes()
+                          hashes.add(hashlib.sha256(pixels).hexdigest())
+                  print(f"{name} has {len(hashes)} distinct page images across the four arms.")
+                  assert len(hashes)==1, (name,hashes)
+          (output/"compare.json").write_text(json.dumps(reports,indent=2)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: packaged-linux-engines-${{ matrix.case }}
+          path: out/
+          retention-days: 7
