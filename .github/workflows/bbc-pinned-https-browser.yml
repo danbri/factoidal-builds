@@ -1,0 +1,138 @@
+name: Compare scoped pinned HTTPS reuse on BBC News
+on:
+  push:
+    branches: [wip/bbc-pinned-https-browser]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [live, replay]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            experiments/bbc-linux-startup
+            experiments/bbc-pinned-https
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45530401313
+          name: foafnaut-browser-linux-x86_64-candidate
+          path: package
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        if: matrix.mode == 'replay'
+        with:
+          run-id: 45413803852
+          name: bbc-home-matched-snapshot
+          path: snapshots
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the host and package inputs
+        env:
+          MODE: ${{ matrix.mode }}
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          echo "LAB=$lab" >> "$GITHUB_ENV"
+          test "$(git hash-object "$lab/run_html.ts")" = ff44425b54c2bc5970125b1248b821a417e1e89b
+          test "$(git hash-object "$lab/native_html_document.ts")" = 2a77fbe11902ff9aa8e38faba929c4ef13a5b926
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          echo "86b24b714ad09d2f89295720eba01ca4f90ac423fcc6a94c8d282282360be58b  ${archives[0]}" | sha256sum -c -
+          tar -xzf "${archives[0]}" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          directory=$(dirname "$binary")
+          (cd "$directory" && sha256sum -c SHA256SUMS)
+          jq -e --arg commit "$CORE" '.commitFull==$commit' "$directory/BUILD-INFO.json"
+          echo "NATIVE_LIB=$directory/libweb-render.so" >> "$GITHUB_ENV"
+          mkdir -p web out
+          gh release download "build-${CORE:0:12}-foafnaut-web" -R "$GITHUB_REPOSITORY" -D web -p foafnaut-web.tar.gz -p build-info.json
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' web/build-info.json)
+          echo "$expected  web/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf web/foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          cp "$directory/libnative-window.so" "$lab/.build/native/"
+          sha256sum "${archives[0]}" web/foafnaut-web.tar.gz "$lab/run_html.ts" "$lab/native_html_document.ts" > out/inputs.sha256
+          if [[ "$MODE" == replay ]]; then
+            snapshot="$PWD/snapshots/bbc.com/desktop-bbc-news-20261124.zip"
+            echo "2d1f97f2756462b2c4c4c1afb0b1cde66474943d579dcf959b1d57401fcb2ffb  $snapshot" | sha256sum -c -
+            echo "REALPAGES_REPLAY=$snapshot" >> "$GITHUB_ENV"
+            jq '.pages |= map(if (.id == "desktop-bbc-news" or .id == "desktop-bbc-news-noscripts") then .url = "https://www.bbc.com/news" else . end)' "$lab/realpages/pages.json" > "$RUNNER_TEMP/pages.json"
+            cp "$RUNNER_TEMP/pages.json" "$lab/realpages/pages.json"
+          fi
+          sha256sum "$lab/realpages/pages.json" >> out/inputs.sha256
+          python3 experiments/bbc-linux-startup/instrument.py "$lab"
+          variant="$RUNNER_TEMP/http-variants"
+          mkdir -p "$variant"/{a,b}
+          test "$(git hash-object "$lab/native_net.ts")" = 1359504dff664aea51b8098ede9812df04e70dbb
+          for role in a b; do
+            cp "$lab"/{run_html.ts,native_net.ts} "$variant/$role/"
+          done
+          python3 experiments/bbc-pinned-https/attach-pool.py "$variant/a/run_html.ts" baseline
+          python3 experiments/bbc-pinned-https/attach-pool.py "$variant/b/run_html.ts" candidate
+          python3 experiments/bbc-pinned-https/make-variant.py "$variant/b/native_net.ts"
+          sha256sum "$variant"/*/*.ts >> out/inputs.sha256
+          for role in a b; do
+            cp "$variant/$role/"*.ts "$lab/"
+            deno check --no-config --no-npm --unstable-ffi --unstable-webgpu "$lab/run_html.ts" 2>&1 | tee -a out/typecheck.log
+          done
+      - name: Alternate baseline and pooled browser processes
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          GALLIVM_PERF: nopt
+          CASE: desktop-bbc-news
+          MODE: ${{ matrix.mode }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
+          export VK_DRIVER_FILES=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$VK_DRIVER_FILES"
+          export DENO_BIN=$(command -v deno)
+          cat > "$RUNNER_TEMP/host" <<'BASH'
+          #!/bin/bash
+          preload=()
+          if [[ -n ${REALPAGES_REPLAY:-} ]]; then preload+=(--preload "$LAB/realpages/replay.ts"); fi
+          exec "$DENO_BIN" run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
+            "${preload[@]}" "$LAB/run_html.ts" --follow-links --log-all --native-engine "$NATIVE_LIB" "$@"
+          BASH
+          chmod +x "$RUNNER_TEMP/host"
+          for rep in a1 b1 b2 a2; do
+            cp "$RUNNER_TEMP/http-variants/${rep:0:1}/"*.ts "$LAB/"
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$rep" XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$rep"
+            install -d -m 700 "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+            xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 experiments/bbc-linux-startup/probe.py \
+              "$RUNNER_TEMP/host" "$LAB" "$PWD/out/$rep" "$CASE" "$rep" ""
+          done
+          python3 experiments/bbc-pinned-https/report.py "$PWD/out" "$MODE" | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-pinned-https-${{ matrix.mode }}
+          path: out/
+          retention-days: 7
