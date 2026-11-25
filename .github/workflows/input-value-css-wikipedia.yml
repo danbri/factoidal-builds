@@ -1,0 +1,114 @@
+name: Measure CSS invalidation after a no-op input value request
+on:
+  push:
+    branches: [wip/871-input-value-replay]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: 22fdd694d0d10c3b95fc0801e63883bc238a1035
+  CANDIDATE: 67d59793bc3694ac3be46c4510a27c4913e33ddf
+  BASELINE_RUN: "45631488895"
+  CANDIDATE_RUN: "45631286428"
+  WEB: build-e4445d14752c-foafnaut-web
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Find both exact native artifacts
+        run: |
+          set -euo pipefail
+          for pair in "$BASELINE_RUN:$BASELINE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            run=${pair%:*}
+            sha=${pair#*:}
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $sha"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+          test "$(gh api "repos/danbri/factoidal-core/git/commits/$CANDIDATE" --jq '.parents[0].sha')" = "$BASELINE"
+  replay:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            third_party/realpages/zh.wikipedia.org/hub-wp-zh-20261116.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.BASELINE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Replay the pinned Wikipedia document in alternating order
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          cmp engines/{baseline,candidate}/lean-toolchain
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat engines/baseline/lean-toolchain)"
+          export LD_LIBRARY_PATH="$(ls -d "$HOME/.elan/toolchains/"*/lib/lean | head -1)"
+          mkdir -p runtime out
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          export REALPAGES_REPLAY="$PWD/third_party/realpages/zh.wikipedia.org/hub-wp-zh-20261116.zip"
+          echo "da6d99c9c1b841a3366ebb19de34c31bb605b6440e929aa9f835eb69740e0f28  $REALPAGES_REPLAY" | sha256sum -c -
+          sha256sum engines/*/libweb-render.so "$REALPAGES_REPLAY" core/tests/browser-wpt/reftest-render.ts > out/inputs.sha256
+          unzip -p "$REALPAGES_REPLAY" manifest.json | jq -ce '(.viewport|split("x")|map(tonumber)) as $wh | {url,width:$wh[0],height:$wh[1],file:"page.png"} | select(.width>0 and .height>0)' > out/page.jsonl
+          for arm in baseline-1 candidate-1 candidate-2 baseline-2; do
+            role=${arm%-*}
+            deno run --no-check --no-config --no-npm --unstable-ffi -A               --preload "$lab/realpages/replay.ts" core/tests/browser-wpt/reftest-render.ts               --native-engine "$PWD/engines/$role/libweb-render.so" --list out/page.jsonl               --out "out/$arm" > "out/$arm.log" 2>&1
+          done
+          python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          output = Path("out")
+          rows = {}
+          for log in sorted(output.glob("*.log")):
+              done = [json.loads(line[7:]) for line in log.read_text(errors="replace").splitlines()
+                      if line.startswith("__done ")]
+              assert len(done) == 1 and done[0]["status"] == "ok" and done[0]["scripted"], (log, done)
+              rows[log.stem] = done[0]
+              print(log.stem, done[0]["ms"], "ms", done[0]["scriptCost"], done[0]["sha"])
+          (output / "summary.json").write_text(json.dumps(rows, indent=2) + "\n")
+          assert len(rows) == 4 and len({row["sha"] for row in rows.values()}) == 1, rows
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: input-value-css-wikipedia-replay
+          path: out/
+          retention-days: 7
