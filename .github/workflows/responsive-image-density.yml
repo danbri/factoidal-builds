@@ -1,0 +1,123 @@
+name: Check responsive image geometry and paint with loaded assets
+on:
+  push:
+    branches: [codex/responsive-image-density-paint]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE: 2b27cddb1cbd9ee48c86699256cad348ba72b2a0
+  CANDIDATE_RUN: '45696242905'
+  CONTROL: 405b990bd5e1d533d70b4fcd95f17c6517f56dfd
+  CONTROL_RUN: '45690456586'
+  BASE: ac8961ffccc9c5c814d938fe72fb75358ed1eca1
+  WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/responsive-image-density
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            tests/browser-wpt
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: ${{ env.WPT }}
+          path: wpt
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /images/green-256x256.png
+            /html/semantics/embedded-content/the-img-element/current-pixel-density/basic.html
+      - name: Match the native engines to their exact source commits
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git -C wpt rev-parse HEAD)" = "$WPT"
+          mkdir -p out/control out/candidate
+          for arm in control candidate; do
+            if [[ $arm == control ]]; then sha=$CONTROL; run=$CONTROL_RUN; else sha=$CANDIDATE; run=$CANDIDATE_RUN; fi
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs?per_page=100" |
+              jq -e --arg sha "$sha" '.jobs[] | select(.name==("Build libweb-render.so from "+$sha) and .conclusion=="success") | {id,name,html_url,conclusion}' > "out/$arm-build.json"
+          done
+          gh api "repos/danbri/factoidal-core/compare/$BASE...$CONTROL" > out/control-compare.json
+          jq -e --arg base "$BASE" '.merge_base_commit.sha==$base and ([.files[].filename]|sort)==["docs/20261125-responsive-image-density.md","formal/lean4/L4Factoidal/HTML/ImageSource.lean","tools/wasmvm/quickjs/prelude.js"]' out/control-compare.json
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CONTROL_RUN }}
+          name: branch-engine
+          path: engines/control
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the runtime and exact fixtures
+        run: |
+          set -euo pipefail
+          cmp engines/control/lean-toolchain engines/candidate/lean-toolchain
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          toolchain=$(cat engines/candidate/lean-toolchain)
+          "$HOME/.elan/bin/elan" toolchain install "$toolchain"
+          echo "LD_LIBRARY_PATH=$("$HOME/.elan/bin/elan" run "$toolchain" lean --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          mkdir runtime
+          gh release download build-e4445d14752c-foafnaut-web -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          sum=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$sum  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          test -f /usr/bin/python3
+          /usr/bin/python3 -c 'from PIL import Image' || (sudo apt-get update -q && sudo apt-get install -y python3-pil)
+          imgtest=wpt/html/semantics/embedded-content/the-img-element/current-pixel-density/basic.html
+          python3 experiments/responsive-image-density/fixtures.py wpt "$imgtest" fixtures
+          cp fixtures/images.sha256 fixtures/cases.json fixtures/jobs.jsonl out/
+          sha256sum "$imgtest" engines/{control,candidate}/libweb-render.so wpt/images/green-256x256.png > out/inputs.sha256
+          python3 experiments/responsive-image-density/instrument.py core/tests/browser-wpt/reftest-render.ts
+      - name: Render both copies through the desktop loader and verify their pixels
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8030 --bind 127.0.0.1 --directory fixtures > out/http.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          curl -fsS --retry 8 --retry-connrefused --retry-delay 1 http://127.0.0.1:8030/images/green-256x256.png -o out/served.png
+          cmp out/served.png wpt/images/green-256x256.png
+          google-chrome --version > out/chrome-version.txt
+          google-chrome --headless=new --no-sandbox --disable-gpu --disable-background-networking --hide-scrollbars \
+            --user-data-dir="$RUNNER_TEMP/density-chrome" --force-device-scale-factor=1 --window-size=600,800 \
+            --virtual-time-budget=1000 --screenshot="$PWD/out/chrome-stripes.png" http://127.0.0.1:8030/stripes.html
+          google-chrome --headless=new --no-sandbox --disable-gpu --disable-background-networking --hide-scrollbars \
+            --user-data-dir="$RUNNER_TEMP/density-chrome" --force-device-scale-factor=1 --window-size=600,800 \
+            --virtual-time-budget=1000 --dump-dom http://127.0.0.1:8030/chrome-fractional.html > out/chrome-fractional.html
+          for arm in control candidate; do
+            deno run --no-config --no-npm --unstable-ffi -A core/tests/browser-wpt/reftest-render.ts \
+              --native-engine "$PWD/engines/$arm/libweb-render.so" --list "$PWD/fixtures/jobs.jsonl" --out "$PWD/out/$arm" \
+              | tee "out/$arm.log"
+            test "$(grep -c '"status":"ok"' "out/$arm.log")" -eq 17
+          done
+          /usr/bin/python3 experiments/responsive-image-density/report.py out fixtures | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: responsive-image-density-native-paint
+          path: out
+          retention-days: 7
