@@ -1,4 +1,4 @@
-name: Measure BBC Textnaut load phases
+name: Profile BBC final script startup reply
 on:
   push:
     branches: [wip/textnaut-bbc-load]
@@ -29,12 +29,6 @@ jobs:
             labs/demos/foafnaut
             docs/web/hub/foafnaut
             third_party/fonts
-      - uses: actions/download-artifact@v4
-        with:
-          run-id: 45638334817
-          name: bbc-uk-replay-with-photos
-          path: capture
-          github-token: ${{ github.token }}
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
@@ -57,11 +51,18 @@ jobs:
               tar -xzf "$dest/$set.tar.gz" -C "$dest"
             fi
           done
-          archive="$PWD/capture/bbc-uk-with-photos.zip"
-          echo "32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46  $archive" | sha256sum -c -
-      - name: Inspect each startup answer on archived and live BBC
+      - name: Sample Linux native execution during the final startup reply
         run: |
           set -euo pipefail
+          if command -v perf >/dev/null && perf --version >/dev/null 2>&1; then
+            profiler="$(command -v perf)"
+          else
+            sudo apt-get update -q
+            sudo apt-get install -y -q linux-tools-generic
+            profiler="$(find /usr/lib/linux-tools -type f -name perf | sort -V | tail -1)"
+          fi
+          test -x "$profiler"
+          sudo "$profiler" stat -e cpu-clock:u -- true
           lab="$PWD/core/labs/demos/foafnaut"
           bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
           browser="$lab/textnaut/textnaut.ts"
@@ -70,30 +71,25 @@ jobs:
           lib="$PWD/engine/foafnaut/libweb-render.so"
           lib_hash=$(jq -er '.artifacts["foafnaut-linux-x86_64.tar.gz"].files["foafnaut/libweb-render.so"].sha256' engine/build-info.json)
           echo "$lib_hash  $lib" | sha256sum -c -
-          archive="$PWD/capture/bbc-uk-with-photos.zip"
-          sha256sum "$browser" "$lib" "$archive" > out/inputs.sha256
-          for mode in archive live; do
-            preload=()
-            if [[ $mode == archive ]]; then
-              export REALPAGES_REPLAY="$archive"
-              preload=(--preload "$lab/realpages/replay.ts")
-            else
-              unset REALPAGES_REPLAY
-            fi
-            for script in on; do
-              switches=()
-              if [[ $script == off ]]; then switches=(--no-scripts); fi
-              timeout 160s deno run "${preload[@]}" --no-prompt --allow-read --allow-ffi --allow-net --allow-env \
-                --import-map="$lab/textnaut/import_map.json" "$browser" --dump --width 160 --timing --engine "$lib" \
-                "${switches[@]}" https://www.bbc.co.uk/news > "out/$mode-$script.txt" 2> "out/$mode-$script.log"
-              grep '^{"type":"textnaut-load-phases"' "out/$mode-$script.log" | jq -e --arg variant "$mode-$script" \
-                'select(.phases["load.prepare"].calls==1 and .phases["load.settle"].calls==1) | {variant} + .' > "out/$mode-$script.json"
-              jq -c 'del(.startupAnswers)' "out/$mode-$script.json" >> "$GITHUB_STEP_SUMMARY"
-            done
+          sha256sum "$browser" "$lib" > out/inputs.sha256
+          deno_bin=$(command -v deno)
+          data="$RUNNER_TEMP/bbc-start.perf"
+          sudo env DENO_DIR="${DENO_DIR:-$HOME/.cache/deno}" "$profiler" record --quiet -o "$data" \
+            --clockid monotonic -e cpu-clock:u -F 79 --call-graph dwarf,8192 -- \
+            timeout 180s "$deno_bin" run --no-prompt --allow-read --allow-ffi --allow-net --allow-env \
+            --import-map="$lab/textnaut/import_map.json" "$browser" --dump --width 160 --timing --engine "$lib" \
+            https://www.bbc.co.uk/news > out/browser.txt 2> out/browser.log
+          grep '^{"type":"textnaut-load-phases"' out/browser.log > out/phases.json
+          range=$(jq -er '[.startupAnswers[] | select(.pending|not)] | last | .from + "," + .to' out/phases.json)
+          test -n "$range"
+          for group in no-children children; do
+            sudo "$profiler" report -i "$data" --time "$range" --stdio "--$group" \
+              --sort dso,sym --percent-limit 0.2 > "out/$group.txt"
           done
+          head -n 60 out/no-children.txt >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: textnaut-bbc-load-phases
+          name: textnaut-bbc-final-native-profile
           path: out/
           retention-days: 7

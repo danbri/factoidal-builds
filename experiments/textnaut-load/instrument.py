@@ -24,15 +24,24 @@ async function timed<T>(name: string, action: () => Promise<T>): Promise<T> {
   try { return await action(); }
   finally { notePhase(name, started); }
 }
-const startupAnswers: { ms: number; pending: boolean; status?: number; wireBytes: number; addresses: number }[] = [];
+const nativeClock = Deno.dlopen("libc.so.6", { clock_gettime: { parameters: ["i32", "buffer"], result: "i32" } });
+const timespec = new BigInt64Array(2);
+function monotonicTimestamp() {
+  if (nativeClock.symbols.clock_gettime(1, timespec) !== 0) throw new Error("clock_gettime failed");
+  return `${timespec[0]}.${String(timespec[1]).padStart(9, "0")}`;
+}
+const startupAnswers: { from: string; to: string; ms: number; pending: boolean; status?: number; wireBytes: number; addresses: number }[] = [];
 function scriptSession(engine: HTMLEngine, ...args: Parameters<HTMLEngine["scriptSession"]>) {
   const started = performance.now();
+  const isAnswer = args[1].action === "syncAnswer";
+  const from = isAnswer ? monotonicTimestamp() : "";
   const result = engine.scriptSession(...args);
+  const to = isAnswer ? monotonicTimestamp() : "";
   notePhase("engine." + args[1].action, started);
-  if (args[1].action === "syncAnswer") {
+  if (isAnswer) {
     const answer = args[1].answer as Awaited<ReturnType<typeof rawNetAnswer>>;
     startupAnswers.push({
-      ms: performance.now() - started, pending: !!result.netSync,
+      from, to, ms: performance.now() - started, pending: !!result.netSync,
       status: answer.status, wireBytes: answer.bodyBase64?.length ?? 0, addresses: answer.addresses?.length ?? 0,
     });
   }
