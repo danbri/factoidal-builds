@@ -1,0 +1,133 @@
+name: Measure partial-restyle costs on matched Wikipedia pages
+on:
+  push:
+    branches: [wip/partial-restyle-element-keys-replay]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: fc246f938484c09f154cd315f36e4694380fb1f5
+  CANDIDATE: 120c5bc893e08dfc8bd2a2baeb79d8e9bcd3ac85
+  WEB: build-05ec0b29ca8a-foafnaut-web
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - name: Get both exact native renderer artifacts
+        run: |
+          set -euo pipefail
+          for pair in "45516536649:$BASELINE:a" "45516536886:$CANDIDATE:b"; do
+            run=${pair%%:*}
+            arm=${pair##*:}
+            sha=${pair#*:}
+            sha=${sha%:*}
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $sha"
+            for i in $(seq 1 190); do
+              if gh run download "$run" -R "$GITHUB_REPOSITORY" -n branch-engine -D "$arm"; then break; fi
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+                echo "Missing exact engine from $run" >&2; exit 1
+              fi
+              sleep 20
+            done
+            test -s "$arm/libweb-render.so"
+          done
+      - uses: actions/checkout@v4
+        with:
+          path: inputs
+          persist-credentials: false
+          sparse-checkout: |
+            third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+            third_party/realpages/en.wikipedia.org/wp-stub-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: fc246f938484c09f154cd315f36e4694380fb1f5
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Prepare the pinned host, runtime and archives
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          cmp a/lean-toolchain b/lean-toolchain
+          mkdir -p runtime out
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          data=inputs/third_party/realpages/en.wikipedia.org
+          echo "66ed79b9d470f6d9115b0b2e73de8819d38544956da56c3dd73e854eb2849680  $data/wp-us-20261115.zip" | sha256sum -c -
+          test "$(git hash-object "$data/wp-stub-20261115.zip")" = 1f51caeef1b9da330c2bb2643ce6f5b20570d27f
+          sha256sum a/libweb-render.so b/libweb-render.so "$data"/*.zip "$lab/textnaut/textnaut.ts" > out/inputs.sha256
+          python3 - "$lab/textnaut/textnaut.ts" <<'PY'
+          from pathlib import Path
+          import sys
+          p = Path(sys.argv[1])
+          source = p.read_text()
+          anchor = '      take(await synced(engine, engine.scriptSession("", { action: "advance", session: script.session, ms })));'
+          assert source.count(anchor) == 1
+          marker = (
+              '      const advanceStarted = performance.now();\n'
+              + anchor
+              + '\n      console.error(JSON.stringify({type:"restyle-timer",clock:turn.clock,'
+              'ms:Math.round(performance.now()-advanceStarted),leanMs:Math.round(turn.ns/1e6),'
+              'instructions:turn.instructions,layouts:turn.layouts,reads:turn.reads,readOps:turn.readOps}));'
+          )
+          p.write_text(source.replace(anchor, marker))
+          PY
+      - name: Compare reportable timer turns on both archived articles
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          for case_id in wp-us wp-stub; do
+            article=United_States; if [[ "$case_id" == wp-stub ]]; then article=Spodnje_Danje; fi
+            export REALPAGES_REPLAY="$PWD/inputs/third_party/realpages/en.wikipedia.org/$case_id-20261115.zip"
+            for arm in a1 b1 b2 a2; do
+              key="$case_id-$arm"
+              /usr/bin/time -f '%e %M' -o "out/$key.time" timeout 240s deno run --no-prompt --preload "$lab/realpages/replay.ts" \
+                --allow-read --allow-ffi --allow-net --allow-env --import-map="$lab/textnaut/import_map.json" \
+                "$lab/textnaut/textnaut.ts" --dump --timing --width 160 --engine "$PWD/${arm:0:1}/libweb-render.so" \
+                "https://en.wikipedia.org/wiki/$article" > "out/$key.dump" 2> "out/$key.log"
+              sha256sum "out/$key.dump" >> "out/$case_id.sha256"
+            done
+          done
+          python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          root = Path("out")
+          report = {}
+          for case in ("wp-us", "wp-stub"):
+              digests = {line.split()[0] for line in (root / f"{case}.sha256").read_text().splitlines()}
+              assert len(digests) == 1, (case, digests)
+              report[case] = {}
+              for arm in ("a1", "b1", "b2", "a2"):
+                  key = f"{case}-{arm}"
+                  rows = [json.loads(l) for l in (root / f"{key}.log").read_text().splitlines()
+                          if l.startswith('{"type":"restyle-timer"')]
+                  if case == "wp-us":
+                      actual = {(r["clock"],r["layouts"],r["reads"]) for r in rows}
+                      assert {(7852,2,117),(7856,1,3)} <= actual, actual
+                  elapsed, rss = (root / f"{key}.time").read_text().split()
+                  report[case][arm] = {"elapsedSeconds":float(elapsed), "rssKiB":int(rss), "timers":rows}
+          (root / "report.json").write_text(json.dumps(report,indent=2)+"\n")
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: partial-restyle-element-keys-replay
+          path: out/
+          retention-days: 7
