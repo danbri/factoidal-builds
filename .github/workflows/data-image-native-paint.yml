@@ -1,15 +1,15 @@
 name: Compare percent-encoded image painting on two native engines
 on:
   push:
-    branches: [codex/data-image-native-paint]
+    branches: [codex/data-image-native-paint-checked]
 permissions:
   actions: read
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
   BASE: 41789954b17aae0057e4f5a5adee434f35facafa
-  CANDIDATE: d8dc3b49fe72b43a40faa064ca0af24556155614
-  CANDIDATE_RUN: '45693281207'
+  CANDIDATE: 88ef40aec1bf07e775be93b80877a03de6a29e77
+  CANDIDATE_RUN: '45697912825'
   WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
 jobs:
   compare:
