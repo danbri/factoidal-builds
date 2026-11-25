@@ -6,7 +6,7 @@ out = Path(sys.argv[1])
 results = {}
 print("| Page | Arm | Whole replay s | Page load and raster ms | Compile-only render ms | Peak RSS MiB |")
 print("|---|---|---:|---:|---:|---:|")
-for page in ("w3c", "bbc", "wiki-mobile"):
+for page in ("w3c", "bbc", "wiki-mobile", "w3c-flexbox"):
     rows = {}
     for arm in ("a1", "b1", "b2", "a2"):
         key = f"{page}-{arm}"
