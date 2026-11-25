@@ -1,0 +1,114 @@
+name: Recheck CSS2 list-item regressions on main
+on:
+  push:
+    branches: [wip/list-item-applicability]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE_RUN: "45530401313"
+  CANDIDATE_RUN: "45613858135"
+  BASELINE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
+  CANDIDATE: 8ea4de3899040c6de55c903861c0eedac6608641
+  MAIN_EQUIVALENT: 34c12a749da071964d4893fcdab6014c75c34be1
+  WPT: 056c528ccb5844b01628e0cd667520535dee16cc
+  WEB: build-05ec0b29ca8a-foafnaut-web
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for exact native engine artifacts
+        run: |
+          set -euo pipefail
+          for pair in "$BASELINE_RUN:foafnaut-linux-native-worker" "$CANDIDATE_RUN:branch-engine"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${pair%%:*}"
+            artifact="${pair#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx "$artifact"; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+          source_tree=$(gh api "repos/danbri/factoidal-core/git/commits/$CANDIDATE" --jq .tree.sha)
+          main_tree=$(gh api "repos/danbri/factoidal-core/git/commits/$MAIN_EQUIVALENT" --jq .tree.sha)
+          test "$source_tree" = "$main_tree"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN/jobs" --jq '.jobs[].name' |
+            grep -Fx "Build libweb-render.so from $CANDIDATE"
+  reftest:
+    needs: wait-engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.BASELINE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: foafnaut-linux-native-worker
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Pin the engine, harness, and WPT inputs
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          (cd engines/baseline && grep -Fx "$BASELINE" source-commit.txt && sha256sum -c SHA256SUMS)
+          mkdir -p runtime out wpt/css/CSS2/{margin-padding-clear,text} wpt/fonts
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+          download() {
+            curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$1" -o "wpt/$1"
+          }
+          cases=(margin-padding-clear/padding-left-applies-to-010 text/letter-spacing-applies-to-003
+            text/text-indent-applies-to-003 text/white-space-applies-to-003)
+          for name in "${cases[@]}"; do
+            download "css/CSS2/$name.xht"
+            download "css/CSS2/$name-ref.xht"
+          done
+          download fonts/ahem.css
+          download fonts/Ahem.ttf
+          printf 'baseline=%s\ncandidate=%s\nmain_equivalent=%s\nwpt=%s\n' \
+            "$BASELINE" "$CANDIDATE" "$MAIN_EQUIVALENT" "$WPT" > out/revisions.txt
+          sha256sum engines/*/libweb-render.so > out/inputs.sha256
+      - name: Render both arms and retain the pixel evidence
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          prefix=css/CSS2
+          only="/$prefix/margin-padding-clear/padding-left-applies-to-010.xht,/$prefix/text/letter-spacing-applies-to-003.xht,/$prefix/text/text-indent-applies-to-003.xht,/$prefix/text/white-space-applies-to-003.xht"
+          for role in baseline candidate; do
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json --wpt-root "$PWD/wpt" \
+              --native-engine "$PWD/engines/$role/libweb-render.so" --prefix "$prefix/" --jobs 1 --only "$only" --out "$PWD/out/$role"
+            jq -e '.valid and (.tests | length == 4)' "out/$role/results.json"
+            jq -r --arg role "$role" '.tests[] | [$role,.test,.status,([.edges[].totalPixels // 0] | add)] | @tsv' \
+              "out/$role/results.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: list-item-applicability
+          path: out/
+          retention-days: 7
