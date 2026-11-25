@@ -1,6 +1,7 @@
 import functools
 import http.server
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -103,6 +104,11 @@ def main():
         result[name] = {"chrome": reference, "foafnaut": actual}
         print(name, result[name], flush=True)
     (OUT / "logo.json").write_text(json.dumps(result, indent=2) + "\n")
+    if os.environ.get("REQUIRE_LOGO_INK") == "1":
+        for case in ("wordmark-direct", "tagline-direct", "grid-header"):
+            reference = result[case]["chrome"]["inkPixels"]
+            actual = result[case]["foafnaut"]["inkPixels"]
+            assert actual > reference // 2, (case, result[case])
 
 
 if __name__ == "__main__":

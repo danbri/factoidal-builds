@@ -8,9 +8,24 @@ permissions:
 env:
   GH_TOKEN: ${{ github.token }}
   CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
-  NATIVE_RUN: "45613857797"
+  CANDIDATE: 103bf29910b47c6876845cb1e0ad06fd8e9ce875
+  NATIVE_RUN: "45636256959"
 jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for the exact SVG definition candidate
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$NATIVE_RUN"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CANDIDATE"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+            sleep 30
+          done
   pixels:
+    needs: wait
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -33,7 +48,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           run-id: ${{ env.NATIVE_RUN }}
-          name: foafnaut-linux-native-worker
+          name: branch-engine
           path: engine
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
@@ -50,7 +65,10 @@ jobs:
           set -euo pipefail
           unset LD_LIBRARY_PATH
           test "$(git -C core rev-parse HEAD)" = "$CORE"
-          (cd engine && grep -Fx "$CORE" source-commit.txt && sha256sum -c SHA256SUMS)
+          test -s engine/libweb-render.so
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat engine/lean-toolchain)"
+          export LD_LIBRARY_PATH="$(ls -d "$HOME/.elan/toolchains/"*/lib/lean | head -1)"
           archive=$(find capture -name desktop-wikipedia-www-20261124.zip -print -quit)
           echo "d83f40080b38f311dc42c3be0a74b6d948e8c0bf0e9da1b7b94d76d02556721c  $archive" | sha256sum -c -
           mkdir out runtime
@@ -65,10 +83,10 @@ jobs:
           sudo apt-get install -y python3-pil
           google-chrome --version > out/chrome.txt
           sha256sum engine/libweb-render.so experiments/wikipedia-logo/probe.py > out/inputs.sha256
-          /usr/bin/python3 experiments/wikipedia-logo/probe.py | tee "$GITHUB_STEP_SUMMARY"
+          REQUIRE_LOGO_INK=1 /usr/bin/python3 experiments/wikipedia-logo/probe.py | tee "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: wikipedia-logo-pixel-reductions
+          name: wikipedia-logo-candidate-pixels
           path: out/
           retention-days: 7
