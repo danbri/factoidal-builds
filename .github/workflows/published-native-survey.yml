@@ -1,7 +1,7 @@
-name: Survey the released Linux browser with the native worker
+name: Compare software Vulkan settings on all 24 Linux browser pages
 on:
   push:
-    branches: [wip/published-4a0c-native-survey]
+    branches: [wip/published-linux-mesa-comparison]
 permissions:
   contents: read
   actions: read
@@ -91,7 +91,7 @@ jobs:
           sha256sum package/*.json "${archives[0]}" "$binary" core/labs/demos/foafnaut/realpages/pages.json > out/inputs.sha256
           dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
           install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
-      - name: Capture first visible frames and send a native scroll event
+      - name: Compare stock Vulkan and nopt in the packaged native browser
         env:
           SDL_VIDEODRIVER: x11
           DENO_WEBGPU_BACKEND: vulkan
@@ -99,11 +99,41 @@ jobs:
         run: |
           set -euo pipefail
           unset LD_LIBRARY_PATH
-          xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/native-worker-survey.py             "$FOAFNAUT_BINARY" "$PWD/core/labs/demos/foafnaut" "$PWD/out" "$PART" 4
+          order=(stock nopt)
+          if (( PART % 2 )); then order=(nopt stock); fi
+          for role in "${order[@]}"; do
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$role"
+            export MESA_SHADER_CACHE_DIR="$XDG_CACHE_HOME"
+            mkdir -p "$XDG_CACHE_HOME" "out/$role"
+            if [[ "$role" == nopt ]]; then export GALLIVM_PERF=nopt; else unset GALLIVM_PERF; fi
+            printf '%s\n' "$role" >> out/run-order.txt
+            xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/native-worker-survey.py \
+              "$FOAFNAUT_BINARY" "$PWD/core/labs/demos/foafnaut" "$PWD/out/$role" "$PART" 4
+            /usr/bin/python3 - "$role" <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import json, sys
+          from PIL import Image
+
+          directory = Path("out") / sys.argv[1]
+          metadata = directory / "summary.json"
+          entries = json.loads(metadata.read_text())
+          for entry in entries:
+              if entry["state"] != "presented":
+                  continue
+              with Image.open(directory / (entry["id"] + ".png")) as window:
+                  layers = entry["firstFrame"].get("layers") or {}
+                  top = int(layers.get("top", 65))
+                  assert 0 <= top < window.height
+                  document = window.crop((0, top, window.width, window.height))
+                  entry["firstDocumentSHA256"] = sha256(document.convert("RGB").tobytes()).hexdigest()
+          metadata.write_text(json.dumps(entries, indent=2) + "\n")
+          PY
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: linux-window-survey-${{ matrix.part }}
+          name: mesa-window-survey-${{ matrix.part }}
           path: out/
           retention-days: 7
   report:
@@ -112,39 +142,40 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: linux-window-survey-*
+          pattern: mesa-window-survey-*
           path: results
       - name: Summarize the registered pages
         run: |
           python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
-          import collections, json
+          import json
           from pathlib import Path
 
-          rows = [row for path in Path("results").glob("*/summary.json") for row in json.loads(path.read_text())]
-          Path("published-linux-survey.json").write_text(json.dumps(rows, indent=2)+"\n")
-          assert len(rows) == len({r["id"] for r in rows}) == 24
-          print("Published 4a0c174b7066 browser, Ubuntu 24.04 X11 and stock software Vulkan, live URLs")
-          print()
-          print("| Page | State | Target viewport frame ms | Wheel to scroll trace ms |")
-          print("| --- | --- | ---: | ---: |")
-          for row in sorted(rows,key=lambda r:r["id"]):
-              frame = row.get("presentedMs")
-              state = row["state"]
-              if frame is not None and row["documentColorsAtLeast"] < 2:
-                  state = "uniform document pixels"
-              elif frame is not None and frame > row["budget"]["first_frame_s"]*1000:
-                  state = "over first-frame budget"
-              print(f'| {row["id"]} | {state} | {frame if frame is not None else ""} | {row.get("scrollObservedMs","")} |')
-          print()
-          print(dict(collections.Counter(r["state"] for r in rows)))
-          print("First-frame budget met:", sum(r.get("presentedMs") is not None and r["presentedMs"] <= r["budget"]["first_frame_s"] * 1000 for r in rows))
-          print("Wheel changed content pixels:", sum(r.get("scrollChangesPixels") is True for r in rows))
-          print("Documents rendered with the native worker:", sum(r.get("documentEngine")=="native" for r in rows))
-          assert all(r.get("documentEngine") == "native" for r in rows if r["state"] == "presented")
+          def load(role):
+              rows = [row for path in Path("results").glob(f"*/{role}/summary.json") for row in json.loads(path.read_text())]
+              assert len(rows) == len({r["id"] for r in rows}) == 24
+              assert all(r.get("documentEngine") == "native" for r in rows if r["state"] == "presented")
+              return {r["id"]: r for r in rows}
+
+          stock, nopt = load("stock"), load("nopt")
+          assert set(stock) == set(nopt)
+          arms = {"stock": stock, "nopt": nopt}
+          print("| Page | Stock first frame ms | nopt first frame ms | Stock graphics ms | nopt graphics ms | Same document pixels |")
+          print("| --- | ---: | ---: | ---: | ---: | --- |")
+          for name, a in sorted(stock.items()):
+              b = nopt[name]
+              assert a["url"] == b["url"] and a["viewport"] == b["viewport"]
+              ha, hb = a.get("firstDocumentSHA256"), b.get("firstDocumentSHA256")
+              f, g = a.get("firstFrame") or {}, b.get("firstFrame") or {}
+              print(f'| {name} | {a.get("presentedMs")} | {b.get("presentedMs")} | {f.get("sessionMs")} | {g.get("sessionMs")} | {"yes" if ha and ha == hb else "changed or missing"} |')
+          for role, rows in arms.items():
+              in_budget = sum(r.get("presentedMs") is not None and r["presentedMs"] <= r["budget"]["first_frame_s"] * 1000 for r in rows.values())
+              wheel = sum(r.get("scrollChangesPixels") is True for r in rows.values())
+              print(f"{role} had {in_budget}/24 first frames within budget and visible wheel changes on {wheel}/24 pages.")
+          Path("mesa-comparison.json").write_text(json.dumps(arms, indent=2) + "\n")
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: published-linux-survey
-          path: published-linux-survey.json
+          name: published-mesa-comparison
+          path: mesa-comparison.json
           if-no-files-found: error
           retention-days: 7
