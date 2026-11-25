@@ -1,0 +1,30 @@
+name: Verify the exact Foafnaut HTTPS startup change
+on:
+  push:
+    branches: [wip/check-https-startup-reuse]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 30b1396eb44ac37db22f601f15170c870567157b
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Check the exact host and test TLS, HTTP, DNS and WebSocket
+        working-directory: labs/demos/foafnaut
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 30b1396eb44ac37db22f601f15170c870567157b
+          openssl version
+          deno check --no-config --no-npm --unstable-ffi --unstable-webgpu run_html.ts
+          deno test --no-config --no-npm --allow-net --allow-read --allow-write --allow-run=openssl native_net_test.ts
