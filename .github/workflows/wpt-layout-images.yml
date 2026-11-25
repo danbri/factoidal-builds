@@ -1,0 +1,94 @@
+name: Compare WPT image geometry with desktop image inputs
+on:
+  push:
+    branches: [codex/wpt-layout-image-inputs]
+permissions:
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 76f307e51e441e60b6cc5191b66475e2c8dbc918
+  WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
+  RUNTIME: 98cf12b45124a964363520bda0d84a543a19094d
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/wpt-layout-image-inputs/instrument.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: ${{ env.WPT }}
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/css-sizing/aspect-ratio
+            resources
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Extract checksum-verified released engine and runtime
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          test "$(git -C wpt rev-parse HEAD)" = "$WPT"
+          mkdir -p out engine runtime
+          for record in "engine:$CORE:foafnaut-linux-x86_64" "runtime:$RUNTIME:foafnaut-web"; do
+            dest=${record%%:*}
+            pair=${record#*:}
+            sha=${pair%%:*}
+            set=${pair#*:}
+            gh release download "build-${sha:0:12}-$set" -R "$GITHUB_REPOSITORY" -D "$dest" -p build-info.json -p "$set.tar.gz"
+            expected=$(jq -er --arg sha "$sha" --arg file "$set.tar.gz" \
+              'select(.source_commit == $sha) | .artifacts[$file].sha256' "$dest/build-info.json")
+            echo "$expected  $dest/$set.tar.gz" | sha256sum -c -
+            if [[ $dest == runtime ]]; then
+              tar -xzf "$dest/$set.tar.gz" -C "$dest" docs/web/hub/html-webgpu/runtime
+            else
+              tar -xzf "$dest/$set.tar.gz" -C "$dest"
+            fi
+          done
+          engine="$PWD/engine/foafnaut/libweb-render.so"
+          sum=$(jq -er '.artifacts["foafnaut-linux-x86_64.tar.gz"].files["foafnaut/libweb-render.so"].sha256' engine/build-info.json)
+          echo "$sum  $engine" | sha256sum -c -
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+      - name: Compare exact pinned tests with and without image layout inputs
+        run: |
+          set -euo pipefail
+          runner=core/tests/browser-wpt/testharness-run.ts
+          fixture=wpt/css/css-sizing/aspect-ratio
+          sha256sum "$runner" "$fixture/box-sizing-dimensions.html" "$fixture/box-sizing-squashed.html" \
+            "$fixture/support/20x50-green.png" engine/foafnaut/libweb-render.so > out/inputs.sha256
+          python3 experiments/wpt-layout-image-inputs/instrument.py "$runner"
+          printf '%s\n' /css/css-sizing/aspect-ratio/box-sizing-dimensions.html /css/css-sizing/aspect-ratio/box-sizing-squashed.html > out/names.txt
+          for arm in baseline loaded; do
+            flags=()
+            if [[ $arm == loaded ]]; then flags=(--diagnostic-layout-images); fi
+            deno run --no-check --no-config --no-npm --unstable-ffi -A "$runner" --script-engine bubblepop \
+              --native-engine "$PWD/engine/foafnaut/libweb-render.so" --wpt-root "$PWD/wpt" --wpt-commit "$WPT" \
+              --list "$PWD/out/names.txt" --out "$PWD/out/$arm.json" "${flags[@]}" | tee "out/$arm.log"
+            jq -e '.totals.files == 2 and .totals.run == 2 and .totals.subtests == 24 and all(.cases[]; .harness == "OK")' "out/$arm.json"
+            jq -c .totals "out/$arm.json" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wpt-geometry-image-inputs
+          path: out/
+          retention-days: 7
