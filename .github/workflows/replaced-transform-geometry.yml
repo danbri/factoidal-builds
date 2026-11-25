@@ -1,0 +1,80 @@
+name: Verify CSS transforms with the corrected block PNG control
+on:
+  push:
+    branches: [wip/712-replaced-transform-geometry]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for the pinned engine
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/45649280589"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from 06c7df9e39575800712eb92c131671c826fa1699"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+            sleep 30
+          done
+  geometry:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/replaced-transforms/probe.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45649280589"
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify engine and runtime and compare synthetic fixtures
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          CORE=e4445d14752cc3ec75da7bf2fc1797263d02efbf
+          export GH_TOKEN=${{ github.token }}
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          test -s engine/libweb-render.so
+          mkdir out runtime
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sudo apt-get update
+          sudo apt-get install -y python3-pil
+          google-chrome --version > out/chrome.txt
+          sha256sum engine/libweb-render.so experiments/replaced-transforms/probe.py > out/inputs.sha256
+          /usr/bin/python3 experiments/replaced-transforms/probe.py | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: replaced-transforms
+          path: out/
+          retention-days: 7
