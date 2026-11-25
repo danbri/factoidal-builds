@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [wiki-mobile]
+        case: [govuk-static, w3c-static]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,7 +123,7 @@ jobs:
           test "$(git hash-object "$dataset/en.wikipedia.org/m-us-20261115.zip")" = 944a0bff5adaa6b9cdd97a41b1d2a8852310c2d3
           sha256sum engines/*/libweb-render.so "$window" "$lab/run_html.ts" "$dataset"/*/*.zip "$dataset"/*.zip > out/inputs.sha256
           sudo apt-get update
-          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth time
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth time ffmpeg
           icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
           test -f "$icd"
           echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
