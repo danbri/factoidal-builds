@@ -1,0 +1,288 @@
+name: Verify cached document metadata during module startup
+on:
+  push:
+    branches: [wip/712-module-metadata-check]
+permissions:
+  contents: read
+
+concurrency:
+  group: branch-wpt-202d6b8c9c418046aa2e136478761d9ba471b77b
+  cancel-in-progress: false
+
+env:
+  CORE_REPO: danbri/factoidal-core
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.p.outputs.matrix }}
+      web_tag: ${{ steps.p.outputs.web_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAMES: /html/semantics/scripting-1/the-script-element/module/,/xhr/send-sync
+          WPT: 056c528ccb5844b01628e0cd667520535dee16cc
+          SHARDS: "1"
+          REF: 202d6b8c9c418046aa2e136478761d9ba471b77b
+        run: |
+          set -euo pipefail
+          [[ "${SHARDS:-0}" =~ ^[0-9]*$ ]] || { echo "::error::shards is a number"; exit 2; }
+          python3 release-tests/release-tests.py branch-plan --names "$NAMES" --wpt-commit "${WPT:-}" \
+            --shards "${SHARDS:-0}" --core-ref "$REF" --out "$RUNNER_TEMP/inputs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branch-inputs
+          path: ${{ runner.temp }}/inputs/
+          retention-days: 7
+
+  build:
+    name: Build libweb-render.so from 202d6b8c9c418046aa2e136478761d9ba471b77b
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      # A branch, a tag, or a commit id of any length: the commit, so that the checkout
+      # can fetch it (a short commit id is not a ref the checkout can ask for).
+      - id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: 202d6b8c9c418046aa2e136478761d9ba471b77b
+        run: |
+          SHA=$(gh api "repos/$CORE_REPO/commits/$REF" --jq .sha 2> /dev/null || true)
+          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::core_ref '$REF' is not a branch, tag or commit of $CORE_REPO (push the branch first)"
+            echo "**core_ref \`$REF\` is not a branch, tag or commit of $CORE_REPO.** Push the branch, then dispatch again." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ steps.ref.outputs.sha }}
+          path: core
+      - id: sha
+        env:
+          REF: 202d6b8c9c418046aa2e136478761d9ba471b77b
+        run: |
+          echo "sha=$(git -C core rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "### Build: \`$REF\` = $(git -C core log -1 --format='%H %s' | cut -c1-140)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install elan and the pinned Lean
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+          sudo apt-get update -q > /dev/null && sudo apt-get install -y -q libuv1-dev libc++-dev libc++abi-dev > /dev/null
+      # build.yml's Lake cache of the newest Linux build (same path, so the same cache
+      # version). Restore only.
+      - name: Restore build.yml's Lake cache
+        id: lake
+        uses: actions/cache/restore@v4
+        with:
+          path: core/formal/lean4/.lake
+          key: lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ hashFiles('core/formal/lean4/**/*.lean', 'core/formal/lean4/lakefile.lean', 'core/formal/lean4/ffi/**', 'core/tools/wasmvm/quickjs/*.js') }}
+          restore-keys: |
+            lake-linux-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      # The C objects of the last engine build (release-tests/leanc-cache.sh): Lean's C for
+      # a module that did not change is the same bytes, so its object is not compiled again.
+      - name: Restore the C object cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+          restore-keys: |
+            leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-
+      - name: Build
+        id: build
+        shell: bash
+        env:
+          CACHE_KEY: ${{ steps.lake.outputs.cache-matched-key }}
+          CACHE_HIT: ${{ steps.lake.outputs.cache-hit }}
+        run: |
+          set -uo pipefail
+          LOG=$RUNNER_TEMP/build.log
+          mkdir -p "$HOME/leanc-cache" "$HOME/leanc-shim"
+          rm -f "$HOME/leanc-cache/.hits" "$HOME/leanc-cache/.misses"; touch "$HOME/leanc-cache/.start"
+          cp builds/release-tests/leanc-cache.sh "$HOME/leanc-shim/leanc"; chmod +x "$HOME/leanc-shim/leanc"
+          export LEANC_REAL=$(ls "$HOME"/.elan/toolchains/*/bin/leanc | head -1) LEANC_CACHE="$HOME/leanc-cache"
+          export LEANC_ID="$(tr -d ' \n' < core/formal/lean4/lean-toolchain) x86_64"
+          T0=$(date +%s)
+          PATH="$HOME/leanc-shim:$PATH" bash core/labs/demos/foafnaut/build-web-render.sh --native > "$LOG" 2>&1
+          RC=$?
+          HITS=$(wc -c < "$HOME/leanc-cache/.hits" 2>/dev/null || echo 0); MISSES=$(wc -c < "$HOME/leanc-cache/.misses" 2>/dev/null || echo 0)
+          echo "misses=$MISSES" >> "$GITHUB_OUTPUT"
+          T1=$(date +%s)
+          # Where the time went: the Lake build ends at the first LEAN line, the lab's
+          # Lean modules at the first NATIVE line.
+          stamp() { grep -m1 -E "^$1 " "$LOG" | sed -E 's/^[A-Z]+ [^ ]+ //' | xargs -I{} date -u -d "{}" +%s 2>/dev/null || true; }
+          L=$(stamp LEAN); N=$(stamp NATIVE)
+          {
+            echo "Build exit $RC in $(( (T1 - T0) / 60 )) min $(( (T1 - T0) % 60 )) s. Lake cache: ${CACHE_KEY:-none restored}$([ "$CACHE_HIT" = true ] && echo ' (exact)')."
+            if [ -n "$L" ] && [ -n "$N" ]; then
+              echo "Parts: formal/lean4 (lake build) $(( (L - T0) / 60 )) min, lab Lean modules $(( (N - L) / 60 )) min, C compile and link $(( (T1 - N) / 60 )) min."
+              echo "Lake built $(grep -cE '^(✔|⚠|ℹ) \[[0-9]+/[0-9]+\] Built ' "$LOG" || true) modules here; $(grep -cE 'Replayed ' "$LOG" || true) replayed from the cache. C objects: $HITS from the cache, $MISSES compiled."
+            fi
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RC" -ne 0 ] || [ ! -f core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so ]; then
+            {
+              echo "**The branch did not build.** First errors:"
+              echo '```'
+              grep -n -E -A6 ': error: |^error: |^✖ |build refused' "$LOG" | head -80 | cut -c1-400
+              echo '```'
+              echo "Last lines:"
+              echo '```'
+              tail -25 "$LOG" | cut -c1-400
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            grep -m5 -E ': error: |^error: ' "$LOG" | cut -c1-300 | sed "s|$GITHUB_WORKSPACE/core/||" | while IFS= read -r line; do echo "::error::$line"; done
+            exit 1
+          fi
+          # Keep only the objects this build used.
+          find "$HOME/leanc-cache" -name '*.o' ! -newer "$HOME/leanc-cache/.start" -delete
+          mkdir -p "$RUNNER_TEMP/engine"
+          cp core/labs/demos/foafnaut/.build/web-render/engines/libweb-render.so "$RUNNER_TEMP/engine/"
+          tr -d ' \n' < core/formal/lean4/lean-toolchain > "$RUNNER_TEMP/engine/lean-toolchain"
+      - name: Save the C object cache
+        if: steps.build.outputs.misses != '' && steps.build.outputs.misses >= 30
+        uses: actions/cache/save@v4
+        with:
+          path: ~/leanc-cache
+          key: leanc-objects-v1-x86_64-${{ hashFiles('core/formal/lean4/lean-toolchain') }}-${{ github.run_id }}
+      # build.yml's tail-recursion gate (tools/lean-tail-recursion-audit.py --gate), which
+      # the engine build does not run: main's build publishes no release while it fails.
+      # Reported here, not fatal: the tests still run. Only the modules compiled in this
+      # job are sure to be the branch's (the others come from the Lake cache of an older
+      # main), so a failure in one of those is listed apart.
+      - name: Tail-recursion gate (reported)
+        if: steps.build.outcome == 'success'
+        shell: bash
+        run: |
+          set -uo pipefail
+          cd core
+          [ -f tools/lean-tail-recursion-audit.py ] || exit 0
+          find formal/lean4/.lake/build/ir -name '*.c' | while read -r c; do
+            rel=${c#formal/lean4/.lake/build/ir/}
+            [ -f "formal/lean4/${rel%.c}.lean" ] || rm -f "$c"
+          done
+          # bash runs this step with -e: the audit's exit code is taken without ending the step.
+          RC=0
+          python3 tools/lean-tail-recursion-audit.py --gate > "$RUNNER_TEMP/tail-gate.txt" 2>&1 || RC=$?
+          python3 ../builds/release-tests/release-tests.py tail-gate-report --log "$RUNNER_TEMP/tail-gate.txt" --exit "$RC" \
+            --core . --newer-than "$HOME/leanc-cache/.start" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: |
+            ${{ runner.temp }}/build.log
+            ${{ runner.temp }}/tail-gate.txt
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branch-engine
+          path: ${{ runner.temp }}/engine/
+          retention-days: 3
+
+  shard:
+    name: Tests ${{ matrix.shard }}
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CORE_REPO }}
+          ref: ${{ needs.build.outputs.sha }}
+          path: core
+          # docs/web/hub/foafnaut: the engine host imports Hub modules from there (host-trace.mjs
+          # since core 2fcec0287); without them no test runs (WPT runs of 2026-11-16 02:26Z, 04:50Z).
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+      - uses: actions/download-artifact@v4
+        with:
+          name: branch-inputs
+          path: ${{ runner.temp }}/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          name: branch-engine
+          path: ${{ runner.temp }}/lib
+      - id: pins
+        run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.pins.outputs.deno }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: PyYAML and Lean's shared runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --target "$RUNNER_TEMP/pydeps" pyyaml==6.0.3
+          curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat "$RUNNER_TEMP/lib/lean-toolchain")"
+          echo "LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)" >> "$GITHUB_ENV"
+      - name: Run the tests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sudo --preserve-env env "PATH=$PATH" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" "HOME=$HOME" \
+            systemd-run --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue --uid="$(id -u)" --gid="$(id -g)" -- \
+            "$(command -v python3)" builds/release-tests/release-tests.py wpt-shard --inputs "$RUNNER_TEMP/inputs" --core core \
+            --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
+            --engine-lib "$RUNNER_TEMP/lib/libweb-render.so" --web-tag "${{ needs.plan.outputs.web_tag }}" \
+            --index ${{ matrix.shard }} --shards ${{ matrix.shards }} --platform linux-x86_64 \
+            --script-engine bubblepop --jobs 3 --max-minutes 45 --retry-minutes 10 --pydeps "$RUNNER_TEMP/pydeps"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: branch-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+
+  report:
+    name: Report
+    needs: [plan, build, shard]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: branch-inputs
+          path: ${{ runner.temp }}/inputs
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: branch-shard-*
+          path: ${{ runner.temp }}/shards
+      - env:
+          REF: 202d6b8c9c418046aa2e136478761d9ba471b77b
+        run: |
+          python3 release-tests/release-tests.py branch-report --inputs "$RUNNER_TEMP/inputs" --shards-dir "$RUNNER_TEMP/shards" \
+            --out "$RUNNER_TEMP/report" --core-ref "$REF" --core-commit "${{ needs.build.outputs.sha }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: branch-wpt-results
+          path: ${{ runner.temp }}/report/
+          retention-days: 30
