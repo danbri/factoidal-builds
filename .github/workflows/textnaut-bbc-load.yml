@@ -1,0 +1,99 @@
+name: Measure BBC Textnaut load phases
+on:
+  push:
+    branches: [wip/textnaut-bbc-load]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CANDIDATE: 76f307e51e441e60b6cc5191b66475e2c8dbc918
+  RUNTIME: 98cf12b45124a964363520bda0d84a543a19094d
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/textnaut-load/instrument.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45638334817
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Read checksum-verified engine and runtime from releases
+        run: |
+          set -euo pipefail
+          mkdir -p out engine runtime
+          test "$(git -C core rev-parse HEAD)" = "$CANDIDATE"
+          for entry in "engine:$CANDIDATE:foafnaut-linux-x86_64" "runtime:$RUNTIME:foafnaut-web"; do
+            dest=${entry%%:*}
+            pair=${entry#*:}
+            sha=${pair%%:*}
+            set=${pair#*:}
+            gh release download "build-${sha:0:12}-$set" -R "$GITHUB_REPOSITORY" -D "$dest" -p build-info.json -p "$set.tar.gz"
+            expected=$(jq -er --arg sha "$sha" --arg asset "$set.tar.gz"               'select(.source_commit == $sha) | .artifacts[$asset].sha256' "$dest/build-info.json")
+            echo "$expected  $dest/$set.tar.gz" | sha256sum -c -
+            if [[ $dest == runtime ]]; then
+              tar -xzf "$dest/$set.tar.gz" -C "$dest" docs/web/hub/html-webgpu/runtime
+            else
+              tar -xzf "$dest/$set.tar.gz" -C "$dest"
+            fi
+          done
+          archive="$PWD/capture/bbc-uk-with-photos.zip"
+          echo "32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46  $archive" | sha256sum -c -
+      - name: Measure archived and live loads with scripts on and off
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          browser="$lab/textnaut/textnaut.ts"
+          python3 experiments/textnaut-load/instrument.py "$browser"
+          deno check --no-config --import-map="$lab/textnaut/import_map.json" "$browser"
+          lib="$PWD/engine/foafnaut/libweb-render.so"
+          lib_hash=$(jq -er '.artifacts["foafnaut-linux-x86_64.tar.gz"].files["foafnaut/libweb-render.so"].sha256' engine/build-info.json)
+          echo "$lib_hash  $lib" | sha256sum -c -
+          archive="$PWD/capture/bbc-uk-with-photos.zip"
+          sha256sum "$browser" "$lib" "$archive" > out/inputs.sha256
+          for mode in archive live; do
+            preload=()
+            if [[ $mode == archive ]]; then
+              export REALPAGES_REPLAY="$archive"
+              preload=(--preload "$lab/realpages/replay.ts")
+            else
+              unset REALPAGES_REPLAY
+            fi
+            for script in on off; do
+              switches=()
+              if [[ $script == off ]]; then switches=(--no-scripts); fi
+              timeout 160s deno run "${preload[@]}" --no-prompt --allow-read --allow-ffi --allow-net --allow-env \
+                --import-map="$lab/textnaut/import_map.json" "$browser" --dump --width 160 --timing --engine "$lib" \
+                "${switches[@]}" https://www.bbc.co.uk/news > "out/$mode-$script.txt" 2> "out/$mode-$script.log"
+              grep '^{"type":"textnaut-load-phases"' "out/$mode-$script.log" | jq -e --arg variant "$mode-$script" \
+                'select(.phases["load.prepare"].calls==1 and .phases["load.settle"].calls==1) | {variant} + .' > "out/$mode-$script.json"
+              jq -c . "out/$mode-$script.json" >> "$GITHUB_STEP_SUMMARY"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: textnaut-bbc-load-phases
+          path: out/
+          retention-days: 7
