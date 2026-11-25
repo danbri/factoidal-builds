@@ -45,7 +45,9 @@ jobs:
           test "$(git rev-parse HEAD)" = "$CORE"
           test "$(git rev-parse HEAD^)" = "$ORIGINAL"
           lab=labs/demos/foafnaut
-          mkdir -p ../out
+          runtime="$lab/.build/native-html/runtime"
+          mkdir -p ../out "$runtime"
+          cp "$lab/.build/web-render/engines/web-render."{mjs,wasm} "$runtime/"
           font="$lab/fallback_fonts_test.ts"
           bytes="$lab/native_html_bytes_test.ts"
           check_fonts() { deno test --no-config --no-npm --node-modules-dir=none --allow-read "$font"; }
@@ -56,12 +58,12 @@ jobs:
             echo "The old font fixture unexpectedly passed" >&2
             exit 1
           fi
-          grep -F "particle-rex" ../out/original-font.log
+          grep -F "particle-rex" ../out/original-font.log || { cat ../out/original-font.log; exit 1; }
           if check_bytes > ../out/original-bytes.log 2>&1; then
             echo "The old static scene fixture unexpectedly passed" >&2
             exit 1
           fi
-          grep -F "Page scripts need" ../out/original-bytes.log
+          grep -F "Page scripts need" ../out/original-bytes.log || { cat ../out/original-bytes.log; exit 1; }
           git restore --source="$CORE" -- "$font" "$bytes"
           check_fonts 2>&1 | tee ../out/candidate-font.log
           check_bytes 2>&1 | tee ../out/candidate-bytes.log
