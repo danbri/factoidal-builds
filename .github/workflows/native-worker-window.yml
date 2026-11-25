@@ -86,7 +86,7 @@ jobs:
           cat > host/foafnaut <<'BASH'
           #!/bin/bash
           exec "$DENO_BIN" run -A --no-check --no-config --no-npm --unstable-webgpu --unstable-ffi \
-            "$LAB/run_html.ts" --native-engine "$(dirname "$0")/libweb-render.so" "$@"
+            "$LAB/run_html.ts" --follow-links --native-engine "$(dirname "$0")/libweb-render.so" "$@"
           BASH
           chmod +x host/foafnaut
           for arm in a1 b1 b2 a2; do
