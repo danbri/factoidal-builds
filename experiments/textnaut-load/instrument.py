@@ -24,10 +24,19 @@ async function timed<T>(name: string, action: () => Promise<T>): Promise<T> {
   try { return await action(); }
   finally { notePhase(name, started); }
 }
+const startupAnswers: { ms: number; pending: boolean; status?: number; wireBytes: number; addresses: number }[] = [];
 function scriptSession(engine: HTMLEngine, ...args: Parameters<HTMLEngine["scriptSession"]>) {
   const started = performance.now();
-  try { return engine.scriptSession(...args); }
-  finally { notePhase("engine." + args[1].action, started); }
+  const result = engine.scriptSession(...args);
+  notePhase("engine." + args[1].action, started);
+  if (args[1].action === "syncAnswer") {
+    const answer = args[1].answer as Awaited<ReturnType<typeof rawNetAnswer>>;
+    startupAnswers.push({
+      ms: performance.now() - started, pending: !!result.netSync,
+      status: answer.status, wireBytes: answer.bodyBase64?.length ?? 0, addresses: answer.addresses?.length ?? 0,
+    });
+  }
+  return result;
 }
 const netAnswer = (request: Parameters<typeof rawNetAnswer>[0]) =>
   timed("network." + networkPhase, () => rawNetAnswer(request));
@@ -46,7 +55,7 @@ replace(
   await timed("load.settle", () => settle(engine, doc, options));'''
 )
 replace('if (parsed.timing) {', '''if (parsed.timing) {
-      console.error(JSON.stringify({ type: "textnaut-load-phases", ...rendered.ms, phases }));''')
+      console.error(JSON.stringify({ type: "textnaut-load-phases", ...rendered.ms, phases, startupAnswers }));''')
 p.write_text(source)
 
 # Deno adds Node timer types through the survey imports. Keep the same timer at runtime.

@@ -59,7 +59,7 @@ jobs:
           done
           archive="$PWD/capture/bbc-uk-with-photos.zip"
           echo "32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46  $archive" | sha256sum -c -
-      - name: Measure archived and live loads with scripts on and off
+      - name: Inspect each startup answer on archived and live BBC
         run: |
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
@@ -80,7 +80,7 @@ jobs:
             else
               unset REALPAGES_REPLAY
             fi
-            for script in on off; do
+            for script in on; do
               switches=()
               if [[ $script == off ]]; then switches=(--no-scripts); fi
               timeout 160s deno run "${preload[@]}" --no-prompt --allow-read --allow-ffi --allow-net --allow-env \
@@ -88,7 +88,7 @@ jobs:
                 "${switches[@]}" https://www.bbc.co.uk/news > "out/$mode-$script.txt" 2> "out/$mode-$script.log"
               grep '^{"type":"textnaut-load-phases"' "out/$mode-$script.log" | jq -e --arg variant "$mode-$script" \
                 'select(.phases["load.prepare"].calls==1 and .phases["load.settle"].calls==1) | {variant} + .' > "out/$mode-$script.json"
-              jq -c . "out/$mode-$script.json" >> "$GITHUB_STEP_SUMMARY"
+              jq -c 'del(.startupAnswers)' "out/$mode-$script.json" >> "$GITHUB_STEP_SUMMARY"
             done
           done
       - uses: actions/upload-artifact@v4
