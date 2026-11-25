@@ -1,16 +1,16 @@
-name: Measure MDN after reusing its specified font sizes
+name: Measure MDN after indexing CSS property names
 on:
   push:
-    branches: [wip/mdn-font-size-cascade-replay]
+    branches: [wip/css-applied-name-hash-replay]
 permissions:
   actions: read
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
-  BASELINE_RUN: "45522279585"
-  CANDIDATE_RUN: "45524529287"
-  BASELINE: d38eaddb33bbdda0a14f9f4b6703f456235855fd
-  CANDIDATE: da180a942eae7c56bf154a79f1f45f279a3afebe
+  BASELINE_RUN: "45536215217"
+  CANDIDATE_RUN: "45536215156"
+  BASELINE: 856332018542401c736a133af05d1653fed525ee
+  CANDIDATE: af97d7a27fb9b691524efe6c7af519e6fe752d91
   WEB: build-05ec0b29ca8a-foafnaut-web
 jobs:
   wait-engine:
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: d38eaddb33bbdda0a14f9f4b6703f456235855fd
+          ref: 856332018542401c736a133af05d1653fed525ee
           path: core
           persist-credentials: false
           sparse-checkout: |
