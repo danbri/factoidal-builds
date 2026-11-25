@@ -1,0 +1,199 @@
+name: Measure overlapping graphics startup and first document preparation
+on:
+  push:
+    branches: [wip/linux-overlap-first-document]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
+  HOST: bcbda8cceca59db52816e06bb29639a199a43987
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [fixture, desktop-govuk, desktop-w3c-home, m-us]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            experiments/gpu-overlap
+            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+            third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.HOST }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45524300796
+          name: branch-engine
+          path: native
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Download the published Linux release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=build-aa2c4b775740-foafnaut-browser-linux-x86_64
+          mkdir -p package
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D package \
+            -p foafnaut-browser-linux-x86_64.tar.gz -p build-info.json -p window-smoke.json
+      - name: Check the exact package and install the X11 and Vulkan runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          echo "6e12ebd78d447c6836e8f5bced9892d8a309586740604089b5f7369afa5a6684  ${archives[0]}" | sha256sum -c -
+          tar -xzf "${archives[0]}" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          (cd "$(dirname "$binary")" && sha256sum -c SHA256SUMS)
+          jq -e '.commitFull=="aa2c4b775740efbf644ea59fe3d9b0bf881cae38"' "$(dirname "$binary")/BUILD-INFO.json"
+          echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          mkdir -p out
+          sha256sum package/*.json "${archives[0]}" "$binary" core/labs/demos/foafnaut/realpages/pages.json > out/inputs.sha256
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
+          install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
+      - name: Prepare identical released Wasm runtime and pinned page inputs
+        env:
+          CASE: ${{ matrix.case }}
+        run: |
+          set -euo pipefail
+          lab="$PWD/core/labs/demos/foafnaut"
+          test "$(git -C core rev-parse HEAD)" = "$HOST"
+          test "$(git hash-object "$lab/run_html.ts")" = ff44425b54c2bc5970125b1248b821a417e1e89b
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45524300796/jobs" --jq '.jobs[].name' |
+            grep -Fx "Build libweb-render.so from $CORE"
+          native="$PWD/native/libweb-render.so"
+          echo "NATIVE_LIB=$native" >> "$GITHUB_ENV"
+          mkdir -p web snapshots
+          gh release download "build-${CORE:0:12}-foafnaut-web" -R "$GITHUB_REPOSITORY" -D web -p foafnaut-web.tar.gz
+          echo 'bd25336995c144135a50f0bef8a6e608153277110500826db7b9ecfa132858f9  web/foafnaut-web.tar.gz' | sha256sum -c -
+          tar -xzf web/foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          cp "$(dirname "$FOAFNAUT_BINARY")/libnative-window.so" "$lab/.build/native/"
+          python3 experiments/gpu-overlap/instrument.py "$lab/run_html.ts" "$RUNNER_TEMP/variants"
+          sha256sum web/foafnaut-web.tar.gz "$lab/run_html.ts" "$native" "$RUNNER_TEMP/variants/"*.ts >> out/inputs.sha256
+          for role in a b; do
+            cp "$RUNNER_TEMP/variants/$role.ts" "$lab/run_html.ts"
+            deno check --no-config --no-npm --unstable-ffi --unstable-webgpu "$lab/run_html.ts" >> out/typecheck.txt 2>&1
+          done
+          case "$CASE" in
+            desktop-w3c-home) capture=45431269816; digest=359b431764ad4eb9debb4e5dc2e4571d968cd95447b52fe767f9933145f4a388 ;;
+            desktop-govuk) capture=45430099580; digest=f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e ;;
+            m-us|wp-us)
+              snapshot="$PWD/third_party/realpages/en.wikipedia.org/$CASE-20261115.zip"
+              if [[ "$CASE" == m-us ]]; then blob=944a0bff5adaa6b9cdd97a41b1d2a8852310c2d3; else blob=cef358a866925858473ee36cd02ecee876d8291a; fi
+              test "$(git hash-object "$snapshot")" = "$blob" ;;
+            fixture) ;;
+          esac
+          if [[ -n ${capture:-} ]]; then
+            gh run download "$capture" -R "$GITHUB_REPOSITORY" -n "$CASE-snapshot" -D snapshots
+            snapshot=$(find "$PWD/snapshots" -name '*.zip' -print -quit)
+            echo "$digest  $snapshot" | sha256sum -c -
+          fi
+          if [[ -n ${snapshot:-} ]]; then
+            sha256sum "$snapshot" >> out/inputs.sha256
+            echo "REALPAGES_REPLAY=$snapshot" >> "$GITHUB_ENV"
+          fi
+          echo "LAB=$lab" >> "$GITHUB_ENV"
+          echo "DENO_BIN=$(command -v deno)" >> "$GITHUB_ENV"
+      - name: Alternate serial and overlapping startup
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          GALLIVM_PERF: nopt
+          CASE: ${{ matrix.case }}
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/host" <<'BASH'
+          #!/bin/bash
+          preload=()
+          if [[ -n ${REALPAGES_REPLAY:-} ]]; then preload+=(--preload "$LAB/realpages/replay.ts"); fi
+          exec "$DENO_BIN" run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
+            "${preload[@]}" "$LAB/run_html.ts" --follow-links --native-engine "$NATIVE_LIB" "$@"
+          BASH
+          chmod +x "$RUNNER_TEMP/host"
+          cat > "$RUNNER_TEMP/fixture.html" <<'HTML'
+          <!doctype html><title>Initial window size</title>
+          <style>body{margin:0;background:#ddd}p{height:280px;margin:0;background:#4c8d45;color:#111}p:nth-child(2n){background:#d8d2f0}</style>
+          <script>console.log('viewport before first paint', innerWidth, innerHeight);</script>
+          <p>First section</p><p>Second section</p><p>Third section</p><p>Fourth section</p>
+          HTML
+          rc=0
+          for arm in a1 b1 b2 a2; do
+            host="$RUNNER_TEMP/variants/${arm:0:1}.ts"
+            cp "$host" "$LAB/run_html.ts"
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$arm" XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$arm"
+            install -d -m 700 "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+            xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 experiments/gpu-overlap/probe.py \
+              "$RUNNER_TEMP/host" "$LAB" "$PWD/out/$arm" "$CASE" "$arm" "$RUNNER_TEMP/fixture.html" || rc=1
+          done
+          test "$rc" = 0
+          /usr/bin/python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from pathlib import Path
+          from PIL import Image
+          output=Path("out")
+          case=os.environ["CASE"]
+          report={}
+          print("| Arm | Document ms | Adapter ms | Device ms | Overlap ms | Target frame ms | Wheel |")
+          print("| --- | ---: | ---: | ---:| ---: | ---: | --- |")
+          for arm in ("a1","b1","b2","a2"):
+              row=json.loads((output/arm/"summary.json").read_text())[0]
+              assert row["state"]=="presented" and row["documentColorsAtLeast"]>=2,row
+              frame=row["firstFrame"]
+              assert frame["frame"]==row["initialFrame"]["frame"],row
+              log=(output/arm/(case+".log")).read_text()
+              events=[json.loads(line) for line in log.splitlines()
+                      if line.startswith('{"type":"native-html-startup-overlap"')]
+              assert len(events)==6,events
+              phase={entry["phase"]:entry["t"] for entry in events}
+              assert '"engine":"native ' in log
+              overlap=max(0,min(phase["document-end"],phase["device-end"])-max(phase["document-start"],phase["adapter-start"]))
+              if arm.startswith("a"): assert phase["document-end"]<=phase["adapter-start"],phase
+              report[arm]={**row,"startupPhases":phase,"gpuDocumentOverlapMs":overlap}
+              print(f"| {arm} | {phase['document-end']-phase['document-start']:.1f} | {phase['adapter-end']-phase['adapter-start']:.1f} |"
+                    f" {phase['device-end']-phase['device-start']:.1f} | {overlap:.1f} | {frame['t']} | {row.get('scrollChangesPixels')} |")
+          (output/"report.json").write_text(json.dumps(report,indent=2)+"\n")
+          if case=="fixture":
+              for name in ("fixture.png","fixture-scroll.png"):
+                  crops=[]
+                  for arm,row in report.items():
+                      with Image.open(output/arm/name) as im:
+                          top=row["firstFrame"]["layers"]["top"]
+                          crops.append(im.crop((0,top,im.width,im.height)).tobytes())
+                  assert len(set(crops))==1,name
+              for arm in ("a1","b1","b2","a2"):
+                  log=(output/arm/"fixture.log").read_text()
+                  expected="1024 640"
+                  assert f"viewport before first paint {expected}" in log, arm
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gpu-document-overlap-${{ matrix.case }}
+          path: out/
+          retention-days: 7
