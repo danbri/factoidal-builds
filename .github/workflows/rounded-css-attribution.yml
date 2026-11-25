@@ -1,0 +1,126 @@
+name: Attribute CSS pixel changes to the rounded-corner commit
+on:
+  push:
+    branches: [wip/994-rounded-css-attribution]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE_RUN: "45624817921"
+  CANDIDATE_RUN: "45613857797"
+  BASELINE: 58e31103ead2d4adfe1e850cbf249501563bb244
+  CANDIDATE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  WPT: 056c528ccb5844b01628e0cd667520535dee16cc
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Verify that both source revisions have their exact engine artifacts
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$BASELINE_RUN"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+            sleep 30
+          done
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $BASELINE"
+          test "$(gh api "repos/danbri/factoidal-core/git/commits/$CANDIDATE" --jq '.parents[0].sha')" = "$BASELINE"
+  reftest:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/css-rounded-attribution/cases.txt
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: ${{ env.WPT }}
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css
+            fonts
+            images
+            common
+            resources
+            svg
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: foafnaut-linux-native-worker
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Record input identities and run the same pixel checks twice
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git -C wpt rev-parse HEAD)" = "$WPT"
+          (cd engines/candidate && grep -Fx "$CANDIDATE" source-commit.txt && sha256sum -c SHA256SUMS)
+          mkdir -p runtime out
+          tag="build-${CANDIDATE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+          sha256sum engines/*/libweb-render.so MANIFEST.json experiments/css-rounded-attribution/cases.txt > out/inputs.sha256
+          only=$(paste -sd, experiments/css-rounded-attribution/cases.txt)
+          for role in baseline candidate; do
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json --wpt-root "$PWD/wpt" \
+              --native-engine "$PWD/engines/$role/libweb-render.so" --prefix css/ --jobs 2 --only "$only" --out "$PWD/out/$role"
+          done
+          python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import collections
+          import json
+          from pathlib import Path
+
+          def load(role):
+              result = json.loads(Path(f"out/{role}/results.json").read_text())
+              assert result["valid"], (role, result.get("invalidReason"))
+              return {entry["test"]: entry["status"] for entry in result["tests"]}
+
+          cases=set(Path("experiments/css-rounded-attribution/cases.txt").read_text().splitlines())
+          baseline,candidate=load("baseline"),load("candidate")
+          assert baseline.keys() == candidate.keys() == cases, (len(baseline),len(candidate),len(cases))
+          changes={case:[baseline[case],candidate[case]] for case in sorted(cases) if baseline[case] != candidate[case]}
+          Path("out/changes.json").write_text(json.dumps(changes,indent=2)+"\n")
+          print(f"Exact-parent comparison of {len(cases)} cases. The previous full run selected these cases.")
+          print(collections.Counter(map(tuple,changes.values())))
+          for name, (before, after) in changes.items():
+              print(f"- `{name}` {before} → {after}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rounded-css-exact-parent
+          path: out/
+          retention-days: 7
