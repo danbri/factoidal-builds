@@ -8,9 +8,9 @@ permissions:
 env:
   GH_TOKEN: ${{ github.token }}
   BASELINE: 22fdd694d0d10c3b95fc0801e63883bc238a1035
-  CANDIDATE: 67d59793bc3694ac3be46c4510a27c4913e33ddf
+  CANDIDATE: 6711f98f4a401f5e94b9ffe21475b68f59c5465e
   BASELINE_RUN: "45631488895"
-  CANDIDATE_RUN: "45631286428"
+  CANDIDATE_RUN: "45633571575"
   WEB: build-e4445d14752c-foafnaut-web
 jobs:
   wait:
@@ -30,7 +30,7 @@ jobs:
               sleep 30
             done
           done
-          test "$(gh api "repos/danbri/factoidal-core/git/commits/$CANDIDATE" --jq '.parents[0].sha')" = "$BASELINE"
+          test "$(gh api "repos/danbri/factoidal-core/compare/$BASELINE...$CANDIDATE" --jq '.merge_base_commit.sha')" = "$BASELINE"
   replay:
     needs: wait
     runs-on: ubuntu-latest
