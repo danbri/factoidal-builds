@@ -1,0 +1,139 @@
+name: Check the original canvas reftest with both sizing fixes
+on:
+  push:
+    branches: [codex/canvas-and-zero-font-native-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 76f307e51e441e60b6cc5191b66475e2c8dbc918
+  WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
+  RUNTIME: 98cf12b45124a964363520bda0d84a543a19094d
+  BASELINE: 79478835ae409bda926bb2be5452f44056eac851
+  BASELINE_RUN: '45690458775'
+  CANDIDATE: 3306df8f7f10f87e5cb2524f5cfce27dea59d04a
+  CANDIDATE_RUN: '45718882092'
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            experiments/canvas-and-zero-font-native-replay
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            formal/lean4/lean-toolchain
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: web-platform-tests/wpt
+          ref: ${{ env.WPT }}
+          path: wpt
+          persist-credentials: false
+          sparse-checkout: |
+            css/css-fonts
+            html/rendering/replaced-elements/attributes-for-embedded-content-and-images
+            resources
+      - name: Verify the two native build identities
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          [[ "$BASELINE" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CANDIDATE" =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BASELINE_RUN/jobs" |
+            jq -e --arg sha "$BASELINE" '.jobs[] | select(.name == ("Build libweb-render.so from " + $sha) and .conclusion == "success") | {id,name,status,conclusion}' > out/baseline-build.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN" |
+            jq -e --arg sha "$CANDIDATE" 'select(.display_title == ("core " + $sha)) | {id,display_title,status,conclusion}' > out/candidate-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN/jobs" |
+            jq -e '.jobs[] | select(.name == "foafnaut-linux-native-worker" and .conclusion == "success") | {id,name,status,conclusion}' > out/candidate-build.json
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: foafnaut-linux-native-worker
+          path: candidate
+          github-token: ${{ github.token }}
+      - name: Verify the packaged native library
+        run: |
+          set -euo pipefail
+          test "$(cat candidate/source-commit.txt)" = "$CANDIDATE"
+          ( cd candidate && sha256sum -c SHA256SUMS )
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Extract the pinned web module imports used by the host
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          test "$(git -C wpt rev-parse HEAD)" = "$WPT"
+          mkdir -p out runtime
+          set=foafnaut-web
+          gh release download "build-${RUNTIME:0:12}-$set" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p "$set.tar.gz"
+          expected=$(jq -er --arg sha "$RUNTIME" --arg file "$set.tar.gz" \
+            'select(.source_commit == $sha) | .artifacts[$file].sha256' runtime/build-info.json)
+          echo "$expected  runtime/$set.tar.gz" | sha256sum -c -
+          tar -xzf "runtime/$set.tar.gz" -C runtime docs/web/hub/html-webgpu/runtime
+          echo '3250ee5d9477e3a4540b55b95361ba56e960b7e7904ae216f92b7aa0547b107f  baseline/libweb-render.so' | sha256sum -c -
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+      - name: Compare zero-width text and the spacing controls
+        run: |
+          set -euo pipefail
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          toolchain=$(cat baseline/lean-toolchain)
+          test "$toolchain" = "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+          "$HOME/.elan/bin/elan" toolchain install "$toolchain"
+          export LD_LIBRARY_PATH="$("$HOME/.elan/bin/elan" run "$toolchain" lean --print-prefix)/lib/lean"
+          test -d "$LD_LIBRARY_PATH"
+          fixture="$PWD/experiments/canvas-and-zero-font-native-replay"
+          wpt="$PWD/wpt/css/css-fonts"
+          curl -fsSL --retry 3 -o out/wpt-3-ref.html "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/css/reference/ref-filled-green-200px-square.html"
+          echo '6a0bda50a3e358356fcf79c51b8de1d2d62ceebca0fdfe857f782b7cf4c7391e  out/wpt-3-ref.html' | sha256sum -c -
+          canvas="$PWD/wpt/html/rendering/replaced-elements/attributes-for-embedded-content-and-images/canvas-dimension-attributes.html"
+          echo "9044a15855c820a5d01d41b0ef5a0f9beda8c974756c775046491919ceca8778  $canvas" | sha256sum -c -
+          python3 - "$fixture" "$wpt" "$PWD/out/wpt-3-ref.html" "$canvas" > out/jobs.jsonl <<'PY'
+          import json,sys
+          generated, wpt, third_ref, canvas = sys.argv[1:]
+          files = [
+              ("pair", f"{generated}/font-pair.html"), ("pair-ref", f"{generated}/font-pair-ref.html"),
+              ("positive", f"{generated}/font-pair-positive.html"), ("spaced", f"{generated}/font-pair-spaced.html"),
+              ("wpt-1", f"{wpt}/font-size-zero-1.html"), ("wpt-1-ref", f"{wpt}/font-size-zero-1-ref.html"),
+              ("wpt-2", f"{wpt}/font-size-zero-2.html"), ("wpt-2-ref", f"{wpt}/font-size-zero-2-ref.html"),
+              ("wpt-3", f"{wpt}/font-size-zero-3.html"), ("wpt-3-ref", third_ref),
+              ("canvas", canvas),
+          ]
+          for name, path in files:
+              print(json.dumps({"url":"file://" + path,"file":name + ".png","width":800,"height":600}))
+          PY
+          sha256sum baseline/libweb-render.so candidate/libweb-render.so "$canvas" "$fixture"/*.html "$wpt"/font-size-zero-{1,2,3}*.html > out/inputs.sha256
+          renderer=core/tests/browser-wpt/reftest-render.ts
+          for engine in baseline candidate; do
+            lib="$PWD/$engine/libweb-render.so"
+            deno run --no-check --no-config --no-npm --unstable-ffi -A "$renderer" \
+              --native-engine "$lib" --list out/jobs.jsonl --out "out/$engine" | tee "out/$engine.log"
+          done
+          python3 "$fixture/report-font.py" | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canvas-and-zero-font-native-replay
+          path: out/
+          retention-days: 7
