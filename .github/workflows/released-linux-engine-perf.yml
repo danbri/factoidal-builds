@@ -59,12 +59,12 @@ jobs:
             else
               mkdir "$dest/$set"
               tar -xzf "$dest/$set.tar.gz" -C "$dest/$set"
-              engine_sha=$(jq -er --arg asset "$set.tar.gz" '.artifacts[$asset].files["libweb-render.so"].sha256' "$dest/build-info.json")
-              echo "$engine_sha  $dest/$set/libweb-render.so" | sha256sum -c -
+              engine_sha=$(jq -er --arg asset "$set.tar.gz" '.artifacts[$asset].files["foafnaut/libweb-render.so"].sha256' "$dest/build-info.json")
+              echo "$engine_sha  $dest/$set/foafnaut/libweb-render.so" | sha256sum -c -
             fi
           done
-          test -s engines/parent/foafnaut-linux-x86_64/libweb-render.so
-          test -s engines/candidate/foafnaut-linux-x86_64/libweb-render.so
+          test -s engines/parent/foafnaut-linux-x86_64/foafnaut/libweb-render.so
+          test -s engines/candidate/foafnaut-linux-x86_64/foafnaut/libweb-render.so
           cp engines/parent/build-info.json out/parent-build-info.json
           cp engines/candidate/build-info.json out/candidate-build-info.json
           cp runtime/build-info.json out/runtime-build-info.json
@@ -80,14 +80,14 @@ jobs:
           renderer=core/tests/browser-wpt/reftest-render.ts
           python3 experiments/released-linux-engine-perf/instrument.py "$renderer"
           deno check --no-config --no-npm "$renderer"
-          sha256sum engines/*/foafnaut-linux-x86_64/libweb-render.so "$renderer" "$REALPAGES_REPLAY" > out/inputs.sha256
+          sha256sum engines/*/foafnaut-linux-x86_64/foafnaut/libweb-render.so "$renderer" "$REALPAGES_REPLAY" > out/inputs.sha256
           printf '%s\n' '{"url":"https://www.bbc.co.uk/news","file":"bbc.png","width":1280,"height":735}' > out/jobs.jsonl
           sample=0
           for role in parent candidate candidate parent; do
             sample=$((sample+1))
             dir="out/$sample-$role"
             mkdir "$dir"
-            deno run --no-config --no-npm --unstable-ffi -A --preload "$lab/realpages/replay.ts" "$renderer"               --native-engine "$PWD/engines/$role/foafnaut-linux-x86_64/libweb-render.so"               --list out/jobs.jsonl --out "$dir" 2>&1 | tee "$dir/run.log"
+            deno run --no-config --no-npm --unstable-ffi -A --preload "$lab/realpages/replay.ts" "$renderer"               --native-engine "$PWD/engines/$role/foafnaut-linux-x86_64/foafnaut/libweb-render.so"               --list out/jobs.jsonl --out "$dir" 2>&1 | tee "$dir/run.log"
             grep '^__done ' "$dir/run.log" | cut -d' ' -f2- | jq -e 'select(.status=="ok")' > "$dir/result.json"
             grep '^{"type":"everyday-phase"' "$dir/run.log" | jq -e               'select(.times.cpuFrame>0 and .methods["prepare.scriptSession"].calls>0)' > "$dir/phase.json"
             jq -c --arg role "$role" '{role,times,session:.methods["prepare.scriptSession"]}'               "$dir/phase.json" >> "$GITHUB_STEP_SUMMARY"
