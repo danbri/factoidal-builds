@@ -5,6 +5,16 @@ source = runner.read_text()
 anchor = "  const rgba=new Uint8Array(buffer,offset,length);"
 assert source.count(anchor) == 1
 probe = """
+
+  const inspected = engine.inspect(source,{...options,url:page.url,liberal:true}) as unknown as
+      {images?: {key:string}[]};
+  if (!Array.isArray(inspected.images) || !Array.isArray(options.heldImages)) {
+    throw new Error("missing image declarations or held bytes");
+  }
+  const held = Object.fromEntries((options.heldImages as {key:string;sha256:string}[]).map(item => [item.key,item.sha256]));
+  await Deno.writeTextFile("out/document-image-keys.json", JSON.stringify({
+    pictures: inspected.images.map(item => item.key), held,
+  }, null, 2));
   const byteView = (key: string) => {
     const n = scene[key];
     if (typeof n !== "number") throw new Error(`no ${key}`);

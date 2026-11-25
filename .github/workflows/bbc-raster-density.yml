@@ -8,9 +8,9 @@ permissions:
 env:
   CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
   BASE: 839dc27f0d873bbef749fc6ad36ecb2bf6e95316
-  CANDIDATE: 9d3c843103e78dd854de2cfcd3bd773d107ad200
+  CANDIDATE: c80b56516c9e75def5e809cad577f47f3354dc9e
   BASE_RUN: "45649724924"
-  CANDIDATE_RUN: "45649679340"
+  CANDIDATE_RUN: "45658716312"
   ARCHIVE_SHA: 32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46
   GH_TOKEN: ${{ github.token }}
 jobs:
@@ -101,7 +101,9 @@ jobs:
             grep -F '"status":"ok"' "out/$role/foafnaut.log"
           done
           test -s out/foafnaut.png-paint-bitmap.json
-          jq -c ' .[] | {bounds,width,height} ' out/foafnaut.png-paint-bitmap.json
+          sudo apt-get update
+          sudo apt-get install -y python3-pil
+          /usr/bin/python3 experiments/bbc-grid-integrated/measure-held-pixels.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
