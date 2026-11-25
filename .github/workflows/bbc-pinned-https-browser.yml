@@ -129,7 +129,7 @@ jobs:
             xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 experiments/bbc-linux-startup/probe.py \
               "$RUNNER_TEMP/host" "$LAB" "$PWD/out/$rep" "$CASE" "$rep" ""
           done
-          python3 experiments/bbc-pinned-https/report.py "$PWD/out" "$MODE" | tee "$GITHUB_STEP_SUMMARY"
+          /usr/bin/python3 experiments/bbc-pinned-https/report.py "$PWD/out" "$MODE" | tee "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

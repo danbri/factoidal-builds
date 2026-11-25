@@ -2,6 +2,7 @@ from collections import Counter
 from hashlib import sha256
 from pathlib import Path
 import json, sys
+from PIL import Image
 
 out = Path(sys.argv[1])
 mode = sys.argv[2]
@@ -29,7 +30,14 @@ for arm in ("a1","b1","b2","a2"):
     https = [r for r in requests if r["transfer"] == "pinned" and r["method"] == "GET"]
     assert https and any(r["status"] == 200 for r in https), (mode,arm,requests)
     reply_signature = [(r["host"],r["method"],r["transfer"],r["status"],r["bodyDigest"]) for r in requests]
+    with Image.open(path / (case+".png")) as img:
+        top = row["firstFrame"]["layers"]["top"]
+        content = img.crop((0,top,img.width,img.height)).tobytes()
+    resourceErrors = [line for line in (path / (case+".log")).read_text().splitlines()
+                      if "Bad resource ID" in line]
     report[arm] = {
+        "resourceErrors": len(resourceErrors),
+        "documentPixels":sha256(content).hexdigest(),
         "firstMs":row["presentedMs"],"windowMs":row["windowMs"],"scrollMs":row.get("scrollObservedMs"),
         "scriptStartMs":round(phase["script-ready"]-phase["script-start"],1),
         "pinnedFetchMs":round(sum(r["fetchMs"] for r in https),1),
@@ -41,8 +49,9 @@ for arm in ("a1","b1","b2","a2"):
     }
 summary = {"mode":mode,"arms":report,
            "identicalReplies":len({r["repliesFingerprint"] for r in report.values()})==1,
-           "identicalPngs":len({r["firstPng"] for r in report.values()})==1}
+           "identicalDocumentPixels":len({r["documentPixels"] for r in report.values()})==1}
 (out / "pair.json").write_text(json.dumps(summary,indent=2)+"\n")
 print("```json",json.dumps(summary,indent=2),"```",sep="\n")
+assert not any(arm["resourceErrors"] for arm in report.values()),summary
 if mode == "replay":
-    assert summary["identicalReplies"],summary
+    assert summary["identicalReplies"] and summary["identicalDocumentPixels"],summary

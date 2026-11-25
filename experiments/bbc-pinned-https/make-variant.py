@@ -109,7 +109,7 @@ def swap(before, after):
 swap('export async function netAnswer(w:NetWire,opts:NetOptions={}):Promise<NetAnswer>{',
      'export async function netAnswer(w:NetWire,opts:NetOptions={},batch?:PinnedHTTPSBatch):Promise<NetAnswer>{')
 swap('  let client:Deno.HttpClient|undefined,done=()=>{};',
-     '  let client:Deno.HttpClient|undefined,pooled=false,done:()=>void=()=>{};')
+     '  let client:Deno.HttpClient|undefined,pooled=false,done:(()=>void)|undefined;')
 swap('        ({client,done}=await tunnelClient(`${u.hostname}:${w.port}`,w.address,w.port??443,opts));',
      '''        const port=w.port??443;
         if(batch&&w.method==="GET"&&w.bodyBase64===undefined){
@@ -119,5 +119,8 @@ swap('        ({client,done}=await tunnelClient(`${u.hostname}:${w.port}`,w.addr
           ({client,close:done}=tunnelClient(`${u.hostname}:${port}`,w.address,port,opts));
         }''')
 swap('  finally{try{client?.close();}catch{/* closed */}done();}',
-     '  finally{if(!pooled)try{client?.close();}catch{/* closed */}done();}')
+     '''  finally{
+    if(done)done();
+    else if(!pooled)try{client?.close();}catch{/* closed */}
+  }''')
 path.write_text(source)
