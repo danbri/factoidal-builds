@@ -1,0 +1,19 @@
+name: Request exact image placeholder package check
+on:
+  push:
+    branches: [codex/placeholder-exact-package]
+    paths: [.github/workflows/request-placeholder-package.yml]
+permissions:
+  actions: write
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Request the standard package gate for the exact core commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CORE: b60d8939888756781b9296bc5117f92f375d2a4d
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/build.yml/dispatches" \
+            -f ref=main -f "inputs[core_ref]=$CORE"
