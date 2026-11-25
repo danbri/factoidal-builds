@@ -1,7 +1,7 @@
-name: Recheck canvas bitmap sizing on three pinned native engines
+name: Compare zero font size in two pinned Linux native engines
 on:
   push:
-    branches: [codex/canvas-size-native-replay]
+    branches: [codex/zero-font-native-replay]
 permissions:
   contents: read
   actions: read
@@ -10,10 +10,8 @@ env:
   CORE: 76f307e51e441e60b6cc5191b66475e2c8dbc918
   WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
   RUNTIME: 98cf12b45124a964363520bda0d84a543a19094d
-  RATIO_PARENT: 79545173384efb69fe8c58c8b90080ef7274e586
-  RATIO_PARENT_RUN: '45681427052'
-  CANDIDATE: 79478835ae409bda926bb2be5452f44056eac851
-  CANDIDATE_RUN: '45690458775'
+  CANDIDATE: e05848eb8b6be6d99fd8458ce10fca13cdafdc2e
+  CANDIDATE_RUN: '45698004376'
 jobs:
   compare:
     runs-on: ubuntu-24.04
@@ -23,8 +21,7 @@ jobs:
         with:
           persist-credentials: false
           sparse-checkout: |
-            experiments/wpt-layout-image-inputs/instrument.py
-            experiments/wpt-layout-image-inputs/canvas-expanded.html
+            experiments/zero-font-native-replay
           sparse-checkout-cone-mode: false
       - uses: actions/checkout@v4
         with:
@@ -45,26 +42,16 @@ jobs:
           path: wpt
           persist-credentials: false
           sparse-checkout: |
-            css/css-sizing/aspect-ratio
-            html/rendering/replaced-elements/attributes-for-embedded-content-and-images
+            css/css-fonts
             resources
-      - name: Verify the exact native build identities
+      - name: Verify the exact native candidate build
         run: |
           set -euo pipefail
           mkdir -p out
-          for entry in "ratio-parent:$RATIO_PARENT_RUN:$RATIO_PARENT" "candidate:$CANDIDATE_RUN:$CANDIDATE"; do
-            IFS=: read -r role run sha <<< "$entry"
-            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" |
-              jq -e --arg sha "$sha" '.jobs[] | select(.name == ("Build libweb-render.so from " + $sha) and .conclusion == "success") | {id,name,status,conclusion}' > "out/$role-build.json"
-            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/artifacts" |
-              jq -e '.artifacts[] | select(.name == "branch-engine" and .expired == false) | {id,digest,size_in_bytes,workflow_run}' > "out/$role-artifact.json"
-          done
-      - uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ env.RATIO_PARENT_RUN }}
-          name: branch-engine
-          path: ratio-parent
-          github-token: ${{ github.token }}
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN/jobs" |
+            jq -e --arg sha "$CANDIDATE" '.jobs[] | select(.name == ("Build libweb-render.so from " + $sha) and .conclusion == "success") | {id,name,status,conclusion}' > out/candidate-build.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN/artifacts" |
+            jq -e '.artifacts[] | select(.name == "branch-engine" and .expired == false) | {id,digest,size_in_bytes,workflow_run}' > out/candidate-artifact.json
       - uses: actions/download-artifact@v4
         with:
           run-id: ${{ env.CANDIDATE_RUN }}
@@ -100,109 +87,44 @@ jobs:
           echo "$sum  $engine" | sha256sum -c -
           lab="$PWD/core/labs/demos/foafnaut"
           bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
-      - name: Run the same image and canvas geometry inputs on each native engine
+      - name: Compare zero-width text and the spacing controls
         run: |
           set -euo pipefail
           curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           toolchain=$(cat candidate/lean-toolchain)
-          test "$toolchain" = "$(cat ratio-parent/lean-toolchain)"
           test "$toolchain" = "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
-          echo 'ccfc32027a2b2e39751c3bb61dcf1d2e664b516143df4f4285befdfe4b8ca336  ratio-parent/libweb-render.so' | sha256sum -c -
           "$HOME/.elan/bin/elan" toolchain install "$toolchain"
           export LD_LIBRARY_PATH="$("$HOME/.elan/bin/elan" run "$toolchain" lean --print-prefix)/lib/lean"
           test -d "$LD_LIBRARY_PATH"
-          runner=core/tests/browser-wpt/testharness-run.ts
-          fixture=wpt/css/css-sizing/aspect-ratio
-          cp experiments/wpt-layout-image-inputs/canvas-expanded.html "$fixture/canvas-box-sizing-wpt.html"
-          sha256sum "$runner" "$fixture/box-sizing-dimensions.html" "$fixture/box-sizing-squashed.html" \
-            "$fixture/support/20x50-green.png" "$fixture/canvas-box-sizing-wpt.html" \
-            engine/foafnaut/libweb-render.so ratio-parent/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
-          # Run the same geometry controls in Chrome without external script resources.
-          python3 - "$fixture/canvas-box-sizing-wpt.html" "$RUNNER_TEMP/canvas-chrome.html" <<'PY'
-          from pathlib import Path
-          import sys
-          source = Path(sys.argv[1]).read_text().split('<script src=', 1)[0]
-          script = """<pre id="actual"></pre><script>
-          document.getElementById("actual").textContent = JSON.stringify(Array.from(
-            document.querySelectorAll("[data-size]"), element => {
-              const rect = element.getBoundingClientRect();
-              return {expected: element.dataset.size.split("x").map(Number), size: [rect.width, rect.height]};
-            }));
-          </script>"""
-          Path(sys.argv[2]).write_text(source + script)
+          fixture="$PWD/experiments/zero-font-native-replay"
+          wpt="$PWD/wpt/css/css-fonts"
+          curl -fsSL --retry 3 -o out/wpt-3-ref.html "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/css/reference/ref-filled-green-200px-square.html"
+          echo '6a0bda50a3e358356fcf79c51b8de1d2d62ceebca0fdfe857f782b7cf4c7391e  out/wpt-3-ref.html' | sha256sum -c -
+          python3 - "$fixture" "$wpt" "$PWD/out/wpt-3-ref.html" > out/jobs.jsonl <<'PY'
+          import json,sys
+          generated, wpt, third_ref = sys.argv[1:]
+          files = [
+              ("pair", f"{generated}/font-pair.html"), ("pair-ref", f"{generated}/font-pair-ref.html"),
+              ("positive", f"{generated}/font-pair-positive.html"), ("spaced", f"{generated}/font-pair-spaced.html"),
+              ("wpt-1", f"{wpt}/font-size-zero-1.html"), ("wpt-1-ref", f"{wpt}/font-size-zero-1-ref.html"),
+              ("wpt-2", f"{wpt}/font-size-zero-2.html"), ("wpt-2-ref", f"{wpt}/font-size-zero-2-ref.html"),
+              ("wpt-3", f"{wpt}/font-size-zero-3.html"), ("wpt-3-ref", third_ref),
+          ]
+          for name, path in files:
+              print(json.dumps({"url":"file://" + path,"file":name + ".png","width":800,"height":600}))
           PY
-          google-chrome --version > out/chrome-version.txt
-          google-chrome --headless --no-sandbox --disable-gpu --disable-background-networking \
-            --user-data-dir="$RUNNER_TEMP/canvas-chrome-profile" --dump-dom "file://$RUNNER_TEMP/canvas-chrome.html" \
-            > "$RUNNER_TEMP/canvas-chrome-dom.html" 2> out/chrome.log
-          sed -n 's/.*<pre id="actual">\([^<]*\)<\/pre>.*/\1/p' "$RUNNER_TEMP/canvas-chrome-dom.html" |
-            jq -es 'if length==1 and (.[0]|length)==19 and all(.[0][]; .size==.expected) then .[0]
-                    else error("Chrome controls do not match the fixture") end' > out/chrome-canvas.json
-          python3 experiments/wpt-layout-image-inputs/instrument.py "$runner"
-          canvas_wpt="$PWD/wpt/html/rendering/replaced-elements/attributes-for-embedded-content-and-images/canvas-dimension-attributes.html"
-          canvas_ref="$PWD/out/canvas-wpt-ref.html"
-          curl -fsSL --retry 3 -o "$canvas_ref" "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/css/reference/ref-filled-green-200px-square.html"
-          {
-            echo "9044a15855c820a5d01d41b0ef5a0f9beda8c974756c775046491919ceca8778  $canvas_wpt"
-            echo "6a0bda50a3e358356fcf79c51b8de1d2d62ceebca0fdfe857f782b7cf4c7391e  $canvas_ref"
-          } | sha256sum -c -
-          jq -nc --arg a "file://$canvas_wpt" --arg b "file://$canvas_ref" \
-            '({url:$a,file:"canvas-wpt.png"},{url:$b,file:"canvas-wpt-ref.png"})+{width:800,height:600}' > out/reftest.jsonl
-          printf '%s\n' /css/css-sizing/aspect-ratio/box-sizing-dimensions.html /css/css-sizing/aspect-ratio/box-sizing-squashed.html > out/images.txt
-          printf '%s\n' /css/css-sizing/aspect-ratio/canvas-box-sizing-wpt.html > out/canvas.txt
-          for engine in baseline ratio-parent candidate; do
-            if [[ $engine == baseline ]]; then
-              lib="$PWD/engine/foafnaut/libweb-render.so"
-            else
-              lib="$PWD/$engine/libweb-render.so"
-            fi
-            for fixture in images canvas; do
-              deno run --no-check --no-config --no-npm --unstable-ffi -A "$runner" --script-engine bubblepop \
-                --native-engine "$lib" --wpt-root "$PWD/wpt" --wpt-commit "$WPT" \
-                --list "$PWD/out/$fixture.txt" --out "$PWD/out/$engine-$fixture.json" --diagnostic-layout-images |
-                tee "out/$engine-$fixture.log"
-              jq -e 'all(.cases[]; .harness == "OK")' "out/$engine-$fixture.json"
-              jq -c --arg engine "$engine" --arg fixture "$fixture" '{engine:$engine,fixture:$fixture,totals}' "out/$engine-$fixture.json" >> "$GITHUB_STEP_SUMMARY"
-            done
-            deno run --no-check --no-config --no-npm --unstable-ffi -A core/tests/browser-wpt/reftest-render.ts \
-              --native-engine "$lib" --list out/reftest.jsonl --out "out/$engine-reftest" |
-              tee "out/$engine-reftest.log"
-            awk '/^__done /{sub(/^__done /,"");print}' "out/$engine-reftest.log" | jq -es \
-              'if length==2 and all(.[]; .status=="ok") then {test:.[0].sha,ref:.[1].sha,match:(.[0].sha==.[1].sha)}
-               else error("missing canvas test or reference frame") end' > "out/$engine-reftest.json"
+          sha256sum engine/foafnaut/libweb-render.so candidate/libweb-render.so "$fixture"/*.html "$wpt"/font-size-zero-{1,2,3}*.html > out/inputs.sha256
+          renderer=core/tests/browser-wpt/reftest-render.ts
+          for engine in baseline candidate; do
+            if [[ $engine == baseline ]]; then lib="$PWD/engine/foafnaut/libweb-render.so"
+            else lib="$PWD/candidate/libweb-render.so"; fi
+            deno run --no-check --no-config --no-npm --unstable-ffi -A "$renderer" \
+              --native-engine "$lib" --list out/jobs.jsonl --out "out/$engine" | tee "out/$engine.log"
           done
-          python3 - <<'EOF'
-          import json
-          from pathlib import Path
-
-          def statuses(role, fixture):
-              report = json.loads(Path(f"out/{role}-{fixture}.json").read_text())
-              pairs = {(case["file"], test["name"]): test
-                       for case in report["cases"] for test in case["subtests"]}
-              assert len(pairs) == report["totals"]["subtests"], (role, fixture, report["totals"])
-              return pairs
-
-          roles = ("baseline", "ratio-parent", "candidate")
-          images = {r: statuses(r, "images") for r in roles}
-          canvas = {r: statuses(r, "canvas") for r in roles}
-          assert len(images["baseline"]) == 24 and len(canvas["baseline"]) == 19
-          expected_images = {"baseline": 11, "ratio-parent": 20, "candidate": 20}
-          for role in roles:
-              assert images[role].keys() == images["baseline"].keys()
-              assert canvas[role].keys() == canvas["baseline"].keys()
-              assert sum(c["status"] == "PASS" for c in images[role].values()) == expected_images[role]
-          failures = {r: [v for v in canvas[r].values() if v["status"] != "PASS"] for r in roles}
-          Path("out/canvas-failures.json").write_text(json.dumps(failures, indent=2) + "\n")
-          old_case = next(k for k in canvas["baseline"] if k[1].startswith("box 5:"))
-          for role in roles[:2]:
-              assert canvas[role][old_case]["status"] == "FAIL" and "got 50" in canvas[role][old_case]["message"]
-          assert {k for k,v in images["candidate"].items() if v["status"] == "PASS"} == {
-              k for k,v in images["ratio-parent"].items() if v["status"] == "PASS"}
-          assert not failures["candidate"], failures["candidate"]
-          EOF
+          python3 "$fixture/report-font.py" | tee "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: canvas-sizing-native-geometry
+          name: zero-font-native-replay
           path: out/
           retention-days: 7
