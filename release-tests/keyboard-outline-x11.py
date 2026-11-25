@@ -37,6 +37,16 @@ a.addEventListener('click', e => e.preventDefault());
 for (const [id, color] of [['a', '#23b45a'], ['b', '#d2376e'], ['c', '#3778be']]) {
   document.getElementById(id).addEventListener('focus', () => { status.style.backgroundColor = color; });
 }
+// The fixture tests focus painting with a native key and a scripted focus change.
+// The browser's own sequential Tab navigation is tracked separately.
+const sequence = ['a', 'b', 'c'];
+let step = 0;
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Tab' || event.ctrlKey || event.metaKey || event.altKey) return;
+  event.preventDefault();
+  const target = document.getElementById(sequence[step++]);
+  if (target) target.focus();
+});
 status.style.backgroundColor = "#7125a3";
 </script>
 """
@@ -163,6 +173,9 @@ def main():
                             report[stage] = expected
 
                         key(esc)
+                        address_fill = before.getpixel((650, 45))
+                        wait_for(proc, lambda: True if image().getpixel((650, 45)) != address_fill else None,
+                                 20, "address field leaving focus")
                         for stage, which in [("tab-link", "a"), ("tab-input", "b"), ("tab-override", "c")]:
                             key(tab)
                             snap(stage, which, draw_ring=which != "c")
