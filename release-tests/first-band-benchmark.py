@@ -14,7 +14,7 @@ cases = [
     ("mdn-static", "developer.mozilla.org/mdn-display-20261115.zip",
      "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/display", "1280x800", False),
     ("wiki-mobile", "en.wikipedia.org/m-us-20261115.zip",
-     "https://en.m.wikipedia.org/wiki/United_States", "412x860", True),
+     "https://en.wikipedia.org/wiki/United_States?useskin=minerva", "412x860", True),
     ("govuk", "desktop-govuk.zip", "https://www.gov.uk/", "1280x800", True),
     ("w3c", "desktop-w3c-home.zip", "https://www.w3.org/", "1280x800", True),
     ("hn-static", "news.ycombinator.com/hn-20261115.zip", "https://news.ycombinator.com/", "1280x800", False),
@@ -63,6 +63,9 @@ def capture(case, arm, engine):
     assert any(r.get("engine", "").startswith(f"native {engine}") for r in renderer), renderer
     frames = [r for r in records if r.get("type") == "native-html-frame" and r.get("presented")]
     first = frames[0]
+    if name == "wiki-mobile":
+        loads = [r for r in records if r.get("type") == "native-html-loaded" and r.get("url") == url]
+        assert loads and max(r["links"] for r in loads) > 1000, (url, loads, log)
     assert f'{first["width"]}x{first["height"]}' == size, first
     wheel = sorted(r["ms"] for r in records if r.get("type") == "native-html-input-latency" and r.get("kind") == "scroll")
     shifts = [r for r in records if r.get("type") == "native-html-scroll" and r.get("presented")]
