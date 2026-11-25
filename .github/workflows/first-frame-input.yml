@@ -1,0 +1,59 @@
+name: Measure external X11 input after the first frame
+on:
+  push:
+    branches: [wip/first-frame-x11-input]
+permissions:
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  SET: foafnaut-browser-linux-x86_64
+jobs:
+  input:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        layout: [layers, single]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/first-frame-input.py
+          sparse-checkout-cone-mode: false
+      - name: Install software Vulkan and the verified bundle
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-xlib
+          mkdir -p incoming out
+          tag="build-${CORE:0:12}-$SET"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D incoming
+          file="$SET.tar.gz"
+          checksum=$(jq -er --arg sha "$CORE" --arg file "$file" 'select(.source_commit == $sha) | .artifacts[$file].sha256' incoming/build-info.json)
+          echo "$checksum  incoming/$file" | sha256sum -c -
+          tar -xzf "incoming/$file" -C incoming
+          app=$(find "$PWD/incoming" -type f -name foafnaut -perm -u=x -print -quit)
+          test -n "$app"
+          echo "FOAFNAUT_APP=$app" >> "$GITHUB_ENV"
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -n "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          cp incoming/build-info.json out/
+      - name: Compare first-launch and cache-reusing input
+        env:
+          DENO_WEBGPU_BACKEND: vulkan
+          SDL_VIDEODRIVER: x11
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -o pipefail
+          mkdir -m 700 "$RUNNER_TEMP/runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime"
+          xvfb-run -a -s "-screen 0 1920x1200x24" /usr/bin/python3 release-tests/first-frame-input.py "${{ matrix.layout }}" | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: x11-first-frame-${{ matrix.layout }}
+          path: out/
+          retention-days: 7
