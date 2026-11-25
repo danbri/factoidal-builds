@@ -1,0 +1,101 @@
+name: Verify visible keyboard focus outlines
+on:
+  push:
+    branches: [codex/keyboard-outline-x11]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 8d35c2bc5f19b90e49050d6f8d4be1efa0c8344d
+  BASELINE_CORE: b26f4a1ac7cbeb56ac7859574aec4f86f6c0fc5d
+  RUNTIME: 98cf12b45124a964363520bda0d84a543a19094d
+jobs:
+  x11:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/keyboard-outline-x11.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: source
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45680093250
+          name: branch-engine
+          path: baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45680093395
+          name: branch-engine
+          path: candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Install the matching Lean runtime and native display
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-xlib python3-pil
+          cmp baseline/lean-toolchain candidate/lean-toolchain
+          if cmp -s baseline/libweb-render.so candidate/libweb-render.so; then
+            echo "The two pinned native engines must differ." >&2
+            exit 1
+          fi
+          for pair in "45680093250:$BASELINE_CORE" "45680093395:$CORE"; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/${pair%%:*}/jobs" |
+              jq -e --arg name "Build libweb-render.so from ${pair#*:}" \
+                '.jobs | any(.name == $name and .conclusion == "success")'
+          done
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat candidate/lean-toolchain)"
+          lib=$(find "$HOME/.elan/toolchains" -type d -path '*/lib/lean' -print -quit)
+          test -n "$lib"
+          echo "LD_LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+          mkdir -p out web bundle
+          for set in foafnaut-web foafnaut-browser-linux-x86_64; do
+            dest=web
+            if [ "$set" != foafnaut-web ]; then dest=bundle; fi
+            gh release download "build-${RUNTIME:0:12}-$set" -R "$GITHUB_REPOSITORY" -p "$set.tar.gz" -p build-info.json -D "$dest"
+            checksum=$(jq -er --arg sha "$RUNTIME" --arg file "$set.tar.gz" 'select(.source_commit == $sha) | .artifacts[$file].sha256' "$dest/build-info.json")
+            echo "$checksum  $dest/$set.tar.gz" | sha256sum -c -
+            tar -xzf "$dest/$set.tar.gz" -C "$dest"
+          done
+          lab="$PWD/source/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          cp "$(find bundle -name libnative-window.so -print -quit)" "$lab/.build/native/"
+          echo "VK_DRIVER_FILES=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)" >> "$GITHUB_ENV"
+          sha256sum baseline/libweb-render.so candidate/libweb-render.so "$lab/run_html.ts" "$lab/.build/native/libnative-window.so" > out/inputs.sha256
+      - name: Compare actual Tab and click frames
+        env:
+          DENO_WEBGPU_BACKEND: vulkan
+          SDL_VIDEODRIVER: x11
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime"
+          status=0
+          for role in baseline candidate; do
+            xvfb-run -a -s '-screen 0 1280x800x24' /usr/bin/python3 release-tests/keyboard-outline-x11.py "$role" "$PWD/$role/libweb-render.so" "$PWD/source/labs/demos/foafnaut" || status=1
+          done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: keyboard-outline-x11
+          path: out/
+          retention-days: 7
