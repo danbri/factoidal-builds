@@ -1,0 +1,74 @@
+name: Verify corrected Particle Rex release fixtures
+on:
+  push:
+    branches: [codex/particle-rex-host-gates]
+    paths: [.github/workflows/particle-rex-host-gates.yml]
+permissions:
+  actions: read
+  contents: read
+env:
+  CORE: a97e545efa3ba31faf182635f9f42c217894b640
+  ORIGINAL: c9a112895a5756170d17f40adca4d289457fe0f4
+  ENGINE_RUN: '45675887078'
+jobs:
+  verify:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          fetch-depth: 2
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      # Both versions run against the same checked ac8961 Wasm on purpose. The point
+      # here is to isolate the fixture changes. Standard exact-source packaging is separate.
+      - uses: actions/download-artifact@v4
+        with:
+          name: foafnaut-engines
+          path: core/labs/demos/foafnaut/.build
+          run-id: ${{ env.ENGINE_RUN }}
+          github-token: ${{ github.token }}
+      - name: Reproduce both failures and verify the corrected fixtures
+        working-directory: core
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CORE"
+          test "$(git rev-parse HEAD^)" = "$ORIGINAL"
+          lab=labs/demos/foafnaut
+          mkdir -p ../out
+          font="$lab/fallback_fonts_test.ts"
+          bytes="$lab/native_html_bytes_test.ts"
+          check_fonts() { deno test --no-config --no-npm --node-modules-dir=none --allow-read "$font"; }
+          check_bytes() { deno test --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi --allow-read --allow-ffi "$bytes"; }
+          git show "$ORIGINAL:$font" > "$font"
+          git show "$ORIGINAL:$bytes" > "$bytes"
+          if check_fonts > ../out/original-font.log 2>&1; then
+            echo "The old font fixture unexpectedly passed" >&2
+            exit 1
+          fi
+          grep -F "particle-rex" ../out/original-font.log
+          if check_bytes > ../out/original-bytes.log 2>&1; then
+            echo "The old static scene fixture unexpectedly passed" >&2
+            exit 1
+          fi
+          grep -F "Page scripts need" ../out/original-bytes.log
+          git restore --source="$CORE" -- "$font" "$bytes"
+          check_fonts 2>&1 | tee ../out/candidate-font.log
+          check_bytes 2>&1 | tee ../out/candidate-bytes.log
+          sha256sum "$font" "$bytes" "$lab/.build/native-html/runtime/web-render.wasm" > ../out/inputs.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: particle-rex-release-fixtures
+          path: out/
+          retention-days: 7
