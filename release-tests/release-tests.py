@@ -518,6 +518,8 @@ def cmd_resolve(a):
 # ---- WPT: inputs, shards, merge ------------------------------------------------------------
 
 def cmd_wpt_inputs(a):
+    if bool(a.timing_file) != bool(a.timing_sha256):
+        die("WPT timing plan requires both --timing-file and --timing-sha256")
     os.makedirs(a.out, exist_ok=True)
     crun = chrome_run(a.wpt_commit)
     chrome = load_summary(crun["results_url"], os.path.join(a.out, "chrome.json"))
@@ -529,6 +531,11 @@ def cmd_wpt_inputs(a):
     inputs = {"wpt_commit": a.wpt_commit, "chrome_run": {k: crun.get(k) for k in ("id", "browser_version", "os_name", "os_version", "time_start", "results_url")},
               "names": len(names), "denominator": denominator, "denominator_encoding": enc,
               "full_list_sha256": sha256(os.path.join(a.out, "full.list")), "chrome_json_sha256": sha256(os.path.join(a.out, "chrome.json"))}
+    if a.timing_file:
+        import wpt_timing_plan
+
+        inputs["timing_plan_sha256"] = wpt_timing_plan.create(
+            a.out, a.timing_file, a.timing_sha256, inputs["full_list_sha256"], a.wpt_commit)
     json.dump(inputs, open(os.path.join(a.out, "inputs.json"), "w"), indent=1)
     log(f"WPT {a.wpt_commit[:10]}: {len(names)} names, denominator {denominator} (Chrome {crun.get('browser_version')})")
 
@@ -577,9 +584,21 @@ def read_results(d):
 def cmd_wpt_shard(a):
     t0 = time.time()
     started = now_utc()
-    inputs = json.load(open(os.path.join(a.inputs, "inputs.json")))
-    names = [l.strip() for l in open(os.path.join(a.inputs, "full.list")) if l.strip()]
+    with open(os.path.join(a.inputs, "inputs.json")) as f:
+        inputs = json.load(f)
+    with open(os.path.join(a.inputs, "full.list")) as f:
+        names = [l.strip() for l in f if l.strip()]
     mine = names[a.index::a.shards]
+    timing_plan = None
+    if inputs.get("timing_plan_sha256") and a.platform == "linux-x86_64":
+        import wpt_timing_plan
+
+        if a.script_engine != wpt_timing_plan.ENGINE:
+            die("WPT timing plan requires the BubblePop script engine")
+        lists, timing_plan = wpt_timing_plan.load(a.inputs, inputs, names, a.shards, a.jobs)
+        if not 0 <= a.index < len(lists):
+            die("WPT timing plan shard index out of range")
+        mine = lists[a.index]
     work, out = os.path.abspath(a.work), os.path.abspath(a.out)
     os.makedirs(work, exist_ok=True)
     os.makedirs(out, exist_ok=True)
@@ -588,6 +607,9 @@ def cmd_wpt_shard(a):
         f.write("\n".join(mine) + "\n")
     meta = {"index": a.index, "shards": a.shards, "names": len(mine), "started_utc": started, "runner": runner_info(),
             "platform": a.platform, "script_engine": a.script_engine, "wpt_commit": inputs["wpt_commit"]}
+    if timing_plan:
+        meta["timing_plan_sha256"] = inputs["timing_plan_sha256"]
+        meta["shard_list_sha256"] = timing_plan["shard_sha256"][a.index]
 
     def finish(**kv):
         meta.update(kv, finished_utc=now_utc(), wall_seconds=round(time.time() - t0))
@@ -2229,6 +2251,8 @@ def main():
     w = sub.add_parser("wpt-inputs")
     w.add_argument("--wpt-commit", required=True)
     w.add_argument("--out", required=True)
+    w.add_argument("--timing-file", help="opt in to a local Linux BubblePop WPT timing artifact")
+    w.add_argument("--timing-sha256", help="expected SHA-256 of --timing-file")
     s = sub.add_parser("wpt-shard")
     for k in ("--inputs", "--core", "--engine-dir", "--work", "--out", "--web-tag"):
         s.add_argument(k, required=True)
