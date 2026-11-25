@@ -1,5 +1,6 @@
 """Check the native X11 keyboard and button paths for a FrogFind-shaped GET form."""
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -8,9 +9,15 @@ from tempfile import TemporaryDirectory
 from threading import Thread
 from urllib.parse import parse_qs, urlsplit
 
-sys.path.insert(0, sys.argv[1])
 from Xlib import display
-from check_linux_browser import colour_mask, trace_records, wait_for, window_image, xdotool
+
+check_path = Path(sys.argv[1]) / "check-linux-browser.py"
+spec = importlib.util.spec_from_file_location("check_linux_browser", check_path)
+assert spec and spec.loader, check_path
+check = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(check)
+colour_mask, trace_records = check.colour_mask, check.trace_records
+wait_for, window_image, xdotool = check.wait_for, check.window_image, check.xdotool
 
 BROWSER = Path(sys.argv[2]).resolve()
 LIBRARY = Path(sys.argv[3]).resolve()
@@ -19,20 +26,18 @@ BACKEND = sys.argv[5]
 CASE = sys.argv[6]
 QUERY = {"enter": "Lean 4 CSS", "button": "Foafnaut + WPT"}[CASE]
 OUT.mkdir(parents=True, exist_ok=True)
-HOME_TITLE = "Local search form"
+HOME_TITLE = "FrogFind!"
 RESULT_TITLE = "Local search received"
 INPUT = (199, 233, 207)
 BUTTON = (216, 210, 243)
 RESULT = (19, 88, 167)
-FORM = """<!doctype html><meta charset=utf-8><title>Local search form</title>
-<style>
-  body {margin:18px;color:#111;background:white}
-  input[type=text] {background:#c7e9cf;width:270px;height:34px}
-  input[type=submit] {background:#d8d2f3;width:112px;height:36px}
-</style>
-<h1>Local search fixture</h1><form action="/" method="get">
-<label>Web search <input type="text" size="30" name="q"></label>
-<input type="submit" value="Search"></form>"""
+source = Path(sys.argv[7]).read_text()
+assert source.count("</head>") == 1
+# Only the two paint colours are changed, so X11 can locate the two controls.
+FORM = source.replace("</head>", """<style>
+  input[type=text] {background-color:#c7e9cf !important}
+  input[type=submit] {background-color:#d8d2f3 !important}
+</style></head>""")
 
 class Fixture(BaseHTTPRequestHandler):
     def do_GET(self):

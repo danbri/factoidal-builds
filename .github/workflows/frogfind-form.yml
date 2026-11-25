@@ -9,35 +9,6 @@ env:
   GH_TOKEN: ${{ github.token }}
   CORE: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
 jobs:
-  origin:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: Inspect whether the live homepage serves a search control
-        run: |
-          set -euo pipefail
-          mkdir -p out
-          if curl -sSL --max-time 25 -A 'Mozilla/5.0' -o out/live.html \
-              -w '%{http_code} %{url_effective}\n' 'https://frogfind.com/' > out/live-http.txt; then
-            python3 - <<'PY' | tee out/live-status.txt
-          from html.parser import HTMLParser
-          from pathlib import Path
-          class Forms(HTMLParser):
-              def handle_starttag(self,tag,attrs):
-                  attrs=dict(attrs)
-                  if tag=="form": print(tag,attrs.get("action"),attrs.get("method"))
-                  if tag=="input": print(tag,attrs.get("type"),attrs.get("name"))
-          Forms().feed(Path("out/live.html").read_text(errors="replace"))
-          PY
-          else
-            echo "Could not fetch the live homepage from this runner." | tee out/live-status.txt
-          fi
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: frogfind-origin
-          path: out/
-          retention-days: 7
   form:
     runs-on: ubuntu-24.04
     timeout-minutes: 16
@@ -65,10 +36,17 @@ jobs:
           name: branch-engine
           path: native
           github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45533984047
+          name: frogfind-origin
+          path: snapshot
+          github-token: ${{ github.token }}
       - name: Verify the published archive, native engine and upstream form shape
         run: |
           set -euo pipefail
           mkdir -p package out
+          echo "3db65e438145fcce040bf0354d07d49d691cc8acd89bd05c48f3e3d3753f2c16  snapshot/live.html" | sha256sum -c -
           gh release download "build-${CORE:0:12}-foafnaut-browser-linux-x86_64" -R "$GITHUB_REPOSITORY" -D package -p foafnaut-browser-linux-x86_64.tar.gz
           echo '6e12ebd78d447c6836e8f5bced9892d8a309586740604089b5f7369afa5a6684  package/foafnaut-browser-linux-x86_64.tar.gz' | sha256sum -c -
           tar -xzf package/foafnaut-browser-linux-x86_64.tar.gz -C package
@@ -97,7 +75,7 @@ jobs:
           test -n "$VK_DRIVER_FILES"
           xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 experiments/frogfind-form/probe.py \
             "$PWD/core/labs/demos/foafnaut" "$PWD/package/foafnaut-linux-x86_64/foafnaut" \
-            "$PWD/native/libweb-render.so" "$PWD/out" "$BACKEND" "$SUBMISSION"
+            "$PWD/native/libweb-render.so" "$PWD/out" "$BACKEND" "$SUBMISSION" "$PWD/snapshot/live.html"
           jq -e '.status=="pass" and (.queries|length)==1' out/receipt.json | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
