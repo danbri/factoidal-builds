@@ -58,6 +58,25 @@ jobs:
           mkdir -m 700 "$RUNNER_TEMP/runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime"
           xvfb-run -a deno run --no-config -A release-tests/installed-forms-ci.ts "$FOAFNAUT_APP" "$PWD/out" | tee "$GITHUB_STEP_SUMMARY"
+      - name: Capture the actual FrogFind homepage served to Foafnaut
+        if: always() && env.FOAFNAUT_APP != ''
+        env:
+          DENO_WEBGPU_BACKEND: vulkan
+          SDL_VIDEODRIVER: x11
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p -m 700 "$RUNNER_TEMP/runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime"
+          app="$FOAFNAUT_APP"
+          out="$PWD/out"
+          (
+            cd "$(dirname "$app")"
+            xvfb-run -a timeout 70 "$app" --offscreen --no-state --url https://frogfind.com/ \
+              --shot "$out/frogfind-live.png"
+          ) > out/frogfind-live.log 2>&1 || result=$?
+          printf 'Live FrogFind browser exit %s\n' "${result:-0}" | tee -a "$GITHUB_STEP_SUMMARY"
+          rg 'native-html-(loaded|refused|shot)' out/frogfind-live.log | tail -6 | tee -a "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
