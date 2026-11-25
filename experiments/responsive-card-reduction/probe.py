@@ -85,6 +85,7 @@ def main():
                                check=True, stdout=log, stderr=subprocess.STDOUT, timeout=45)
         server.shutdown()
     result = {}
+    mismatches = []
     print("| Fixture | Chrome image, marker, end | Foafnaut image, marker, end |")
     print("| --- | --- | --- |")
     for name in CASES:
@@ -92,8 +93,14 @@ def main():
         actual = measure(OUT / "foafnaut" / f"{name}.png")
         assert reference["image"] == [0, 179] and reference["below_image"] == [180, 191], (name, reference)
         result[name] = {"chrome": reference, "foafnaut": actual}
+        if (actual["image"] is None or actual["image"][0] != reference["image"][0] or
+                abs(actual["image"][1] - reference["image"][1]) > 1 or any(
+                    actual[key] is None or actual[key][0] != reference[key][0]
+                    for key in ("below_image", "below_grid"))):
+            mismatches.append(name)
         print(f"| {name} | {list(reference.values())} | {list(actual.values())} |")
     (OUT / "geometry.json").write_text(json.dumps(result, indent=2) + "\n")
+    assert not mismatches, mismatches
 
 
 if __name__ == "__main__":
