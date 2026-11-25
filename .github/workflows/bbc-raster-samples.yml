@@ -1,0 +1,96 @@
+name: Sample native CPU rendering on the archived BBC News page
+on:
+  push:
+    branches: [wip/712-bbc-raster-samples]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/bbc-raster-samples
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45613857797"
+          name: foafnaut-linux-native-worker
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45638334817"
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Sample native CPU stacks during the pinned replay
+        env:
+          ARCHIVE_SHA: 32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH REFTEST_TIME REFTEST_DUMP_DIR
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          (cd engine && grep -Fx "$CORE" source-commit.txt && sha256sum -c SHA256SUMS)
+          export REALPAGES_REPLAY="$PWD/capture/bbc-uk-with-photos.zip"
+          echo "$ARCHIVE_SHA  $REALPAGES_REPLAY" | sha256sum -c -
+          mkdir runtime out
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          renderer=core/tests/browser-wpt/reftest-render.ts
+          python3 experiments/bbc-raster-samples/instrument.py "$renderer"
+          deno check --no-config --no-npm "$renderer"
+          sha256sum engine/libweb-render.so "$renderer" "$REALPAGES_REPLAY" > out/inputs.sha256
+          printf '%s\n' '{"url":"https://www.bbc.co.uk/news","file":"bbc.png","width":1280,"height":735}' > out/jobs.jsonl
+          if command -v perf >/dev/null && perf --version >/dev/null 2>&1; then
+            perf="$(command -v perf)"
+          else
+            sudo apt-get update
+            sudo apt-get install -y linux-tools-generic
+            perf="$(find /usr/lib/linux-tools -type f -name perf | sort -V | tail -1)"
+          fi
+          test -x "$perf"
+          "$perf" --version > out/perf-version.txt
+          sudo "$perf" stat -e cpu-clock:u -- true
+          sudo env REALPAGES_REPLAY="$REALPAGES_REPLAY" DENO_DIR="${DENO_DIR:-$HOME/.cache/deno}" \
+            "$perf" record --quiet -o "$RUNNER_TEMP/bbc.perf.data" -e cpu-clock:u -F 79 --call-graph dwarf,8192 -- \
+            "$(command -v deno)" run --no-config --no-npm --unstable-ffi -A --preload "$lab/realpages/replay.ts" \
+            "$renderer" --native-engine "$PWD/engine/libweb-render.so" --list out/jobs.jsonl --out out/frame \
+            2>&1 | tee out/replay.log
+          grep '^__done ' out/replay.log | cut -d' ' -f2- | jq -e 'select(.status=="ok")' > out/result.json
+          jq -e '.sha == "b61cdf3a01e4f0bebe57e4234d8887d1f50d95bffbeee1e0250ec162831624b6"' out/result.json
+          sudo "$perf" report -i "$RUNNER_TEMP/bbc.perf.data" --stdio --no-children \
+            --sort dso,symbol --percent-limit 0.3 -g none > out/self.txt
+          sudo "$perf" report -i "$RUNNER_TEMP/bbc.perf.data" --stdio --children \
+            --sort dso,symbol --percent-limit 1 -g none > out/inclusive.txt
+          grep -F libweb-render out/self.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-raster-samples
+          path: out/
+          retention-days: 7
