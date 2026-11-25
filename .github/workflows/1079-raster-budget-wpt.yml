@@ -107,7 +107,7 @@ jobs:
 
           baseline,candidate=load("baseline"),load("candidate")
           assert baseline.keys() == candidate.keys(), (len(baseline),len(candidate))
-          changes={case:[baseline[case],candidate[case]] for case in sorted(cases) if baseline[case] != candidate[case]}
+          changes={case:[baseline[case],candidate[case]] for case in sorted(baseline) if baseline[case] != candidate[case]}
           Path("out/changes.json").write_text(json.dumps(changes,indent=2)+"\n")
           print(f"Exact baseline comparison of {len(baseline)} CSS Images reftests.")
           print(collections.Counter(map(tuple,changes.values())))
