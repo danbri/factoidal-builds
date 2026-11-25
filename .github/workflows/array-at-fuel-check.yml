@@ -1,11 +1,11 @@
-name: Check the Array at fuel proof with the release target
+name: Check the Object.fromEntries fuel proof with the release target
 on:
   push:
     branches: [wip/array-at-fuel-mono-check]
 permissions:
   contents: read
 env:
-  CORE: 005ca9bb64863eefdb58a9f495c8a6493f8cb1ec
+  CORE: 04d672fdf7959f3bbd1cf2fe243a49a3da950793
 jobs:
   fuel:
     runs-on: ubuntu-latest
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: 005ca9bb64863eefdb58a9f495c8a6493f8cb1ec
+          ref: 04d672fdf7959f3bbd1cf2fe243a49a3da950793
           path: core
           persist-credentials: false
       - name: Install the release Lean toolchain
@@ -37,7 +37,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$CORE"
           mkdir -p "$RUNNER_TEMP/native-proof"
           python3 tools/fuelmono-natives.py formal/lean4/L4Factoidal/JS/Interp.lean "$RUNNER_TEMP/native-proof"
-          for proof in FuelMonoNatives_arrayAtWithLength.lean FuelMonoNatives_moreNativeTypedMethod.lean; do
+          for proof in FuelMonoNatives_addObjectEntry.lean FuelMonoNatives_callNativeObjectStatic.lean; do
             cmp "$RUNNER_TEMP/native-proof/$proof" "formal/lean4/L4Factoidal/JS/$proof"
           done
       - name: Compile the exact release fuel target and print axioms
@@ -47,8 +47,8 @@ jobs:
           lake build JSFuelMono 2>&1 | tee "$RUNNER_TEMP/fuel-mono.log"
           cat > "$RUNNER_TEMP/axioms.lean" <<'LEAN'
           import L4Factoidal.JS.FuelMonoAll
-          #print axioms L4Factoidal.JS.FuelMono.natives_arrayAtWithLength_mono
-          #print axioms L4Factoidal.JS.FuelMono.natives_moreNativeTypedMethod_mono
+          #print axioms L4Factoidal.JS.FuelMono.natives_addObjectEntry_mono
+          #print axioms L4Factoidal.JS.FuelMono.natives_callNativeObjectStatic_mono
           #print axioms L4Factoidal.JS.FuelMono.IH_all
           LEAN
           lake env lean "$RUNNER_TEMP/axioms.lean" | tee "$RUNNER_TEMP/axioms.txt"
@@ -56,7 +56,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: array-at-fuel-proof
+          name: from-entries-fuel-proof
           path: |
             ${{ runner.temp }}/fuel-mono.log
             ${{ runner.temp }}/axioms.txt
