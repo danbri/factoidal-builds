@@ -101,7 +101,11 @@ jobs:
                               "candidate": "out/candidate/govuk.png"}.items():
               rgb = Image.open(path).convert("RGB")
               assert rgb.size == (1280, 735), (label, rgb.size)
-              points = [(x, y) for y in range(655, 732) for x in range(741, 790)
+              button = [(x, y) for y in range(655, 732) for x in range(730, 810)
+                        if rgb.getpixel((x, y)) == (210, 226, 241)]
+              assert button, (label, "submit button background is missing")
+              bx, by = zip(*button)
+              points = [(x, y) for y in range(min(by), max(by)+1) for x in range(min(bx), max(bx)+1)
                         if rgb.getpixel((x, y)) == (29, 112, 184)]
               assert points, (label, "no icon-color pixels in the submit control")
               xs, ys = zip(*points)
