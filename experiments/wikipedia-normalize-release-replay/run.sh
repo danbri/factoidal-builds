@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-: "${SITE:?}" "${CAPTURE:?}" "${BASELINE:?}"
+: "${SITE:?}" "${CAPTURE:?}" "${BASELINE:?}" "${HARNESS_CORE:?}"
 unset LD_LIBRARY_PATH REFTEST_TIME REFTEST_DUMP_DIR REALPAGES_RECORD
 harness=$PWD/harness
 out=$PWD/out
@@ -8,7 +8,7 @@ host=$PWD/host
 runtime=$PWD/runtime
 mkdir -p "$out" "$runtime"
 python3 "$harness/inspect_inputs.py" "$harness/fixtures.json" "$SITE" "$CAPTURE" "$out"
-python3 "$harness/materialize.py" "$BASELINE" "$harness/host.sha256" "$host"
+python3 "$harness/materialize.py" "$HARNESS_CORE" "$harness/host.sha256" "$host"
 cp "$harness/host.sha256" "$out/host-files.sha256"
 lscpu > "$out/runner.txt"
 deno --version > "$out/deno.txt"
@@ -18,10 +18,10 @@ geometry_pin=3a11210be57cce4452c9d67ef199ab08ff89458e8d267272b539fc589e370786
 python3 "$harness/capture_geometry.py" "$renderer" "$geometry_pin"
 sha256sum "$renderer" > "$out/instrumented-renderer.sha256"
 
-tag="build-${BASELINE:0:12}-foafnaut-web"
+tag="build-${HARNESS_CORE:0:12}-foafnaut-web"
 web=foafnaut-web.tar.gz
 gh release download "$tag" -R danbri/factoidal-builds -D "$runtime" -p build-info.json -p "$web"
-expected=$(jq -er --arg sha "$BASELINE" --arg asset "$web" \
+expected=$(jq -er --arg sha "$HARNESS_CORE" --arg asset "$web" \
   'select(.source_commit == $sha) | .artifacts[$asset].sha256' "$runtime/build-info.json")
 echo "$expected  $runtime/$web" | sha256sum -c -
 cp "$runtime/build-info.json" "$out/web-build-info.json"
