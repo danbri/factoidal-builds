@@ -7,7 +7,7 @@ permissions:
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CORE: 8d35c2bc5f19b90e49050d6f8d4be1efa0c8344d
+  CORE: 5983560888833e3f4866bc0eef3fd00c8d11da2a
   BASELINE_CORE: b26f4a1ac7cbeb56ac7859574aec4f86f6c0fc5d
   RUNTIME: 98cf12b45124a964363520bda0d84a543a19094d
 jobs:
@@ -38,7 +38,7 @@ jobs:
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
         with:
-          run-id: 45680093395
+          run-id: 45684186601
           name: branch-engine
           path: candidate
           github-token: ${{ github.token }}
@@ -55,7 +55,7 @@ jobs:
             echo "The two pinned native engines must differ." >&2
             exit 1
           fi
-          for pair in "45680093250:$BASELINE_CORE" "45680093395:$CORE"; do
+          for pair in "45680093250:$BASELINE_CORE" "45684186601:$CORE"; do
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/${pair%%:*}/jobs" |
               jq -e --arg name "Build libweb-render.so from ${pair#*:}" \
                 '.jobs | any(.name == $name and .conclusion == "success")'
