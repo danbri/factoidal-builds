@@ -150,7 +150,12 @@ jobs:
               want="native" if arm.startswith("b") else "wasm"
               first=row["initialFrame"]
               target=row["firstFrame"]
-              assert first["engine"]["backend"]==target["engine"]["backend"]==want,row
+              log=(output/arm/(case+".log")).read_text(errors="replace")
+              engines=[json.loads(line)["engine"].split()[0] for line in log.splitlines()
+                       if line.startswith('{"type":"native-html-engine"')]
+              assert engines and set(engines)=={want}, (arm,engines)
+              assert all("engine" not in frame or frame["engine"]["backend"]==want
+                         for frame in (first,target)), row
               t=target["t"]
               print(f"| {arm} | {want} | {t} | {target['layoutMs']} | {target['sessionMs']} | {row.get('scrollChangesPixels')} |")
           if case=="fixture":
