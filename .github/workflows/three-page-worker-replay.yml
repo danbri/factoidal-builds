@@ -1,0 +1,83 @@
+name: Replay three archived pages on the public and candidate Linux workers
+on:
+  push:
+    branches: [wip/three-page-worker-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: 41789954b17aae0057e4f5a5adee434f35facafa
+  CANDIDATE: 5d4a4366293994bb3aa268c6c68882560e773aba
+  WORKER_RUN: '45692334484'
+  WORKER_ARTIFACT: '15065824494'
+  WORKER_ZIP_DIGEST: sha256:81a4f316e191483a7863daaeffed049467324d36df56fe6c2b4e91d94ee018c2
+jobs:
+  page:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - site: w3c
+            run: "45431269816"
+            artifact: desktop-w3c-home-snapshot
+            archive: w3.org/desktop-w3c-home-20261124.zip
+          - site: govuk
+            run: "45430099580"
+            artifact: desktop-govuk-snapshot
+            archive: gov.uk/desktop-govuk-20261124.zip
+          - site: wikipedia
+            run: "45416936347"
+            artifact: desktop-wikipedia-www-snapshot
+            archive: en.wikipedia.org/desktop-wikipedia-www-20261124.zip
+    timeout-minutes: 18
+    steps:
+      - name: Verify the native worker artifact identity
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$WORKER_ARTIFACT" |
+            jq -e --argjson run "$WORKER_RUN" --arg digest "$WORKER_ZIP_DIGEST" \
+              'select(.workflow_run.id == $run and .name == "foafnaut-linux-native-worker" and .digest == $digest and .expired == false) | {id,name,digest,workflow_run}' > candidate-artifact.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$WORKER_RUN/jobs" |
+            jq -e '.jobs[] | select(.name == "foafnaut-linux-native-worker" and .conclusion == "success") | {id,name,conclusion}' >/dev/null
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.WORKER_RUN }}
+          name: foafnaut-linux-native-worker
+          path: candidate-worker
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ matrix.run }}
+          name: ${{ matrix.artifact }}
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Get the scratch harness and image tooling
+        run: |
+          set -euo pipefail
+          mkdir -p harness
+          base="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/experiments/three-page-worker-replay"
+          for file in host.sha256 fixtures.json materialize.py inspect_inputs.py capture_geometry.py compare.py run.sh; do
+            curl -fsSL --retry 3 --output "harness/$file" "$base/$file"
+          done
+          if ! /usr/bin/python3 -c 'import PIL'; then
+            sudo apt-get update -q
+            sudo apt-get install -qy python3-pil
+          fi
+      - name: Replay the archived page using both checked native libraries
+        env:
+          SITE: ${{ matrix.site }}
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          export CAPTURE="$PWD/capture/$ARCHIVE"
+          bash harness/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: three-page-worker-replay-${{ matrix.site }}
+          path: out/
+          retention-days: 7
