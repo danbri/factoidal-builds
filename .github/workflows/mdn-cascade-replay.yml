@@ -1,16 +1,16 @@
-name: Compare MDN cascade invalidation and scroll
+name: Measure MDN after reusing its specified font sizes
 on:
   push:
-    branches: [wip/mdn-cascade-replay]
+    branches: [wip/mdn-font-size-cascade-replay]
 permissions:
   actions: read
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
-  BASELINE_RUN: "45516536649"
-  CANDIDATE_RUN: "45516536886"
-  BASELINE: fc246f938484c09f154cd315f36e4694380fb1f5
-  CANDIDATE: 120c5bc893e08dfc8bd2a2baeb79d8e9bcd3ac85
+  BASELINE_RUN: "45522279585"
+  CANDIDATE_RUN: "45523601297"
+  BASELINE: d38eaddb33bbdda0a14f9f4b6703f456235855fd
+  CANDIDATE: 1cc630203d59f1c596abf9c3610a827ef7a853ba
   WEB: build-05ec0b29ca8a-foafnaut-web
 jobs:
   wait-engine:
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: fc246f938484c09f154cd315f36e4694380fb1f5
+          ref: d38eaddb33bbdda0a14f9f4b6703f456235855fd
           path: core
           persist-credentials: false
           sparse-checkout: |
