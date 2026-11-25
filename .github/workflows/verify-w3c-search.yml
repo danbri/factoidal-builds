@@ -1,7 +1,7 @@
-name: Verify the W3C search form in native Foafnaut
+name: Verify W3C search with inline-block height limits
 on:
   push:
-    branches: [wip/verify-w3c-search-form]
+    branches: [wip/verify-w3c-inline-height]
 permissions:
   actions: read
   contents: read
@@ -9,10 +9,23 @@ env:
   GH_TOKEN: ${{ github.token }}
   HOST: 4a0c174b706690a21d66e23463a9da355f4271fa
   PACKAGE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
-  ENGINE: 7f67fb2e2cd1c6dc47e1727b3354193e890623ce
-  ENGINE_RUN: "45535114460"
+  ENGINE: 0d110332a21b11018d6be1d971edcf9037fd519e
+  ENGINE_RUN: "45546457857"
 jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Wait for the exact candidate's native engine
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$ENGINE_RUN"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+            sleep 25
+          done
   search:
+    needs: wait-engine
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
@@ -104,7 +117,8 @@ jobs:
           BASH
           chmod +x "$RUNNER_TEMP/host"
           xvfb-run -a -s '-screen 0 1440x1000x24' /usr/bin/python3 experiments/w3c-search/probe.py             "$LAB/check-linux-browser.py" "$RUNNER_TEMP/host" "$PWD/out/$MODE" "$MODE"
-          jq -e '.status=="handoff-pass"' "out/$MODE/receipt.json"
+          jq -e '.status=="handoff-pass" and .typedPixelsObserved and (.field[3]-.field[1] >= 41)' "out/$MODE/receipt.json"
+          jq -se '[.[] | select(.variant != "none") | .logs[0] | fromjson | .[0]] == [47,47,47,47]' out/form-height.jsonl
           jq . "out/$MODE/receipt.json" | tee "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
