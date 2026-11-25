@@ -1,0 +1,124 @@
+name: Compare the archived GOV.UK search icon with the transform fix
+on:
+  push:
+    branches: [wip/712-govuk-transform-replay]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  BASELINE: 839dc27f0d873bbef749fc6ad36ecb2bf6e95316
+  BASE_RUN: "45649724924"
+  CANDIDATE: 06c7df9e39575800712eb92c131671c826fa1699
+  NATIVE_RUN: "45649280589"
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for the exact candidate engine
+        run: |
+          set -euo pipefail
+          for entry in "$BASE_RUN:$BASELINE" "$NATIVE_RUN:$CANDIDATE"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${entry%:*}"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from ${entry#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+  replay:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.NATIVE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45430099580"
+          name: desktop-govuk-snapshot
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Install image measurement dependency
+        run: sudo apt-get update && sudo apt-get install -y python3-pil
+      - name: Verify the archive and replay the same GOV.UK page twice
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          export REALPAGES_REPLAY="$PWD/capture/gov.uk/desktop-govuk-20261124.zip"
+          echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  $REALPAGES_REPLAY" | sha256sum -c -
+          mkdir -p runtime out
+          unzip -p "$REALPAGES_REPLAY" reference.png > out/chrome.png
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sha256sum engines/*/libweb-render.so "$REALPAGES_REPLAY" > out/inputs.sha256
+          printf '%s\n' '{"url":"https://www.gov.uk/","width":1280,"height":735,"file":"govuk.png"}' > out/jobs.jsonl
+          for role in baseline candidate; do
+            deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
+              core/tests/browser-wpt/reftest-render.ts --native-engine "$PWD/engines/$role/libweb-render.so" \
+              --list "$PWD/out/jobs.jsonl" --out "$PWD/out/$role" | tee "out/$role.log"
+            test -s "out/$role/govuk.png"
+            grep -F '"status":"ok"' "out/$role.log"
+          done
+          /usr/bin/python3 - <<'PYCODE' | tee "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          from PIL import Image
+          icons = {}
+          for label, path in {"chrome": "out/chrome.png", "baseline": "out/baseline/govuk.png",
+                              "candidate": "out/candidate/govuk.png"}.items():
+              rgb = Image.open(path).convert("RGB")
+              assert rgb.size == (1280, 735), (label, rgb.size)
+              points = [(x, y) for y in range(655, 732) for x in range(741, 790)
+                        if rgb.getpixel((x, y)) == (29, 112, 184)]
+              assert points, (label, "no icon-color pixels in the submit control")
+              xs, ys = zip(*points)
+              icons[label] = {"bounds": [min(xs), min(ys), max(xs), max(ys)],
+                              "size": [max(xs)-min(xs)+1, max(ys)-min(ys)+1], "ink": len(points)}
+          Path("out/icon.json").write_text(json.dumps(icons, indent=2) + "\n")
+          print(json.dumps(icons, indent=2))
+          assert all(15 <= n <= 23 for n in icons["chrome"]["size"]), icons
+          assert all(n >= 38 for n in icons["baseline"]["size"]), icons
+          assert all(abs(a-b) <= 3 for a, b in zip(icons["candidate"]["size"], icons["chrome"]["size"])), icons
+          assert all(abs(sum(a)-sum(b)) <= 8 for a, b in
+                     zip((icons["candidate"]["bounds"][::2], icons["candidate"]["bounds"][1::2]),
+                         (icons["chrome"]["bounds"][::2], icons["chrome"]["bounds"][1::2]))), icons
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: govuk-search-transform-replay
+          path: out/
+          retention-days: 7
