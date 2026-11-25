@@ -1,12 +1,23 @@
 name: Measure external X11 input after the first frame
 on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Full source commit of the published Linux browser
+        type: string
+        default: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+      max_click_delivery_ms:
+        description: Maximum time from X11 injection to SDL receipt, or 0 to report only
+        type: number
+        default: 100
   push:
     branches: [wip/first-frame-x11-input]
 permissions:
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
-  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  CORE: ${{ inputs.release_commit || 'e4445d14752cc3ec75da7bf2fc1797263d02efbf' }}
+  MAX_CLICK_DELIVERY_MS: ${{ inputs.max_click_delivery_ms || 0 }}
   SET: foafnaut-browser-linux-x86_64
 jobs:
   input:
@@ -28,6 +39,7 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-xlib
           mkdir -p incoming out
+          [[ "$CORE" =~ ^[0-9a-f]{40}$ ]]
           tag="build-${CORE:0:12}-$SET"
           gh release download "$tag" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D incoming
           file="$SET.tar.gz"

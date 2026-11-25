@@ -16,6 +16,7 @@ from Xlib.ext import xtest
 
 binary = Path(os.environ["FOAFNAUT_APP"]).resolve()
 layout = sys.argv[1]
+latency_budget = float(os.environ.get("MAX_CLICK_DELIVERY_MS", "0"))
 out = Path("out").resolve()
 out.mkdir(exist_ok=True)
 conn = display.Display()
@@ -127,6 +128,9 @@ def run(label, url, cache):
         host_click_ms = first_host_ms + (sent - first_frame) * 1000
         result["observedClickDuringAskMs"] = max((ask["blocked"] for ask in asks
             if ask.get("ev") == "ask" and ask["asked"] <= host_click_ms <= ask["asked"] + ask["blocked"]), default=0)
+        # The released gate allows three light submissions or one heavy submission.
+        if not 1 <= result["maxInFlight"] <= 3:
+            raise RuntimeError(f'unexpected outstanding GPU submissions: {result["maxInFlight"]}')
         if dispatched is None or result["dropped"]:
             raise RuntimeError("missing SDL button trace or dropped native input")
     except Exception as error:
@@ -141,6 +145,8 @@ def run(label, url, cache):
         result.update(firstFrameLogMs=ms(start, first_frame), firstSourcePixelsMs=ms(start, source_visible),
                       frameLogToInjectionMs=ms(first_frame, sent), clickToSDLLogMs=ms(sent, dispatched),
                       clickToResultPixelsMs=ms(sent, visible))
+        if latency_budget > 0 and result["clickToSDLLogMs"] is not None and result["clickToSDLLogMs"] > latency_budget:
+            result.setdefault("error", f"SDL button delivery exceeded {latency_budget:g} ms")
         (out / f"{label}.json").write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result), flush=True)
     return result
