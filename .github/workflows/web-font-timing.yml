@@ -1,13 +1,15 @@
-name: Measure overlap of web font discovery and initial assets
+name: Verify current Foafnaut web font overlap
 on:
   push:
-    branches: [wip/web-font-overlap-current]
+    branches: [wip/web-font-overlap-production]
 permissions:
   contents: read
   actions: read
 env:
   GH_TOKEN: ${{ github.token }}
   CORE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
+  HOST: 9dad59fe700460630eff2d37413fab4d09cd81dd
+  BASELINE: eec048b9da8a3e2bc1c426ee9e5274edcb39f472
 jobs:
   profile:
     runs-on: ubuntu-24.04
@@ -26,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: ${{ env.CORE }}
+          ref: ${{ env.HOST }}
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -46,10 +48,10 @@ jobs:
         run: |
           set -euo pipefail
           lab="$PWD/core/labs/demos/foafnaut"
-          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          test "$(git -C core rev-parse HEAD)" = "$HOST"
           echo "LAB=$lab" >> "$GITHUB_ENV"
-          test "$(git hash-object "$lab/run_html.ts")" = ff44425b54c2bc5970125b1248b821a417e1e89b
-          test "$(git hash-object "$lab/native_html_document.ts")" = 2a77fbe11902ff9aa8e38faba929c4ef13a5b926
+          test "$(git hash-object "$lab/run_html.ts")" = bc18426ee268de6015fa9ee62d92a7a03caeae27
+          test "$(git hash-object "$lab/native_html_document.ts")" = bdfbb5d937c9e42344d7028f4813683e3a21c06d
           mapfile -t archives < <(find package -name '*.tar.gz')
           test "${#archives[@]}" -eq 1
           echo "86b24b714ad09d2f89295720eba01ca4f90ac423fcc6a94c8d282282360be58b  ${archives[0]}" | sha256sum -c -
@@ -68,14 +70,18 @@ jobs:
           cp "$directory/libnative-window.so" "$lab/.build/native/"
           sha256sum "${archives[0]}" web/foafnaut-web.tar.gz "$lab/run_html.ts" "$lab/native_html_document.ts" > out/inputs.sha256
           sha256sum "$lab/realpages/pages.json" >> out/inputs.sha256
-          python3 experiments/bbc-linux-startup/instrument.py "$lab"
           variant="$RUNNER_TEMP/font-variants"
           mkdir -p "$variant"/{a,b}
+          cp "$lab/native_html_document.ts" "$variant/b/"
+          gh api "repos/danbri/factoidal-core/contents/labs/demos/foafnaut/native_html_document.ts?ref=$BASELINE" --jq .content |
+            base64 --decode > "$variant/a/native_html_document.ts"
+          test "$(git hash-object "$variant/a/native_html_document.ts")" = 2a77fbe11902ff9aa8e38faba929c4ef13a5b926
+          sha256sum "$variant"/*/*.ts >> out/production-inputs.sha256
+          deno check --no-config --no-npm --unstable-ffi --unstable-webgpu "$lab/run_html.ts" 2>&1 | tee out/typecheck.log
           for role in a b; do
-            cp "$lab/native_html_document.ts" "$variant/$role/"
+            python3 experiments/web-font-timing/doc-phases.py "$variant/$role"
+            python3 experiments/web-font-timing/fonts.py "$variant/$role/native_html_document.ts" baseline
           done
-          python3 experiments/web-font-timing/fonts.py "$variant/a/native_html_document.ts" baseline
-          python3 experiments/web-font-timing/fonts.py "$variant/b/native_html_document.ts" candidate
           sha256sum "$variant"/*/*.ts >> out/inputs.sha256
           for role in a b; do
             cp "$variant/$role/"*.ts "$lab/"
