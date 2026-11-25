@@ -1,4 +1,4 @@
-name: Check percentage-grid layout against exact parent with WPT reftests
+name: Check percentage-grid layout against pinned baseline with WPT reftests
 on:
   push:
     branches: [wip/1051-grid-wpt-pixels]
@@ -7,10 +7,10 @@ permissions:
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
-  BASELINE_RUN: "45639650100"
-  CANDIDATE_RUN: "45642343732"
-  BASELINE: da564916037a1470d2f15a894364e18eb489a307
-  CANDIDATE: d441eb9a0e458dd11adebee8f4a834a1afcca4e3
+  BASELINE_RUN: "45649724924"
+  CANDIDATE_RUN: "45657670341"
+  BASELINE: 839dc27f0d873bbef749fc6ad36ecb2bf6e95316
+  CANDIDATE: f8d8a077688dfc8651e10dbcb8ae6381d6d2b626
   WPT: 056c528ccb5844b01628e0cd667520535dee16cc
 jobs:
   wait:
@@ -20,19 +20,14 @@ jobs:
       - name: Verify that both source revisions have their exact engine artifacts
         run: |
           set -euo pipefail
-          candidate="repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN"
-          baseline="repos/$GITHUB_REPOSITORY/actions/runs/$BASELINE_RUN"
-          tag="build-${BASELINE:0:12}-foafnaut-linux-x86_64"
-          gh api "$candidate/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CANDIDATE"
-          until gh api "$candidate/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
-            if [[ "$(gh api "$candidate" --jq .status)" == completed ]]; then exit 1; fi
-            sleep 30
+          for entry in "$BASELINE_RUN:$BASELINE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${entry%:*}"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from ${entry#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
           done
-          until gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '.assets[].name' | grep -Fx foafnaut-linux-x86_64.tar.gz; do
-            if [[ "$(gh api "$baseline" --jq .status)" == completed ]]; then exit 1; fi
-            sleep 30
-          done
-          test "$(gh api "repos/danbri/factoidal-core/git/commits/$CANDIDATE" --jq '.parents[0].sha')" = "$BASELINE"
   reftest:
     needs: wait
     runs-on: ubuntu-latest
@@ -47,6 +42,7 @@ jobs:
         with:
           repository: danbri/factoidal-core
           ref: ${{ env.CANDIDATE }}
+          fetch-depth: 3
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -70,6 +66,12 @@ jobs:
             quirks/reference
       - uses: actions/download-artifact@v4
         with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
           run-id: ${{ env.CANDIDATE_RUN }}
           name: branch-engine
           path: engines/candidate
@@ -83,14 +85,8 @@ jobs:
           unset LD_LIBRARY_PATH
           test "$(git -C core rev-parse HEAD)" = "$CANDIDATE"
           test "$(git -C wpt rev-parse HEAD)" = "$WPT"
-          mkdir -p runtime out engines/baseline
-          tag="build-${BASELINE:0:12}-foafnaut-linux-x86_64"
-          archive=foafnaut-linux-x86_64.tar.gz
-          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D engines/baseline -p build-info.json -p "$archive"
-          expected=$(jq -er --arg base "$BASELINE" --arg name "$archive" 'select(.source_commit==$base) | .artifacts[$name].sha256' engines/baseline/build-info.json)
-          echo "$expected  engines/baseline/$archive" | sha256sum -c -
-          tar -xzf "engines/baseline/$archive" -C engines/baseline
-          mv engines/baseline/foafnaut/libweb-render.so engines/baseline/libweb-render.so
+          git -C core merge-base --is-ancestor "$BASELINE" "$CANDIDATE"
+          mkdir -p runtime out
           tag="build-e4445d14752c-foafnaut-web"
           gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
           expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
@@ -120,12 +116,12 @@ jobs:
           assert baseline.keys() == candidate.keys() == cases, (len(baseline),len(candidate),len(cases))
           changes={case:[baseline[case],candidate[case]] for case in sorted(cases) if baseline[case] != candidate[case]}
           Path("out/changes.json").write_text(json.dumps(changes,indent=2)+"\n")
-          print(f"Exact-parent comparison of {len(cases)} Grid reftests for percentage sizes, edges and nesting.")
+          print(f"Exact baseline comparison of {len(cases)} Grid reftests for percentage sizes, edges and nesting.")
           print(collections.Counter(map(tuple,changes.values())))
           for name, (before, after) in changes.items():
               print(f"- `{name}` {before} → {after}")
           if any(before == "PASS" and after != "PASS" for before, after in changes.values()):
-              raise SystemExit("One or more passing parent reftests regressed")
+              raise SystemExit("One or more passing baseline reftests regressed")
           PY
       - uses: actions/upload-artifact@v4
         if: always()
