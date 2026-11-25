@@ -107,6 +107,9 @@ jobs:
             --virtual-time-budget=1000 --screenshot="$PWD/out/chrome-stripes.png" http://127.0.0.1:8030/stripes.html
           google-chrome --headless=new --no-sandbox --disable-gpu --disable-background-networking --hide-scrollbars \
             --user-data-dir="$RUNNER_TEMP/density-chrome" --force-device-scale-factor=1 --window-size=600,800 \
+            --virtual-time-budget=1000 --screenshot="$PWD/out/chrome-reference.png" http://127.0.0.1:8030/stripe-reference.html
+          google-chrome --headless=new --no-sandbox --disable-gpu --disable-background-networking --hide-scrollbars \
+            --user-data-dir="$RUNNER_TEMP/density-chrome" --force-device-scale-factor=1 --window-size=600,800 \
             --virtual-time-budget=1000 --dump-dom http://127.0.0.1:8030/chrome-fractional.html > out/chrome-fractional.html
           for arm in control candidate; do
             deno run --no-config --no-npm --unstable-ffi -A core/tests/browser-wpt/reftest-render.ts \
