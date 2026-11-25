@@ -7,9 +7,9 @@ permissions:
   contents: read
 env:
   GH_TOKEN: ${{ github.token }}
-  BASELINE_RUN: "45692334484"
+  BASELINE_RUN: "45706477664"
   CANDIDATE_RUN: "45708903743"
-  BASELINE: 5d4a4366293994bb3aa268c6c68882560e773aba
+  BASELINE: 9fa1d855822cc14462d55602dcab7d622094e16b
   CANDIDATE: 054a5169f5056011b7f31de0212fdad0a13954d0
   WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
 jobs:
@@ -35,7 +35,7 @@ jobs:
             if [[ "$(gh api "$baseline" --jq .status)" == completed ]]; then exit 1; fi
             sleep 30
           done
-          # The sole source change between the released engine and the candidate parent is the WPT runner.
+          # The candidate parent and release baseline have the same renderer source. Only the build budget changed.
           test "$(gh api "repos/danbri/factoidal-core/git/commits/$CANDIDATE" --jq '.parents[0].sha')" = "acfa63c86cf9c273cb3bbffcdab86b1cc52874cc"
   reftest:
     needs: wait
