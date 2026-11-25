@@ -1,0 +1,1645 @@
+{
+ "format": "factoidal-wpt-reftests-run-v1",
+ "row": {
+  "run_id": "20261125T0126Z-wpt-reftest-css-linux-x86_64-gh45525656736a1",
+  "started_utc": "2026-11-25T01:26:33Z",
+  "finished_utc": "2026-11-25T01:37:04Z",
+  "trigger": "schedule",
+  "suite": "wpt-reftest-css",
+  "platform": "linux-x86_64",
+  "engine": "native-cpu-raster",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "11c6771daaac6d4caa65e3a183bea3a700c215cf",
+  "commit_utc": "2026-11-25T00:22:43Z",
+  "snapshot_branch": "",
+  "release_tag": "build-11c6771daaac-foafnaut-linux-x86_64",
+  "wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+  "names_total": 25868,
+  "names_run": 25868,
+  "passed": 12173,
+  "denominator": 25868,
+  "share_pct": "47.0581",
+  "share_ex_encoding_pct": "",
+  "ok": 12173,
+  "error": 22,
+  "timeout": 135,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": 13533,
+  "server_failures": 22,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 16,
+  "wall_minutes": 10.5,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x16; core tests/browser-wpt/wpt-reftests.py, CPU raster, Noto Sans",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45525656736",
+  "result_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261125T0126Z-wpt-reftest-css-linux-x86_64-gh45525656736a1/results.tsv.gz",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261125T0126Z-wpt-reftest-css-linux-x86_64-gh45525656736a1/meta.json"
+ },
+ "rules": "Every reftest item of the WPT manifest at wpt_commit under the suite's directory (print reftests are a separate kind), run by core tests/browser-wpt/wpt-reftests.py by wptrunner's rules: == and != references, reference chains, fuzzy annotations, the test's viewport size (800x600 by default); per pixel the largest channel difference and the count of differing pixels against the fuzzy ranges. Drawn by the release's engine library with its CPU raster (op render, cpu:true), Noto Sans and the Hub's fallback fonts (third_party/fonts), page scripts on BubblePopJS; reftest-wait honoured for up to 6 s of page time (TIMEOUT after). A reftest is one test, PASS or not, as on wpt.fyi.",
+ "validity": {
+  "rules": "every shard present; every test has a status; ERROR (harness) under 0.5% of tests",
+  "valid": true,
+  "reasons": []
+ },
+ "totals": {
+  "tests": 25868,
+  "passed": 12173,
+  "share_pct": 47.0581,
+  "statuses": {
+   "PASS": 12173,
+   "FAIL": 13533,
+   "ERROR": 22,
+   "EXCLUDED": 5,
+   "TIMEOUT": 135
+  },
+  "harness_errors": 22,
+  "chrome_passed": 22737,
+  "firefox_passed": 21053,
+  "safari_passed": 20373,
+  "edge_passed": 22801,
+  "chrome_share_pct": 87.8962,
+  "firefox_share_pct": 81.3863,
+  "safari_share_pct": 78.7575,
+  "edge_share_pct": 88.1437,
+  "passed_where_chrome_passes": 11708,
+  "chrome_passes_we_fail": 11029,
+  "passed_with_skips": 87
+ },
+ "directories": {
+  "css/CSS2/": {
+   "tests": 6245,
+   "passed": 4462,
+   "chrome": 6118,
+   "firefox": 6106,
+   "safari": 5973,
+   "edge": 6113
+  },
+  "css/WOFF2/": {
+   "tests": 298,
+   "passed": 293,
+   "chrome": 292,
+   "firefox": 292,
+   "safari": 293,
+   "edge": 291
+  },
+  "css/compositing/": {
+   "tests": 60,
+   "passed": 8,
+   "chrome": 58,
+   "firefox": 52,
+   "safari": 44,
+   "edge": 56
+  },
+  "css/css-align/": {
+   "tests": 66,
+   "passed": 28,
+   "chrome": 62,
+   "firefox": 50,
+   "safari": 41,
+   "edge": 62
+  },
+  "css/css-anchor-position/": {
+   "tests": 240,
+   "passed": 44,
+   "chrome": 225,
+   "firefox": 190,
+   "safari": 219,
+   "edge": 225
+  },
+  "css/css-animations/": {
+   "tests": 37,
+   "passed": 13,
+   "chrome": 36,
+   "firefox": 32,
+   "safari": 32,
+   "edge": 36
+  },
+  "css/css-backgrounds/": {
+   "tests": 578,
+   "passed": 229,
+   "chrome": 476,
+   "firefox": 526,
+   "safari": 489,
+   "edge": 476
+  },
+  "css/css-borders/": {
+   "tests": 269,
+   "passed": 131,
+   "chrome": 225,
+   "firefox": 173,
+   "safari": 166,
+   "edge": 238
+  },
+  "css/css-box/": {
+   "tests": 42,
+   "passed": 5,
+   "chrome": 42,
+   "firefox": 2,
+   "safari": 31,
+   "edge": 42
+  },
+  "css/css-break/": {
+   "tests": 1143,
+   "passed": 147,
+   "chrome": 989,
+   "firefox": 554,
+   "safari": 619,
+   "edge": 989
+  },
+  "css/css-cascade/": {
+   "tests": 44,
+   "passed": 20,
+   "chrome": 44,
+   "firefox": 41,
+   "safari": 44,
+   "edge": 44
+  },
+  "css/css-color-adjust/": {
+   "tests": 24,
+   "passed": 7,
+   "chrome": 23,
+   "firefox": 22,
+   "safari": 20,
+   "edge": 23
+  },
+  "css/css-color/": {
+   "tests": 321,
+   "passed": 160,
+   "chrome": 297,
+   "firefox": 295,
+   "safari": 283,
+   "edge": 291
+  },
+  "css/css-conditional/": {
+   "tests": 173,
+   "passed": 119,
+   "chrome": 170,
+   "firefox": 161,
+   "safari": 161,
+   "edge": 170
+  },
+  "css/css-contain/": {
+   "tests": 438,
+   "passed": 196,
+   "chrome": 427,
+   "firefox": 427,
+   "safari": 418,
+   "edge": 429
+  },
+  "css/css-content/": {
+   "tests": 66,
+   "passed": 13,
+   "chrome": 62,
+   "firefox": 55,
+   "safari": 47,
+   "edge": 62
+  },
+  "css/css-counter-styles/": {
+   "tests": 260,
+   "passed": 19,
+   "chrome": 247,
+   "firefox": 240,
+   "safari": 216,
+   "edge": 247
+  },
+  "css/css-display/": {
+   "tests": 225,
+   "passed": 91,
+   "chrome": 152,
+   "firefox": 142,
+   "safari": 143,
+   "edge": 152
+  },
+  "css/css-exclusions/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-flexbox/": {
+   "tests": 1025,
+   "passed": 613,
+   "chrome": 1014,
+   "firefox": 943,
+   "safari": 925,
+   "edge": 1014
+  },
+  "css/css-font-loading/": {
+   "tests": 7,
+   "passed": 3,
+   "chrome": 7,
+   "firefox": 6,
+   "safari": 5,
+   "edge": 7
+  },
+  "css/css-fonts/": {
+   "tests": 386,
+   "passed": 162,
+   "chrome": 328,
+   "firefox": 336,
+   "safari": 311,
+   "edge": 330
+  },
+  "css/css-forms/": {
+   "tests": 16,
+   "passed": 2,
+   "chrome": 2,
+   "firefox": 2,
+   "safari": 2,
+   "edge": 2
+  },
+  "css/css-gaps/": {
+   "tests": 553,
+   "passed": 34,
+   "chrome": 358,
+   "firefox": 47,
+   "safari": 37,
+   "edge": 358
+  },
+  "css/css-grid/": {
+   "tests": 1779,
+   "passed": 592,
+   "chrome": 947,
+   "firefox": 926,
+   "safari": 1210,
+   "edge": 947
+  },
+  "css/css-highlight-api/": {
+   "tests": 111,
+   "passed": 15,
+   "chrome": 110,
+   "firefox": 102,
+   "safari": 64,
+   "edge": 110
+  },
+  "css/css-image-animation/": {
+   "tests": 22,
+   "passed": 14,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 4,
+   "edge": 3
+  },
+  "css/css-images/": {
+   "tests": 490,
+   "passed": 301,
+   "chrome": 395,
+   "firefox": 423,
+   "safari": 330,
+   "edge": 394
+  },
+  "css/css-inline/": {
+   "tests": 186,
+   "passed": 21,
+   "chrome": 163,
+   "firefox": 104,
+   "safari": 80,
+   "edge": 163
+  },
+  "css/css-layout-api/": {
+   "tests": 135,
+   "passed": 8,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/css-lists/": {
+   "tests": 199,
+   "passed": 113,
+   "chrome": 116,
+   "firefox": 197,
+   "safari": 102,
+   "edge": 116
+  },
+  "css/css-logical/": {
+   "tests": 6,
+   "passed": 4,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-masking/": {
+   "tests": 503,
+   "passed": 162,
+   "chrome": 470,
+   "firefox": 474,
+   "safari": 426,
+   "edge": 497
+  },
+  "css/css-multicol/": {
+   "tests": 464,
+   "passed": 144,
+   "chrome": 459,
+   "firefox": 381,
+   "safari": 297,
+   "edge": 459
+  },
+  "css/css-namespaces/": {
+   "tests": 23,
+   "passed": 6,
+   "chrome": 23,
+   "firefox": 23,
+   "safari": 23,
+   "edge": 23
+  },
+  "css/css-navigation/": {
+   "tests": 3,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-nesting/": {
+   "tests": 17,
+   "passed": 12,
+   "chrome": 17,
+   "firefox": 17,
+   "safari": 17,
+   "edge": 17
+  },
+  "css/css-overflow/": {
+   "tests": 737,
+   "passed": 180,
+   "chrome": 421,
+   "firefox": 304,
+   "safari": 234,
+   "edge": 424
+  },
+  "css/css-paint-api/": {
+   "tests": 115,
+   "passed": 101,
+   "chrome": 106,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 109
+  },
+  "css/css-painting/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-position/": {
+   "tests": 252,
+   "passed": 88,
+   "chrome": 251,
+   "firefox": 199,
+   "safari": 192,
+   "edge": 251
+  },
+  "css/css-properties-values-api/": {
+   "tests": 7,
+   "passed": 1,
+   "chrome": 7,
+   "firefox": 7,
+   "safari": 7,
+   "edge": 7
+  },
+  "css/css-pseudo/": {
+   "tests": 280,
+   "passed": 108,
+   "chrome": 252,
+   "firefox": 196,
+   "safari": 151,
+   "edge": 253
+  },
+  "css/css-rhythm/": {
+   "tests": 18,
+   "passed": 3,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/css-ruby/": {
+   "tests": 143,
+   "passed": 39,
+   "chrome": 99,
+   "firefox": 97,
+   "safari": 49,
+   "edge": 99
+  },
+  "css/css-scroll-anchoring/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 4,
+   "firefox": 4,
+   "safari": 4,
+   "edge": 4
+  },
+  "css/css-scroll-snap/": {
+   "tests": 26,
+   "passed": 2,
+   "chrome": 24,
+   "firefox": 25,
+   "safari": 23,
+   "edge": 24
+  },
+  "css/css-scrollbars/": {
+   "tests": 31,
+   "passed": 31,
+   "chrome": 31,
+   "firefox": 31,
+   "safari": 27,
+   "edge": 31
+  },
+  "css/css-shadow/": {
+   "tests": 114,
+   "passed": 65,
+   "chrome": 95,
+   "firefox": 95,
+   "safari": 95,
+   "edge": 95
+  },
+  "css/css-shapes/": {
+   "tests": 238,
+   "passed": 28,
+   "chrome": 236,
+   "firefox": 219,
+   "safari": 213,
+   "edge": 237
+  },
+  "css/css-sizing/": {
+   "tests": 612,
+   "passed": 241,
+   "chrome": 547,
+   "firefox": 483,
+   "safari": 514,
+   "edge": 547
+  },
+  "css/css-style-attr/": {
+   "tests": 16,
+   "passed": 15,
+   "chrome": 16,
+   "firefox": 16,
+   "safari": 16,
+   "edge": 16
+  },
+  "css/css-syntax/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-tables/": {
+   "tests": 172,
+   "passed": 89,
+   "chrome": 163,
+   "firefox": 150,
+   "safari": 139,
+   "edge": 163
+  },
+  "css/css-text-decor/": {
+   "tests": 339,
+   "passed": 113,
+   "chrome": 258,
+   "firefox": 290,
+   "safari": 150,
+   "edge": 271
+  },
+  "css/css-text/": {
+   "tests": 1564,
+   "passed": 601,
+   "chrome": 1263,
+   "firefox": 1188,
+   "safari": 1200,
+   "edge": 1277
+  },
+  "css/css-transforms/": {
+   "tests": 797,
+   "passed": 405,
+   "chrome": 791,
+   "firefox": 789,
+   "safari": 772,
+   "edge": 792
+  },
+  "css/css-transitions/": {
+   "tests": 6,
+   "passed": 5,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-typed-om/": {
+   "tests": 5,
+   "passed": 5,
+   "chrome": 5,
+   "firefox": 0,
+   "safari": 4,
+   "edge": 5
+  },
+  "css/css-ui/": {
+   "tests": 965,
+   "passed": 885,
+   "chrome": 947,
+   "firefox": 925,
+   "safari": 915,
+   "edge": 947
+  },
+  "css/css-values/": {
+   "tests": 212,
+   "passed": 83,
+   "chrome": 206,
+   "firefox": 149,
+   "safari": 148,
+   "edge": 206
+  },
+  "css/css-variables/": {
+   "tests": 183,
+   "passed": 139,
+   "chrome": 179,
+   "firefox": 178,
+   "safari": 180,
+   "edge": 179
+  },
+  "css/css-view-transitions/": {
+   "tests": 335,
+   "passed": 23,
+   "chrome": 323,
+   "firefox": 240,
+   "safari": 259,
+   "edge": 319
+  },
+  "css/css-viewport/": {
+   "tests": 113,
+   "passed": 18,
+   "chrome": 111,
+   "firefox": 81,
+   "safari": 88,
+   "edge": 111
+  },
+  "css/css-will-change/": {
+   "tests": 47,
+   "passed": 11,
+   "chrome": 47,
+   "firefox": 47,
+   "safari": 44,
+   "edge": 47
+  },
+  "css/css-writing-modes/": {
+   "tests": 1171,
+   "passed": 196,
+   "chrome": 1128,
+   "firefox": 1131,
+   "safari": 1083,
+   "edge": 1129
+  },
+  "css/cssom-view/": {
+   "tests": 11,
+   "passed": 7,
+   "chrome": 11,
+   "firefox": 11,
+   "safari": 8,
+   "edge": 11
+  },
+  "css/cssom/": {
+   "tests": 12,
+   "passed": 5,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/fill-stroke/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 0,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/filter-effects/": {
+   "tests": 375,
+   "passed": 150,
+   "chrome": 345,
+   "firefox": 323,
+   "safari": 267,
+   "edge": 347
+  },
+  "css/mediaqueries/": {
+   "tests": 58,
+   "passed": 45,
+   "chrome": 56,
+   "firefox": 56,
+   "safari": 54,
+   "edge": 56
+  },
+  "css/motion/": {
+   "tests": 101,
+   "passed": 3,
+   "chrome": 95,
+   "firefox": 98,
+   "safari": 89,
+   "edge": 95
+  },
+  "css/printing/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/reference/": {
+   "tests": 3,
+   "passed": 1,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/selectors/": {
+   "tests": 344,
+   "passed": 294,
+   "chrome": 323,
+   "firefox": 337,
+   "safari": 335,
+   "edge": 323
+  }
+ },
+ "rivals": [
+  {
+   "recorded_utc": "2026-11-25T01:37:39Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+   "browser": "chrome",
+   "version": "158.0.8127.88",
+   "wptfyi_run_id": 4736928910671872,
+   "passed": 22737,
+   "denominator": 25868,
+   "share_pct": "87.8962",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-25T01:37:39Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+   "browser": "firefox",
+   "version": "160.0.1",
+   "wptfyi_run_id": 5913538959507456,
+   "passed": 21053,
+   "denominator": 25868,
+   "share_pct": "81.3863",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-25T01:37:39Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+   "browser": "safari",
+   "version": "27.2 (22625.2.8.11.9)",
+   "wptfyi_run_id": 4792976489054208,
+   "passed": 20373,
+   "denominator": 25868,
+   "share_pct": "78.7575",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-25T01:37:39Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+   "browser": "edge",
+   "version": "158.0.4370.33",
+   "wptfyi_run_id": 5108147229032448,
+   "passed": 22801,
+   "denominator": 25868,
+   "share_pct": "88.1437",
+   "status": "ok",
+   "reason": ""
+  }
+ ],
+ "since_previous": {
+  "previous_run": "20261124T1552Z-wpt-reftest-css-linux-x86_64-gh45430232420a1",
+  "previous_commit": "44f71d2e63f689635afcb1f4e0cbf7fc2142ddef",
+  "previous_wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+  "previous_passed": 11738,
+  "passed_delta": 435,
+  "newly_passing": [
+   "/css/CSS2/abspos/static-inside-inline-001.html",
+   "/css/CSS2/abspos/static-inside-inline-003.html",
+   "/css/CSS2/abspos/static-inside-inline-block.html",
+   "/css/CSS2/abspos/static-inside-table-cell.html",
+   "/css/CSS2/abspos/table-caption-is-containing-block-001.html",
+   "/css/CSS2/backgrounds/background-327.xht",
+   "/css/CSS2/backgrounds/background-328.xht",
+   "/css/CSS2/backgrounds/background-329.xht",
+   "/css/CSS2/backgrounds/background-root-023.xht",
+   "/css/CSS2/box-display/containing-block-019.xht",
+   "/css/CSS2/box-display/containing-block-021.xht",
+   "/css/CSS2/css1/c563-list-type-000.xht",
+   "/css/CSS2/floats-clear/floats-029.xht",
+   "/css/CSS2/floats/floats-wrap-bfc-outside-001.xht",
+   "/css/CSS2/generated-content/after-content-display-003.xht",
+   "/css/CSS2/generated-content/before-content-display-003.xht",
+   "/css/CSS2/generated-content/content-004.xht",
+   "/css/CSS2/generated-content/content-150.xht",
+   "/css/CSS2/linebox/line-height-applies-to-008.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-038.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-113.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-114.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-115.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-116.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-clear-001.xht",
+   "/css/CSS2/margin-padding-clear/margin-collapse-quirks-mode-001.html",
+   "/css/CSS2/normal-flow/block-formatting-context-height-003.xht",
+   "/css/CSS2/normal-flow/block-non-replaced-height-013.xht",
+   "/css/CSS2/normal-flow/height-percentage-004.xht",
+   "/css/CSS2/normal-flow/inline-replaced-height-010.xht",
+   "/css/CSS2/normal-flow/inline-replaced-height-011.xht",
+   "/css/CSS2/normal-flow/inline-replaced-width-016.xht",
+   "/css/CSS2/normal-flow/inline-replaced-width-017.xht",
+   "/css/CSS2/normal-flow/margin-collapse-after-float-001.html",
+   "/css/CSS2/normal-flow/replaced-intrinsic-005.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-025.xht",
+   "/css/CSS2/positioning/absolute-non-replaced-width-026.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-007.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-008.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-014.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-021.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-028.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-035.xht",
+   "/css/CSS2/positioning/absolute-replaced-height-036.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-001.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-006.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-008.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-013.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-027.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-036.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-041.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-043.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-048.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-050.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-055.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-057.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-062.xht",
+   "/css/CSS2/positioning/absolute-replaced-width-069.xht",
+   "/css/CSS2/positioning/abspos-001.xht",
+   "/css/CSS2/positioning/abspos-009.xht",
+   "/css/CSS2/positioning/abspos-014.xht",
+   "/css/CSS2/positioning/abspos-016.xht",
+   "/css/CSS2/positioning/abspos-018.xht",
+   "/css/CSS2/positioning/abspos-020.xht",
+   "/css/CSS2/positioning/abspos-029.html",
+   "/css/CSS2/positioning/abspos-overflow-001.xht",
+   "/css/CSS2/positioning/abspos-overflow-002.xht",
+   "/css/CSS2/positioning/abspos-overflow-003.xht",
+   "/css/CSS2/positioning/abspos-overflow-011.xht",
+   "/css/CSS2/positioning/bottom-offset-003.xht",
+   "/css/CSS2/positioning/position-absolute-001.xht",
+   "/css/CSS2/positioning/position-fixed-001.xht",
+   "/css/CSS2/positioning/position-relative-004.xht",
+   "/css/CSS2/positioning/position-relative-005.xht",
+   "/css/CSS2/positioning/position-relative-014.xht",
+   "/css/CSS2/positioning/position-relative-019.xht",
+   "/css/CSS2/positioning/right-offset-003.xht",
+   "/css/CSS2/positioning/top-offset-003.xht",
+   "/css/CSS2/tables/height-table-cell-001.xht",
+   "/css/CSS2/tables/height-width-inline-table-001.xht",
+   "/css/CSS2/tables/height-width-inline-table-001a.xht",
+   "/css/CSS2/tables/height-width-inline-table-001b.xht",
+   "/css/CSS2/tables/height-width-inline-table-001c.xht",
+   "/css/CSS2/tables/height-width-inline-table-001d.xht",
+   "/css/CSS2/tables/height-width-inline-table-001e.xht",
+   "/css/CSS2/tables/height-width-table-001.xht",
+   "/css/CSS2/tables/height-width-table-001a.xht",
+   "/css/CSS2/tables/height-width-table-001b.xht",
+   "/css/CSS2/tables/height-width-table-001c.xht",
+   "/css/CSS2/tables/height-width-table-001d.xht",
+   "/css/CSS2/tables/height-width-table-001e.xht",
+   "/css/CSS2/tables/padding-applies-to-013a.xht",
+   "/css/CSS2/tables/separated-border-model-003a.xht",
+   "/css/CSS2/tables/separated-border-model-004a.xht",
+   "/css/CSS2/tables/separated-border-model-004b.xht",
+   "/css/CSS2/tables/separated-border-model-004c.xht",
+   "/css/CSS2/tables/table-anonymous-objects-010.xht",
+   "/css/CSS2/tables/table-anonymous-objects-012.xht",
+   "/css/CSS2/tables/table-anonymous-objects-018.xht",
+   "/css/CSS2/tables/table-anonymous-objects-020.xht",
+   "/css/CSS2/tables/table-anonymous-objects-060.xht",
+   "/css/CSS2/tables/table-anonymous-objects-062.xht",
+   "/css/CSS2/tables/table-anonymous-objects-064.xht",
+   "/css/CSS2/tables/table-anonymous-objects-066.xht",
+   "/css/CSS2/tables/table-anonymous-objects-068.xht",
+   "/css/CSS2/tables/table-anonymous-objects-070.xht",
+   "/css/CSS2/tables/table-anonymous-objects-072.xht",
+   "/css/CSS2/tables/table-anonymous-objects-074.xht",
+   "/css/CSS2/tables/table-anonymous-objects-076.xht",
+   "/css/CSS2/tables/table-anonymous-objects-078.xht",
+   "/css/CSS2/tables/table-anonymous-objects-088.xht",
+   "/css/CSS2/tables/table-anonymous-objects-090.xht",
+   "/css/CSS2/tables/table-anonymous-objects-092.xht",
+   "/css/CSS2/tables/table-anonymous-objects-094.xht",
+   "/css/CSS2/tables/table-anonymous-objects-096.xht",
+   "/css/CSS2/tables/table-anonymous-objects-098.xht",
+   "/css/CSS2/tables/table-anonymous-objects-100.xht",
+   "/css/CSS2/tables/table-anonymous-objects-102.xht",
+   "/css/CSS2/tables/table-anonymous-objects-104.xht",
+   "/css/CSS2/tables/table-anonymous-objects-106.xht",
+   "/css/CSS2/tables/table-anonymous-objects-108.xht",
+   "/css/CSS2/tables/table-anonymous-objects-110.xht",
+   "/css/CSS2/tables/table-anonymous-objects-112.xht",
+   "/css/CSS2/tables/table-anonymous-objects-114.xht",
+   "/css/CSS2/tables/table-anonymous-objects-116.xht",
+   "/css/CSS2/tables/table-anonymous-objects-118.xht",
+   "/css/CSS2/tables/table-anonymous-objects-120.xht",
+   "/css/CSS2/tables/table-anonymous-objects-122.xht",
+   "/css/CSS2/tables/table-anonymous-objects-124.xht",
+   "/css/CSS2/tables/table-anonymous-objects-126.xht",
+   "/css/CSS2/tables/table-anonymous-objects-128.xht",
+   "/css/CSS2/tables/table-anonymous-objects-130.xht",
+   "/css/CSS2/tables/table-anonymous-objects-132.xht",
+   "/css/CSS2/tables/table-anonymous-objects-134.xht",
+   "/css/CSS2/tables/table-anonymous-objects-136.xht",
+   "/css/CSS2/tables/table-anonymous-objects-138.xht",
+   "/css/CSS2/tables/table-anonymous-objects-140.xht",
+   "/css/CSS2/tables/table-anonymous-objects-142.xht",
+   "/css/CSS2/tables/table-anonymous-objects-144.xht",
+   "/css/CSS2/tables/table-anonymous-objects-146.xht",
+   "/css/CSS2/tables/table-anonymous-objects-148.xht",
+   "/css/CSS2/tables/table-anonymous-objects-150.xht",
+   "/css/CSS2/tables/table-anonymous-objects-152.xht",
+   "/css/CSS2/tables/table-anonymous-objects-154.xht",
+   "/css/CSS2/tables/table-anonymous-objects-158.xht",
+   "/css/CSS2/tables/table-anonymous-objects-160.xht",
+   "/css/CSS2/tables/table-anonymous-objects-162.xht",
+   "/css/CSS2/tables/table-anonymous-objects-164.xht",
+   "/css/CSS2/tables/table-anonymous-objects-166.xht",
+   "/css/CSS2/tables/table-anonymous-objects-170.xht",
+   "/css/CSS2/tables/table-anonymous-objects-172.xht",
+   "/css/CSS2/tables/table-anonymous-objects-174.xht",
+   "/css/CSS2/tables/table-anonymous-objects-176.xht",
+   "/css/CSS2/tables/table-anonymous-objects-178.xht",
+   "/css/CSS2/tables/table-anonymous-objects-182.xht",
+   "/css/CSS2/tables/table-anonymous-objects-186.xht",
+   "/css/CSS2/tables/table-anonymous-objects-190.xht",
+   "/css/CSS2/tables/table-anonymous-objects-194.xht",
+   "/css/CSS2/tables/table-anonymous-objects-198.xht",
+   "/css/CSS2/tables/table-anonymous-objects-206.xht",
+   "/css/CSS2/tables/table-height-algorithm-008a.xht",
+   "/css/CSS2/tables/table-height-algorithm-008b.xht",
+   "/css/CSS2/tables/table-height-algorithm-008c.xht",
+   "/css/CSS2/text/text-indent-103.xht",
+   "/css/CSS2/text/text-indent-104.xht",
+   "/css/CSS2/visudet/height-applies-to-010a.xht",
+   "/css/CSS2/visudet/height-percentage-004.xht",
+   "/css/CSS2/visuren/anonymous-boxes-001a.xht",
+   "/css/CSS2/visuren/anonymous-boxes-001b.xht",
+   "/css/CSS2/visuren/left-offset-position-fixed-001.xht",
+   "/css/CSS2/visuren/position-absolute-008a.xht",
+   "/css/css-align/baseline-of-scrollable-1a.html",
+   "/css/css-align/blocks/justify-self-auto-margins-1.html",
+   "/css/css-align/blocks/justify-self-normal-1.html",
+   "/css/css-align/blocks/justify-self-text-align.html",
+   "/css/css-align/blocks/safe-justify-self-text-align-1.html",
+   "/css/css-align/distribution-values/space-evenly-001.html",
+   "/css/css-align/gaps/gap-normal-used-001.html",
+   "/css/css-align/gaps/gap-normal-used-002.html",
+   "/css/css-anchor-position/anchor-scroll-implicit-001.html",
+   "/css/css-anchor-position/anchor-scroll-update-008.html",
+   "/css/css-anchor-position/anchor-scroll-update-009.html",
+   "/css/css-backgrounds/background-size/background-size-near-zero-png.html",
+   "/css/css-backgrounds/background-size/background-size-near-zero-svg.html",
+   "/css/css-box/margin-trim/block-container-block-end-start-margin.html",
+   "/css/css-box/margin-trim/block-container-block-in-inline-001.html",
+   "/css/css-box/margin-trim/block-container-block-in-inline-008.html",
+   "/css/css-box/margin-trim/block-container-block-in-inline-009.html",
+   "/css/css-box/margin-trim/block-container-block-in-inline-010.html",
+   "/css/css-break/block-end-aligned-abspos-nested.html",
+   "/css/css-break/flexbox/multi-line-row-flex-fragmentation-026.html",
+   "/css/css-break/flexbox/single-line-row-flex-fragmentation-016.html",
+   "/css/css-break/flexbox/single-line-row-flex-fragmentation-018.html",
+   "/css/css-break/svg-with-transform.html",
+   "/css/css-cascade/unset-val-002.html",
+   "/css/css-contain/content-visibility/content-visibility-auto-svg-text.html",
+   "/css/css-contain/content-visibility/content-visibility-on-g.html",
+   "/css/css-content/pseudo-element-inline-box.html",
+   "/css/css-flexbox/abspos/dynamic-align-self-001.html",
+   "/css/css-flexbox/align-items-006.html",
+   "/css/css-flexbox/auto-margins-002.html",
+   "/css/css-flexbox/flex-aspect-ratio-img-column-001.html",
+   "/css/css-flexbox/flex-aspect-ratio-img-column-002.html",
+   "/css/css-flexbox/flex-aspect-ratio-img-column-003.html",
+   "/css/css-flexbox/flex-aspect-ratio-img-row-001.html",
+   "/css/css-flexbox/flex-aspect-ratio-img-row-002.html",
+   "/css/css-flexbox/flex-aspect-ratio-img-row-003.html",
+   "/css/css-flexbox/flex-aspect-ratio-img-row-014.html",
+   "/css/css-flexbox/flex-basis-item-margins-001.html",
+   "/css/css-flexbox/flex-item-and-percentage-abspos.html",
+   "/css/css-flexbox/flex-item-contains-size-layout-001.html",
+   "/css/css-flexbox/flex-minimum-height-flex-items-001.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-002.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-003.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-004.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-005.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-006.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-007.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-008.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-011.xht",
+   "/css/css-flexbox/flex-minimum-height-flex-items-015.html",
+   "/css/css-flexbox/flex-minimum-height-flex-items-019.html",
+   "/css/css-flexbox/flex-minimum-width-flex-items-001.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-002.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-003.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-004.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-005.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-006.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-007.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-008.xht",
+   "/css/css-flexbox/flex-minimum-width-flex-items-009.html",
+   "/css/css-flexbox/flex-minimum-width-flex-items-010.html",
+   "/css/css-flexbox/flex-wrap-002.html",
+   "/css/css-flexbox/flex-wrap-003.html",
+   "/css/css-flexbox/flex-wrap-004.html",
+   "/css/css-flexbox/flex-wrap-005.html",
+   "/css/css-flexbox/flexbox-baseline-single-item-001a.html",
+   "/css/css-flexbox/flexbox-baseline-single-item-001b.html",
+   "/css/css-flexbox/gap-011.html",
+   "/css/css-flexbox/gap-012.html",
+   "/css/css-flexbox/gap-014.html",
+   "/css/css-flexbox/gap-015.html",
+   "/css/css-flexbox/gap-016.html",
+   "/css/css-flexbox/gap-020.html",
+   "/css/css-flexbox/gap-021.html",
+   "/css/css-flexbox/grandchild-span-height.html",
+   "/css/css-flexbox/grid-flex-item-006.html",
+   "/css/css-flexbox/grid-flex-item-007.html",
+   "/css/css-flexbox/image-items-flake-001.html",
+   "/css/css-flexbox/intrinsic-size/col-flex-grow-negative-margin-001.html",
+   "/css/css-flexbox/intrinsic-size/col-negative-margin-hidden-grid-item-001.html",
+   "/css/css-flexbox/intrinsic-size/col-wrap-011.html",
+   "/css/css-flexbox/intrinsic-size/col-wrap-012.html",
+   "/css/css-flexbox/intrinsic-size/col-wrap-015.html",
+   "/css/css-flexbox/intrinsic-size/col-wrap-016.html",
+   "/css/css-flexbox/intrinsic-size/row-001.html",
+   "/css/css-flexbox/intrinsic-size/row-006.html",
+   "/css/css-flexbox/intrinsic-size/row-009.html",
+   "/css/css-flexbox/intrinsic-size/row-010.html",
+   "/css/css-flexbox/justify-content-sideways-001.html",
+   "/css/css-flexbox/stretch-obeys-min-max-001.html",
+   "/css/css-flexbox/stretch-obeys-min-max-002.html",
+   "/css/css-flexbox/svg-root-as-flex-item-001.html",
+   "/css/css-flexbox/table-as-flex-item-max-content.html",
+   "/css/css-flexbox/table-as-item-min-height-1.html",
+   "/css/css-flexbox/table-as-item-stretch-cross-size-3.html",
+   "/css/css-flexbox/table-as-item-stretch-cross-size-4.html",
+   "/css/css-flexbox/table-as-item-wide-content.html",
+   "/css/css-fonts/font-size-xxx-large.html",
+   "/css/css-grid/alignment/grid-content-distribution-001.html",
+   "/css/css-grid/alignment/grid-content-distribution-002.html",
+   "/css/css-grid/alignment/grid-content-distribution-003.html",
+   "/css/css-grid/alignment/grid-content-distribution-004.html",
+   "/css/css-grid/alignment/grid-content-distribution-005.html",
+   "/css/css-grid/alignment/grid-content-distribution-006.html",
+   "/css/css-grid/alignment/grid-content-distribution-007.html",
+   "/css/css-grid/alignment/grid-content-distribution-008.html",
+   "/css/css-grid/alignment/grid-content-distribution-009.html",
+   "/css/css-grid/alignment/grid-content-distribution-010.html",
+   "/css/css-grid/alignment/grid-content-distribution-011.html",
+   "/css/css-grid/alignment/grid-content-distribution-012.html",
+   "/css/css-grid/alignment/grid-content-distribution-013.html",
+   "/css/css-grid/alignment/grid-content-distribution-014.html",
+   "/css/css-grid/alignment/grid-content-distribution-015.html",
+   "/css/css-grid/alignment/grid-content-distribution-016.html",
+   "/css/css-grid/alignment/grid-content-distribution-017.html",
+   "/css/css-grid/alignment/grid-content-distribution-018.html",
+   "/css/css-grid/alignment/grid-content-distribution-019.html",
+   "/css/css-grid/alignment/grid-content-distribution-020.html",
+   "/css/css-grid/alignment/grid-content-distribution-021.html",
+   "/css/css-grid/alignment/grid-content-distribution-022.html",
+   "/css/css-grid/alignment/grid-content-distribution-023.html",
+   "/css/css-grid/alignment/grid-content-distribution-024.html",
+   "/css/css-grid/alignment/grid-content-distribution-025.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-001.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-002.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-003.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-004.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-005.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-006.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-007.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-008.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-009.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-010.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-011.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-012.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-013.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-014.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-015.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-016.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-017.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-018.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-019.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-020.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-021.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-022.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-023.html",
+   "/css/css-grid/alignment/grid-content-distribution-with-collapsed-tracks-024.html",
+   "/css/css-grid/alignment/self-baseline/grid-self-baseline-changes-grid-area-size-001.html",
+   "/css/css-grid/alignment/self-baseline/grid-self-baseline-changes-grid-area-size-003.html",
+   "/css/css-grid/grid-definition/grid-auto-repeat-multiple-values-001.html",
+   "/css/css-grid/grid-items/grid-items-001.html",
+   "/css/css-grid/grid-items/grid-items-002.html",
+   "/css/css-grid/grid-items/grid-items-003.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-003.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-004.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-005.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-006.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-007.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-008.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-009.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-010.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-011.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-012.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-013.html",
+   "/css/css-grid/grid-items/grid-items-percentage-margins-014.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-003.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-004.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-005.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-006.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-007.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-008.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-009.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-010.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-011.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-012.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-013.html",
+   "/css/css-grid/grid-items/grid-items-percentage-paddings-014.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-001.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-002.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-003.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-004.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-005.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-006.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-007.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-008.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-009.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-010.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-011.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-012.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-013.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-014.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-015.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-016.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-018.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-019.html",
+   "/css/css-grid/grid-items/grid-minimum-size-grid-items-020.html",
+   "/css/css-grid/grid-items/grid-order-property-auto-placement-001.html",
+   "/css/css-grid/grid-items/grid-order-property-auto-placement-002.html",
+   "/css/css-grid/grid-items/grid-order-property-auto-placement-003.html",
+   "/css/css-grid/grid-items/grid-order-property-auto-placement-004.html",
+   "/css/css-grid/grid-items/grid-order-property-auto-placement-005.html",
+   "/css/css-grid/grid-items/replaced-element-002.html",
+   "/css/css-grid/grid-lanes/abspos/column-grid-lanes-intrinsic-sizing-oof.html",
+   "/css/css-grid/grid-lanes/abspos/row-grid-lanes-intrinsic-sizing-oof.html",
+   "/css/css-grid/grid-model/grid-display-grid-001.html",
+   "/css/css-grid/grid-model/grid-float-001.html",
+   "/css/css-grid/grid-model/grid-multicol-001.html",
+   "/css/css-grid/grid-model/grid-vertical-align-001.html",
+   "/css/css-grid/layout-algorithm/grid-stretch-respects-min-size-001.html",
+   "/css/css-grid/layout-algorithm/grid-stretch-respects-min-size-002.html",
+   "/css/css-grid/layout-algorithm/grid-stretch-respects-min-size-003.html",
+   "/css/css-masking/clip-path/svg-clip-path-fixed-values.html",
+   "/css/css-masking/mask-image/mask-image-svg-child-will-change.html",
+   "/css/css-multicol/multicol-on-broken-image-alt-text.html",
+   "/css/css-overflow/scrollbar-gutter-fixedpos-003.html",
+   "/css/css-overflow/scrollbar-gutter-fixedpos-004.html",
+   "/css/css-position/position-absolute-center-003.html",
+   "/css/css-position/position-absolute-center-004.html",
+   "/css/css-position/position-absolute-dynamic-overflow-001.html",
+   "/css/css-position/position-absolute-in-inline-margin-top.html",
+   "/css/css-position/position-absolute-multicol-001.html",
+   "/css/css-position/position-absolute-scrollable-overflow-zero.html",
+   "/css/css-shadow/css-scoping-shadow-host-functional-rule.html",
+   "/css/css-shadow/css-scoping-shadow-nested-slot-display-override.html",
+   "/css/css-shadow/css-scoping-shadow-slot-display-override.html",
+   "/css/css-shadow/css-scoping-shadow-slot-fallback.html",
+   "/css/css-shadow/css-scoping-shadow-slot-style.html",
+   "/css/css-shadow/has-slotted-002.html",
+   "/css/css-shadow/has-slotted-flattened-002.html",
+   "/css/css-shadow/has-slotted-flattened-004.html",
+   "/css/css-shadow/has-slotted-functional-002.tentative.html",
+   "/css/css-shadow/has-slotted-functional-003.tentative.html",
+   "/css/css-shadow/has-slotted-functional-005.tentative.html",
+   "/css/css-shadow/has-slotted-functional-flattened-002.tentative.html",
+   "/css/css-shadow/has-slotted-functional-flattened-003.tentative.html",
+   "/css/css-shadow/has-slotted-functional-flattened-005.tentative.html",
+   "/css/css-shadow/host-has-001.tentative.html",
+   "/css/css-shadow/host-has-002.tentative.html",
+   "/css/css-shadow/host-has-003.tentative.html",
+   "/css/css-shadow/reslot-text-inheritance.html",
+   "/css/css-sizing/aspect-ratio/abspos-011.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-004.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-005.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-006.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-009.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-014.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-018.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-019.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-023.html",
+   "/css/css-sizing/aspect-ratio/grid-aspect-ratio-027.html",
+   "/css/css-sizing/aspect-ratio/replaced-element-015.html",
+   "/css/css-sizing/fit-content-contribution-001.html",
+   "/css/css-sizing/intrinsic-size-min-content-box-sizing.html",
+   "/css/css-sizing/stretch-function-block-size-indefinite-001.html",
+   "/css/css-sizing/stretch/abspos-1.html",
+   "/css/css-sizing/stretch/bfc-next-to-float-1.html",
+   "/css/css-sizing/stretch/cache-miss-001.html",
+   "/css/css-sizing/stretch/flexbox-stretch-minimum-001.html",
+   "/css/css-sizing/stretch/flexbox-stretch-minimum-002.html",
+   "/css/css-tables/absolute-tables-007.html",
+   "/css/css-tables/height-distribution/extra-height-given-to-all-row-groups-001.html",
+   "/css/css-tables/height-distribution/extra-height-given-to-all-row-groups-002.html",
+   "/css/css-tables/height-distribution/extra-height-given-to-all-row-groups-005.html",
+   "/css/css-tables/height-distribution/percentage-sizing-of-table-cell-children-003.html",
+   "/css/css-tables/height-distribution/percentage-sizing-of-table-cell-children-004.html",
+   "/css/css-tables/height-distribution/percentage-sizing-of-table-cell-children-005.html",
+   "/css/css-tables/height-distribution/percentage-sizing-of-table-cell-children-006.html",
+   "/css/css-tables/internal-containing-block-001.html",
+   "/css/css-tables/table-has-box-sizing-border-box-002.html",
+   "/css/css-text/line-break/line-break-anywhere-016.html",
+   "/css/css-text/line-break/line-break-anywhere-and-white-space-001.html",
+   "/css/css-text/line-break/line-break-anywhere-and-white-space-002.html",
+   "/css/css-text/line-break/line-break-anywhere-and-white-space-003.html",
+   "/css/css-text/line-break/line-break-anywhere-and-white-space-004.html",
+   "/css/css-text/line-break/line-break-anywhere-overrides-uax-behavior-010.html",
+   "/css/css-text/line-break/line-break-anywhere-overrides-uax-behavior-012.html",
+   "/css/css-text/line-breaking/line-breaking-012.html",
+   "/css/css-text/line-breaking/line-breaking-013.html",
+   "/css/css-text/line-breaking/line-breaking-014.html",
+   "/css/css-text/line-breaking/line-breaking-ic-001.html",
+   "/css/css-text/overflow-wrap/overflow-wrap-anywhere-inline-001.html",
+   "/css/css-text/overflow-wrap/overflow-wrap-anywhere-inline-003.tentative.html",
+   "/css/css-text/overflow-wrap/overflow-wrap-min-content-size-007.html",
+   "/css/css-text/text-indent/text-indent-percentage-001.xht",
+   "/css/css-text/white-space/full-width-leading-spaces-002.html",
+   "/css/css-text/white-space/full-width-leading-spaces-003.html",
+   "/css/css-text/white-space/full-width-leading-spaces-005.html",
+   "/css/css-text/white-space/pre-wrap-017.html",
+   "/css/css-text/white-space/pre-wrap-leading-spaces-004.html",
+   "/css/css-text/white-space/pre-wrap-leading-spaces-005.html",
+   "/css/css-text/white-space/pre-wrap-leading-spaces-006.html",
+   "/css/css-text/white-space/pre-wrap-leading-spaces-007.html",
+   "/css/css-text/white-space/pre-wrap-leading-spaces-008.html",
+   "/css/css-text/white-space/pre-wrap-leading-spaces-009.html",
+   "/css/css-text/white-space/pre-wrap-leading-spaces-010.html",
+   "/css/css-text/white-space/text-wrap-balance-004.html",
+   "/css/css-text/white-space/text-wrap-balance-005.html",
+   "/css/css-text/word-break/word-break-break-all-028.html",
+   "/css/css-text/word-break/word-break-break-all-inline-010.tentative.html",
+   "/css/css-text/word-break/word-break-min-content-004.html",
+   "/css/css-transforms/3dtransform-and-filter-no-perspective-001.html",
+   "/css/css-transforms/inline-styles/svg-inline-styles-005.html",
+   "/css/css-transforms/inline-styles/svg-inline-styles-006.html",
+   "/css/css-transforms/inline-styles/svg-inline-styles-009.html",
+   "/css/css-transforms/inline-styles/svg-inline-styles-010.html",
+   "/css/css-transforms/inline-styles/svg-inline-styles-013.html",
+   "/css/css-transforms/preserve3d-button.html",
+   "/css/css-transforms/transform-display-001.html",
+   "/css/css-transforms/transform-transformable-inline-block.html",
+   "/css/css-ui/box-sizing-001.html",
+   "/css/css-ui/box-sizing-026.html",
+   "/css/css-viewport/zoom/scroll-margin.html",
+   "/css/css-viewport/zoom/zoom-pseudo-image.html",
+   "/css/css-writing-modes/abs-pos-non-replaced-icb-vlr-003.xht",
+   "/css/css-writing-modes/abs-pos-non-replaced-icb-vlr-011.xht",
+   "/css/css-writing-modes/abs-pos-non-replaced-icb-vrl-002.xht",
+   "/css/css-writing-modes/abs-pos-non-replaced-icb-vrl-010.xht",
+   "/css/filter-effects/css-reference-large-svg-filter.html",
+   "/css/filter-effects/filter-region-transformed-child-001.html",
+   "/css/filter-effects/svg-filter-gradient-interpolation.html",
+   "/css/filter-effects/svg-sourcegraphic-currentcolor-dynamic-001.html",
+   "/css/selectors/sharing-in-svg-use.html"
+  ],
+  "newly_failing": [
+   {
+    "test": "/css/CSS2/lists/list-style-applies-to-017.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/lists/list-style-image-applies-to-017.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/lists/list-style-type-applies-to-017.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/margin-padding-clear/padding-left-applies-to-010.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/text/letter-spacing-applies-to-003.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/text/text-indent-applies-to-003.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/CSS2/text/white-space-applies-to-003.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-align/baseline-of-scrollable-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-animations/svg-transform-animation-zoom.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-break/flexbox/multi-line-row-flex-fragmentation-032.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-break/flexbox/single-line-row-flex-fragmentation-017.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-break/flexbox/single-line-row-flex-fragmentation-019.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-break/flexbox/single-line-row-flex-fragmentation-020.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-conditional/container-queries/svg-g-no-size-container.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-contain/content-visibility/content-visibility-on-root-svg.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-contain/content-visibility/content-visibility-svg-forced-layout.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-counter-styles/counter-style-at-rule/disclosure-line-height.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-display/run-in/list-style-applies-to-011.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-display/run-in/list-style-type-applies-to-011.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-display/run-in/run-in-listitem-between-001.xht",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-lists/counter-list-item-slot-order.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-lists/counter-slot-order-scoping.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-lists/counter-slot-order.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-borderBox-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-contentBox-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-fillBox-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-marginBox-1a.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-paddingBox-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-strokeBox-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-strokeBox-1c.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-viewBox-1a.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-viewBox-1b.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/clip-path/clip-path-viewBox-1d.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-clip-2.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-clip-4.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-clip-5.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-masking/mask-image/mask-origin-3.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/individual-transform/animation/individual-transform-combine.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-001.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-002.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-003.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-004.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-005.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-006.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-007.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-008.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-009.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-010.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-011.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-012.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-013.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-014.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-015.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-016.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-017.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-018.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-transforms/transform-input-019.html",
+    "status": "FAIL"
+   },
+   {
+    "test": "/css/css-viewport/zoom/stroke.html",
+    "status": "FAIL"
+   }
+  ],
+  "drop": true,
+  "same_wpt_commit": true
+ },
+ "incidents": [],
+ "shards": [
+  {
+   "shard": [
+    7,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 619.4,
+   "pagesDrawn": 2805,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    6,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 394.5,
+   "pagesDrawn": 2805,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    1,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 625.1,
+   "pagesDrawn": 2813,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    2,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 626.5,
+   "pagesDrawn": 2829,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    13,
+    16
+   ],
+   "tests": 1616,
+   "wallSeconds": 391.9,
+   "pagesDrawn": 2801,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    0,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 393.6,
+   "pagesDrawn": 2814,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    9,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 459.6,
+   "pagesDrawn": 2794,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    11,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 337.6,
+   "pagesDrawn": 2802,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    3,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 449.7,
+   "pagesDrawn": 2836,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    8,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 585.1,
+   "pagesDrawn": 2816,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    15,
+    16
+   ],
+   "tests": 1616,
+   "wallSeconds": 605.9,
+   "pagesDrawn": 2806,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    5,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 630.4,
+   "pagesDrawn": 2804,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    12,
+    16
+   ],
+   "tests": 1616,
+   "wallSeconds": 586.8,
+   "pagesDrawn": 2810,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    4,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 458.7,
+   "pagesDrawn": 2830,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    10,
+    16
+   ],
+   "tests": 1617,
+   "wallSeconds": 334.0,
+   "pagesDrawn": 2798,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  },
+  {
+   "shard": [
+    14,
+    16
+   ],
+   "tests": 1616,
+   "wallSeconds": 331.8,
+   "pagesDrawn": 2820,
+   "engineSha256": "ed0b5a50fdb489b0e485a69022d94f9cc7fcfbebcba1846df5c44518bd2b8a5e"
+  }
+ ],
+ "completeness": "complete",
+ "shards_missing_reasons": {},
+ "plan": {
+  "release_tag": "build-11c6771daaac-foafnaut-linux-x86_64",
+  "core_commit": "11c6771daaac6d4caa65e3a183bea3a700c215cf",
+  "commit_utc": "2026-11-25T00:22:43Z",
+  "web_tag": "build-aa2c4b775740-foafnaut-web",
+  "wpt_commit": "056c528ccb5844b01628e0cd667520535dee16cc",
+  "suites": [
+   "css"
+  ],
+  "trigger": "schedule",
+  "planned_utc": "2026-11-25T01:25:49Z"
+ }
+}
