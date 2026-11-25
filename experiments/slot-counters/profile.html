@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset=utf-8>
+<style>
+body {font: 24px monospace}
+.row > .item::before, .row > .contents > .item::before {content: counters(c,'.') ' '}
+.item {counter-increment:c}
+.contents {display:contents}
+.box {display:block}
+</style>
+<p>Contents siblings:
+<div class=row><div class=contents><div class=item>A</div></div><div class=contents><div class=item>B</div></div></div>
+<p>Box siblings:
+<div class=row><div class="contents box"><div class=item>A</div></div><div class="contents box"><div class=item>B</div></div></div>
+<p>Reset on contents:
+<div class=row style="counter-reset:c 4"><div class=contents style="counter-reset:c 9"><div class=item>A</div></div><div class=item>B</div></div>
+<p>Increment on contents:
+<div class=row style="counter-reset:c 4"><div class=contents style="counter-increment:c 5"><div class=item>A</div></div><div class=item>B</div></div>
+<p>Shadow slots (default display):
+<div id="default-slots"><div slot="a">A</div><div slot="b">B</div></div>
+<p>Shadow slots (block display):
+<div id="block-slots"><div slot="a">A</div><div slot="b">B</div></div>
+<script>
+for (const name of ["default-slots","block-slots"]) {
+  const shadow = document.getElementById(name).attachShadow({mode:"open"});
+  shadow.innerHTML = `
+    <style>
+      ::slotted(div) {counter-increment:c}
+      ${name==="block-slots"?"slot {display:block}":""}
+    </style>
+    <div><slot name=a></slot><slot name=b></slot></div>
+  `;
+}
+const counterStyle = document.createElement("style");
+counterStyle.textContent = "[slot]::before {content:counters(c,'.') ' '}";
+document.head.append(counterStyle);
+</script>

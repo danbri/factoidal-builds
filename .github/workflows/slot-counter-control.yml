@@ -1,0 +1,56 @@
+name: Check counter inheritance through contents boxes and shadow slots
+on:
+  push:
+    branches: [wip/counter-contents-chrome-control]
+permissions:
+  contents: read
+env:
+  WPT: 056c528ccb5844b01628e0cd667520535dee16cc
+jobs:
+  chrome:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/slot-counters
+      - name: Capture browser behavior and compare the pinned WPT references
+        run: |
+          set -euo pipefail
+          chrome=$(command -v google-chrome || command -v chromium)
+          mkdir -p out inputs
+          "$chrome" --version | tee out/chrome-version.txt
+          sudo apt-get update -q
+          sudo apt-get install -y -q tesseract-ocr python3-pil
+          for name in counter-list-item-slot-order counter-slot-order-scoping counter-slot-order; do
+            for test in "$name" "$name-ref"; do
+              curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/css/css-lists/$test.html" -o "inputs/$test.html"
+            done
+          done
+          cp experiments/slot-counters/profile.html inputs/profile.html
+          sha256sum inputs/*.html > out/inputs.sha256
+          for file in inputs/*.html; do
+            base=$(basename "$file" .html)
+            "$chrome" --headless --no-sandbox --disable-gpu --disable-background-networking --no-first-run \
+              --user-data-dir="$RUNNER_TEMP/chrome" --force-device-scale-factor=1 --window-size=800,870 \
+              --screenshot="$PWD/out/$base.png" "file://$PWD/$file" >> out/chrome.log 2>&1
+            test -s "out/$base.png"
+          done
+          tesseract out/profile.png stdout 2>out/ocr.log | tee out/profile.txt
+          /usr/bin/python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          from pathlib import Path
+          from PIL import Image, ImageChops
+          root=Path("out")
+          for ref in sorted(root.glob("*-ref.png")):
+              test=root/(ref.stem.removesuffix("-ref")+".png")
+              with Image.open(test) as a, Image.open(ref) as b:
+                  diff=ImageChops.difference(a.convert("RGB"),b.convert("RGB"))
+                  print(test.stem, sum(p!=(0,0,0) for p in diff.getdata()))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: slot-counter-chrome-control
+          path: out/
+          retention-days: 7
