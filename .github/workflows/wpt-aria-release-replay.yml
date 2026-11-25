@@ -1,0 +1,112 @@
+name: Replay ARIA reflection on two released Linux engines
+on:
+  push:
+    branches: [codex/wpt-aria-release-replay]
+permissions:
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASE: 3f499a9011b382d4f707330707a79a45191ddcba
+  CURRENT: dc102cae43cb7f0a2a457da339dee1ec18295da8
+  HARNESS: cbd84d30e68162efa4d04fc586393c7f70bbe07f
+  WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
+  TARGET: html/dom/aria-attribute-reflection.html
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.HARNESS }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+            formal/lean4/lean-toolchain
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify runner and stage the exact WPT files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          test "$(git -C core rev-parse HEAD)" = "$HARNESS"
+          test "$(git -C core hash-object tests/browser-wpt/testharness-run.ts)" = 9bf9a9f87cf1a542cd1b80d7c19d39db2e76125b
+          test "$(git -C core hash-object tests/browser-wpt/wpt-score.py)" = 9e1dbe19ccdd98baba10bf2c102f29c95b684fb8
+          python3 -m pip install --quiet pyyaml==6.0.3
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$(cat core/formal/lean4/lean-toolchain)"
+          echo "LD_LIBRARY_PATH=$(ls -d "$HOME"/.elan/toolchains/*/lib/lean | head -1)" >> "$GITHUB_ENV"
+          {
+            printf 'base=%s\ncurrent=%s\nharness=%s\nwpt=%s\n' "$BASE" "$CURRENT" "$HARNESS" "$WPT"
+            deno --version
+            python3 --version
+            uname -a
+            printf 'image=%s %s\n' "$ImageOS" "$ImageVersion"
+          } > out/provenance.txt
+          printf '/%s\n' "$TARGET" > out/isolated.list
+          printf '/%s\n' \
+            html/cross-origin-opener-policy/reporting/navigation-reporting/reporting-coop-navigated-opener.https.html \
+            'html/document-isolation-policy/credentialless-shared-worker.https.tentative.window.html?request_origin=cross_origin&worker_dip=none&window_dip=credentialless' \
+            "$TARGET" html/dom/documents/dom-tree-accessors/document.title-05.html > out/sequence.list
+          python3 core/tests/browser-wpt/wpt-score.py tree --wpt-root "$PWD/wpt" --list out/sequence.list --commit "$WPT"
+          sha256sum "wpt/$TARGET" out/*.list core/tests/browser-wpt/{wpt-score.py,testharness-run.ts} > out/input.sha256
+      - name: Replay isolated and neighboring cases against the published engines
+        shell: bash
+        run: |
+          set -euo pipefail
+          fetch_set() {
+            local commit=$1 set=$2 dest=$3 tag
+            tag="build-${commit:0:12}-$set"
+            mkdir -p "$dest"
+            gh release download "$tag" -R "$GITHUB_REPOSITORY" -D "$dest" -p build-info.json -p "$set.tar.gz"
+            local sum
+            sum=$(jq -er --arg sha "$commit" --arg file "$set.tar.gz" 'select(.source_commit == $sha) | .artifacts[$file].sha256' "$dest/build-info.json")
+            printf '%s  %s\n' "$sum" "$dest/$set.tar.gz" | sha256sum -c -
+            printf '%s %s %s\n' "$commit" "$tag" "$sum" >> out/release-provenance.txt
+          }
+          for options in \
+            "$BASE:98cf12b45124a964363520bda0d84a543a19094d:4613600a8e2b3fb99c4895857592d1534be1d41f569d9be97703edd4a5e10347" \
+            "$CURRENT:41789954b17aae0057e4f5a5adee434f35facafa:b3aba7d36e24d1639b1f4b7c5c14414b19fb3aabbfa652c4024a06595b403adc"; do
+            IFS=: read -r commit runtime engine_hash <<< "$options"
+            short=${commit:0:12}
+            stage="$RUNNER_TEMP/$short"
+            fetch_set "$commit" foafnaut-linux-x86_64 "$stage/engine"
+            fetch_set "$runtime" foafnaut-web "$stage/runtime"
+            cp "$stage/engine/build-info.json" "out/$short-engine-build-info.json"
+            cp "$stage/runtime/build-info.json" "out/$short-runtime-build-info.json"
+            tar -xzf "$stage/engine/foafnaut-linux-x86_64.tar.gz" -C "$stage/engine" foafnaut/libweb-render.so
+            tar -xzf "$stage/runtime/foafnaut-web.tar.gz" -C "$stage/runtime" docs/web/hub/html-webgpu/runtime
+            engine="$stage/engine/foafnaut/libweb-render.so"
+            test "$(jq -er '.artifacts["foafnaut-linux-x86_64.tar.gz"].files["foafnaut/libweb-render.so"].sha256' "$stage/engine/build-info.json")" = "$engine_hash"
+            printf '%s  %s\n' "$engine_hash" "$engine" | sha256sum -c -
+            printf 'engine %s %s\n' "$commit" "$engine_hash" >> out/input.sha256
+            bash core/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/core/labs/demos/foafnaut" "$stage/runtime"
+            for mode in isolated sequence; do
+              arm="out/$short-$mode"
+              mkdir -p "$arm"
+              python3 core/tests/browser-wpt/wpt-score.py run --list "out/$mode.list" --dir "$arm" \
+                --wpt-root "$PWD/wpt" --native-engine "$engine" --jobs 1 --stall 300 --max-hours 0.18 \
+                -- --script-engine bubblepop --wpt-commit "$WPT" | tee "$arm/tool.log"
+              jq -cs --arg target "$TARGET" '
+                [.[] | select(.file == $target)] |
+                if length != 1 then error("target case missing or duplicated") else
+                  .[0] | {file, harness, ms, message, count: (.subtests | length), pass: ([.subtests[] | select(.status == "PASS")] | length)}
+                end' "$arm/part0.jsonl" | tee "$arm/summary.json" >> "$GITHUB_STEP_SUMMARY"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: released-aria-reflection-replay
+          path: out/
+          retention-days: 7
