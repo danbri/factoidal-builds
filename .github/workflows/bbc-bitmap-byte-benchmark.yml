@@ -1,0 +1,114 @@
+name: Compare BBC CPU pixels and time after direct bitmap channel conversion
+on:
+  push:
+    branches: [wip/712-bitmap-byte-benchmark]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+
+  PARENT: c72a027ff0eb9f89ea65e72949383f9aed252ee0
+  CANDIDATE: c37aedd790fec725d4caa70196d930d7cb77a03f
+  PARENT_RUN: "45646066839"
+  CANDIDATE_RUN: "45646067249"
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for both pinned native engines
+        run: |
+          set -euo pipefail
+          for entry in "$PARENT_RUN:$PARENT" "$CANDIDATE_RUN:$CANDIDATE"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${entry%:*}"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from ${entry#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+  replay:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/bitmap-byte-benchmark
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.PARENT_RUN }}
+          name: branch-engine
+          path: engines/parent
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45638334817"
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Replay in parent, candidate, candidate, parent order
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH REFTEST_TIME REFTEST_DUMP_DIR
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          export REALPAGES_REPLAY="$PWD/capture/bbc-uk-with-photos.zip"
+          echo "32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46  $REALPAGES_REPLAY" | sha256sum -c -
+          mkdir runtime out
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          renderer=core/tests/browser-wpt/reftest-render.ts
+          python3 experiments/bitmap-byte-benchmark/instrument.py "$renderer"
+          deno check --no-config --no-npm "$renderer"
+          sha256sum engines/*/libweb-render.so "$renderer" "$REALPAGES_REPLAY" > out/inputs.sha256
+          printf '%s\n' '{"url":"https://www.bbc.co.uk/news","file":"bbc.png","width":1280,"height":735}' > out/jobs.jsonl
+          sample=0
+          for role in parent candidate candidate parent; do
+            sample=$((sample+1))
+            dir="out/$sample-$role"
+            mkdir "$dir"
+            deno run --no-config --no-npm --unstable-ffi -A --preload "$lab/realpages/replay.ts" \
+              "$renderer" --native-engine "$PWD/engines/$role/libweb-render.so" --list out/jobs.jsonl \
+              --out "$dir" 2>&1 | tee "$dir/run.log"
+            grep '^__done ' "$dir/run.log" | cut -d' ' -f2- | jq -e 'select(.status=="ok")' > "$dir/result.json"
+            grep '^{"type":"everyday-phase"' "$dir/run.log" | jq -e \
+              'select(.times.cpuFrame>0 and .methods["prepare.scriptSession"].calls>0)' > "$dir/phase.json"
+            jq -c --arg role "$role" '{role:$role,times,session:.methods["prepare.scriptSession"]}' "$dir/phase.json" >> "$GITHUB_STEP_SUMMARY"
+          done
+          jq -s -e 'map(.sha)|unique|length==1' out/*/result.json
+          jq -s -e 'map(.scriptCost)|unique|length==1' out/*/result.json
+          jq -s -e 'map(.methods["prepare.scriptSession"].calls)|unique|length==1' out/*/phase.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-bitmap-byte-benchmark
+          path: out/
+          retention-days: 7
