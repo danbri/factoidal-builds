@@ -30,7 +30,7 @@ try {
     });
     const submitted = events.some(event => event.type === "native-html-form-navigate" &&
       new URL(event.url).searchParams.get("q") === test.expected);
-    const loaded = events.some(event => event.type === "native-html-loaded" &&
+    const loaded = events.some(event => event.type === "native-html-test-title" && event.ok === true &&
       new URL(event.url).pathname === "/results" && new URL(event.url).searchParams.get("q") === test.expected);
     const pass = result.code === 0 && (test.expected === undefined || submitted && loaded);
     const row = {test:test.name,pass,exit:result.code,submitted,loaded};
