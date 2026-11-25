@@ -1,0 +1,79 @@
+name: Check W3C homepage navigation in the published Mac browser
+on:
+  push:
+    branches: [wip/w3c-home-native-input]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 384c4b6196120e4ff8ed831f98903c436d1e1307
+  SET: foafnaut-darwin-arm64
+  WEB: build-384c4b619612-foafnaut-web
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/w3c-home-native-input.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 384c4b6196120e4ff8ed831f98903c436d1e1307
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45431269816
+          name: desktop-w3c-home-snapshot
+          path: snapshot
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Install the pinned public app engine and matching host
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          mkdir -p native runtime out
+          gh release download "build-${CORE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D native
+          expected=63ed5a6334c1851b3c03aaf70717236b173d61489c674c3f899dc7075e0a41b1
+          jq -e --arg sha "$CORE" --arg name "$SET.tar.gz" --arg digest "$expected" \
+            '.source_commit==$sha and .artifacts[$name].sha256==$digest' native/build-info.json
+          echo "$expected  native/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "native/$SET.tar.gz" -C native
+          engine=$(find "$PWD/native" -name libweb-render.dylib -print -quit)
+          window=$(find "$PWD/native" -name libnative-window.dylib -print -quit)
+          test -s "$engine"
+          test -s "$window"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -p build-info.json -D runtime
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | shasum -a 256 -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime" "$window"
+          snap=$(find "$PWD/snapshot" -name 'desktop-w3c-home-*.zip' -print -quit)
+          echo "359b431764ad4eb9debb4e5dc2e4571d968cd95447b52fe767f9933145f4a388  $snap" | shasum -a 256 -c -
+          shasum -a 256 "$snap" "$engine" "$window" "$lab/run_html.ts" > out/inputs.sha256
+          unzip -p "$snap" reference.png > out/chrome-reference.png
+          echo "ENGINE=$engine" >> "$GITHUB_ENV"
+          echo "SNAPSHOT=$snap" >> "$GITHUB_ENV"
+      - name: Check desktop menu and search navigation and capture the narrow layout
+        run: |
+          set -euo pipefail
+          python3 release-tests/w3c-home-native-input.py "$PWD/core/labs/demos/foafnaut" "$ENGINE" "$SNAPSHOT" "$PWD/out" |
+            tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: w3c-home-native-input
+          path: out/
+          retention-days: 7
