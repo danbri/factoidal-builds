@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Preferred aspect ratio on bordered thumbnail canvases</title>
+<style>
+  .card { width:200px; }
+  [data-size] { display:block; box-sizing:border-box; border:15px solid royalblue; padding:5px; }
+</style>
+<div class="card">
+  <canvas width="20" height="50" style="aspect-ratio:2/1;width:100px;height:auto" data-size="100x50"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:2/1;width:50px;height:auto" data-size="50x40"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:2/1;width:auto;height:20px" data-size="80x40"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:2/1;width:auto;max-height:20px" data-size="80x40"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:2/1;width:50%;max-width:90px" data-size="90x45"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:1/2;width:20px;height:auto" data-size="40x80"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:auto 2/1;width:100px;height:auto" data-size="100x190"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:2/1;width:auto;height:auto" data-size="80x40"></canvas>
+  <canvas width="20" height="50" style="box-sizing:content-box;aspect-ratio:2/1;width:100px;height:auto" data-size="140x90"></canvas>
+  <canvas width="20" height="50" style="width:100px;height:auto" data-size="100x190"></canvas>
+  <canvas width="20" height="50" style="aspect-ratio:2/1;width:100px;height:60px" data-size="100x60"></canvas>
+  <div style="aspect-ratio:auto 2/1;width:100px;height:auto" data-size="100x70"></div>
+</div>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script>
+const boxes = document.querySelectorAll('[data-size]');
+for (let i = 0; i < boxes.length; ++i) {
+  const element = boxes[i];
+  test(() => {
+    const box = element.getBoundingClientRect();
+    const expected = element.getAttribute('data-size').split('x').map(Number);
+    assert_approx_equals(box.width, expected[0], 0.015625, 'border-box width');
+    assert_approx_equals(box.height, expected[1], 0.015625, 'border-box height');
+  }, 'box ' + (i + 1) + ': ' + element.getAttribute('style'));
+}
+</script>

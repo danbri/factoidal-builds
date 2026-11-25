@@ -1,4 +1,4 @@
-name: Compare WPT image geometry with desktop image inputs
+name: Compare native aspect ratio with loaded images and canvas
 on:
   push:
     branches: [codex/wpt-layout-image-inputs]
@@ -9,6 +9,8 @@ env:
   CORE: 76f307e51e441e60b6cc5191b66475e2c8dbc918
   WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
   RUNTIME: 98cf12b45124a964363520bda0d84a543a19094d
+  CANDIDATE: 79545173384efb69fe8c58c8b90080ef7274e586
+  CANDIDATE_RUN: '45681427052'
 jobs:
   compare:
     runs-on: ubuntu-24.04
@@ -17,7 +19,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          sparse-checkout: experiments/wpt-layout-image-inputs/instrument.py
+          sparse-checkout: |
+            experiments/wpt-layout-image-inputs/instrument.py
+            experiments/wpt-layout-image-inputs/canvas-box-sizing-wpt.html
           sparse-checkout-cone-mode: false
       - uses: actions/checkout@v4
         with:
@@ -39,6 +43,18 @@ jobs:
           sparse-checkout: |
             css/css-sizing/aspect-ratio
             resources
+      - name: Verify the candidate branch build identity
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN/jobs" |
+            jq -e --arg sha "$CANDIDATE" '.jobs[] | select(.name == ("Build libweb-render.so from " + $sha) and .conclusion == "success") | {id,name,status,conclusion}' > out/candidate-build.json
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: candidate
+          github-token: ${{ github.token }}
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.4
@@ -68,27 +84,54 @@ jobs:
           echo "$sum  $engine" | sha256sum -c -
           lab="$PWD/core/labs/demos/foafnaut"
           bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
-      - name: Compare exact pinned tests with and without image layout inputs
+      - name: Run the same image and canvas geometry inputs on each native engine
         run: |
           set -euo pipefail
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          toolchain=$(cat candidate/lean-toolchain)
+          "$HOME/.elan/bin/elan" toolchain install "$toolchain"
+          export LD_LIBRARY_PATH="$("$HOME/.elan/bin/elan" run "$toolchain" lean --print-prefix)/lib/lean"
+          test -d "$LD_LIBRARY_PATH"
           runner=core/tests/browser-wpt/testharness-run.ts
           fixture=wpt/css/css-sizing/aspect-ratio
+          cp experiments/wpt-layout-image-inputs/canvas-box-sizing-wpt.html "$fixture/"
           sha256sum "$runner" "$fixture/box-sizing-dimensions.html" "$fixture/box-sizing-squashed.html" \
-            "$fixture/support/20x50-green.png" engine/foafnaut/libweb-render.so > out/inputs.sha256
+            "$fixture/support/20x50-green.png" "$fixture/canvas-box-sizing-wpt.html" \
+            engine/foafnaut/libweb-render.so candidate/libweb-render.so > out/inputs.sha256
           python3 experiments/wpt-layout-image-inputs/instrument.py "$runner"
-          printf '%s\n' /css/css-sizing/aspect-ratio/box-sizing-dimensions.html /css/css-sizing/aspect-ratio/box-sizing-squashed.html > out/names.txt
-          for arm in baseline loaded; do
-            flags=()
-            if [[ $arm == loaded ]]; then flags=(--diagnostic-layout-images); fi
-            deno run --no-check --no-config --no-npm --unstable-ffi -A "$runner" --script-engine bubblepop \
-              --native-engine "$PWD/engine/foafnaut/libweb-render.so" --wpt-root "$PWD/wpt" --wpt-commit "$WPT" \
-              --list "$PWD/out/names.txt" --out "$PWD/out/$arm.json" "${flags[@]}" | tee "out/$arm.log"
-            jq -e '.totals.files == 2 and .totals.run == 2 and .totals.subtests == 24 and all(.cases[]; .harness == "OK")' "out/$arm.json"
-            jq -c .totals "out/$arm.json" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' /css/css-sizing/aspect-ratio/box-sizing-dimensions.html /css/css-sizing/aspect-ratio/box-sizing-squashed.html > out/images.txt
+          printf '%s\n' /css/css-sizing/aspect-ratio/canvas-box-sizing-wpt.html > out/canvas.txt
+          for engine in baseline candidate; do
+            if [[ $engine == baseline ]]; then
+              lib="$PWD/engine/foafnaut/libweb-render.so"
+            else
+              lib="$PWD/candidate/libweb-render.so"
+            fi
+            for fixture in images canvas; do
+              deno run --no-check --no-config --no-npm --unstable-ffi -A "$runner" --script-engine bubblepop \
+                --native-engine "$lib" --wpt-root "$PWD/wpt" --wpt-commit "$WPT" \
+                --list "$PWD/out/$fixture.txt" --out "$PWD/out/$engine-$fixture.json" --diagnostic-layout-images |
+                tee "out/$engine-$fixture.log"
+              jq -e 'all(.cases[]; .harness == "OK")' "out/$engine-$fixture.json"
+              jq -c --arg engine "$engine" --arg fixture "$fixture" '{engine:$engine,fixture:$fixture,totals}' "out/$engine-$fixture.json" >> "$GITHUB_STEP_SUMMARY"
+            done
           done
+          jq -e '.totals.subtests == 24 and .totals.pass == 11' out/baseline-images.json
+          jq -e '.totals.subtests == 24 and .totals.pass == 20' out/candidate-images.json
+          jq -e '.totals.subtests == 12 and .totals.pass == 12' out/candidate-canvas.json
+          python3 - <<'EOF'
+          import json
+          def statuses(which):
+              with open(f"out/{which}-images.json") as f:
+                  return {(case["file"], test["name"]): test["status"]
+                          for case in json.load(f)["cases"] for test in case["subtests"]}
+          baseline, candidate = statuses("baseline"), statuses("candidate")
+          assert baseline.keys() == candidate.keys(), "image comparison subtests differed"
+          assert all(candidate[key] == "PASS" for key in baseline if baseline[key] == "PASS")
+          EOF
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: wpt-geometry-image-inputs
+          name: aspect-ratio-native-geometry
           path: out/
           retention-days: 7
