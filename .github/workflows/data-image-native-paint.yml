@@ -1,0 +1,103 @@
+name: Compare percent-encoded image painting on two native engines
+on:
+  push:
+    branches: [codex/data-image-native-paint]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASE: 41789954b17aae0057e4f5a5adee434f35facafa
+  CANDIDATE: d8dc3b49fe72b43a40faa064ca0af24556155614
+  CANDIDATE_RUN: '45693281207'
+  WPT: 94e2796a2aa59a232e4e43e8a218ae967e9fac77
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/data-image-paint
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.BASE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            tests/browser-wpt
+            labs/demos/foafnaut
+            formal/lean4/lean-toolchain
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - name: Verify the candidate build receipt
+        run: |
+          mkdir -p out
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN/jobs" |
+            jq -e --arg sha "$CANDIDATE" '.jobs[] | select(.name == ("Build libweb-render.so from " + $sha) and .status == "completed" and .conclusion == "success") | {id,name,status,conclusion}' > out/candidate.json
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Check the released browser and obtain its native library and runtime
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$BASE"
+          for pair in browser:foafnaut-browser-linux-x86_64 runtime:foafnaut-web; do
+            dest=${pair%%:*}
+            set=${pair#*:}
+            mkdir -p "$dest"
+            gh release download "build-${BASE:0:12}-$set" -R "$GITHUB_REPOSITORY" -D "$dest" -p build-info.json -p "$set.tar.gz"
+            expected=$(jq -er --arg sha "$BASE" --arg file "$set.tar.gz" \
+              'select(.source_commit == $sha) | .artifacts[$file].sha256' "$dest/build-info.json")
+            echo "$expected  $dest/$set.tar.gz" | sha256sum -c -
+            if [[ $dest == browser ]]; then
+              member=foafnaut-linux-x86_64/libweb-render.so
+              tar -xzf "$dest/$set.tar.gz" -C "$dest" "$member"
+              sum=$(jq -er --arg f "$set.tar.gz" --arg key "$member" '.artifacts[$f].files[$key].sha256' "$dest/build-info.json")
+              echo "$sum  $dest/$member" | sha256sum -c -
+            else
+              tar -xzf "$dest/$set.tar.gz" -C "$dest" docs/web/hub/html-webgpu/runtime
+            fi
+          done
+          bash core/labs/demos/foafnaut/realpages/setup-host.sh "$PWD/core/labs/demos/foafnaut" "$PWD/runtime"
+      - name: Paint inline SVG and pinned CSS Images reftests
+        run: |
+          set -euo pipefail
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          toolchain=$(cat candidate/lean-toolchain)
+          test "$toolchain" = "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+          "$HOME/.elan/bin/elan" toolchain install "$toolchain"
+          export LD_LIBRARY_PATH="$("$HOME/.elan/bin/elan" run "$toolchain" lean --print-prefix)/lib/lean"
+          curl -fsSL --retry 3 'https://www.w3.org/assets/website-2021/styles/core.css?ver=1.6' -o out/w3c-core.css
+          python3 experiments/data-image-paint/fixtures.py out/w3c-core.css out/fixtures
+          for file in percent base64 empty; do
+            jq -nc --arg url "file://$PWD/out/fixtures/$file.html" --arg file "$file.png" '{url:$url,file:$file,width:128,height:160}'
+          done > out/jobs.jsonl
+          for stem in object-fit-fill-svg-with-natural-size-and-viewbox object-fit-none-svg-width-only object-fit-svg-no-natural-dimensions; do
+            for file in "$stem" "$stem-ref"; do
+              curl -fsSL --retry 3 "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/css/css-images/$file.html" -o "out/fixtures/$file.html"
+              jq -nc --arg url "file://$PWD/out/fixtures/$file.html" --arg file "$file.png" '{url:$url,file:$file,width:800,height:600}'
+            done
+          done >> out/jobs.jsonl
+          for variant in baseline candidate; do
+            lib="$PWD/candidate/libweb-render.so"
+            if [[ $variant == baseline ]]; then lib="$PWD/browser/foafnaut-linux-x86_64/libweb-render.so"; fi
+            sha256sum "$lib" >> out/engine.sha256
+            deno run --no-check --no-config --no-npm --unstable-ffi -A core/tests/browser-wpt/reftest-render.ts \
+              --native-engine "$lib" --list out/jobs.jsonl --out "out/$variant" | tee "out/$variant.log"
+          done
+          python3 experiments/data-image-paint/compare.py out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: inline-data-image-native-pixels
+          path: out/
+          retention-days: 7
