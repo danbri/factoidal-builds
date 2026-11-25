@@ -21,7 +21,7 @@ lines = [
     ("  for(const read of sheetsRead)", "linked-sheets-ready"),
     ("  const listedImages=new Set(", "imports-ready"),
     ("  let iconBase64:string|undefined;", "first-frame-images-ready"),
-    ("  const webFonts=await loadWebFonts(", "icon-ready"),
+    ("  const webFonts=await ", "icon-ready"),
     ("  // `diagnostics:true` asks Lean", "web-fonts-ready"),
     ("  if(scripted&&scriptHost) {", "fallback-fonts-ready"),
     ("    const turn=await Promise.resolve(scriptHost.start(document.source,document.url,supplied,", "script-start"),
