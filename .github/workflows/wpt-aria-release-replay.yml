@@ -84,8 +84,8 @@ jobs:
             fetch_set "$runtime" foafnaut-web "$stage/runtime"
             cp "$stage/engine/build-info.json" "out/$short-engine-build-info.json"
             cp "$stage/runtime/build-info.json" "out/$short-runtime-build-info.json"
-            tar -xzf "$stage/engine/foafnaut-linux-x86_64.tar.gz" -C "$stage/engine" foafnaut/libweb-render.so
-            tar -xzf "$stage/runtime/foafnaut-web.tar.gz" -C "$stage/runtime" docs/web/hub/html-webgpu/runtime
+            tar -xzf "$stage/engine/foafnaut-linux-x86_64.tar.gz" -C "$stage/engine"
+            tar -xzf "$stage/runtime/foafnaut-web.tar.gz" -C "$stage/runtime"
             engine="$stage/engine/foafnaut/libweb-render.so"
             test "$(jq -er '.artifacts["foafnaut-linux-x86_64.tar.gz"].files["foafnaut/libweb-render.so"].sha256' "$stage/engine/build-info.json")" = "$engine_hash"
             printf '%s  %s\n' "$engine_hash" "$engine" | sha256sum -c -
