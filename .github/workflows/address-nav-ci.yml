@@ -1,0 +1,99 @@
+name: Verify displayed address when a form navigates
+on:
+  push:
+    branches: [codex/address-nav-check]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 626cda66cce0ea1006d19d7f3cbc1ea51b42b53f
+  RUNTIME: e4445d14752c
+jobs:
+  desktop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        layout: [layers, single]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/address-nav-ci.ts
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: release-tests/source
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45652778937
+          name: branch-engine
+          path: engine
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the engine, runtime and display
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth
+          curl -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          toolchain=$(cat engine/lean-toolchain)
+          "$HOME/.elan/bin/elan" toolchain install "$toolchain"
+          lib=$(find "$HOME/.elan/toolchains" -type d -path '*/lib/lean' -print -quit)
+          test -n "$lib"
+          echo "LD_LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+          mkdir -p web bundle out
+          for set in foafnaut-web foafnaut-browser-linux-x86_64; do
+            dest=web
+            if [ "$set" != foafnaut-web ]; then dest=bundle; fi
+            gh release download "build-$RUNTIME-$set" -R "$GITHUB_REPOSITORY" -D "$dest" -p "$set.tar.gz" -p build-info.json
+            sha=$(jq -er --arg file "$set.tar.gz" '.artifacts[$file].sha256' "$dest/build-info.json")
+            echo "$sha  $dest/$set.tar.gz" | sha256sum -c -
+            tar -xzf "$dest/$set.tar.gz" -C "$dest"
+          done
+          lab="$PWD/release-tests/source/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          cp "$(find bundle -name libnative-window.so -print -quit)" "$lab/.build/native/"
+          echo "NATIVE_ENGINE=$PWD/engine/libweb-render.so" >> "$GITHUB_ENV"
+          echo "VK_DRIVER_FILES=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)" >> "$GITHUB_ENV"
+          sha256sum engine/libweb-render.so "$lab/run_html.ts" "$lab/.build/native/libnative-window.so" > out/inputs.sha256
+      - name: Reproduce the bug, then verify the fix
+        env:
+          DENO_WEBGPU_BACKEND: vulkan
+          SDL_VIDEODRIVER: x11
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          LAYOUT: ${{ matrix.layout }}
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime"
+          lab="$PWD/release-tests/source/labs/demos/foafnaut"
+          cp "$lab/run_html.ts" "$RUNNER_TEMP/candidate.ts"
+          python3 - "$lab/run_html.ts" <<'PY'
+          from pathlib import Path
+          import sys
+          file=Path(sys.argv[1])
+          text=file.read_text()
+          assert text.count("const view0=shown(page);")==1
+          file.write_text(text.replace("const view0=shown(page);","const view0=shown();"))
+          PY
+          xvfb-run -a deno run --no-config -A release-tests/address-nav-ci.ts baseline "$LAYOUT" "$NATIVE_ENGINE" "$PWD/out" | tee -a "$GITHUB_STEP_SUMMARY"
+          cp "$RUNNER_TEMP/candidate.ts" "$lab/run_html.ts"
+          xvfb-run -a deno run --no-config -A release-tests/address-nav-ci.ts candidate "$LAYOUT" "$NATIVE_ENGINE" "$PWD/out" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: address-nav-${{ matrix.layout }}
+          path: out/
+          retention-days: 7
