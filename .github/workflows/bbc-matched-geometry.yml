@@ -10,6 +10,19 @@ env:
   CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
   ARCHIVE_SHA: 32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46
 jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for the pinned engine
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/45642343732"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from d441eb9a0e458dd11adebee8f4a834a1afcca4e3"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+            sleep 30
+          done
   chrome:
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -49,6 +62,7 @@ jobs:
           path: out/
           retention-days: 7
   foafnaut:
+    needs: wait
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -69,7 +83,7 @@ jobs:
             third_party/fonts
       - uses: actions/download-artifact@v4
         with:
-          run-id: "45627403020"
+          run-id: "45642343732"
           name: branch-engine
           path: engine
           github-token: ${{ github.token }}
@@ -87,8 +101,8 @@ jobs:
           set -euo pipefail
           unset LD_LIBRARY_PATH
           test "$(git -C core rev-parse HEAD)" = "$CORE"
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45627403020/jobs" --jq '.jobs[].name' |
-            grep -Fx "Build libweb-render.so from 308be7db6741ba1c19d580ffe0ed456d22a7e75b"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45642343732/jobs" --jq '.jobs[].name' |
+            grep -Fx "Build libweb-render.so from d441eb9a0e458dd11adebee8f4a834a1afcca4e3"
           echo "$ARCHIVE_SHA  capture/bbc-uk-with-photos.zip" | sha256sum -c -
           mkdir runtime out
           tag="build-${CORE:0:12}-foafnaut-web"
