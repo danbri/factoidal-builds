@@ -27,6 +27,29 @@ case "$ON_MAIN" in
   *) echo "core $SHA is not on core main (compare status: $ON_MAIN): gates only, nothing published"; exit 0 ;;
 esac
 
+# gh removes its draft when an asset upload fails. Retry only transient upload
+# responses with successful draft cleanup, keeping the same tag and asset bytes.
+create_release() {
+  local attempt output status
+  for attempt in 1 2 3; do
+    if output=$(gh release create "$@" 2>&1); then
+      printf '%s\n' "$output"
+      return 0
+    else
+      status=$?
+    fi
+    printf '%s\n' "$output" >&2
+    case "$output" in
+      *"cleaning up draft failed:"*) return "$status" ;;
+      *"HTTP 502:"*"https://uploads.github.com/"*|*"HTTP 503:"*"https://uploads.github.com/"*|*"HTTP 504:"*"https://uploads.github.com/"*) ;;
+      *) return "$status" ;;
+    esac
+    if [ "$attempt" -eq 3 ]; then return "$status"; fi
+    echo "::warning::Transient release asset upload error. Retrying the same assets (attempt $((attempt + 1)) of 3)." >&2
+    sleep $((attempt * 10))
+  done
+}
+
 ART=art
 OUT=release-out
 mkdir -p "$OUT" latest
@@ -185,7 +208,7 @@ PY
   fi
   # Native sets link GNU MP statically: its licence and source pointer go with them.
   case "$SET" in linux-x86_64|darwin-arm64|foafnaut-darwin-arm64) EXTRA+=("notices/GMP-NOTICE.txt");; esac
-  gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+  create_release "$TAG" --repo "$GITHUB_REPOSITORY" \
     --title "$SET build of factoidal-core ${SHORT}" \
     --notes "Built from https://github.com/${CORE_REPO:-danbri/factoidal-core}/commit/$SHA ($REF) by $RUN_URL. $INSTALL build-info.json lists the sha256 of every file." \
     "$OUT/$SET/$SET.tar.gz" "$OUT/$SET/build-info.json" "${EXTRA[@]}"
