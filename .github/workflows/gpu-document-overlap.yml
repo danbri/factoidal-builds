@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [fixture, desktop-govuk, desktop-w3c-home, m-us]
+        case: [desktop-govuk, desktop-w3c-home]
+        first: [serial, overlap]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -125,6 +126,7 @@ jobs:
           SDL_VIDEODRIVER: x11
           DENO_WEBGPU_BACKEND: vulkan
           GALLIVM_PERF: nopt
+          FIRST: ${{ matrix.first }}
           CASE: ${{ matrix.case }}
         run: |
           set -euo pipefail
@@ -143,7 +145,9 @@ jobs:
           <p>First section</p><p>Second section</p><p>Third section</p><p>Fourth section</p>
           HTML
           rc=0
-          for arm in a1 b1 b2 a2; do
+          order=(a1 b1 b2 a2)
+          if [[ "$FIRST" == overlap ]]; then order=(b1 a1 a2 b2); fi
+          for arm in "${order[@]}"; do
             host="$RUNNER_TEMP/variants/${arm:0:1}.ts"
             cp "$host" "$LAB/run_html.ts"
             export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$arm" XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$arm"
@@ -194,6 +198,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: gpu-document-overlap-${{ matrix.case }}
+          name: gpu-document-overlap-${{ matrix.case }}-${{ matrix.first }}
           path: out/
           retention-days: 7
