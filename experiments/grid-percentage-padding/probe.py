@@ -18,6 +18,10 @@ CASES = {
     "block-control": (".card{width:320px}", [(16, 180)]),
     "grid-explicit-width-control": (GRID + ".card{width:320px}", [(16, 180), (336, 180)]),
     "grid-equal-tracks": (GRID, [(16, 180), (336, 180)]),
+    "grid-border-box": (
+        GRID + ".card{width:320px;box-sizing:border-box;margin-left:5%;padding-inline:10%}",
+        [(72, 144), (392, 144)],
+    ),
     "grid-column": (GRID + COLUMN, [(16, 180), (336, 180)]),
     "grid-unequal-tracks": (
         ".list{width:576px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr)}",
@@ -92,7 +96,7 @@ def main():
             result[name].append({"x": x, "chrome": reference, "foafnaut": actual})
             print(f"| {name} | {x} | {list(reference.values())} | {list(actual.values())} |")
     (OUT / "geometry.json").write_text(json.dumps(result, indent=2) + "\n")
-    for name in ("block-control", "grid-explicit-width-control"):
+    for name in CASES:
         assert all(sample["chrome"] == sample["foafnaut"] for sample in result[name]), name
 
 
