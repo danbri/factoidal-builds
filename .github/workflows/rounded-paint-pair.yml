@@ -8,9 +8,9 @@ permissions:
 env:
   GH_TOKEN: ${{ github.token }}
   BASELINE_RUN: "45528577527"
-  CANDIDATE_RUN: "45532864969"
+  CANDIDATE_RUN: "45539354603"
   BASELINE: 94399281c30b39607de209a0762fed79e9821727
-  CANDIDATE: e0cc737e12e9777abb7334b78ef4c47bda7dbbbc
+  CANDIDATE: bba5223ba3de153b7167443dc315efef568a0caa
   WPT: 056c528ccb5844b01628e0cd667520535dee16cc
   WEB: build-05ec0b29ca8a-foafnaut-web
 jobs:
@@ -88,6 +88,10 @@ jobs:
           url="https://raw.githubusercontent.com/danbri/factoidal-builds/95d82b08b300c5b8864b5132a4a0f653ee920f8a/third_party/realpages/w3.org/w3c-flexbox-20261115.zip"
           curl --retry 3 -fsSL "$url" -o snapshots/w3c-flexbox.zip
           echo "a01b88268d16a2ab95bdf0a2edf8f56bf5634bf3534fa793d13263166f38d206  snapshots/w3c-flexbox.zip" | sha256sum -c -
+          gh run download 45431269816 -R "$GITHUB_REPOSITORY" -n desktop-w3c-home-snapshot -D snapshots/home
+          home=$(find "$PWD/snapshots/home" -name '*.zip' -print -quit)
+          echo "359b431764ad4eb9debb4e5dc2e4571d968cd95447b52fe767f9933145f4a388  $home" | sha256sum -c -
+          cp "$home" snapshots/w3c-home.zip
           sha256sum engines/*/libweb-render.so snapshots/*.zip > out/inputs.sha256
       - name: Compare clipping reftests and capture W3C Flexbox
         run: |
@@ -127,10 +131,18 @@ jobs:
               deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
               core/tests/browser-wpt/reftest-render.ts --native-engine "$lib" --list "$RUNNER_TEMP/w3c.jsonl" \
                 --out "$PWD/out" > "out/w3c-$role.log" 2>&1
+            jq -nc --arg file "w3c-home-$role.png" '{url:"https://www.w3.org/",width:1280,height:800,file:$file}' > "$RUNNER_TEMP/home.jsonl"
+            REALPAGES_REPLAY="$PWD/snapshots/w3c-home.zip" REFTEST_TIME=1 \
+              deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
+              core/tests/browser-wpt/reftest-render.ts --native-engine "$lib" --list "$RUNNER_TEMP/home.jsonl" \
+                --out "$PWD/out" > "out/w3c-home-$role.log" 2>&1
+            test -s "out/w3c-home-$role.png"
+            sed -n 's/^__done //p' "out/w3c-home-$role.log" | jq -e '.status == "ok"' >/dev/null
             test -s "out/w3c-$role.png"
             sed -n 's/^__done //p' "out/w3c-$role.log" | jq -e '.status == "ok"' >/dev/null
             deno run -A --unstable-ffi experiments/rounded-paint/radius-fixture.ts "$lib" "$role" | tee "out/fixture-$role.jsonl"
           done
+          jq -e '.valid and (.tests | length == 5 and all(.status == "PASS"))' out/candidate/results.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
