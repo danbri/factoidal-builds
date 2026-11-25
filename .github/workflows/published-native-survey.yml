@@ -1,0 +1,150 @@
+name: Survey the released Linux browser with the native worker
+on:
+  push:
+    branches: [wip/published-4a0c-native-survey]
+permissions:
+  contents: read
+  actions: read
+env:
+  CORE_SHA: 4a0c174b706690a21d66e23463a9da355f4271fa
+  RELEASE_RUN: "45543448538"
+jobs:
+  wait-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Wait for the exact public package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="build-${CORE_SHA:0:12}-foafnaut-browser-linux-x86_64"
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$RELEASE_RUN"
+          while true; do
+            if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq \
+              '.assets[].name' 2>/dev/null | grep -Fx window-smoke.json; then
+              break
+            fi
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+              echo "Exact release run ended without a public browser archive" >&2
+              exit 1
+            fi
+            sleep 45
+          done
+  survey:
+    needs: wait-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 34
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: release-tests/native-worker-survey.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE_SHA }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut/realpages
+            labs/demos/foafnaut/pages
+      - name: Download the published browser and its checked receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir package
+          tag="build-${CORE_SHA:0:12}-foafnaut-browser-linux-x86_64"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D package \
+            -p foafnaut-browser-linux-x86_64.tar.gz -p build-info.json -p window-smoke.json
+      - name: Check the exact package and install the X11 and Vulkan runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          archive="${archives[0]}"
+          digest=$(sha256sum "$archive" | cut -d' ' -f1)
+          jq -e --arg sha "$CORE_SHA" --arg digest "$digest" --arg file "$(basename "$archive")" \
+            '.source_commit == $sha and .artifacts[$file].sha256 == $digest' package/build-info.json
+          jq -e --arg sha "$CORE_SHA" --arg digest "$digest" \
+            '.sourceCommit == $sha and .archive_sha256 == $digest and .worker == "native" and .status == "pass"' package/window-smoke.json
+          tar -xzf "$archive" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          (cd "$(dirname "$binary")" && sha256sum -c SHA256SUMS)
+          test -s "$(dirname "$binary")/libweb-render.so"
+          jq -e --arg sha "$CORE_SHA" '.commitFull == $sha' "$(dirname "$binary")/BUILD-INFO.json"
+          echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          mkdir -p out
+          sha256sum package/*.json "${archives[0]}" "$binary" core/labs/demos/foafnaut/realpages/pages.json > out/inputs.sha256
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
+          install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
+      - name: Capture first visible frames and send a native scroll event
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          PART: ${{ matrix.part }}
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/native-worker-survey.py             "$FOAFNAUT_BINARY" "$PWD/core/labs/demos/foafnaut" "$PWD/out" "$PART" 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-window-survey-${{ matrix.part }}
+          path: out/
+          retention-days: 7
+  report:
+    runs-on: ubuntu-latest
+    needs: survey
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: linux-window-survey-*
+          path: results
+      - name: Summarize the registered pages
+        run: |
+          python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import collections, json
+          from pathlib import Path
+
+          rows = [row for path in Path("results").glob("*/summary.json") for row in json.loads(path.read_text())]
+          Path("published-linux-survey.json").write_text(json.dumps(rows, indent=2)+"\n")
+          assert len(rows) == len({r["id"] for r in rows}) == 24
+          print("Published 4a0c174b7066 browser, Ubuntu 24.04 X11 and stock software Vulkan, live URLs")
+          print()
+          print("| Page | State | Target viewport frame ms | Wheel to scroll trace ms |")
+          print("| --- | --- | ---: | ---: |")
+          for row in sorted(rows,key=lambda r:r["id"]):
+              frame = row.get("presentedMs")
+              state = row["state"]
+              if frame is not None and row["documentColorsAtLeast"] < 2:
+                  state = "uniform document pixels"
+              elif frame is not None and frame > row["budget"]["first_frame_s"]*1000:
+                  state = "over first-frame budget"
+              print(f'| {row["id"]} | {state} | {frame if frame is not None else ""} | {row.get("scrollObservedMs","")} |')
+          print()
+          print(dict(collections.Counter(r["state"] for r in rows)))
+          print("First-frame budget met:", sum(r.get("presentedMs") is not None and r["presentedMs"] <= r["budget"]["first_frame_s"] * 1000 for r in rows))
+          print("Wheel changed content pixels:", sum(r.get("scrollChangesPixels") is True for r in rows))
+          print("Documents rendered with the native worker:", sum(r.get("documentEngine")=="native" for r in rows))
+          assert all(r.get("documentEngine") == "native" for r in rows if r["state"] == "presented")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: published-linux-survey
+          path: published-linux-survey.json
+          if-no-files-found: error
+          retention-days: 7
