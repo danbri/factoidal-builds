@@ -3,7 +3,7 @@ import {netAnswer as candidate,pinnedHTTPSBatch,type NetWire} from "./native_net
 
 const cert=await Deno.readTextFile("cert.pem");
 const key=await Deno.readTextFile("key.pem");
-const caCerts=[cert],timeoutMs=3000;
+const caCerts=[await Deno.readTextFile("ca.pem")],timeoutMs=3000;
 const opts={caCerts,timeoutMs};
 const names=new Map<string,Set<number>>();
 const order:string[]=[];
