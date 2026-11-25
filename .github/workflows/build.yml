@@ -518,6 +518,8 @@ jobs:
   # same pinned runtime cache; no full library extraction is needed here.
   foafnaut-engines:
     needs: resolve
+    outputs:
+      hub_upload_outcome: ${{ steps.upload_hub.outcome }}
     if: needs.resolve.outputs.proceed == 'true' && needs.resolve.outputs.foafnaut == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -674,8 +676,13 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
+      # Keep Hub staging beside generated C and Lean sources for provenance checks.
+      # Hub-only failures must not invalidate the already checked desktop engine artifact.
+      # Check step outcome so that a tolerated failure cannot publish a partial Hub package.
       - name: Package the SVG browser runtime from the fresh tested build
+        id: stage_hub_svg
         if: needs.resolve.outputs.foafnaut_web == 'true'
+        continue-on-error: true
         env:
           CORE_SHA: ${{ needs.resolve.outputs.sha }}
         run: |
@@ -695,7 +702,9 @@ jobs:
           json.dump(value, open(sys.argv[3], 'w'), indent=2)
           PY
       - name: Package the HTML browser runtime from the fresh checked build
-        if: needs.resolve.outputs.foafnaut_web == 'true'
+        id: stage_hub_html
+        if: needs.resolve.outputs.foafnaut_web == 'true' && steps.stage_hub_svg.outcome == 'success'
+        continue-on-error: true
         env:
           CORE_SHA: ${{ needs.resolve.outputs.sha }}
         run: |
@@ -719,7 +728,9 @@ jobs:
       # decoders (build-media.sh) build the same way and join this step when the engine
       # loads them. A core revision without the page-mode guest (no prelude.js) gets none.
       - name: Build the WasmVM guest modules
-        if: needs.resolve.outputs.foafnaut_web == 'true'
+        id: build_hub_guests
+        if: needs.resolve.outputs.foafnaut_web == 'true' && steps.stage_hub_html.outcome == 'success'
+        continue-on-error: true
         env:
           CORE_SHA: ${{ needs.resolve.outputs.sha }}
         shell: bash
@@ -757,7 +768,9 @@ jobs:
             echo "core has no page-mode QuickJS guest; no WasmVM guest modules"
           fi
       - name: Upload the checked browser runtime release candidate
-        if: needs.resolve.outputs.foafnaut_web == 'true'
+        id: upload_hub
+        if: needs.resolve.outputs.foafnaut_web == 'true' && steps.build_hub_guests.outcome == 'success'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: foafnaut-web
@@ -1351,8 +1364,18 @@ jobs:
           # The engines' tests (test.sh, in foafnaut-host-tests) gate the web runtime. Until
           # 2026-11-15 test.sh ran inside foafnaut-engines before the HTML engine existed, so
           # only its first part gated; now all of it does, on the Wasm engines.
-          FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
+          FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-engines'].outputs.hub_upload_outcome == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
         run: scripts/publish.sh
+      - name: Report a failed Foafnaut Hub package
+        if: >-
+          ${{ !cancelled() && needs.resolve.outputs.foafnaut_web == 'true' &&
+              needs['foafnaut-engines'].result == 'success' &&
+              needs['foafnaut-engines'].outputs.hub_upload_outcome != 'success' }}
+        env:
+          HUB_UPLOAD_OUTCOME: ${{ needs['foafnaut-engines'].outputs.hub_upload_outcome }}
+        run: |
+          echo "::error::Foafnaut Hub packaging failed (upload outcome: ${HUB_UPLOAD_OUTCOME:-missing}). See the Hub steps in foafnaut-engines."
+          exit 1
 
   # This archive has its own source-pinned engine, host tests and relocated X11 check.
   # The Lean SDK lane runs FOUNDATION checks for its CLI and web packages.
