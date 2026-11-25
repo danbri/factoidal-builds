@@ -1,0 +1,109 @@
+name: Verify native worker startup in the windowed browser
+on:
+  push:
+    branches: [wip/check-native-worker-without-wasm]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: aa2c4b775740efbf644ea59fe3d9b0bf881cae38
+  CANDIDATE: 853a7c27519be74f447c869ff3989259344a9edf
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          path: candidate
+          persist-credentials: false
+          sparse-checkout: labs/demos/foafnaut/native_html_engine.ts
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45524300796
+          name: branch-engine
+          path: native
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Check the native library and extract the released runtimes
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          test "$(git -C candidate rev-parse HEAD)" = "$CANDIDATE"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45524300796/jobs" --jq '.jobs[].name' |
+            grep -Fx "Build libweb-render.so from $CORE"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          mkdir -p package web out
+          gh release download "build-${CORE:0:12}-foafnaut-browser-linux-x86_64" -R "$GITHUB_REPOSITORY" -D package -p foafnaut-browser-linux-x86_64.tar.gz
+          gh release download "build-${CORE:0:12}-foafnaut-web" -R "$GITHUB_REPOSITORY" -D web -p foafnaut-web.tar.gz
+          echo '6e12ebd78d447c6836e8f5bced9892d8a309586740604089b5f7369afa5a6684  package/foafnaut-browser-linux-x86_64.tar.gz' | sha256sum -c -
+          echo 'bd25336995c144135a50f0bef8a6e608153277110500826db7b9ecfa132858f9  web/foafnaut-web.tar.gz' | sha256sum -c -
+          tar -xzf package/foafnaut-browser-linux-x86_64.tar.gz -C package
+          tar -xzf web/foafnaut-web.tar.gz -C web docs/web/hub/html-webgpu/runtime
+          bundle="$PWD/package/foafnaut-linux-x86_64"
+          (cd "$bundle" && sha256sum -c SHA256SUMS)
+          lab="$PWD/core/labs/demos/foafnaut"
+          test "$(git hash-object "$lab/native_html_engine.ts")" = 2d9ec03eedf182e8da88db1dcbfa939667707867
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/web"
+          cp "$bundle/libnative-window.so" "$lab/.build/native/"
+          mkdir -p host
+          cp "$bundle/BUILD-INFO.json" host/
+          cp native/libweb-render.so host/
+          test -s host/libweb-render.so
+          export LAB="$lab" DENO_BIN="$(command -v deno)"
+          printf '%s\n' "LAB=$LAB" "DENO_BIN=$DENO_BIN" >> "$GITHUB_ENV"
+          cp "$lab/native_html_engine.ts" "$RUNNER_TEMP/engine-before.ts"
+          cp candidate/labs/demos/foafnaut/native_html_engine.ts "$lab/"
+          deno check --no-config --no-npm --unstable-ffi --unstable-webgpu "$lab/run_html.ts" > out/typecheck.txt 2>&1
+          sha256sum "$RUNNER_TEMP/engine-before.ts" "$lab/native_html_engine.ts" host/libweb-render.so > out/inputs.sha256
+      - name: Alternate packaged libraries with the two host versions
+        env:
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          GALLIVM_PERF: nopt
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)"
+          test -n "$VK_DRIVER_FILES"
+          cat > host/foafnaut <<'BASH'
+          #!/bin/bash
+          exec "$DENO_BIN" run -A --no-check --no-config --no-npm --unstable-webgpu --unstable-ffi \
+            "$LAB/run_html.ts" --native-engine "$(dirname "$0")/libweb-render.so" "$@"
+          BASH
+          chmod +x host/foafnaut
+          for arm in a1 b1 b2 a2; do
+            source="$RUNNER_TEMP/engine-before.ts"
+            [[ "$arm" != b* ]] || source=candidate/labs/demos/foafnaut/native_html_engine.ts
+            cp "$source" "$LAB/native_html_engine.ts"
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$arm" XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime-$arm"
+            install -d -m 700 "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR"
+            xvfb-run -a -s '-screen 0 1280x1024x24' /usr/bin/python3 \
+              "$LAB/check-linux-browser.py" "$PWD/host/foafnaut" "$PWD/out/$arm"
+            jq -e --arg sha "$CORE" '.status=="pass" and .worker=="native" and .sourceCommit==$sha' "out/$arm/window-smoke.json"
+            jq -r --arg arm "$arm" '[$arm,.worker,.pages[0].sinceLaunchMs,.presentedFrames] | @tsv' \
+              "out/$arm/window-smoke.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-worker-window-pair
+          path: out/
+          retention-days: 7
