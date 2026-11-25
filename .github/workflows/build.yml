@@ -1354,8 +1354,10 @@ jobs:
           FOAFNAUT_WEB: ${{ needs.resolve.outputs.foafnaut_web == 'true' && needs['foafnaut-engines'].result == 'success' && needs['foafnaut-host-tests'].result == 'success' }}
         run: scripts/publish.sh
 
+  # This archive has its own source-pinned engine, host tests and relocated X11 check.
+  # The Lean SDK lane runs FOUNDATION checks for its CLI and web packages.
   publish-linux-browser:
-    needs: [resolve, lean, foafnaut-host-tests, foafnaut-browser-linux-check]
+    needs: [resolve, foafnaut-host-tests, foafnaut-browser-linux-check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
