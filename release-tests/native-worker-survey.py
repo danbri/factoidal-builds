@@ -1,6 +1,7 @@
 """Run the packaged Linux Foafnaut on the registered live pages under an X11 display."""
 import collections
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -62,6 +63,9 @@ def capture(spec):
     log = out / f"{key}.log"
     arguments = [str(binary), "--url", url, "--no-state", "--no-splash", "--perf-summary", "--trace-input"]
     arguments.extend(("--window-size", f"{width}x{height}"))
+    single_frame = os.environ.get("SURVEY_RENDER_MODE") == "single"
+    if single_frame:
+        arguments.append("--single-frame")
     if spec.get("scripts") is False:
         arguments.append("--no-scripts")
     with log.open("w") as output, log.open("r", errors="replace") as reader:
@@ -103,6 +107,11 @@ def capture(spec):
                         row.setdefault("scrollTrace", trace)
                     if wheel_at is not None and kind == "native-html-input-latency":
                         row.setdefault("inputTrace", []).append(trace)
+                        # Single-frame rendering performs a full redraw for scrolling.
+                        # Its presented event settles the wheel trace without the
+                        # separate fast layered scroll event.
+                        if single_frame and trace.get("kind") == "scroll":
+                            row.setdefault("scrollTrace", trace)
                 if base is None and window is not None and frame is not None:
                     image = window_image(window)
                     if image.size != (width, height):
