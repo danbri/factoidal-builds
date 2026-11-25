@@ -1,0 +1,66 @@
+name: Three archived pages on published Linux browser workers
+on:
+  push:
+    branches: [wip/three-page-release-replay]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: 41789954b17aae0057e4f5a5adee434f35facafa
+  SUCCESSOR: 9fa1d855822cc14462d55602dcab7d622094e16b
+jobs:
+  page:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - site: w3c
+            run: "45431269816"
+            artifact: desktop-w3c-home-snapshot
+            archive: w3.org/desktop-w3c-home-20261124.zip
+          - site: govuk
+            run: "45430099580"
+            artifact: desktop-govuk-snapshot
+            archive: gov.uk/desktop-govuk-20261124.zip
+          - site: wikipedia
+            run: "45416936347"
+            artifact: desktop-wikipedia-www-snapshot
+            archive: en.wikipedia.org/desktop-wikipedia-www-20261124.zip
+    timeout-minutes: 14
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ matrix.run }}
+          name: ${{ matrix.artifact }}
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Get the scratch harness and image tooling
+        run: |
+          set -euo pipefail
+          mkdir -p harness
+          base="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/experiments/three-page-release-replay"
+          for file in host.sha256 fixtures.json materialize.py inspect_inputs.py capture_geometry.py compare.py run.sh; do
+            curl -fsSL --retry 3 --output "harness/$file" "$base/$file"
+          done
+          if ! /usr/bin/python3 -c 'import PIL'; then
+            sudo apt-get update -q
+            sudo apt-get install -qy python3-pil
+          fi
+      - name: Replay the archived page using each published native worker
+        env:
+          SITE: ${{ matrix.site }}
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          export CAPTURE="$PWD/capture/$ARCHIVE"
+          bash harness/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: three-page-release-replay-${{ matrix.site }}
+          path: out/
+          retention-days: 7
