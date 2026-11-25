@@ -1,7 +1,7 @@
-name: Compare opening at the requested window size
+name: Check settled W3C paint at its initial viewport
 on:
   push:
-    branches: [wip/linux-initial-window-viewport]
+    branches: [wip/linux-initial-window-w3c-settle]
 permissions:
   contents: read
   actions: read
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [fixture, desktop-govuk, desktop-w3c-home, m-us, wp-us]
+        case: [desktop-w3c-home]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -174,22 +174,19 @@ jobs:
                   assert initial==row["viewport"] and first["frame"]==target["frame"],row
               print(f"| {arm} | {initial[0]}×{initial[1]} | {first['t']} | {target['t']} | {row.get('scrollChangesPixels')} |")
           (output/"report.json").write_text(json.dumps(report,indent=2)+"\n")
-          if case=="fixture":
-              for name in ("fixture.png","fixture-scroll.png"):
-                  crops=[]
-                  for arm,row in report.items():
-                      with Image.open(output/arm/name) as im:
-                          top=row["firstFrame"]["layers"]["top"]
-                          crops.append(im.crop((0,top,im.width,im.height)).tobytes())
-                  assert len(set(crops))==1,name
-              for arm in ("a1","b1","b2","a2"):
-                  log=(output/arm/"fixture.log").read_text()
-                  expected="1024 640" if arm.startswith("b") else "1280 800"
-                  assert f"viewport before first paint {expected}" in log, arm
+          import hashlib
+          for arm,row in report.items():
+              path=output/arm/(case+"-settled.png")
+              assert row.get("settledAfterMs",0)>=12000 and path.stat().st_size,row
+              with Image.open(path) as im:
+                  top=row["firstFrame"]["layers"]["top"]
+                  page=im.crop((0,top,im.width,im.height)).tobytes()
+              print(arm,"settled page SHA256",hashlib.sha256(page).hexdigest(),
+                    "loaded links",row.get("loaded",{}).get("links"))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: initial-window-viewport-${{ matrix.case }}
+          name: initial-window-settled-${{ matrix.case }}
           path: out/
           retention-days: 7

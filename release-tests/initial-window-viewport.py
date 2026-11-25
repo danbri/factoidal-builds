@@ -78,6 +78,7 @@ def capture(spec):
         frame = None
         configured = False
         wheel_at = None
+        settle_at = None
         while_timeout = start + 190
         try:
             while time.monotonic() < while_timeout:
@@ -120,8 +121,11 @@ def capture(spec):
                                presentedMs=round((time.monotonic()-start)*1000),
                                documentColorsAtLeast=5 if colors is None else len(colors))
                     image.save(out / f"{key}.png")
-                    if spec.get("scroll") is False:
-                        break
+                    settle_at = time.monotonic() + 12
+                    while_timeout = settle_at + 35
+                if settle_at is not None and wheel_at is None and time.monotonic() >= settle_at:
+                    window_image(window).save(out / f"{key}-settled.png")
+                    row["settledAfterMs"] = 12000 + round((time.monotonic()-settle_at)*1000)
                     xdotool("mousemove", "--window", window.id, width//2, 3*height//4, "click", "5")
                     wheel_at = time.monotonic()
                     while_timeout = wheel_at + 15
