@@ -82,6 +82,8 @@ jobs:
           echo "OBSERVE=$PWD/experiments/w3c-search/observe.ts" >> "$GITHUB_ENV"
           sha256sum "${archives[0]}" web/foafnaut-web.tar.gz engine/libweb-render.so "$lab/run_html.ts" > out/inputs.sha256
           deno check --no-config --no-npm experiments/w3c-search/observe.ts
+          deno run --no-config --no-npm --unstable-ffi -A experiments/w3c-search/height.ts "$PWD/engine/libweb-render.so" |
+            tee out/form-height.jsonl
       - name: Type and submit through the native window
         env:
           SDL_VIDEODRIVER: x11

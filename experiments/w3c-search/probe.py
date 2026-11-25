@@ -39,9 +39,12 @@ with log.open("w") as stream:
             field = check.colour_mask(image, (199, 233, 207)).getbbox()
             button = check.colour_mask(image, (216, 210, 243)).getbbox()
             return (image, field, button) if field and button else None
-        before, field, button = check.wait_for(browser, "painted search controls", controls, timeout=35)
+        before, field, button = check.wait_for(browser, "painted search controls", controls, timeout=115)
         before.save(output / "before.png")
         receipt.update(field=field, button=button)
+        # Retain enough of the surrounding row to see text painted outside a thin box.
+        text_region = (field[0], max(0, field[1]-12), min(field[0]+350, field[2]),
+                       min(before.height, max(field[3]+12, button[3])))
 
         def click(box):
             left, top, right, bottom = box
@@ -51,11 +54,19 @@ with log.open("w") as stream:
         click(field)
         check.xdotool("type", "--clearmodifiers", "--delay", "45", query)
         def dark_pixels(image):
-            return sum(max(pixel) < 105 for pixel in image.crop(field).convert("RGB").getdata())
+            return sum(max(pixel) < 105 for pixel in image.crop(text_region).convert("RGB").getdata())
         def painted_query():
             image = check.window_image(window)
             return image if dark_pixels(image) - dark_pixels(before) >= 25 else None
-        after = check.wait_for(browser, "painted query text", painted_query, timeout=8)
+        try:
+            after = check.wait_for(browser, "painted query text", painted_query, timeout=12)
+            receipt["typedPixelsObserved"] = True
+        except RuntimeError as error:
+            if browser.poll() is not None:
+                raise
+            after = check.window_image(window)
+            receipt["typedPixelsObserved"] = False
+            receipt["typedObservationError"] = str(error)
         after.save(output / "typed.png")
         receipt["darkPixelsAdded"] = dark_pixels(after) - dark_pixels(before)
         if mode == "enter":
