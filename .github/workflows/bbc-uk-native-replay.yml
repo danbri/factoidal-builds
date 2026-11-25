@@ -1,0 +1,98 @@
+name: Compare the full captured BBC UK page with the empty-line fix
+on:
+  push:
+    branches: [wip/712-bbc-home-native-replay]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  CANDIDATE: 308be7db6741ba1c19d580ffe0ed456d22a7e75b
+  NATIVE_RUN: "45627403020"
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Wait for the exact candidate engine
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$NATIVE_RUN"
+          gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $CANDIDATE"
+          until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+            if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+            sleep 30
+          done
+  replay:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.BASELINE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45613857797"
+          name: foafnaut-linux-native-worker
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.NATIVE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45408439387"
+          name: bbc-home-snapshot
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the replay inputs and render the same UK page twice
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          (cd engines/baseline && grep -Fx "$BASELINE" source-commit.txt && sha256sum -c SHA256SUMS)
+          export REALPAGES_REPLAY="$PWD/capture/bbc.co.uk/desktop-bbc-news-20261124.zip"
+          echo "b32f0d193c4041b5703c13a2e8e5b6669223a33d9c3e216ed6d886fbfd9fe3f8  $REALPAGES_REPLAY" | sha256sum -c -
+          mkdir -p runtime out
+          tag="build-${BASELINE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sha256sum engines/*/libweb-render.so "$REALPAGES_REPLAY" > out/inputs.sha256
+          printf '%s\n' '{"url":"https://www.bbc.co.uk/news","width":1280,"height":735,"file":"bbc-uk.png"}' > out/jobs.jsonl
+          for role in baseline candidate; do
+            deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
+              core/tests/browser-wpt/reftest-render.ts --native-engine "$PWD/engines/$role/libweb-render.so" \
+              --list "$PWD/out/jobs.jsonl" --out "$PWD/out/$role" | tee "out/$role.log"
+            test -s "out/$role/bbc-uk.png"
+            grep -F '"status":"ok"' "out/$role.log"
+          done
+          printf '%s\n' "Baseline $BASELINE. Candidate $CANDIDATE includes intervening main changes." >> "$GITHUB_STEP_SUMMARY"
+          for role in baseline candidate; do
+            grep '^__done' "out/$role.log" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bbc-uk-full-page-replay
+          path: out/
+          retention-days: 7
