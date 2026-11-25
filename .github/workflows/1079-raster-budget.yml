@@ -1,0 +1,100 @@
+name: Measure a bounded BBC bitmap allocation experiment
+on:
+  push:
+    branches: [wip/1079-replay-raster-budget]
+permissions:
+  actions: read
+  contents: read
+env:
+  CORE: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  BASE: c80b56516c9e75def5e809cad577f47f3354dc9e
+  CANDIDATE: b2b4467d31917f725e2dd3e67e289c30a887c0ea
+  BASE_RUN: "45658716312"
+  CANDIDATE_RUN: "45676267737"
+  ARCHIVE_SHA: 32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - name: Verify sources and wait for exact native engines
+        run: |
+          set -euo pipefail
+          endpoint="repos/danbri/factoidal-core/git/commits/$CANDIDATE"
+          test "$(gh api "$endpoint" --jq '.parents[0].sha')" = "$BASE"
+          for tuple in "$BASE_RUN:$BASE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/${tuple%:*}"
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from ${tuple#*:}"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then exit 1; fi
+              sleep 30
+            done
+          done
+  experiment:
+    needs: wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: experiments/1079-raster-budget
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CORE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASE_RUN }}
+          name: branch-engine
+          path: baseline-engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: candidate-engine
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: "45638334817"
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Audit identical inputs and measure both engine artifacts
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          echo "$ARCHIVE_SHA  capture/bbc-uk-with-photos.zip" | sha256sum -c -
+          mkdir -p runtime out
+          tag="build-${CORE:0:12}-foafnaut-web"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          sha256sum *-engine/libweb-render.so capture/bbc-uk-with-photos.zip > out/inputs.sha256
+          sudo apt-get update
+          sudo apt-get install -y python3-pil
+          /usr/bin/python3 experiments/1079-raster-budget/paint-probe.py
+          /usr/bin/python3 experiments/1079-raster-budget/control.py
+          /usr/bin/python3 experiments/1079-raster-budget/summary.py | tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: raster-budget-experiment
+          path: out/
+          retention-days: 14
