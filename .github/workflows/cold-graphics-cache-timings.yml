@@ -1,0 +1,147 @@
+name: Measure cold and reused Mesa shader caches on native X11
+on:
+  push:
+    branches: [wip/952-pipeline-timing-x11]
+permissions:
+  contents: read
+env:
+  CORE_SHA: e4445d14752cc3ec75da7bf2fc1797263d02efbf
+  HOST_SHA: 88d72bcd81d5a32b0b36b3f5b6b420e9b031dc8b
+  WEB: build-dd387abb389e-foafnaut-web
+jobs:
+  timings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            release-tests/native-worker-survey.py
+            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.HOST_SHA }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts
+      - name: Download the published browser and its checked receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir package
+          tag="build-${CORE_SHA:0:12}-foafnaut-browser-linux-x86_64"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -D package \
+            -p foafnaut-browser-linux-x86_64.tar.gz -p build-info.json -p window-smoke.json
+      - name: Check the exact package and install the X11 and Vulkan runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t archives < <(find package -name '*.tar.gz')
+          test "${#archives[@]}" -eq 1
+          archive="${archives[0]}"
+          digest=$(sha256sum "$archive" | cut -d' ' -f1)
+          jq -e --arg sha "$CORE_SHA" --arg digest "$digest" --arg file "$(basename "$archive")" \
+            '.source_commit == $sha and .artifacts[$file].sha256 == $digest' package/build-info.json
+          jq -e --arg sha "$CORE_SHA" --arg digest "$digest" \
+            '.sourceCommit == $sha and .archive_sha256 == $digest and .worker == "native" and .status == "pass"' package/window-smoke.json
+          tar -xzf "$archive" -C package
+          binary=$(find "$PWD/package" -type f -name foafnaut -print -quit)
+          (cd "$(dirname "$binary")" && sha256sum -c SHA256SUMS)
+          test -s "$(dirname "$binary")/libweb-render.so"
+          jq -e --arg sha "$CORE_SHA" '.commitFull == $sha' "$(dirname "$binary")/BUILD-INFO.json"
+          echo "FOAFNAUT_BINARY=$binary" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-2.0-0 libvulkan1 mesa-vulkan-drivers xvfb xauth xdotool python3-pil python3-xlib
+          icd=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -f "$icd"
+          echo "VK_DRIVER_FILES=$icd" >> "$GITHUB_ENV"
+          echo "XDG_RUNTIME_DIR=$RUNNER_TEMP/foafnaut-runtime" >> "$GITHUB_ENV"
+          mkdir -p out
+          sha256sum package/*.json "${archives[0]}" "$binary" core/labs/demos/foafnaut/realpages/pages.json > out/inputs.sha256
+          dpkg-query -W mesa-vulkan-drivers libvulkan1 libsdl2-2.0-0 > out/runtime-versions.txt
+          install -d -m 700 "$RUNNER_TEMP/foafnaut-runtime"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Compare freshly compiled and cache-reused first frames
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SDL_VIDEODRIVER: x11
+          DENO_WEBGPU_BACKEND: vulkan
+          MESA_SHADER_CACHE_MAX_SIZE: 32M
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$HOST_SHA"
+          lab="$PWD/core/labs/demos/foafnaut"
+          export REALPAGES_REPLAY="$PWD/third_party/realpages/en.wikipedia.org/m-us-20261115.zip"
+          echo "8801911e887d74487d0f43358aed2506751cbabbcd9ecca11209b5eb2792195c  $REALPAGES_REPLAY" | sha256sum -c -
+          mkdir runtime
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          cp "$(dirname "$FOAFNAUT_BINARY")/libnative-window.so" "$lab/.build/native/libnative-window.so"
+          export BENCH_ENGINE="$(dirname "$FOAFNAUT_BINARY")/libweb-render.so"
+          export BENCH_LAB="$lab"
+          sha256sum "$BENCH_ENGINE" "$lab/run_html.ts" "$lab/layer_compositor.ts" "$REALPAGES_REPLAY" >> out/inputs.sha256
+          jq '.pages |= map(select(.id == "m-us")) | .pages[0].url = "https://en.wikipedia.org/wiki/United_States?useskin=minerva"' \
+            "$lab/realpages/pages.json" > "$RUNNER_TEMP/pages.json"
+          jq -e '.pages | length == 1' "$RUNNER_TEMP/pages.json"
+          cp "$RUNNER_TEMP/pages.json" "$lab/realpages/pages.json"
+          cat > "$lab/benchmark-browser" <<'SH'
+          #!/bin/bash
+          exec deno run --no-check --no-config --no-npm --node-modules-dir=none --unstable-webgpu --unstable-ffi -A \
+            --preload "$BENCH_LAB/realpages/replay.ts" "$BENCH_LAB/run_html.ts" --native-engine "$BENCH_ENGINE" "$@"
+          SH
+          chmod +x "$lab/benchmark-browser"
+          unset LD_LIBRARY_PATH GALLIVM_PERF MESA_SHADER_CACHE_DISABLE
+          export MESA_SHADER_CACHE_DIR
+          for pair in first second; do
+            MESA_SHADER_CACHE_DIR=$(mktemp -d "$RUNNER_TEMP/mesa-cache.XXXXXX")
+            for state in cold reused; do
+              xvfb-run -a -s '-screen 0 1440x1100x24' /usr/bin/python3 release-tests/native-worker-survey.py \
+                "$lab/benchmark-browser" "$lab" "$PWD/out/$pair-$state" 0 1
+              du -sk "$MESA_SHADER_CACHE_DIR" >> out/cache-sizes-kib.txt
+            done
+          done
+          /usr/bin/python3 - <<'PY' | tee "$GITHUB_STEP_SUMMARY"
+          import hashlib
+          import json
+          from pathlib import Path
+          from PIL import Image
+
+          print("| Launch | Visible frame ms | Graphics ms | Pipelines built | Pipeline creation ms | Validation wait ms |")
+          print("| --- | ---: | ---: | ---: | ---: | ---: |")
+          hashes = set()
+          for name in ("first-cold", "first-reused", "second-cold", "second-reused"):
+              directory = Path("out") / name
+              row, = json.loads((directory / "summary.json").read_text())
+              frame = row["firstFrame"]
+              assert row["state"] == "presented" and row["documentEngine"] == "native", row
+              assert row.get("scrollChangesPixels") is True, row
+              assert frame["pipelineBuilds"] > 0, frame
+              steps = frame["steps"]
+              assert any(key.endswith(".createRenderPipeline") for key in steps), steps
+              assert any(key.endswith(".validation") for key in steps), steps
+              assert any("realpages-replay" in line for line in (directory / "m-us.log").read_text().splitlines())
+              with Image.open(directory / "m-us.png") as image:
+                  hashes.add(hashlib.sha256(image.crop((0, frame["layers"]["top"], image.width, image.height)).tobytes()).hexdigest())
+              build = sum(value for key, value in steps.items() if key.endswith(".createRenderPipeline"))
+              validation = sum(value for key, value in steps.items() if key.endswith(".validation"))
+              print(f"| {name} | {row['presentedMs']} | {frame['sessionMs']} | {frame['pipelineBuilds']} | {build:.1f} | {validation:.1f} |")
+          assert len(hashes) == 1, hashes
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cold-graphics-cache-timings
+          path: out/
+          retention-days: 7
