@@ -1,0 +1,87 @@
+name: Profile first native layout on desktop and mobile Wikipedia
+on:
+  push:
+    branches: [wip/wikipedia-first-native-layout]
+permissions:
+  contents: read
+  actions: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  CORE: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
+  SET: foafnaut-darwin-arm64
+  WEB: build-1b851ac72fdf-foafnaut-web
+jobs:
+  profile:
+    runs-on: macos-15
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        page: [wp-us, m-us]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            experiments/wiki-first-layout/profile.py
+            third_party/realpages/en.wikipedia.org/wp-us-20261115.zip
+            third_party/realpages/en.wikipedia.org/m-us-20261115.zip
+          sparse-checkout-cone-mode: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 1b851ac72fdf346f904de1d2ef77dc87a7d52da1
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            third_party/fonts/noto-sans
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Set up the pinned engine and desktop host
+        run: |
+          set -euo pipefail
+          mkdir -p engines/base engines/web
+          gh release download "build-${CORE:0:12}-$SET" -R "$GITHUB_REPOSITORY" -p "$SET.tar.gz" -p build-info.json -D engines/base
+          jq -e --arg sha "$CORE" '.source_commit == $sha' engines/base/build-info.json >/dev/null
+          expected=$(jq -er --arg archive "$SET.tar.gz" '.artifacts[$archive].sha256' engines/base/build-info.json)
+          echo "$expected  engines/base/$SET.tar.gz" | shasum -a 256 -c -
+          tar -xzf "engines/base/$SET.tar.gz" -C engines/base
+          library=$(find "$PWD/engines/base" -name libweb-render.dylib -print | head -1)
+          window=$(find "$PWD/engines/base" -name libnative-window.dylib -print | head -1)
+          test -s "$library"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -p foafnaut-web.tar.gz -p build-info.json -D engines/web
+          web_sha=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' engines/web/build-info.json)
+          echo "$web_sha  engines/web/foafnaut-web.tar.gz" | shasum -a 256 -c -
+          tar -xzf engines/web/foafnaut-web.tar.gz -C engines/web docs/web/hub/html-webgpu/runtime
+          lab=core/labs/demos/foafnaut
+          bash "$lab/realpages/setup-host.sh" "$PWD/$lab" "$PWD/engines/web" "$window"
+          echo "ENGINE=$library" >> "$GITHUB_ENV"
+      - name: Sample the first layered browser frame
+        env:
+          PAGE: ${{ matrix.page }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          snapshot="$PWD/third_party/realpages/en.wikipedia.org/$PAGE-20261115.zip"
+          case "$PAGE" in
+            wp-us) sha=66ed79b9d470f6d9115b0b2e73de8819d38544956da56c3dd73e854eb2849680 ;;
+            m-us) sha=8801911e887d74487d0f43358aed2506751cbabbcd9ecca11209b5eb2792195c ;;
+            *) exit 1 ;;
+          esac
+          echo "$sha  $snapshot" | shasum -a 256 -c -
+          echo "b8d7da27b492ff9c91af97837aa9d441432f4b3d62bd0bfa58611d987aae7e4f  $ENGINE" | shasum -a 256 -c -
+          lab="$PWD/core/labs/demos/foafnaut"
+          test "$(git -C core rev-parse HEAD)" = "$CORE"
+          shasum -a 256 "$snapshot" "$ENGINE" "$lab/run_html.ts" > out/inputs.sha256
+          export REALPAGES_REPLAY="$snapshot"
+          python3 experiments/wiki-first-layout/profile.py "$lab" "$ENGINE" "$PWD/out" "$PAGE" |
+            tee "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wikipedia-first-native-layout-${{ matrix.page }}
+          path: out/
+          retention-days: 7
