@@ -1,0 +1,139 @@
+name: Compare rounded CSS paint on WPT and W3C Flexbox
+on:
+  push:
+    branches: [wip/css-rounded-paint-pair]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  BASELINE_RUN: "45528577527"
+  CANDIDATE_RUN: "45528520243"
+  BASELINE: 94399281c30b39607de209a0762fed79e9821727
+  CANDIDATE: 458f921afd9761e7ecdde739ad672feb5f8d545c
+  WPT: 056c528ccb5844b01628e0cd667520535dee16cc
+  WEB: build-05ec0b29ca8a-foafnaut-web
+jobs:
+  wait-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Wait for both exact native engine artifacts
+        run: |
+          set -euo pipefail
+          for pair in "$BASELINE_RUN:$BASELINE" "$CANDIDATE_RUN:$CANDIDATE"; do
+            run=${pair%:*}
+            sha=${pair#*:}
+            endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$run"
+            until gh api "$endpoint/artifacts" --jq '.artifacts[] | select(.expired|not) | .name' | grep -Fx branch-engine; do
+              if [[ "$(gh api "$endpoint" --jq .status)" == completed ]]; then
+                echo "No native engine artifact in $run" >&2
+                exit 1
+              fi
+              sleep 25
+            done
+            gh api "$endpoint/jobs" --jq '.jobs[].name' | grep -Fx "Build libweb-render.so from $sha"
+          done
+  replay:
+    needs: wait-engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: experiments/rounded-paint
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: 94399281c30b39607de209a0762fed79e9821727
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.BASELINE_RUN }}
+          name: branch-engine
+          path: engines/baseline
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ env.CANDIDATE_RUN }}
+          name: branch-engine
+          path: engines/candidate
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Verify the engine archives and replay inputs
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$BASELINE"
+          mkdir -p runtime out snapshots
+          cmp engines/{baseline,candidate}/lean-toolchain
+          tc=$(cat engines/baseline/lean-toolchain)
+          curl --retry 3 -fsSL https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
+          "$HOME/.elan/bin/elan" toolchain install "$tc"
+          echo "LD_LIBRARY_PATH=$(ELAN_TOOLCHAIN="$tc" "$HOME/.elan/bin/lean" --print-prefix)/lib/lean" >> "$GITHUB_ENV"
+          gh release download "$WEB" -R "$GITHUB_REPOSITORY" -D runtime -p build-info.json -p foafnaut-web.tar.gz
+          expected=$(jq -er '.artifacts["foafnaut-web.tar.gz"].sha256' runtime/build-info.json)
+          echo "$expected  runtime/foafnaut-web.tar.gz" | sha256sum -c -
+          tar -xzf runtime/foafnaut-web.tar.gz -C runtime docs/web/hub/html-webgpu/runtime
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          url="https://raw.githubusercontent.com/danbri/factoidal-builds/95d82b08b300c5b8864b5132a4a0f653ee920f8a/third_party/realpages/w3.org/w3c-flexbox-20261115.zip"
+          curl --retry 3 -fsSL "$url" -o snapshots/w3c-flexbox.zip
+          echo "a01b88268d16a2ab95bdf0a2edf8f56bf5634bf3534fa793d13263166f38d206  snapshots/w3c-flexbox.zip" | sha256sum -c -
+          sha256sum engines/*/libweb-render.so snapshots/*.zip > out/inputs.sha256
+      - name: Compare clipping reftests and capture W3C Flexbox
+        run: |
+          set -euo pipefail
+          d=css/css-backgrounds
+          mkdir -p "wpt/$d/reference" "wpt/$d/support"
+          paths=()
+          tests=(
+            background-clip-padding-box-with-border-radius-003
+            background-clip-content-box-with-border-radius-003
+            background-clip-padding-box-with-border-radius
+            background-image-centered-with-border-radius
+            background-image-with-border-radius-fidelity
+          )
+          download() {
+            curl --retry 3 -fsSL "https://raw.githubusercontent.com/web-platform-tests/wpt/$WPT/$1" -o "wpt/$1"
+          }
+          for test in "${tests[@]}"; do
+            download "$d/$test.html"
+            download "$d/reference/$test-ref.html"
+            paths+=("/$d/$test.html")
+          done
+          download "$d/support/green-60x60-red-5px-border.png"
+          download "$d/support/aqua-yellow-32x32.png"
+          only=$(IFS=,; echo "${paths[*]}")
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT" -o MANIFEST.json
+          lab="$PWD/core/labs/demos/foafnaut"
+          for role in baseline candidate; do
+            lib="$PWD/engines/$role/libweb-render.so"
+            python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json --wpt-root "$PWD/wpt" \
+              --native-engine "$lib" --prefix "$d/" --jobs 1 --only "$only" --out "$PWD/out/$role"
+            jq -e '.valid and (.tests | length == 5)' "out/$role/results.json"
+            jq -r --arg role "$role" '.tests[] | [$role,.test,.status,([.edges[].totalPixels // 0] | add)] | @tsv' \
+              "out/$role/results.json" | tee -a "$GITHUB_STEP_SUMMARY"
+            jq -nc --arg file "w3c-$role.png" '{url:"https://www.w3.org/TR/css-flexbox-1/",width:1280,height:1024,file:$file}' > "$RUNNER_TEMP/w3c.jsonl"
+            REALPAGES_REPLAY="$PWD/snapshots/w3c-flexbox.zip" REFTEST_TIME=1 \
+              deno run -A --unstable-ffi --preload "$lab/realpages/replay.ts" \
+              core/tests/browser-wpt/reftest-render.ts --native-engine "$lib" --list "$RUNNER_TEMP/w3c.jsonl" \
+                --out "$PWD/out" > "out/w3c-$role.log" 2>&1
+            test -s "out/w3c-$role.png"
+            sed -n 's/^__done //p' "out/w3c-$role.log" | jq -e '.status == "ok"' >/dev/null
+            deno run -A --unstable-ffi experiments/rounded-paint/radius-fixture.ts "$lib" "$role" | tee "out/fixture-$role.jsonl"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: css-rounded-paint-pair
+          path: out/
+          retention-days: 7
