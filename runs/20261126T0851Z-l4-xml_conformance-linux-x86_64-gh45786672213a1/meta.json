@@ -1,0 +1,131 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261126T0851Z-l4-xml_conformance-linux-x86_64-gh45786672213a1",
+  "started_utc": "2026-11-26T08:52:19Z",
+  "finished_utc": "2026-11-26T08:52:37Z",
+  "trigger": "factoidal-release",
+  "suite": "l4-xml_conformance",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "023a9ce1211bef36b85b6fe97bc3244c1e12f67c",
+  "commit_utc": "2026-11-26T07:55:18Z",
+  "snapshot_branch": "",
+  "release_tag": "build-023a9ce1211b-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 2206,
+  "names_run": 1861,
+  "passed": 1861,
+  "denominator": 2206,
+  "share_pct": "84.3608",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 345,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.1,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45786672213",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261126T0851Z-l4-xml_conformance-linux-x86_64-gh45786672213a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-26T08:51:15Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45786672213",
+  "trigger": "factoidal-release",
+  "core_commit": "023a9ce1211bef36b85b6fe97bc3244c1e12f67c",
+  "core_short": "023a9ce1211b",
+  "on_main": true,
+  "commit_author_utc": "2026-11-26T07:55:18Z",
+  "commit_committer_utc": "2026-11-26T07:55:18Z",
+  "commit_subject": "@factoidal/core 0.38.0: first publication of the 0.37.3 changes, engine of 2026-11-26",
+  "release_sets": {
+   "foafnaut-browser-linux-x86_64": {
+    "tag": "build-023a9ce1211b-foafnaut-browser-linux-x86_64",
+    "published_at": "2026-11-26T08:44:42Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-023a9ce1211b-foafnaut-browser-linux-x86_64"
+   },
+   "foafnaut-web": {
+    "tag": "build-023a9ce1211b-foafnaut-web",
+    "published_at": "2026-11-26T08:50:43Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-023a9ce1211b-foafnaut-web"
+   },
+   "linux-x86_64": {
+    "tag": "build-023a9ce1211b-linux-x86_64",
+    "published_at": "2026-11-26T08:50:14Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-023a9ce1211b-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-023a9ce1211b-web",
+    "published_at": "2026-11-26T08:50:33Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-023a9ce1211b-web"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-26T08:51:18Z",
+  "candidate_why": "published by build run 45778969677",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "94e2796a2aa59a232e4e43e8a218ae967e9fac77",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": false,
+  "suites": true,
+  "platforms": [],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "command": [
+   "tools/lean-scoreboard.sh",
+   "--only",
+   "l4shacl-core10,l4shacl-sparql10,l4shacl-core12,l4shacl-sparql12,l4shacl-nodeexpr,l4shacl-rules,l4shex,l4shexc,l4rif,l4csvw-rdf,l4csvw-json,l4csvw-validate,l4xmlconf,l4xslt,l4schematron,l4mathml,l4jsonschema,l4jsonld-probe,l4jsonld-api,l4jsonld-frame,l4rml,l4vc-probe,l4rdf-semantics,l4owl-probe-species"
+  ],
+  "started_utc": "2026-11-26T08:52:19Z",
+  "exit": 1,
+  "seconds": 18,
+  "finished_utc": "2026-11-26T08:52:37Z"
+ },
+ "scoreboard_row": {
+  "spec_area": "XML 1.0 conformance (xmlconf)",
+  "label": "",
+  "runner": "l4xmlconf",
+  "job": "l4xmlconf",
+  "status": "ok",
+  "pass": 1861,
+  "fail": 0,
+  "other": 345,
+  "total": 2206,
+  "parse": true,
+  "note": "total derived: scored 1861 (the runner's 'out of 1861 in profile'; 0 of them local-override) + 345 out-of-profile cases the runner reports but does not score",
+  "command": "formal/lean4/.lake/build/bin/l4xmlconf",
+  "log": "/home/runner/work/_temp/suite-out/semweb/logs/l4xmlconf.log",
+  "seconds": 8,
+  "exit_code": "0",
+  "raw_summary_line": "xml conformance SCORED: 1861 pass, 0 fail, 0 local-override (out of 1861 in profile)",
+  "detail": ""
+ },
+ "continues_fstar_suite": "xml_conformance",
+ "group": "lean-semweb",
+ "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
