@@ -1,0 +1,178 @@
+name: Branch visual reftests
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: 'factoidal-builds build.yml run ID containing the native worker'
+        required: true
+        type: string
+      core_sha:
+        description: 'Exact 40-character factoidal-core commit SHA built by that run'
+        required: true
+        type: string
+      wpt_sha:
+        description: 'Exact 40-character WPT commit SHA'
+        required: true
+        type: string
+      prefix:
+        description: 'WPT directory prefix, e.g. svg/coordinate-systems/'
+        required: true
+        type: string
+      paths:
+        description: 'Comma-separated exact WPT reftest URLs beginning with /'
+        required: true
+        type: string
+permissions:
+  actions: read
+  contents: read
+jobs:
+  reftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BUILD_RUN: ${{ inputs.build_run }}
+      CORE_SHA: ${{ inputs.core_sha }}
+      WPT_SHA: ${{ inputs.wpt_sha }}
+      PREFIX: ${{ inputs.prefix }}
+      PATHS: ${{ inputs.paths }}
+    steps:
+      - name: Validate pins and wait for successful build artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ && "$CORE_SHA" =~ ^[0-9a-f]{40}$ && "$WPT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          python3 - <<'PY'
+          import os, re
+          prefix=os.environ['PREFIX'].strip('/')
+          paths=os.environ['PATHS'].split(',')
+          assert re.fullmatch(r'(?:svg|css)/[A-Za-z0-9_.\-/]+', prefix) and '..' not in prefix.split('/')
+          assert paths and len(paths)==len(set(paths))
+          for path in paths:
+              assert re.fullmatch(r'/[A-Za-z0-9_.\-/]+',path) and '..' not in path.split('/')
+              assert path.startswith('/'+prefix+'/'), path
+          PY
+          run="repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN"
+          test "$(gh api "$run" --jq .path)" = '.github/workflows/build.yml'
+          for attempt in {1..180}; do
+            jobs=$(gh api "$run/jobs?per_page=100")
+            worker=$(jq -r '[.jobs[] | select(.name == "foafnaut-linux-native-worker")][-1].conclusion // "pending"' <<<"$jobs")
+            engines=$(jq -r '[.jobs[] | select(.name == "foafnaut-engines")][-1].conclusion // "pending"' <<<"$jobs")
+            for result in "$worker" "$engines"; do
+              if [[ "$result" != pending && "$result" != success ]]; then echo "Build job concluded $result" >&2; exit 1; fi
+            done
+            if [[ "$worker" == success && "$engines" == success ]]; then exit 0; fi
+            if [[ "$(gh api "$run" --jq .status)" == completed ]]; then echo 'Build completed without both required jobs' >&2; exit 1; fi
+            sleep 20
+          done
+          echo 'Timed out waiting for successful build jobs' >&2; exit 1
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ inputs.core_sha }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/checkout@v4
+        with:
+          path: builds
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.build_run }}
+          name: foafnaut-linux-native-worker
+          path: worker
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.build_run }}
+          name: foafnaut-engines
+          path: engines
+          github-token: ${{ github.token }}
+      - name: Verify provenance and stage runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C core rev-parse HEAD)" = "$CORE_SHA"
+          test "$(cat worker/source-commit.txt)" = "$CORE_SHA"
+          (cd worker && sha256sum -c SHA256SUMS)
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          source=Path('engines'); lab=Path('core/labs/demos/foafnaut/.build')
+          for name, src, dest in [('web-render.mjs','web-render/engines','native-html/runtime'),('web-render.wasm','web-render/engines','native-html/runtime'),('render-plan.mjs','engines','engines'),('render-plan.wasm','engines','engines')]:
+              item=source/src/name
+              assert item.is_file(), item
+              out=lab/dest/name; out.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(item,out)
+          PY
+          sha256sum worker/libweb-render.so > worker/library.sha256
+      - name: Read the host Deno pin
+        id: deno
+        run: echo "version=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ steps.deno.outputs.version }}
+      - name: Fetch pinned WPT tests and reference chains
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --compressed --retry 3 -fsSL "https://wpt.fyi/api/manifest?sha=$WPT_SHA" -o MANIFEST.json
+          suite="${PREFIX#/}"; suite="${suite%%/*}"
+          python3 builds/release-tests/reftests.py paths --manifest MANIFEST.json --suite "$suite" > paths.txt
+          git init -q wpt
+          git -C wpt remote add origin https://github.com/web-platform-tests/wpt.git
+          git -C wpt sparse-checkout init --no-cone
+          git -C wpt sparse-checkout set --no-cone $(cat paths.txt)
+          git -C wpt fetch -q --depth 1 --filter=blob:none origin "$WPT_SHA"
+          git -C wpt checkout -q FETCH_HEAD
+          test "$(git -C wpt rev-parse HEAD)" = "$WPT_SHA"
+          sha256sum MANIFEST.json > manifest.sha256
+      - name: Run exact visual reftests
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python3 core/tests/browser-wpt/wpt-reftests.py run --manifest MANIFEST.json --wpt-root "$PWD/wpt" \
+            --native-engine "$PWD/worker/libweb-render.so" --prefix "$PREFIX" --only "$PATHS" \
+            --jobs 2 --out "$PWD/out"
+          runner_status=$?
+          set -e
+          export RUNNER_STATUS="$runner_status"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          report=Path('out/results.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as summary:
+              summary.write(f"Core `{os.environ['CORE_SHA']}`, WPT `{os.environ['WPT_SHA']}`, build {os.environ['BUILD_RUN']}\n\n")
+              if not report.exists():
+                  summary.write('The renderer produced no results.json.\n')
+                  raise SystemExit('Missing results.json')
+              result=json.loads(report.read_text())
+              rows=result.get('tests',[])
+              for row in rows: summary.write(f"- `{row.get('test','(unknown)')}`: {row.get('status','(missing)')}\n")
+              summary.write(f"\nRunner exit: {os.environ['RUNNER_STATUS']}; valid: {result.get('valid',False)}\n")
+          expected=set(os.environ['PATHS'].split(','))
+          actual=[r.get('test') for r in rows]
+          if len(actual)!=len(expected) or set(actual)!=expected:
+              raise SystemExit(f'Unexpected test set: expected {expected}, got {actual}')
+          if os.environ['RUNNER_STATUS'] != '0' or not result.get('valid',False):
+              raise SystemExit(f"Reftest runner failed or invalid: {result.get('invalidReason')}")
+          if any(r.get('status') != 'PASS' for r in rows):
+              raise SystemExit('One or more selected reftests did not pass')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: branch-reftest-results
+          path: |
+            out/
+            worker/source-commit.txt
+            worker/SHA256SUMS
+            worker/library.sha256
+            manifest.sha256
+          if-no-files-found: warn
+          retention-days: 7
