@@ -1,0 +1,118 @@
+### Since 20261126T0059Z-wpt-reftest-css-linux-x86_64-gh45732559655a1 (core 2bf8a0f565b4, other WPT commit 94e2796a2a)
+
+Tests passed 12,244 -> 12,330 (+86) DROP
+
+Newly passing: 95. Newly not passing: 12.
+
+Newly not passing:
+
+- `/css/css-contain/contain-size-014.html`: FAIL
+- `/css/css-grid/alignment/grid-item-aspect-ratio-stretch-1.html`: FAIL
+- `/css/css-grid/alignment/grid-item-aspect-ratio-stretch-2.html`: FAIL
+- `/css/css-grid/alignment/grid-item-no-aspect-ratio-stretch-2.html`: FAIL
+- `/css/css-grid/alignment/grid-item-no-aspect-ratio-stretch-3.html`: FAIL
+- `/css/css-grid/alignment/grid-item-no-aspect-ratio-stretch-4.html`: FAIL
+- `/css/css-grid/alignment/grid-item-no-aspect-ratio-stretch-5.html`: FAIL
+- `/css/css-grid/alignment/grid-item-no-aspect-ratio-stretch-6.html`: FAIL
+- `/css/css-grid/grid-item-percentage-quirk-001.html`: FAIL
+- `/css/css-grid/grid-items/replaced-element-016.tentative.html`: FAIL
+- `/css/css-images/image-orientation/image-orientation-from-image-content-images.html`: FAIL
+- `/css/css-images/image-set/image-set-resolution-002.html`: FAIL
+
+Newly passing:
+
+- `/css/CSS2/fonts/font-size-002.xht`
+- `/css/CSS2/fonts/font-size-004.xht`
+- `/css/CSS2/fonts/font-size-005.xht`
+- `/css/CSS2/fonts/font-size-013.xht`
+- `/css/CSS2/fonts/font-size-015.xht`
+- `/css/CSS2/fonts/font-size-016.xht`
+- `/css/CSS2/fonts/font-size-024.xht`
+- `/css/CSS2/fonts/font-size-026.xht`
+- `/css/CSS2/fonts/font-size-027.xht`
+- `/css/CSS2/fonts/font-size-035.xht`
+- `/css/CSS2/fonts/font-size-037.xht`
+- `/css/CSS2/fonts/font-size-038.xht`
+- `/css/CSS2/fonts/font-size-046.xht`
+- `/css/CSS2/fonts/font-size-048.xht`
+- `/css/CSS2/fonts/font-size-049.xht`
+- `/css/CSS2/fonts/font-size-057.xht`
+- `/css/CSS2/fonts/font-size-059.xht`
+- `/css/CSS2/fonts/font-size-060.xht`
+- `/css/CSS2/fonts/font-size-068.xht`
+- `/css/CSS2/fonts/font-size-070.xht`
+- `/css/CSS2/fonts/font-size-071.xht`
+- `/css/CSS2/fonts/font-size-079.xht`
+- `/css/CSS2/fonts/font-size-081.xht`
+- `/css/CSS2/fonts/font-size-082.xht`
+- `/css/CSS2/fonts/font-size-090.xht`
+- `/css/CSS2/fonts/font-size-092.xht`
+- `/css/CSS2/fonts/font-size-093.xht`
+- `/css/CSS2/fonts/font-size-100.xht`
+- `/css/CSS2/fonts/font-size-101.xht`
+- `/css/CSS2/fonts/font-size-102.xht`
+- `/css/CSS2/visudet/inline-block-baseline-015.html`
+- `/css/CSS2/visudet/inline-block-baseline-016.html`
+- `/css/css-borders/corner-shape/corner-shape-svg-border.html`
+- `/css/css-contain/content-visibility/content-visibility-auto-svg-image.html`
+- `/css/css-flexbox/canvas-contain-size.html`
+- `/css/css-flexbox/flex-aspect-ratio-img-column-013.html`
+- `/css/css-flexbox/flex-aspect-ratio-img-column-014.html`
+- `/css/css-flexbox/flex-aspect-ratio-img-column-015.html`
+- `/css/css-flexbox/flex-aspect-ratio-img-row-008.html`
+- `/css/css-flexbox/flex-aspect-ratio-img-row-009.html`
+- `/css/css-flexbox/flex-aspect-ratio-img-row-010.html`
+- `/css/css-flexbox/flex-aspect-ratio-img-row-011.html`
+- `/css/css-flexbox/flex-aspect-ratio-intrinsic-padding-001.html`
+- `/css/css-flexbox/image-nested-within-definite-column-flexbox.html`
+- `/css/css-flexbox/intrinsic-size/auto-min-size-001.html`
+- `/css/css-flexbox/percentage-heights-014.html`
+- `/css/css-flexbox/percentage-heights-020.html`
+- `/css/css-flexbox/percentage-heights-022.html`
+- `/css/css-fonts/font-size-zero-1.html`
+- `/css/css-fonts/font-size-zero-2.html`
+- `/css/css-fonts/font-size-zero-3.html`
+- `/css/css-grid/alignment/replaced-alignment-with-aspect-ratio-003.tentative.html`
+- `/css/css-grid/grid-items/grid-auto-margin-and-replaced-item-001.html`
+- `/css/css-grid/grid-lanes/item-placement/grid-lanes-item-placement-008.html`
+- `/css/css-grid/grid-lanes/track-sizing/auto-repeat/intrinsic-auto-repeat/column-auto-repeat-auto-026.html`
+- `/css/css-grid/grid-lanes/track-sizing/auto-repeat/intrinsic-auto-repeat/row-auto-repeat-auto-026.html`
+- `/css/css-grid/grid-with-dynamic-img.html`
+- `/css/css-grid/layout-algorithm/grid-intrinsic-size-dynamic-block-size.html`
+- `/css/css-grid/subgrid/standalone-axis-size-006.html`
+- `/css/css-images/object-fit-none-svg-width-only.html`
+- `/css/css-paint-api/background-image-alpha.https.html`
+- `/css/css-paint-api/paint-arguments.https.html`
+- `/css/css-paint-api/paint-function-arguments-var.https.html`
+- `/css/css-paint-api/paint-function-arguments.https.html`
+- `/css/css-position/position-absolute-replaced-intrinsic-size.tentative.html`
+- `/css/css-position/position-absolute-replaced-no-intrinsic-size.tentative.html`
+- `/css/css-sizing/aspect-ratio/replaced-element-034.html`
+- `/css/css-sizing/aspect-ratio/replaced-element-039.html`
+- `/css/css-sizing/aspect-ratio/replaced-element-040.html`
+- `/css/css-sizing/aspect-ratio/replaced-element-045.html`
+- `/css/css-sizing/aspect-ratio/replaced-element-046.html`
+- `/css/css-sizing/image-fractional-height-with-wide-aspect-ratio.html`
+- `/css/css-sizing/intrinsic-percent-replaced-001.html`
+- `/css/css-sizing/intrinsic-percent-replaced-012.html`
+- `/css/css-sizing/intrinsic-percent-replaced-013.html`
+- `/css/css-sizing/intrinsic-percent-replaced-014.html`
+- `/css/css-sizing/intrinsic-percent-replaced-025.html`
+- `/css/css-sizing/intrinsic-percent-replaced-027.html`
+- `/css/css-sizing/intrinsic-percent-replaced-dynamic-003.html`
+- `/css/css-sizing/intrinsic-percent-replaced-dynamic-004.html`
+- `/css/css-sizing/intrinsic-percent-replaced-dynamic-006.html`
+- `/css/css-sizing/intrinsic-percent-replaced-dynamic-009.html`
+- `/css/css-sizing/min-content-le-max-content.tentative.html`
+- `/css/css-sizing/replaced-max-size-saturation.html`
+- `/css/css-sizing/stretch/flexbox-auto-minimum-001.html`
+- `/css/css-sizing/stretch/flexbox-auto-minimum-002.html`
+- `/css/css-sizing/stretch/flexbox-flex-base-size-001.html`
+- `/css/css-sizing/stretch/flexbox-flex-base-size-002.html`
+- `/css/css-sizing/stretch/replaced-next-to-float-1.html`
+- `/css/css-tables/percent-height-replaced-in-percent-cell-002.html`
+- `/css/css-tables/percent-height-replaced-in-percent-cell-003.html`
+- `/css/css-tables/subpixel-table-cell-width-001.html`
+- `/css/css-tables/subpixel-table-cell-width-002.html`
+- `/css/css-text-decor/text-decoration-thickness-from-zero-sized-font.html`
+- `/css/css-text/white-space/white-space-zero-fontsize-001.html`
