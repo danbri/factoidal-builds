@@ -1,0 +1,136 @@
+name: Compare released Linux engines on the same BBC and GOV.UK snapshots
+on:
+  push:
+    branches: [checks/af32-survey-engine-replay]
+permissions:
+  actions: read
+  contents: read
+env:
+  GH_TOKEN: ${{ github.token }}
+  PARENT: edbd2752d765c5f65f0181b3d7ad97432539f844
+  CANDIDATE: af32b113cc3e05fbf219aaa9d382a6c30faedeb1
+  RUNTIME: 9fa1d855822cc14462d55602dcab7d622094e16b
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ env.CANDIDATE }}
+          path: core
+          persist-credentials: false
+          sparse-checkout: |
+            labs/demos/foafnaut
+            docs/web/hub/foafnaut
+            tests/browser-wpt
+            third_party/fonts
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45638334817
+          name: bbc-uk-replay-with-photos
+          path: capture
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45430099580
+          name: desktop-govuk-snapshot
+          path: govuk
+          github-token: ${{ github.token }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.4
+      - name: Download and check the exact released engine files
+        run: |
+          set -euo pipefail
+          mkdir -p out engines/parent engines/candidate runtime
+          test "$(git -C core rev-parse HEAD)" = "$CANDIDATE"
+          for entry in "parent:$PARENT" "candidate:$CANDIDATE" "runtime:$RUNTIME"; do
+            role=${entry%%:*}
+            sha=${entry#*:}
+            set=foafnaut-linux-x86_64
+            dest="engines/$role"
+            if [[ $role == runtime ]]; then set=foafnaut-web; dest=runtime; fi
+            gh release download "build-${sha:0:12}-$set" -R "$GITHUB_REPOSITORY" -D "$dest" -p build-info.json -p "$set.tar.gz"
+            expected=$(jq -er --arg sha "$sha" --arg asset "$set.tar.gz"               'select(.source_commit == $sha) | .artifacts[$asset].sha256' "$dest/build-info.json")
+            echo "$expected  $dest/$set.tar.gz" | sha256sum -c -
+            if [[ $role == runtime ]]; then
+              tar -xzf "$dest/$set.tar.gz" -C "$dest" docs/web/hub/html-webgpu/runtime
+            else
+              mkdir "$dest/$set"
+              tar -xzf "$dest/$set.tar.gz" -C "$dest/$set"
+              engine_sha=$(jq -er --arg asset "$set.tar.gz" '.artifacts[$asset].files["foafnaut/libweb-render.so"].sha256' "$dest/build-info.json")
+              echo "$engine_sha  $dest/$set/foafnaut/libweb-render.so" | sha256sum -c -
+              jq -e '.library.self_contained == true' "$dest/build-info.json" >/dev/null
+              ldd "$dest/$set/foafnaut/libweb-render.so" > "out/$role-linked.txt"
+              if grep -q 'not found' "out/$role-linked.txt"; then cat "out/$role-linked.txt"; exit 1; fi
+            fi
+          done
+          test -s engines/parent/foafnaut-linux-x86_64/foafnaut/libweb-render.so
+          test -s engines/candidate/foafnaut-linux-x86_64/foafnaut/libweb-render.so
+          cp engines/parent/build-info.json out/parent-build-info.json
+          cp engines/candidate/build-info.json out/candidate-build-info.json
+          cp runtime/build-info.json out/runtime-build-info.json
+          lscpu > out/runner.txt
+          echo "32c6aa1ba6934f8db893078034c1efaf8e203416b9c6aa2783a0c65e7d86bf46  capture/bbc-uk-with-photos.zip" | sha256sum -c -
+          echo "f6ce846865473c4a20453944c232763f29849852a43fca5e4190f11117ab776e  govuk/gov.uk/desktop-govuk-20261124.zip" | sha256sum -c -
+      - name: Alternate engines against unchanged snapshots and host
+        run: |
+          set -euo pipefail
+          unset LD_LIBRARY_PATH REFTEST_TIME REFTEST_DUMP_DIR
+          lab="$PWD/core/labs/demos/foafnaut"
+          bash "$lab/realpages/setup-host.sh" "$lab" "$PWD/runtime"
+          renderer="core/tests/browser-wpt/reftest-render.ts"
+          deno check --no-config --no-npm "$renderer"
+          sha256sum engines/*/foafnaut-linux-x86_64/foafnaut/libweb-render.so "$renderer" \
+            capture/bbc-uk-with-photos.zip govuk/gov.uk/desktop-govuk-20261124.zip > out/inputs.sha256
+          for site in bbc govuk; do
+            if [[ $site == bbc ]]; then
+              export REALPAGES_REPLAY="$PWD/capture/bbc-uk-with-photos.zip"
+              url=https://www.bbc.co.uk/news
+            else
+              export REALPAGES_REPLAY="$PWD/govuk/gov.uk/desktop-govuk-20261124.zip"
+              url=https://www.gov.uk/
+            fi
+            mkdir -p "out/$site"
+            jq -nc --arg url "$url" '{url:$url,file:"page.png",width:1280,height:735}' > "out/$site/jobs.jsonl"
+            sample=0
+            for role in parent candidate candidate parent; do
+              sample=$((sample+1))
+              dir="out/$site/$sample-$role"
+              mkdir "$dir"
+              /usr/bin/time -f "wall=%e user=%U sys=%S rssKiB=%M" -o "$dir/process-time.txt" \
+                deno run --no-config --no-npm --unstable-ffi -A --preload "$lab/realpages/replay.ts" "$renderer" \
+                --native-engine "$PWD/engines/$role/foafnaut-linux-x86_64/foafnaut/libweb-render.so" \
+                --list "out/$site/jobs.jsonl" --out "$dir" 2>&1 | tee "$dir/run.log"
+              sed -n 's/^__done //p' "$dir/run.log" | jq -es \
+                'if length == 1 and .[0].status == "ok" then .[0] else error("expected one complete frame") end' > "$dir/result.json"
+            done
+          done
+          python3 - <<'PYTHON' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import statistics
+          from pathlib import Path
+
+          root = Path("out")
+          results = {}
+          for site in ("bbc", "govuk"):
+              by_role = {}
+              for role in ("parent", "candidate"):
+                  samples = sorted((root / site).glob(f"*-{role}/result.json"))
+                  assert len(samples) == 2, (site, role, samples)
+                  records = [json.loads(path.read_text()) for path in samples]
+                  assert all(record["ms"] > 0 and record["sha"] for record in records)
+                  by_role[role] = {"samples": records, "median_ms": statistics.median(row["ms"] for row in records)}
+              times = [by_role[role]["median_ms"] for role in ("parent", "candidate")]
+              results[site] = by_role | {"change_pct": round((times[1] / times[0] - 1) * 100, 2)}
+              print(f"{site}: median of two runs per engine {times[0]:.1f} → {times[1]:.1f} ms")
+          (root / "comparison.json").write_text(json.dumps(results, indent=2) + "\n")
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: survey-same-run-offline-af32
+          path: out/
+          retention-days: 7
