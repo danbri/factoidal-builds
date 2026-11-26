@@ -106,10 +106,10 @@ jobs:
           from pathlib import Path
           import shutil
           source=Path('engines'); lab=Path('core/labs/demos/foafnaut/.build')
-          for name, dest in [('web-render.mjs','native-html/runtime'),('web-render.wasm','native-html/runtime'),('render-plan.mjs','engines'),('render-plan.wasm','engines')]:
-              matches=list(source.rglob(name))
-              assert len(matches)==1, (name,matches)
-              out=lab/dest/name; out.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(matches[0],out)
+          for name, src, dest in [('web-render.mjs','web-render/engines','native-html/runtime'),('web-render.wasm','web-render/engines','native-html/runtime'),('render-plan.mjs','engines','engines'),('render-plan.wasm','engines','engines')]:
+              item=source/src/name
+              assert item.is_file(), item
+              out=lab/dest/name; out.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(item,out)
           PY
           sha256sum worker/libweb-render.so > worker/library.sha256
       - name: Read the host Deno pin
