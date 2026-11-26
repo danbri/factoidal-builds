@@ -545,8 +545,9 @@ class WorkflowSplitTests(unittest.TestCase):
         self.assertEqual(self.needs('foafnaut-browser-linux'),
                          {'resolve', 'foafnaut-engines', 'foafnaut-linux-native-worker'})
         self.assertEqual(self.needs('foafnaut-browser-linux-check'), {'resolve', 'foafnaut-browser-linux'})
-        self.assertEqual(self.needs('publish-linux-browser'), {'resolve', 'lean', 'foafnaut-host-tests',
+        self.assertEqual(self.needs('publish-linux-browser'), {'resolve', 'foafnaut-host-tests',
                                                                'foafnaut-browser-linux-check'})
+        self.assertNotIn('lean', self.needs('publish-linux-browser'))
 
     def test_reports_wait_for_all_publish_jobs(self):
         for job in ('metrics', 'nightly-report'):
