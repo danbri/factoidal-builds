@@ -1,0 +1,483 @@
+{
+ "format": "factoidal-ci-metrics-v1",
+ "run_id": 45758600673,
+ "run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45758600673",
+ "event": "workflow_dispatch",
+ "builds_branch": "main",
+ "builds_sha": "86513829ae0187e8035676d13befe6a18cf358ab",
+ "title": "core main (Mac release lane)",
+ "created_at": "2026-11-26T04:59:03Z",
+ "jobs": [
+  {
+   "name": "resolve",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 0.35,
+   "start_after_dispatch_minutes": 0.07,
+   "end_after_dispatch_minutes": 0.42,
+   "longest_steps": [
+    {
+     "name": "Run scripts/resolve-core.sh",
+     "minutes": 0.23
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run python3 scripts/mac-runs-on.py",
+     "minutes": 0.0
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "foafnaut-engines",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 34.57,
+   "start_after_dispatch_minutes": 0.45,
+   "end_after_dispatch_minutes": 35.02,
+   "longest_steps": [
+    {
+     "name": "Build and check the Lean HTML browser runtime",
+     "minutes": 27.27
+    },
+    {
+     "name": "Build and check the Foafnaut engines",
+     "minutes": 5.13
+    },
+    {
+     "name": "Restore .lake from the lean job's cache",
+     "minutes": 0.52
+    },
+    {
+     "name": "Build the WasmVM guest modules",
+     "minutes": 0.42
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "emsdk-6.0.8-Linux",
+     "result": "hit",
+     "bytes": 480270169,
+     "restored_key": "emsdk-6.0.8-Linux"
+    },
+    {
+     "action": "cache/restore",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-7f2d21ba143eb51638ae111a4e55cce36b3e8ccd60b3b4196065f1762d6991cd",
+     "result": "partial",
+     "bytes": 1216046413,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-419de4fe816c2b2defaf21b69add820c9fa902c99a27529ef1b5494f43f005b5"
+    },
+    {
+     "action": "cache/restore",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45758600673",
+     "result": "partial",
+     "bytes": 199081741,
+     "restored_key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45756413568"
+    },
+    {
+     "action": "cache/save",
+     "key": "ccache-emcc-6.0.8-Linux-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45758600673",
+     "result": "saved",
+     "bytes": null
+    }
+   ],
+   "ccache": {
+    "hits": 786,
+    "lookups": 810
+   },
+   "cache_audit": {
+    "checked": 12,
+    "compiles": 666,
+    "different": 0
+   }
+  },
+  {
+   "name": "lean-macos (darwin-arm64)",
+   "conclusion": "success",
+   "runner": "macos-15",
+   "queue_minutes": 0.07,
+   "minutes": 4.65,
+   "start_after_dispatch_minutes": 0.48,
+   "end_after_dispatch_minutes": 5.13,
+   "longest_steps": [
+    {
+     "name": "Dispatch ABI and CLI smoke",
+     "minutes": 1.52
+    },
+    {
+     "name": "lake build (library, proofs,",
+     "minutes": 1.07
+    },
+    {
+     "name": "Post Cache .lake",
+     "minutes": 0.65
+    },
+    {
+     "name": "Cache .lake",
+     "minutes": 0.58
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "lake-darwin-arm64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-7f2d21ba143eb51638ae111a4e55cce36b3e8ccd60b3b4196065f1762d6991cd",
+     "result": "partial",
+     "bytes": 1121754089,
+     "restored_key": "lake-darwin-arm64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-3f405a0f9ef7ab4e8e422fb875454800f51afb4be33fcd6a9d5ed4d3c79b8a75"
+    }
+   ]
+  },
+  {
+   "name": "lean (ubuntu-latest, linux-x86_64)",
+   "conclusion": "failure",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 8.4,
+   "start_after_dispatch_minutes": 0.45,
+   "end_after_dispatch_minutes": 8.85,
+   "longest_steps": [
+    {
+     "name": "lake build (library, proofs,",
+     "minutes": 6.63
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.65
+    },
+    {
+     "name": "Cache .lake",
+     "minutes": 0.52
+    },
+    {
+     "name": "Tail-recursion gate (danbri/factoidal issue 746)",
+     "minutes": 0.48
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-7f2d21ba143eb51638ae111a4e55cce36b3e8ccd60b3b4196065f1762d6991cd",
+     "result": "partial",
+     "bytes": 1216046413,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-419de4fe816c2b2defaf21b69add820c9fa902c99a27529ef1b5494f43f005b5"
+    }
+   ]
+  },
+  {
+   "name": "foafnaut-linux-native-worker",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 44.62,
+   "start_after_dispatch_minutes": 0.45,
+   "end_after_dispatch_minutes": 45.07,
+   "longest_steps": [
+    {
+     "name": "Compile and stage the self-contained worker",
+     "minutes": 43.57
+    },
+    {
+     "name": "Install elan and native build dependencies",
+     "minutes": 0.45
+    },
+    {
+     "name": "Restore Linux Lake cache",
+     "minutes": 0.27
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.15
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache/restore",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-7f2d21ba143eb51638ae111a4e55cce36b3e8ccd60b3b4196065f1762d6991cd",
+     "result": "partial",
+     "bytes": 1216046413,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-419de4fe816c2b2defaf21b69add820c9fa902c99a27529ef1b5494f43f005b5"
+    },
+    {
+     "action": "cache/restore",
+     "key": "leanc-objects-v1-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45758600673",
+     "result": "partial",
+     "bytes": 38101459,
+     "restored_key": "leanc-objects-v1-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45747980850"
+    }
+   ]
+  },
+  {
+   "name": "js-fuel-mono",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 20.88,
+   "start_after_dispatch_minutes": 0.47,
+   "end_after_dispatch_minutes": 21.35,
+   "longest_steps": [
+    {
+     "name": "lake build JSFuelMono (IH_all and the fuel-monotonicity theorems)",
+     "minutes": 20.2
+    },
+    {
+     "name": "Restore .lake from the lean job's cache",
+     "minutes": 0.38
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.18
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache/restore",
+     "key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-7f2d21ba143eb51638ae111a4e55cce36b3e8ccd60b3b4196065f1762d6991cd",
+     "result": "partial",
+     "bytes": 1216046413,
+     "restored_key": "lake-linux-x86_64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-419de4fe816c2b2defaf21b69add820c9fa902c99a27529ef1b5494f43f005b5"
+    }
+   ]
+  },
+  {
+   "name": "foafnaut",
+   "conclusion": "failure",
+   "runner": "macos-15",
+   "queue_minutes": 0.05,
+   "minutes": 46.17,
+   "start_after_dispatch_minutes": 35.07,
+   "end_after_dispatch_minutes": 81.23,
+   "longest_steps": [
+    {
+     "name": "Package, relocate and check the native demos",
+     "minutes": 44.32
+    },
+    {
+     "name": "Restore .lake from the lean job's cache",
+     "minutes": 0.55
+    },
+    {
+     "name": "Put the object cache in front of leanc",
+     "minutes": 0.37
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.35
+    }
+   ],
+   "caches": [
+    {
+     "action": "cache/restore",
+     "key": "lake-darwin-arm64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-7f2d21ba143eb51638ae111a4e55cce36b3e8ccd60b3b4196065f1762d6991cd",
+     "result": "hit",
+     "bytes": 1121790466,
+     "restored_key": "lake-darwin-arm64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-7f2d21ba143eb51638ae111a4e55cce36b3e8ccd60b3b4196065f1762d6991cd"
+    },
+    {
+     "action": "cache/restore",
+     "key": "leanc-objects-v1-darwin-arm64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45758600673",
+     "result": "partial",
+     "bytes": 33613228,
+     "restored_key": "leanc-objects-v1-darwin-arm64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45731780173"
+    },
+    {
+     "action": "cache/save",
+     "key": "leanc-objects-v1-darwin-arm64-3000596d704f59b6df5e67c1632d260077e1b74e1b501dc4471251c10634bb8f-45758600673",
+     "result": "saved",
+     "bytes": null
+    }
+   ],
+   "leanc_objects": {
+    "hits": 625,
+    "compiled": 23
+   },
+   "cache_audit": {
+    "checked": 8,
+    "compiles": 666,
+    "different": 0
+   }
+  },
+  {
+   "name": "foafnaut-host-tests / host-tests",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 4.78,
+   "start_after_dispatch_minutes": 35.07,
+   "end_after_dispatch_minutes": 39.85,
+   "longest_steps": [
+    {
+     "name": "test.sh on the engines (every check; all failures listed at the end)",
+     "minutes": 4.43
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.17
+    },
+    {
+     "name": "Run denoland/setup-deno@v2",
+     "minutes": 0.05
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.03
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "publish",
+   "conclusion": "failure",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 0.33,
+   "start_after_dispatch_minutes": 39.9,
+   "end_after_dispatch_minutes": 40.23,
+   "longest_steps": [
+    {
+     "name": "Assemble, pack and publish the Linux-built sets (linux-x86_64, web, foafnaut-web)",
+     "minutes": 0.2
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.02
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "foafnaut-browser-linux",
+   "conclusion": "success",
+   "runner": "ubuntu-24.04",
+   "queue_minutes": 0.05,
+   "minutes": 1.63,
+   "start_after_dispatch_minutes": 45.12,
+   "end_after_dispatch_minutes": 46.75,
+   "longest_steps": [
+    {
+     "name": "Install native window build dependencies",
+     "minutes": 0.63
+    },
+    {
+     "name": "Build and archive the Linux browser",
+     "minutes": 0.45
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.17
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.08
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "foafnaut-browser-linux-check",
+   "conclusion": "success",
+   "runner": "ubuntu-24.04",
+   "queue_minutes": 0.03,
+   "minutes": 2.1,
+   "start_after_dispatch_minutes": 46.78,
+   "end_after_dispatch_minutes": 48.88,
+   "longest_steps": [
+    {
+     "name": "Check the relocated browser with Xvfb and Mesa software Vulkan",
+     "minutes": 1.63
+    },
+    {
+     "name": "Install runtime libraries and X11 test tools",
+     "minutes": 0.32
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "publish-linux-browser",
+   "conclusion": "success",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.03,
+   "minutes": 0.23,
+   "start_after_dispatch_minutes": 48.92,
+   "end_after_dispatch_minutes": 49.15,
+   "longest_steps": [
+    {
+     "name": "Publish the checked Linux browser archive",
+     "minutes": 0.13
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.02
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.0
+    }
+   ],
+   "caches": []
+  },
+  {
+   "name": "publish-macos",
+   "conclusion": "failure",
+   "runner": "ubuntu-latest",
+   "queue_minutes": 0.05,
+   "minutes": 0.75,
+   "start_after_dispatch_minutes": 81.28,
+   "end_after_dispatch_minutes": 82.03,
+   "longest_steps": [
+    {
+     "name": "Assemble, pack and publish the macOS sets (darwin-arm64, foafnaut-darwin-arm64)",
+     "minutes": 0.6
+    },
+    {
+     "name": "Run actions/download-artifact@v4",
+     "minutes": 0.07
+    },
+    {
+     "name": "Run actions/checkout@v4",
+     "minutes": 0.03
+    },
+    {
+     "name": "Set up job",
+     "minutes": 0.02
+    }
+   ],
+   "caches": []
+  }
+ ],
+ "wall_minutes": 82.03
+}
