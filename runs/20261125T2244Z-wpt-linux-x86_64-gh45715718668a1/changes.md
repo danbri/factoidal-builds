@@ -1,0 +1,31 @@
+### Since the previous full run: +0 subtests (+0.0000 points)
+
+Previous: `20261125T2218Z-wpt-linux-x86_64-gh45710650507a1`, core `acfa63c86`, 92.6461%. This run: core `acfa63c86`, 92.6461% (the same commit: the difference is flakiness).
+Tests that lost subtests: 2 (-2); that gained: 2 (+2). Page outcomes: CRASH -1, OK +2, STALL -1.
+
+**Directories that fell** (1; the first 1)
+
+| directory | Chrome | before | after | change |
+| --- | ---: | ---: | ---: | ---: |
+| html/semantics | 22,523 | 15,710 | 15,709 | -1 |
+
+**Directories that rose** (1; the first 1)
+
+| directory | Chrome | before | after | change |
+| --- | ---: | ---: | ---: | ---: |
+| preload | 956 | 242 | 243 | +1 |
+
+**Where subtests were lost** (the losses alone, whatever the directory gained elsewhere; 2 directories, the first 2)
+
+| directory | subtests lost | tests |
+| --- | ---: | ---: |
+| html/semantics | 1 | 1 |
+| third_party/test262 | 1 | 1 |
+
+**Tests that lost most** (the first 2 of 2)
+
+| test | before | after | Chrome |
+| --- | ---: | ---: | ---: |
+| /html/semantics/embedded-content/the-img-element/list-of-available-images-does-not-coalesce-in-flight-requests.sub.tentative.html | 1 | 0 | 1 |
+| /third_party/test262/test/built-ins/RegExp/property-escapes/generated/Script_-_Old_Permic.test262.html | 1 | 0 | 1 |
+
