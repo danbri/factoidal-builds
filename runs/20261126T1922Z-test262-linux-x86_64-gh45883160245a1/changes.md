@@ -1,0 +1,82 @@
+### Since 20261126T1350Z-test262-linux-x86_64-gh45832978284a1 (core 4a81bddce418)
+
+Files passed 47,474 -> 47,548 (+74; +0.1376 points)
+
+Newly passing: 74. Newly failing: 0.
+
+Newly passing:
+
+- `test/language/expressions/assignment/dstr/array-elem-init-yield-expr.js`
+- `test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close-err.js`
+- `test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close-null.js`
+- `test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close.js`
+- `test/language/expressions/assignment/dstr/array-elem-nested-array-yield-expr.js`
+- `test/language/expressions/assignment/dstr/array-elem-nested-obj-yield-expr.js`
+- `test/language/expressions/assignment/dstr/array-elem-target-yield-expr.js`
+- `test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close-err.js`
+- `test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close-null.js`
+- `test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close.js`
+- `test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close-err.js`
+- `test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close-null.js`
+- `test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close.js`
+- `test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close-err.js`
+- `test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close-null.js`
+- `test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close.js`
+- `test/language/expressions/assignment/dstr/array-rest-nested-array-yield-expr.js`
+- `test/language/expressions/assignment/dstr/array-rest-nested-obj-yield-expr.js`
+- `test/language/expressions/assignment/dstr/array-rest-yield-expr.js`
+- `test/language/expressions/assignment/dstr/obj-id-init-yield-expr.js`
+- `test/language/expressions/assignment/dstr/obj-prop-elem-init-yield-expr.js`
+- `test/language/expressions/assignment/dstr/obj-prop-elem-target-yield-expr.js`
+- `test/language/expressions/assignment/dstr/obj-prop-nested-array-yield-expr.js`
+- `test/language/expressions/assignment/dstr/obj-prop-nested-obj-yield-expr.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-array-literal.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-func-expression.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-identifier.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-literal-number.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-literal-string.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-nested.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-new-expr.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-null.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-obj-literal.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-regexp.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-template-literal.js`
+- `test/language/module-code/top-level-await/syntax/export-var-await-expr-this.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-elem-init-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-elem-iter-rtrn-close-null.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-elem-nested-array-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-elem-nested-obj-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-elem-target-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-rest-nested-array-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-rest-nested-obj-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-array-rest-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-obj-id-init-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-obj-prop-elem-init-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-obj-prop-elem-target-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-obj-prop-nested-array-yield-expr.js`
+- `test/language/statements/for-await-of/async-gen-decl-dstr-obj-prop-nested-obj-yield-expr.js`
+- `test/language/statements/for-of/dstr/array-elem-init-yield-expr.js`
+- `test/language/statements/for-of/dstr/array-elem-iter-rtrn-close-err.js`
+- `test/language/statements/for-of/dstr/array-elem-iter-rtrn-close-null.js`
+- `test/language/statements/for-of/dstr/array-elem-iter-rtrn-close.js`
+- `test/language/statements/for-of/dstr/array-elem-nested-array-yield-expr.js`
+- `test/language/statements/for-of/dstr/array-elem-nested-obj-yield-expr.js`
+- `test/language/statements/for-of/dstr/array-elem-target-yield-expr.js`
+- `test/language/statements/for-of/dstr/array-elem-trlg-iter-list-rtrn-close-err.js`
+- `test/language/statements/for-of/dstr/array-elem-trlg-iter-list-rtrn-close-null.js`
+- `test/language/statements/for-of/dstr/array-elem-trlg-iter-list-rtrn-close.js`
+- `test/language/statements/for-of/dstr/array-elem-trlg-iter-rest-rtrn-close-err.js`
+- `test/language/statements/for-of/dstr/array-elem-trlg-iter-rest-rtrn-close-null.js`
+- `test/language/statements/for-of/dstr/array-elem-trlg-iter-rest-rtrn-close.js`
+- `test/language/statements/for-of/dstr/array-rest-iter-rtrn-close-err.js`
+- `test/language/statements/for-of/dstr/array-rest-iter-rtrn-close-null.js`
+- `test/language/statements/for-of/dstr/array-rest-iter-rtrn-close.js`
+- `test/language/statements/for-of/dstr/array-rest-nested-array-yield-expr.js`
+- `test/language/statements/for-of/dstr/array-rest-nested-obj-yield-expr.js`
+- `test/language/statements/for-of/dstr/array-rest-yield-expr.js`
+- `test/language/statements/for-of/dstr/obj-id-init-yield-expr.js`
+- `test/language/statements/for-of/dstr/obj-prop-elem-init-yield-expr.js`
+- `test/language/statements/for-of/dstr/obj-prop-elem-target-yield-expr.js`
+- `test/language/statements/for-of/dstr/obj-prop-nested-array-yield-expr.js`
+- `test/language/statements/for-of/dstr/obj-prop-nested-obj-yield-expr.js`
+- `test/staging/sm/expressions/destructuring-array-default-yield.js`
