@@ -1,7 +1,5 @@
 name: Branch visual reftests
 on:
-  push:
-    branches: [codex/branch-visual-reftests]
   workflow_dispatch:
     inputs:
       build_run:
@@ -33,11 +31,11 @@ jobs:
     timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
-      BUILD_RUN: ${{ inputs.build_run || '45736566979' }}
-      CORE_SHA: ${{ inputs.core_sha || '65c6b2fe06b25c291cdc8810b9faa515d10ac085' }}
-      WPT_SHA: ${{ inputs.wpt_sha || '94e2796a2aa59a232e4e43e8a218ae967e9fac77' }}
-      PREFIX: ${{ inputs.prefix || 'svg/as-image/' }}
-      PATHS: ${{ inputs.paths || '/svg/as-image/sprite-sheet-fractional-size.html' }}
+      BUILD_RUN: ${{ inputs.build_run }}
+      CORE_SHA: ${{ inputs.core_sha }}
+      WPT_SHA: ${{ inputs.wpt_sha }}
+      PREFIX: ${{ inputs.prefix }}
+      PATHS: ${{ inputs.paths }}
     steps:
       - name: Validate pins and wait for successful build artifacts
         shell: bash
@@ -71,7 +69,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: danbri/factoidal-core
-          ref: ${{ inputs.core_sha || '65c6b2fe06b25c291cdc8810b9faa515d10ac085' }}
+          ref: ${{ inputs.core_sha }}
           path: core
           persist-credentials: false
           sparse-checkout: |
@@ -85,13 +83,13 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          run-id: ${{ inputs.build_run || '45736566979' }}
+          run-id: ${{ inputs.build_run }}
           name: foafnaut-linux-native-worker
           path: worker
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
         with:
-          run-id: ${{ inputs.build_run || '45736566979' }}
+          run-id: ${{ inputs.build_run }}
           name: foafnaut-engines
           path: engines
           github-token: ${{ github.token }}
