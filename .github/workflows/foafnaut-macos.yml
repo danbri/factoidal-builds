@@ -120,7 +120,7 @@ jobs:
         run: |
           set -euo pipefail
           bash builds/scripts/install-elan.sh
-          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+          bash builds/scripts/elan-toolchain.sh "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
       - name: Pins
         id: pins
         run: echo "deno=v$(grep -E '^DENO_VERSION=' core/labs/demos/foafnaut/toolchain-versions.env | cut -d= -f2)" >> "$GITHUB_OUTPUT"

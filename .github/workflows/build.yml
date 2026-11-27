@@ -820,7 +820,7 @@ jobs:
         run: |
           set -euo pipefail
           bash builds/scripts/install-elan.sh
-          "$HOME/.elan/bin/elan" toolchain install "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
+          bash builds/scripts/elan-toolchain.sh "$(tr -d ' \n' < core/formal/lean4/lean-toolchain)"
           sudo apt-get update -q
           sudo apt-get install -y -q libuv1-dev libc++-dev libc++abi-dev
       - name: Restore Linux Lake cache
