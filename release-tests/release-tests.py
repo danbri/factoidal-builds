@@ -644,6 +644,11 @@ def cmd_wpt_shard(a):
         finish(error=f"ports {busy} in use before the run")
         die(meta["error"])
     extra = ["--", "--script-engine", a.script_engine, "--wpt-commit", inputs["wpt_commit"]]
+    # The WebDriver classic tests (wdspec files of webdriver/tests/classic/) run only with this flag:
+    # the engine's WebDriver endpoint is remote control of the browser (core's testharness-run.ts).
+    if a.webdriver:
+        extra += ["--dangerously-enable-webdriver-endpoint"]
+        meta["webdriver_endpoint"] = True
     if a.script_engine == "quickjs":
         extra += ["--quickjs-wasm", os.path.join(web, "wasm-guests/qjs-wasmvm.wasm")]
     # The WPT server is checked every 30 s for the whole run: a server that stops makes
@@ -2241,6 +2246,8 @@ def main():
     s.add_argument("--jobs", type=int, default=3)
     s.add_argument("--max-minutes", type=int, default=150)
     s.add_argument("--pydeps", help="directory with PyYAML for wptserve's Test262 pages")
+    s.add_argument("--webdriver", action="store_true", help="run the wdspec files of webdriver/tests/classic/ "
+                   "(passes --dangerously-enable-webdriver-endpoint to the test runner)")
     s.add_argument("--retry-max", type=int, default=15000, help="retry the server-failure names once when at most this many")
     s.add_argument("--retry-minutes", type=int, default=40)
     s.add_argument("--min-free-mb", type=int, default=1200, help="Linux: below this, kill the largest test process")
