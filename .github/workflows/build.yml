@@ -320,6 +320,30 @@ jobs:
             echo "core commit carries no tools/lean-scoreboard.sh" | tee "$RUNNER_TEMP/out/meta/lean-scoreboard.txt"
           fi
 
+      # assurance.json (https://github.com/danbri/factoidal-core/issues/1182, P5): the claims of
+      # foundation/claims.toml with the axioms Lean reports for each, entry point coverage, the
+      # panic and host-policy ratchets, and what is outside every proof. A measurement published
+      # with the release; a claim on a non-standard axiom is an error in the summary, not a stop.
+      - name: Assurance manifest
+        if: matrix.platform == 'linux-x86_64'
+        working-directory: core
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/out/meta"
+          if [ -f tools/assurance-manifest.py ] && [ -f tools/claims-gate.py ]; then
+            python3 -I tools/claims-gate.py --axioms-lean "$RUNNER_TEMP/ClaimsAxioms.lean"
+            AX_RC=0
+            (cd formal/lean4 && lake build $(python3 -I ../../tools/claims-gate.py --modules) && lake env lean "$RUNNER_TEMP/ClaimsAxioms.lean") \
+              > "$RUNNER_TEMP/out/meta/claims-axioms.txt" 2>&1 || AX_RC=$?
+            echo "axioms run exit code: $AX_RC" >> "$RUNNER_TEMP/out/meta/claims-axioms.txt"
+            CK_RC=0; python3 -I tools/claims-gate.py --check-axioms "$RUNNER_TEMP/out/meta/claims-axioms.txt" || CK_RC=$?
+            [ "$CK_RC" = 0 ] || echo "::error::a claim depends on an axiom other than propext, Classical.choice and Quot.sound (see claims-axioms.txt)"
+            python3 -I tools/assurance-manifest.py --axioms-log "$RUNNER_TEMP/out/meta/claims-axioms.txt" \
+              --emscripten "6.0.8" --out "$RUNNER_TEMP/out/meta/assurance.json"
+          else
+            echo "core commit carries no tools/assurance-manifest.py" | tee "$RUNNER_TEMP/out/meta/assurance.txt"
+          fi
+
       - name: Stage native Lean executables
         shell: bash
         run: |
