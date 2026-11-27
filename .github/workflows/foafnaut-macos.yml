@@ -127,7 +127,13 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ steps.pins.outputs.deno }}
+      # On the self-hosted Mac the tool cache is the runner's own (runner.tool_cache), not
+      # /Users/runner/hostedtoolcache: without this, setup-python's macOS installer tries to
+      # create that folder and fails with "Permission denied" whenever Python is not cached
+      # (run 272, 2026-11-27). On GitHub's macOS runners the two paths are the same.
       - uses: actions/setup-python@v5
+        env:
+          AGENT_TOOLSDIRECTORY: ${{ runner.tool_cache }}
         with:
           python-version: '3.13'
       # build.yml's Lake cache of its newest macOS lean job (same path, so the same cache
