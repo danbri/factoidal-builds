@@ -285,7 +285,7 @@ jobs:
             --engine-dir "$RUNNER_TEMP/engine" --work "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/out" \
             --engine-tag "${{ steps.pins.outputs.engine_tag }}" --web-tag "${{ steps.pins.outputs.web_tag }}" \
             --index ${{ matrix.shard }} --shards ${{ matrix.shards }} --platform ${{ matrix.platform }} \
-            --script-engine "${{ steps.pins.outputs.script_engine }}" --jobs ${{ matrix.jobs }} --max-minutes 170 --pydeps "$RUNNER_TEMP/pydeps"
+            --script-engine "${{ steps.pins.outputs.script_engine }}" --jobs ${{ matrix.jobs }} --max-minutes 170 --pydeps "$RUNNER_TEMP/pydeps" --webdriver
       - uses: actions/upload-artifact@v4
         if: always()
         with:

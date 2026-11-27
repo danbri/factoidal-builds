@@ -1166,6 +1166,11 @@ def cmd_wpt_merge(a):
     enc = dirs.get("encoding", {"passed": 0, "chrome": 0})
     passed = totals.get("passed", 0)
     den = inputs["denominator"]
+    # The webdriver/ group (WebDriver classic, wdspec) is in the headline whole. It runs only with the
+    # engine's WebDriver endpoint (wpt-shard --webdriver, since 2026-11-27); before that every name was SKIP.
+    # The share without it is in meta.json and the job summary, beside the headline (skills/wpt-runs).
+    wd = dirs.get("webdriver", {"passed": 0, "chrome": 0})
+    wd_share_ex = f"{100 * (passed - wd['passed']) / (den - wd['chrome']):.4f}" if den > wd["chrome"] else ""
     started = min((m["started_utc"] for m in metas), default=None)
     finished = max((m.get("finished_utc") or "" for m in metas), default=None)
     wall = round(max((m.get("wall_seconds") or 0 for m in metas), default=0) / 60, 1)
@@ -1201,6 +1206,8 @@ def cmd_wpt_merge(a):
             "shards_missing_reasons": missing_reasons, "shard_table": shard_table,
             # completeness: complete (every shard, every name), partial (some results; the share
             # counts the missing names as not passed, so it is not a score), none (no results).
+            "webdriver": {"passed": wd["passed"], "denominator": wd["chrome"], "share_ex_webdriver_pct": wd_share_ex,
+                          "endpoint_enabled": any(x.get("webdriver_endpoint") for x in metas)},
             "completeness": completeness(m), "totals": totals, "shards": metas,
             "directories": {k: {kk: v[kk] for kk in ("names", "run", "chrome", "passed", "reported", "share", "outcomes")} for k, v in dirs.items()}}
     # What changed since the previous valid full run: the summary goes into meta.json and
@@ -1223,7 +1230,8 @@ def cmd_wpt_merge(a):
             shutil.copyfileobj(fi, fo)
     verdict = "VALID" if not reasons else "INVALID (not a score): " + "; ".join(reasons)
     text = (f"### WPT {a.platform}: {verdict}\n\n" + (f"{passed:,} of {den:,} Chrome subtests = **{row['share_pct'][:5]}%**; "
-            f"without encoding/ {row['share_ex_encoding_pct'][:5]}%. " if not reasons else
+            f"without encoding/ {row['share_ex_encoding_pct'][:5]}%; without webdriver/ {wd_share_ex[:5]}% "
+            f"(webdriver/: {wd['passed']:,} of {wd['chrome']:,}). " if not reasons else
             f"Measured {passed:,} of {den:,} (not shown as a score). ") +
             f"{row['names_run']:,} of {row['names_total']:,} names; outcomes {totals.get('outcomes')}; server failures {server_failures}; "
             f"{len(present)} of {plan['shards']} shards; wall {wall} min. Run `{run_id}`.")
