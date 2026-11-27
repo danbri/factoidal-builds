@@ -275,6 +275,13 @@ jobs:
             echo "core commit carries no tools/binary-budget.py"; exit 0
           fi
           python3 ../../tools/binary-budget.py imports .
+          # LTO of leanjs (core issue 471; record docs/designissues/2026-11-25-leanjs-lto-linux.md):
+          # ffi/leanrt-lto.sh needs libc++, libc++abi and gmp headers on x86-64 Linux. Installed
+          # before core makes LTO the default, so that change does not stop this step.
+          if [ "$(uname -s)-$(uname -m)" = "Linux-x86_64" ]; then
+            sudo apt-get update -q
+            sudo apt-get install -y -q libc++-dev libc++abi-dev libgmp-dev
+          fi
           bash ../../../builds/scripts/heavy-step.sh lake build leanjs
           python3 ../../tools/binary-budget.py check leanjs=.lake/build/bin/leanjs
           # leanjs is not a default target: its root's C (JS/Main.c, its own `main`) must not reach
