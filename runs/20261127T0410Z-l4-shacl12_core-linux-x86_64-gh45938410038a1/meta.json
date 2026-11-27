@@ -1,0 +1,132 @@
+{
+ "format": "factoidal-release-test-run-v1",
+ "row": {
+  "run_id": "20261127T0410Z-l4-shacl12_core-linux-x86_64-gh45938410038a1",
+  "started_utc": "2026-11-27T04:12:19Z",
+  "finished_utc": "2026-11-27T04:12:33Z",
+  "trigger": "factoidal-release",
+  "suite": "l4-shacl12_core",
+  "platform": "linux-x86_64",
+  "engine": "lean",
+  "script_engine": "",
+  "factoidal_commit": "37b229d2c803f8df3ef83a2f04ed66ee0f43e65e",
+  "commit_utc": "2026-11-27T03:05:21Z",
+  "snapshot_branch": "",
+  "release_tag": "build-37b229d2c803-linux-x86_64",
+  "wpt_commit": "",
+  "names_total": 138,
+  "names_run": 138,
+  "passed": 138,
+  "denominator": 138,
+  "share_pct": "100.0000",
+  "share_ex_encoding_pct": "",
+  "ok": "",
+  "error": "",
+  "timeout": "",
+  "skip": 0,
+  "crash": "",
+  "stall": "",
+  "no_result": "",
+  "other": "",
+  "failed": 0,
+  "server_failures": "",
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 1,
+  "wall_minutes": 0.0,
+  "repeat_of": "",
+  "runner": "ubuntu-latest",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45938410038",
+  "result_url": "",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261127T0410Z-l4-shacl12_core-linux-x86_64-gh45938410038a1/meta.json"
+ },
+ "plan": {
+  "resolved_utc": "2026-11-27T04:10:53Z",
+  "event": "workflow_run",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/45938410038",
+  "trigger": "factoidal-release",
+  "core_commit": "37b229d2c803f8df3ef83a2f04ed66ee0f43e65e",
+  "core_short": "37b229d2c803",
+  "on_main": true,
+  "commit_author_utc": "2026-11-27T03:05:21Z",
+  "commit_committer_utc": "2026-11-27T03:05:21Z",
+  "commit_subject": "Merge pull request #1192 from danbri/wip/1180-claim-witnesses",
+  "release_sets": {
+   "darwin-arm64": {
+    "tag": "build-37b229d2c803-darwin-arm64",
+    "published_at": "2026-11-27T03:29:00Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-37b229d2c803-darwin-arm64"
+   },
+   "linux-x86_64": {
+    "tag": "build-37b229d2c803-linux-x86_64",
+    "published_at": "2026-11-27T04:10:03Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-37b229d2c803-linux-x86_64"
+   },
+   "web": {
+    "tag": "build-37b229d2c803-web",
+    "published_at": "2026-11-27T04:10:20Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-37b229d2c803-web"
+   },
+   "foafnaut-web": {
+    "tag": "build-a3fc76ec11fd-foafnaut-web",
+    "published_at": "2026-11-26T22:57:32Z",
+    "url": "https://github.com/danbri/factoidal-builds/releases/tag/build-a3fc76ec11fd-foafnaut-web",
+    "note": "of core a3fc76ec11fd, not of this commit: the Wasm module is loaded, not used, by a native run"
+   }
+  },
+  "candidate_chosen_utc": "2026-11-27T04:10:56Z",
+  "candidate_why": "published by build run 45927320655",
+  "script_engine": "bubblepop",
+  "kind": "full",
+  "wpt_commit": "dc65cf0a3adeac58e238e7de96979f05a006bde3",
+  "wpt_aligned": true,
+  "repeat_of": "",
+  "snapshot_branch": "",
+  "snapshot_note": "no snapshot: the secret CORE_SNAPSHOT_TOKEN (contents: write on factoidal-core) is not set; the commit id pins the source",
+  "wpt": false,
+  "suites": true,
+  "platforms": [],
+  "shards_by_platform": {
+   "macos-arm64": 4
+  },
+  "shards": 4
+ },
+ "status": {
+  "command": [
+   "tools/lean-scoreboard.sh",
+   "--only",
+   "l4shacl-core10,l4shacl-sparql10,l4shacl-core12,l4shacl-sparql12,l4shacl-nodeexpr,l4shacl-rules,l4shex,l4shexc,l4rif,l4csvw-rdf,l4csvw-json,l4csvw-validate,l4xmlconf,l4xslt,l4schematron,l4mathml,l4jsonschema,l4jsonld-probe,l4jsonld-api,l4jsonld-frame,l4rml,l4vc-probe,l4rdf-semantics,l4owl-probe-species"
+  ],
+  "started_utc": "2026-11-27T04:12:19Z",
+  "exit": 1,
+  "seconds": 13,
+  "finished_utc": "2026-11-27T04:12:33Z"
+ },
+ "scoreboard_row": {
+  "spec_area": "SHACL 1.2 core",
+  "label": "",
+  "runner": "l4shacl",
+  "job": "l4shacl-core12",
+  "status": "ok",
+  "pass": 138,
+  "fail": 0,
+  "other": 0,
+  "total": 138,
+  "parse": true,
+  "note": "",
+  "command": "formal/lean4/.lake/build/bin/l4shacl third_party/testing/shacl/shacl12-test-suite/tests/core/manifest.ttl",
+  "log": "/home/runner/work/_temp/suite-out/semweb/logs/l4shacl-core12.log",
+  "seconds": 0,
+  "exit_code": "0",
+  "raw_summary_line": "shacl-core TOTAL: 138 pass, 0 fail, 0 skip, 0 unsupported (out of 138)",
+  "detail": ""
+ },
+ "continues_fstar_suite": "shacl12_core",
+ "group": "lean-semweb",
+ "parser": "core tools/lean-scoreboard.sh (its parser for the runner)",
+ "validity": {
+  "valid": true,
+  "reasons": []
+ }
+}
