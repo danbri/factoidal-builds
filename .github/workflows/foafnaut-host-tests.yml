@@ -26,8 +26,12 @@ on:
         description: 'factoidal-core commit (the one the engines run built)'
         required: true
       engines_run_id:
-        description: 'build.yml run whose foafnaut-engines artifact to test'
+        description: 'build.yml run with the engine or native worker artifact to test'
         required: true
+      native_worker_sha:
+        description: 'Expected source commit of the Linux native worker. When set, run the Rust desktop smoke instead.'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -35,6 +39,7 @@ permissions:
 
 jobs:
   host-tests:
+    if: github.event_name != 'workflow_dispatch' || inputs.native_worker_sha == ''
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -61,3 +66,53 @@ jobs:
       - name: test.sh on the engines (every check; all failures listed at the end)
         shell: bash
         run: bash core/labs/demos/foafnaut/test.sh --skip-build
+
+  native-window:
+    if: github.event_name == 'workflow_dispatch' && inputs.native_worker_sha != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: danbri/factoidal-core
+          ref: ${{ inputs.core_ref }}
+          path: core
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: foafnaut-linux-native-worker
+          path: ${{ runner.temp }}/native-worker
+          run-id: ${{ inputs.engines_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify the native worker
+        env:
+          WORKER_SHA: ${{ inputs.native_worker_sha }}
+        run: |
+          [[ "$WORKER_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git -C core merge-base --is-ancestor "$WORKER_SHA" HEAD
+          cd "$RUNNER_TEMP/native-worker"
+          grep -Fx "$WORKER_SHA" source-commit.txt
+          sha256sum -c SHA256SUMS
+      - name: Install Linux window test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev libvulkan1 mesa-vulkan-drivers \
+            xvfb xauth xdotool imagemagick
+      - name: Verify native plans and a click on the displayed fixture
+        working-directory: core/labs/demos/foafnaut
+        run: |
+          set -euo pipefail
+          library="$RUNNER_TEMP/native-worker/libweb-render.so"
+          window="$RUNNER_TEMP/libnative-window.so"
+          read -ra sdl_cflags <<<"$(pkg-config --cflags sdl2)"
+          read -ra sdl_libs <<<"$(pkg-config --libs sdl2)"
+          cc -std=c11 -O2 -Wall -Wextra -Werror -fPIC -shared -Wl,-z,defs \
+            "${sdl_cflags[@]}" native_window_linux.c "${sdl_libs[@]}" -lm -o "$window"
+          cargo build --locked --release --manifest-path native-desktop/Cargo.toml
+          host="$PWD/native-desktop/target/release/foafnaut-native-desktop"
+          "$host" "$library" --check-render-plan
+          driver=$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)
+          test -n "$driver"
+          export VK_DRIVER_FILES="$driver" XDG_RUNTIME_DIR="$(mktemp -d)"
+          native-desktop/smoke-linux-window.sh "$host" "$library" "$window"
