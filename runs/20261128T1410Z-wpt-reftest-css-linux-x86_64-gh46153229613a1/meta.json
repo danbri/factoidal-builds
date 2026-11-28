@@ -1,0 +1,924 @@
+{
+ "format": "factoidal-wpt-reftests-run-v1",
+ "row": {
+  "run_id": "20261128T1410Z-wpt-reftest-css-linux-x86_64-gh46153229613a1",
+  "started_utc": "2026-11-28T14:10:50Z",
+  "finished_utc": "2026-11-28T14:16:24Z",
+  "trigger": "schedule",
+  "suite": "wpt-reftest-css",
+  "platform": "linux-x86_64",
+  "engine": "native-cpu-raster",
+  "script_engine": "bubblepop",
+  "factoidal_commit": "bd0d78dd12ff727140262b5f88934c69d1f2d005",
+  "commit_utc": "2026-11-27T22:08:41Z",
+  "snapshot_branch": "",
+  "release_tag": "build-bd0d78dd12ff-foafnaut-linux-x86_64",
+  "wpt_commit": "67903cd58bad06f6eb145dd58c5ff2822b5204b8",
+  "names_total": 25940,
+  "names_run": 25940,
+  "passed": 12369,
+  "denominator": 25940,
+  "share_pct": "47.6831",
+  "share_ex_encoding_pct": "",
+  "ok": 12369,
+  "error": 23,
+  "timeout": 136,
+  "skip": 0,
+  "crash": 0,
+  "stall": 0,
+  "no_result": 0,
+  "other": 0,
+  "failed": 13407,
+  "server_failures": 23,
+  "valid": "true",
+  "invalid_reason": "",
+  "kind": "full",
+  "shards": 16,
+  "wall_minutes": 5.6,
+  "repeat_of": "",
+  "runner": "ubuntu-latest x16; core tests/browser-wpt/wpt-reftests.py, CPU raster, Noto Sans",
+  "workflow_run_url": "https://github.com/danbri/factoidal-builds/actions/runs/46153229613",
+  "result_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261128T1410Z-wpt-reftest-css-linux-x86_64-gh46153229613a1/results.tsv.gz",
+  "meta_url": "https://raw.githubusercontent.com/danbri/factoidal-builds/wpt-scores/runs/20261128T1410Z-wpt-reftest-css-linux-x86_64-gh46153229613a1/meta.json"
+ },
+ "rules": "Every reftest item of the WPT manifest at wpt_commit under the suite's directory (print reftests are a separate kind), run by core tests/browser-wpt/wpt-reftests.py by wptrunner's rules: == and != references, reference chains, fuzzy annotations, the test's viewport size (800x600 by default); per pixel the largest channel difference and the count of differing pixels against the fuzzy ranges. Drawn by the release's engine library with its CPU raster (op render, cpu:true), Noto Sans and the Hub's fallback fonts (third_party/fonts), page scripts on BubblePopJS; reftest-wait honoured for up to 6 s of page time (TIMEOUT after). A reftest is one test, PASS or not, as on wpt.fyi.",
+ "validity": {
+  "rules": "every shard present; every test has a status; ERROR (harness) under 0.5% of tests",
+  "valid": true,
+  "reasons": []
+ },
+ "totals": {
+  "tests": 25940,
+  "passed": 12369,
+  "share_pct": 47.6831,
+  "statuses": {
+   "PASS": 12369,
+   "FAIL": 13407,
+   "ERROR": 23,
+   "EXCLUDED": 5,
+   "TIMEOUT": 136
+  },
+  "harness_errors": 23,
+  "chrome_passed": 22782,
+  "firefox_passed": 21109,
+  "safari_passed": 20399,
+  "edge_passed": 22845,
+  "chrome_share_pct": 87.8258,
+  "firefox_share_pct": 81.3763,
+  "safari_share_pct": 78.6392,
+  "edge_share_pct": 88.0686,
+  "passed_where_chrome_passes": 11910,
+  "chrome_passes_we_fail": 10872,
+  "passed_with_skips": 79
+ },
+ "directories": {
+  "css/CSS2/": {
+   "tests": 6245,
+   "passed": 4536,
+   "chrome": 6118,
+   "firefox": 6106,
+   "safari": 5973,
+   "edge": 6113
+  },
+  "css/WOFF2/": {
+   "tests": 298,
+   "passed": 293,
+   "chrome": 292,
+   "firefox": 292,
+   "safari": 293,
+   "edge": 291
+  },
+  "css/compositing/": {
+   "tests": 60,
+   "passed": 5,
+   "chrome": 58,
+   "firefox": 52,
+   "safari": 44,
+   "edge": 56
+  },
+  "css/css-align/": {
+   "tests": 66,
+   "passed": 28,
+   "chrome": 62,
+   "firefox": 50,
+   "safari": 41,
+   "edge": 62
+  },
+  "css/css-anchor-position/": {
+   "tests": 242,
+   "passed": 44,
+   "chrome": 225,
+   "firefox": 191,
+   "safari": 219,
+   "edge": 224
+  },
+  "css/css-animations/": {
+   "tests": 37,
+   "passed": 13,
+   "chrome": 36,
+   "firefox": 32,
+   "safari": 32,
+   "edge": 36
+  },
+  "css/css-backgrounds/": {
+   "tests": 579,
+   "passed": 228,
+   "chrome": 477,
+   "firefox": 526,
+   "safari": 489,
+   "edge": 477
+  },
+  "css/css-borders/": {
+   "tests": 269,
+   "passed": 137,
+   "chrome": 225,
+   "firefox": 173,
+   "safari": 166,
+   "edge": 238
+  },
+  "css/css-box/": {
+   "tests": 42,
+   "passed": 5,
+   "chrome": 42,
+   "firefox": 2,
+   "safari": 31,
+   "edge": 42
+  },
+  "css/css-break/": {
+   "tests": 1145,
+   "passed": 147,
+   "chrome": 990,
+   "firefox": 554,
+   "safari": 619,
+   "edge": 990
+  },
+  "css/css-cascade/": {
+   "tests": 45,
+   "passed": 21,
+   "chrome": 45,
+   "firefox": 41,
+   "safari": 45,
+   "edge": 45
+  },
+  "css/css-color-adjust/": {
+   "tests": 24,
+   "passed": 7,
+   "chrome": 23,
+   "firefox": 22,
+   "safari": 20,
+   "edge": 23
+  },
+  "css/css-color/": {
+   "tests": 321,
+   "passed": 163,
+   "chrome": 297,
+   "firefox": 295,
+   "safari": 282,
+   "edge": 291
+  },
+  "css/css-conditional/": {
+   "tests": 173,
+   "passed": 119,
+   "chrome": 170,
+   "firefox": 161,
+   "safari": 161,
+   "edge": 170
+  },
+  "css/css-contain/": {
+   "tests": 438,
+   "passed": 196,
+   "chrome": 427,
+   "firefox": 427,
+   "safari": 417,
+   "edge": 430
+  },
+  "css/css-content/": {
+   "tests": 66,
+   "passed": 13,
+   "chrome": 62,
+   "firefox": 55,
+   "safari": 47,
+   "edge": 62
+  },
+  "css/css-counter-styles/": {
+   "tests": 260,
+   "passed": 19,
+   "chrome": 247,
+   "firefox": 239,
+   "safari": 216,
+   "edge": 247
+  },
+  "css/css-display/": {
+   "tests": 225,
+   "passed": 91,
+   "chrome": 152,
+   "firefox": 142,
+   "safari": 143,
+   "edge": 152
+  },
+  "css/css-exclusions/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-flexbox/": {
+   "tests": 1025,
+   "passed": 627,
+   "chrome": 1014,
+   "firefox": 943,
+   "safari": 925,
+   "edge": 1014
+  },
+  "css/css-font-loading/": {
+   "tests": 7,
+   "passed": 3,
+   "chrome": 7,
+   "firefox": 6,
+   "safari": 5,
+   "edge": 7
+  },
+  "css/css-fonts/": {
+   "tests": 386,
+   "passed": 165,
+   "chrome": 328,
+   "firefox": 337,
+   "safari": 311,
+   "edge": 330
+  },
+  "css/css-forms/": {
+   "tests": 16,
+   "passed": 2,
+   "chrome": 2,
+   "firefox": 2,
+   "safari": 2,
+   "edge": 2
+  },
+  "css/css-gaps/": {
+   "tests": 553,
+   "passed": 34,
+   "chrome": 358,
+   "firefox": 47,
+   "safari": 37,
+   "edge": 358
+  },
+  "css/css-grid/": {
+   "tests": 1792,
+   "passed": 599,
+   "chrome": 956,
+   "firefox": 935,
+   "safari": 1219,
+   "edge": 956
+  },
+  "css/css-highlight-api/": {
+   "tests": 111,
+   "passed": 15,
+   "chrome": 110,
+   "firefox": 102,
+   "safari": 64,
+   "edge": 110
+  },
+  "css/css-image-animation/": {
+   "tests": 22,
+   "passed": 14,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 4,
+   "edge": 3
+  },
+  "css/css-images/": {
+   "tests": 490,
+   "passed": 298,
+   "chrome": 394,
+   "firefox": 422,
+   "safari": 330,
+   "edge": 394
+  },
+  "css/css-inline/": {
+   "tests": 191,
+   "passed": 27,
+   "chrome": 163,
+   "firefox": 109,
+   "safari": 80,
+   "edge": 163
+  },
+  "css/css-layout-api/": {
+   "tests": 135,
+   "passed": 8,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/css-lists/": {
+   "tests": 203,
+   "passed": 121,
+   "chrome": 120,
+   "firefox": 200,
+   "safari": 105,
+   "edge": 120
+  },
+  "css/css-logical/": {
+   "tests": 6,
+   "passed": 4,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-masking/": {
+   "tests": 516,
+   "passed": 155,
+   "chrome": 477,
+   "firefox": 473,
+   "safari": 431,
+   "edge": 504
+  },
+  "css/css-multicol/": {
+   "tests": 464,
+   "passed": 145,
+   "chrome": 459,
+   "firefox": 382,
+   "safari": 297,
+   "edge": 459
+  },
+  "css/css-namespaces/": {
+   "tests": 23,
+   "passed": 6,
+   "chrome": 23,
+   "firefox": 23,
+   "safari": 23,
+   "edge": 23
+  },
+  "css/css-navigation/": {
+   "tests": 3,
+   "passed": 0,
+   "chrome": 0,
+   "firefox": 0,
+   "safari": 0,
+   "edge": 0
+  },
+  "css/css-nesting/": {
+   "tests": 17,
+   "passed": 12,
+   "chrome": 17,
+   "firefox": 17,
+   "safari": 17,
+   "edge": 17
+  },
+  "css/css-overflow/": {
+   "tests": 741,
+   "passed": 182,
+   "chrome": 421,
+   "firefox": 305,
+   "safari": 234,
+   "edge": 424
+  },
+  "css/css-paint-api/": {
+   "tests": 115,
+   "passed": 105,
+   "chrome": 107,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 109
+  },
+  "css/css-painting/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-position/": {
+   "tests": 252,
+   "passed": 90,
+   "chrome": 251,
+   "firefox": 199,
+   "safari": 192,
+   "edge": 251
+  },
+  "css/css-properties-values-api/": {
+   "tests": 7,
+   "passed": 1,
+   "chrome": 7,
+   "firefox": 7,
+   "safari": 7,
+   "edge": 7
+  },
+  "css/css-pseudo/": {
+   "tests": 280,
+   "passed": 112,
+   "chrome": 252,
+   "firefox": 196,
+   "safari": 151,
+   "edge": 254
+  },
+  "css/css-rhythm/": {
+   "tests": 18,
+   "passed": 3,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/css-ruby/": {
+   "tests": 143,
+   "passed": 39,
+   "chrome": 99,
+   "firefox": 97,
+   "safari": 49,
+   "edge": 99
+  },
+  "css/css-scroll-anchoring/": {
+   "tests": 4,
+   "passed": 0,
+   "chrome": 4,
+   "firefox": 4,
+   "safari": 4,
+   "edge": 4
+  },
+  "css/css-scroll-snap/": {
+   "tests": 26,
+   "passed": 2,
+   "chrome": 24,
+   "firefox": 25,
+   "safari": 23,
+   "edge": 24
+  },
+  "css/css-scrollbars/": {
+   "tests": 31,
+   "passed": 31,
+   "chrome": 31,
+   "firefox": 31,
+   "safari": 27,
+   "edge": 31
+  },
+  "css/css-shadow/": {
+   "tests": 114,
+   "passed": 65,
+   "chrome": 95,
+   "firefox": 95,
+   "safari": 94,
+   "edge": 95
+  },
+  "css/css-shapes/": {
+   "tests": 242,
+   "passed": 30,
+   "chrome": 236,
+   "firefox": 219,
+   "safari": 214,
+   "edge": 237
+  },
+  "css/css-sizing/": {
+   "tests": 612,
+   "passed": 285,
+   "chrome": 547,
+   "firefox": 483,
+   "safari": 514,
+   "edge": 547
+  },
+  "css/css-style-attr/": {
+   "tests": 16,
+   "passed": 15,
+   "chrome": 16,
+   "firefox": 16,
+   "safari": 16,
+   "edge": 16
+  },
+  "css/css-syntax/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/css-tables/": {
+   "tests": 172,
+   "passed": 93,
+   "chrome": 163,
+   "firefox": 150,
+   "safari": 139,
+   "edge": 163
+  },
+  "css/css-text-decor/": {
+   "tests": 339,
+   "passed": 115,
+   "chrome": 258,
+   "firefox": 290,
+   "safari": 150,
+   "edge": 271
+  },
+  "css/css-text/": {
+   "tests": 1564,
+   "passed": 616,
+   "chrome": 1263,
+   "firefox": 1188,
+   "safari": 1200,
+   "edge": 1277
+  },
+  "css/css-transforms/": {
+   "tests": 797,
+   "passed": 404,
+   "chrome": 791,
+   "firefox": 789,
+   "safari": 772,
+   "edge": 792
+  },
+  "css/css-transitions/": {
+   "tests": 6,
+   "passed": 5,
+   "chrome": 6,
+   "firefox": 6,
+   "safari": 6,
+   "edge": 6
+  },
+  "css/css-typed-om/": {
+   "tests": 5,
+   "passed": 5,
+   "chrome": 5,
+   "firefox": 5,
+   "safari": 4,
+   "edge": 5
+  },
+  "css/css-ui/": {
+   "tests": 965,
+   "passed": 885,
+   "chrome": 947,
+   "firefox": 925,
+   "safari": 915,
+   "edge": 947
+  },
+  "css/css-values/": {
+   "tests": 228,
+   "passed": 88,
+   "chrome": 221,
+   "firefox": 156,
+   "safari": 159,
+   "edge": 221
+  },
+  "css/css-variables/": {
+   "tests": 183,
+   "passed": 139,
+   "chrome": 179,
+   "firefox": 181,
+   "safari": 180,
+   "edge": 178
+  },
+  "css/css-view-transitions/": {
+   "tests": 335,
+   "passed": 23,
+   "chrome": 324,
+   "firefox": 245,
+   "safari": 257,
+   "edge": 319
+  },
+  "css/css-viewport/": {
+   "tests": 113,
+   "passed": 18,
+   "chrome": 111,
+   "firefox": 81,
+   "safari": 89,
+   "edge": 111
+  },
+  "css/css-will-change/": {
+   "tests": 47,
+   "passed": 11,
+   "chrome": 47,
+   "firefox": 47,
+   "safari": 44,
+   "edge": 47
+  },
+  "css/css-writing-modes/": {
+   "tests": 1172,
+   "passed": 196,
+   "chrome": 1129,
+   "firefox": 1143,
+   "safari": 1084,
+   "edge": 1130
+  },
+  "css/cssom-view/": {
+   "tests": 11,
+   "passed": 7,
+   "chrome": 11,
+   "firefox": 11,
+   "safari": 8,
+   "edge": 11
+  },
+  "css/cssom/": {
+   "tests": 12,
+   "passed": 5,
+   "chrome": 9,
+   "firefox": 9,
+   "safari": 9,
+   "edge": 9
+  },
+  "css/fill-stroke/": {
+   "tests": 1,
+   "passed": 0,
+   "chrome": 1,
+   "firefox": 0,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/filter-effects/": {
+   "tests": 375,
+   "passed": 151,
+   "chrome": 345,
+   "firefox": 323,
+   "safari": 267,
+   "edge": 347
+  },
+  "css/mediaqueries/": {
+   "tests": 58,
+   "passed": 45,
+   "chrome": 56,
+   "firefox": 56,
+   "safari": 54,
+   "edge": 56
+  },
+  "css/motion/": {
+   "tests": 107,
+   "passed": 6,
+   "chrome": 100,
+   "firefox": 104,
+   "safari": 89,
+   "edge": 100
+  },
+  "css/printing/": {
+   "tests": 1,
+   "passed": 1,
+   "chrome": 1,
+   "firefox": 1,
+   "safari": 1,
+   "edge": 1
+  },
+  "css/reference/": {
+   "tests": 3,
+   "passed": 1,
+   "chrome": 3,
+   "firefox": 3,
+   "safari": 3,
+   "edge": 3
+  },
+  "css/selectors/": {
+   "tests": 344,
+   "passed": 294,
+   "chrome": 323,
+   "firefox": 337,
+   "safari": 334,
+   "edge": 323
+  }
+ },
+ "rivals": [
+  {
+   "recorded_utc": "2026-11-28T14:17:02Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "67903cd58bad06f6eb145dd58c5ff2822b5204b8",
+   "browser": "chrome",
+   "version": "158.0.8127.88",
+   "wptfyi_run_id": 6294115172745216,
+   "passed": 22782,
+   "denominator": 25940,
+   "share_pct": "87.8258",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-28T14:17:02Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "67903cd58bad06f6eb145dd58c5ff2822b5204b8",
+   "browser": "firefox",
+   "version": "161.0",
+   "wptfyi_run_id": 4902741223407616,
+   "passed": 21109,
+   "denominator": 25940,
+   "share_pct": "81.3763",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-28T14:17:02Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "67903cd58bad06f6eb145dd58c5ff2822b5204b8",
+   "browser": "safari",
+   "version": "27.2 (22625.2.8.11.9)",
+   "wptfyi_run_id": 5117232561258496,
+   "passed": 20399,
+   "denominator": 25940,
+   "share_pct": "78.6392",
+   "status": "ok",
+   "reason": ""
+  },
+  {
+   "recorded_utc": "2026-11-28T14:17:02Z",
+   "suite": "wpt-reftest-css",
+   "wpt_commit": "67903cd58bad06f6eb145dd58c5ff2822b5204b8",
+   "browser": "edge",
+   "version": "158.0.4370.45",
+   "wptfyi_run_id": 6489169803870208,
+   "passed": 22845,
+   "denominator": 25940,
+   "share_pct": "88.0686",
+   "status": "ok",
+   "reason": ""
+  }
+ ],
+ "since_previous": {
+  "previous_run": "20261128T0033Z-wpt-reftest-css-linux-x86_64-gh46088437783a1",
+  "previous_commit": "51bcef8c8cb2d2d38cae60b55321732ccbe64a2e",
+  "previous_wpt_commit": "fb385fbf9c54c6799a48a62365eca3f56436a48a",
+  "previous_passed": 12366,
+  "passed_delta": 3,
+  "newly_passing": [],
+  "newly_failing": [
+   {
+    "test": "/css/css-fonts/system-ui-ja-vs-zh.html",
+    "status": "FAIL"
+   }
+  ],
+  "drop": false,
+  "same_wpt_commit": false
+ },
+ "incidents": [],
+ "shards": [
+  {
+   "shard": [
+    13,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 324.9,
+   "pagesDrawn": 2841,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    8,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 314.2,
+   "pagesDrawn": 2808,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    12,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 318.3,
+   "pagesDrawn": 2809,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    9,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 187.0,
+   "pagesDrawn": 2808,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    1,
+    16
+   ],
+   "tests": 1622,
+   "wallSeconds": 250.4,
+   "pagesDrawn": 2840,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    11,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 184.0,
+   "pagesDrawn": 2795,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    15,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 200.4,
+   "pagesDrawn": 2834,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    7,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 248.3,
+   "pagesDrawn": 2816,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    14,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 200.1,
+   "pagesDrawn": 2829,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    6,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 328.5,
+   "pagesDrawn": 2801,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    4,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 315.8,
+   "pagesDrawn": 2811,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    3,
+    16
+   ],
+   "tests": 1622,
+   "wallSeconds": 233.3,
+   "pagesDrawn": 2831,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    10,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 201.5,
+   "pagesDrawn": 2810,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    5,
+    16
+   ],
+   "tests": 1621,
+   "wallSeconds": 257.0,
+   "pagesDrawn": 2822,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    2,
+    16
+   ],
+   "tests": 1622,
+   "wallSeconds": 268.3,
+   "pagesDrawn": 2833,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  },
+  {
+   "shard": [
+    0,
+    16
+   ],
+   "tests": 1622,
+   "wallSeconds": 250.4,
+   "pagesDrawn": 2822,
+   "engineSha256": "0c81ae4ae4292b70fd970e5b8d7d5f245e9209dd6d880dfb42e7609a228b716a"
+  }
+ ],
+ "completeness": "complete",
+ "shards_missing_reasons": {},
+ "plan": {
+  "release_tag": "build-bd0d78dd12ff-foafnaut-linux-x86_64",
+  "core_commit": "bd0d78dd12ff727140262b5f88934c69d1f2d005",
+  "commit_utc": "2026-11-27T22:08:41Z",
+  "web_tag": "build-bd0d78dd12ff-foafnaut-web",
+  "wpt_commit": "67903cd58bad06f6eb145dd58c5ff2822b5204b8",
+  "suites": [
+   "svg",
+   "css"
+  ],
+  "trigger": "schedule",
+  "planned_utc": "2026-11-28T14:10:08Z"
+ }
+}
